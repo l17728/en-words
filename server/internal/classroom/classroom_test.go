@@ -167,7 +167,42 @@ func TestHappyPathTeachOneWord(t *testing.T) {
 	assert.Equal(t, int64(2), m.CurrentWord().ID)
 }
 
-// ---- SM-02 非法事件忽略 ----
+// ---- R4-arch#7：zh 段超时按释义长度（区分 en/zh）----
+
+func TestTTSSegTimeoutZhLonger(t *testing.T) {
+	m, cfg := newMachine(t, []Word{
+		{ID: 1, Word: "ab", Meanings: []string{"n. 一个非常非常长的中文释义用来测试超时时长估算"}},
+	})
+	// en 段：len("ab")+2 = 4s
+	require.NoError(t, m.OnEvent(Event{Type: EvWordClicked}))
+	dEn, ok := m.TimeoutFor()
+	require.True(t, ok)
+	assert.Equal(t, 4*time.Second, dEn)
+
+	// 推进到 zh 段：释义 25 字符（含 "n. " 前缀）→ 25/2+2 = 14s > 4s
+	for i := 0; i < cfg.TtsEnRepeat; i++ {
+		require.NoError(t, m.OnEvent(Event{Type: EvTTSFinished}))
+	}
+	m.DrainActions()
+	require.Equal(t, PhaseTTSSeg, m.Phase())
+	dZh, ok := m.TimeoutFor()
+	require.True(t, ok)
+	assert.Greater(t, dZh, dEn, "zh 段（长释义）超时应大于 en 段")
+	assert.Equal(t, 14*time.Second, dZh, "25 字符释义 → 25/2+2=14s")
+
+	// RETEACH 上下文同样适用（视同 zh 段）
+	teachGroup(m, cfg)
+	m.DrainActions()
+	require.NoError(t, m.OnEvent(Event{Type: EvAnswerSubmitted, Text: "不知道"}))
+	m.DrainActions()
+	it := m.CurrentItem()
+	require.Equal(t, JudgmentWrong, m.OnJudged(it.ID(), JudgmentWrong))
+	m.DrainActions()
+	require.Equal(t, PhaseReteachShow, m.Phase())
+	dRt, ok := m.TimeoutFor()
+	require.True(t, ok)
+	assert.GreaterOrEqual(t, dRt, 14*time.Second, "RETEACH zh 段超时按释义长度")
+}
 
 func TestIllegalEventIgnored(t *testing.T) {
 	m, _ := newMachine(t, batchN(5))
@@ -268,14 +303,17 @@ func TestWrongAnswerReteachLoop(t *testing.T) {
 	sw := findAction(as, ActShowWord)
 	require.NotNil(t, sw)
 	assert.True(t, sw.WithZh, "RETEACH 显示中文释义")
-	assert.Equal(t, PhaseReteachShow, m.Phase())
+	require.Equal(t, PhaseReteachShow, m.Phase())
 
+	// R4-test#1：RETEACH 闭环逐相位断言（zh→en→repeating）
 	require.NoError(t, m.OnEvent(Event{Type: EvTTSFinished})) // zh
-	en := findAction(m.DrainActions(), ActPlayTTS)
+	enA := m.DrainActions()
+	require.Equal(t, PhaseReteachShow, m.Phase(), "zh 段完成仍在 reteach（待 en）")
+	en := findAction(enA, ActPlayTTS)
 	require.NotNil(t, en)
 	assert.Equal(t, "en", en.Lang)
 	require.NoError(t, m.OnEvent(Event{Type: EvTTSFinished})) // en
-	assert.Equal(t, PhaseRepeating, m.Phase())
+	assert.Equal(t, PhaseRepeating, m.Phase(), "en 完成进跟读（R4-test#1）")
 	m.DrainActions()
 	for i := 0; i < cfg.RepeatTimes; i++ {
 		require.NoError(t, m.OnEvent(Event{Type: EvRepeatDone}))
@@ -317,8 +355,12 @@ func TestJudgedIdempotent(t *testing.T) {
 // ---- SM-07/R2-10 综合测试确定性打乱 ----
 
 func TestCumulativePoolDeterministic(t *testing.T) {
-	run := func() []int64 {
-		m, cfg := newMachine(t, batchN(15))
+	run := func(lessonID, bookID int64) []int64 { // R4-test#3：显式 bookID 参与 seed
+		m := NewMachine(lessonID, bookID, 7, batchN(15), newCfg(),
+			&fakeClock{t: time.Date(2026, 8, 23, 19, 0, 0, 0, time.UTC)})
+		require.NoError(t, m.Start())
+		m.DrainActions()
+		cfg := newCfg()
 		teachGroup(m, cfg)
 		answerN(m, cfg, 5, nil)
 		teachGroup(m, cfg)
@@ -341,10 +383,12 @@ func TestCumulativePoolDeterministic(t *testing.T) {
 		}
 		return order
 	}
-	o1 := run()
-	o2 := run()
-	assert.Equal(t, o1, o2, "Fisher-Yates seed=lessonID*31+bookID 确定性")
+	o1 := run(12, 3)
+	o2 := run(12, 3)
+	o3 := run(12, 9)
+	assert.Equal(t, o1, o2, "同 seed 重放一致")
 	require.Len(t, o1, 10)
+	assert.NotEqual(t, o1, o3, "不同 bookID 打乱序列应不同（seed=lessonID*31+bookID 的证据）")
 }
 
 // ---- SM-08 课内掌握出池 ----

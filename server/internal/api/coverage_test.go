@@ -250,26 +250,31 @@ func TestCov_StudentLessonsList(t *testing.T) {
 	assert.Equal(t, errNotFound, resp.Code)
 }
 
-// ---- Ticket 生命周期 ----
+// ---- Ticket 生命周期（R4-arch#3：含过期判定，需真实 lesson）----
 
 func TestCov_TicketLifecycle(t *testing.T) {
-	app, _ := newTestApp(t)
-	t1 := app.IssueTicket(7, 3)
+	app, clk, lid, _ := setupRoom(t) // 真实 lesson（openAt 已到）
+	t1 := app.IssueTicket(lid, 3)
 	require.NotEmpty(t, t1)
 	// 同绑定复用同一 ticket
-	t2 := app.IssueTicket(7, 3)
+	t2 := app.IssueTicket(lid, 3)
 	assert.Equal(t, t1, t2)
 	// 不同课不同 ticket
-	assert.NotEqual(t, t1, app.IssueTicket(8, 3))
-	// 校验
+	assert.NotEqual(t, t1, app.IssueTicket(lid+1, 3))
+	// 校验（lesson 存在且未过期）
 	tk, ok := app.CheckTicket(t1)
 	require.True(t, ok)
-	assert.Equal(t, int64(7), tk.LessonID)
+	assert.Equal(t, lid, tk.LessonID)
 	_, ok = app.CheckTicket("bogus")
 	assert.False(t, ok)
-	// 回收后失效
-	app.RevokeTicket(7, 3)
+	// 过期：推进 26h（> openAt+overdueHours+1h 窗口）
+	clk.Advance(80 * time.Hour)
 	_, ok = app.CheckTicket(t1)
+	assert.False(t, ok, "过期后失效")
+	// 回收后失效
+	t3 := app.IssueTicket(lid, 3)
+	app.RevokeTicket(lid, 3)
+	_, ok = app.CheckTicket(t3)
 	assert.False(t, ok)
 }
 
