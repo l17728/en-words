@@ -1,7 +1,12 @@
 # en-words 项目记忆（每个会话自动继承）
 
+## 产品命名（2026-08-23 用户定案）
+- 产品名：**叮当words**（DingDang Words）——用于登录页/课堂老师人设/通知落款/管理后台标题。
+- 工程/仓库名保持 en-words 不变；话术人设="叮当老师"（课堂开场白自称）。
+
 ## 项目定位
 单词学习 Web 软件 = **平台 + 开放能力（工具注册表） + 双智能体（老师Agent/系统Agent） + 用户** 四层架构。
+**核心理念 D-15"Agent 即人"**：平台开放所有能力（22 工具），Agent 像老师/教务一样用工具完成"教学→分析→改进"循环；教学决策必须在 Agent 决策表（docs/04），平台侧发现硬编码教学决策=设计缺陷；Agent 一切动作经工具（scope+schema+审计），无后门。
 设计文档在 `docs/`，需求决策记录在 `docs/01-需求分析.md` §7 ADR。
 
 ## 质量铁律（用户明确要求，优先级最高，不可协商）
@@ -24,6 +29,18 @@ React18+AntD5+Vite+TS+Zustand / Go(Gin)+GORM+SQLite / Gorilla WS / 阿里 DashSc
 - 工具链（重跑顺序）：`data/tools/parse_seed.py → build_gaokao_book.py → clean_gaokao.py → verify_seed.py`。
 - 质量过滤规则已固化在工具里：答案串/粘连词/人名/书名/自由搭配过滤；新增试卷沿用同链路。
 
+## 测试执行约定
+- **E2E 一律 Playwright 无头模式（headless Chromium）**：方案与覆盖率门见 docs/08（页面/路由覆盖=100%，FR 域旅程全覆盖；03 文档 §4 是用例唯一事实源）。多用户并发断言由 Go 集成测试(-race)承担。
+- 后端覆盖率门：核心模块≥80%，状态机/调度/判分/反馈≥90%。
+- **当前台账（2026-08-23，15 包全绿+vet 净）**：agent 97.4 / tools 94.5 / voiceclone 94.6 / obs 92.6 / scheduler 92.3 / scripts 91.3 / classroom 91.6 / judge 91.2 / memory 91.2 / voicecmd 91.7 / feedback 96.1 / auth 87.3 / config 84.3 / api 83.1 / wordbook 83.5。IT-01..12 集成测试全绿（REST+真WS往返+断线恢复+重启恢复+语音反馈闭环）。
+- 前端骨架：web/（Vite+React18+AntD5+Zustand，07-UX 主题落地）5 核心页构建通过（登录/广场/摸底/课程表/课堂），e2e/smoke.spec.ts 冒烟位就绪。
+- -race 需 cgo（本机无 gcc）：CI 待办。
+
+## 部署与首启（SDD §17 双击即用，2026-08-23）
+- 首次启动：无 admin 时 `GET/POST /api/v1/bootstrap` 引导创建首个管理员（随后封死）；main 检测无 admin 自动 AutoSeed 播种 7 库 5568 词（幂等）。
+- 管理端一键导入：`POST /api/v1/admin/seed-import?dir=<data/seed 路径>`。
+- 运行：`cd server && go run ./cmd/server`（:8080）+ `cd web && npm run dev`（:5173 代理）。
+
 ## 质量门状态（2026-08-23）
 - 设计文档已过三轮评审（自查34+外部qwen-plus两轮28/19）+全生命周期推演，收敛为0新结构问题，冻结为实施基线。详见 docs/06 §5~§7。
 - 评审工具：`review/run_expert_review.py --round roundN`（DashScope qwen-plus，独立视角）；子代理环境持续故障勿再尝试（模型配置缺失）。
@@ -33,7 +50,13 @@ React18+AntD5+Vite+TS+Zustand / Go(Gin)+GORM+SQLite / Gorilla WS / 阿里 DashSc
 - 中文回复；完成用证据说话（测试数/覆盖率/日志）。
 - 大模型 API 先 mock；真实 API 样例后续用户提供。
 
+## 大模型分工（D-11/D-12/D-17 定案，2026-08-23）
+- **智谱 GLM（API 直连，open.bigmodel.cn，OpenAI 兼容）**：产品全部纯文本任务——系统 Agent 反馈解析、判分第 2 级、导入解析、音标补全。默认 glm-4-flash。
+- **阿里 DashScope**：语音全部——Omni-Realtime 课堂双工（D-11）+ 单词朗读（**D-17：Omni 非实时 qwen3.5-omni-plus 单段合成+播放队列编排，砍掉 CosyVoice**）+ 语音克隆 enrollment（0.01元/次）；paraformer 降 P2 可选（降级链下一级=文本框零成本）。
+- 运行时=2 供应商 4 模型；开发测试期全 Mock。评审脚本（review/run_expert_review.py）历史用 qwen-plus，属一次性开发工具与产品运行时无关。
+- opencode 子代理模型配置：`C:\Users\HW\.config\opencode\oh-my-openagent.json` 已全部切到 zhipuai-coding-plan（百炼 plan 停用），改后需重启 opencode 生效。
+
 ## 密钥（严禁写入任何文档/代码/日志/提交）
-- 阿里百炼 DashScope API Key 已存本地：`D:\en-words\secrets\dashscope.local.yaml`（.gitignore 已排除 secrets/ 与 *.local.yaml；**严禁 push**）。
-- key 前缀 sk-ws-，REST 亦可用：2026-08-23 实测 OpenAI 兼容模式 qwen-flash 返回 200。TTS/ASR/Omni 待接入时再验。
-- WorkspaceId `ws-rcouyh3kd6v0c7g8` 已存 secrets 文件；Omni-Realtime 连通已实测 PASS（session.created+session.updated，qwen3.5-omni-plus-realtime，见 docs/05 §3.1 实测记录）。
+- 密钥统一存 `D:\en-words\secrets\dashscope.local.yaml`（.gitignore 已排除 secrets/ 与 *.local.yaml；**严禁 push**）：
+  - DashScope API Key（sk-ws- 前缀）+ WorkspaceId `ws-rcouyh3kd6v0c7g8`：REST(qwen-flash) 与 Omni-Realtime 均实测 200/PASS。
+  - 智谱 coding plan Key + 端点 `https://open.bigmodel.cn/api/coding/paas/v4`：glm-4-flash/glm-4.6/glm-4.5-air 三模型实测 200（2026-08-23，key 复用 opencode 配置，用户确认）。
