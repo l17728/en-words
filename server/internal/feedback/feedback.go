@@ -244,10 +244,11 @@ func (p *Parser) parseDate(s string) (time.Time, bool) {
 		}
 		return t, true
 	}
-	// 下个月X号 / 下月X号（无前置数字的"个月"）
+	// 下个月X号 / 下月X号（无前置数字的"个月"；R4-be#7：用 AddDate 防月份溢出）
 	if m := regexp.MustCompile(`下个?月(\d{1,2})[号日]?`).FindStringSubmatch(s); m != nil {
 		da, _ := strconv.Atoi(m[1])
-		t := time.Date(now.Year(), now.Month(), da, 0, 0, 0, 0, now.Location()).AddDate(0, 1, 0)
+		next := now.AddDate(0, 1, 0) // 先推进月份再设日（time.Date 自带归一化）
+		t := time.Date(next.Year(), next.Month(), da, 0, 0, 0, 0, now.Location())
 		return t, true
 	}
 	return time.Time{}, false

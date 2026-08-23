@@ -91,6 +91,17 @@ func NewApp(clock Clock) *App {
 		Clock:     clock,
 		tickets:   map[string]*Ticket{},
 	}
+	// §14 排课日志钩子（logger 在 SetLogger 注入后生效；这里闭包引用 app.Log）
+	sched.OnPlanned = func(studentID, bookID int64, l *scheduler.Lesson) {
+		app.Log.Info("scheduler", "lesson_planned", map[string]any{
+			"student_id": studentID, "book_id": bookID,
+			"lesson_id": l.ID, "open_at": l.OpenAt.Format(time.RFC3339),
+			"batch": len(l.BatchWordIDs)})
+	}
+	// R4-backend#3：config.ladder 变更 → scheduler 截断记忆卡 step（SDD §6.2 事务联动）
+	cfgStore.OnLadderChanged = func(newLadder []int) error {
+		return sched.TruncateLadderSteps(len(newLadder))
+	}
 	app.Rooms = NewHub(app)
 	app.registerTools()
 	return app
@@ -138,7 +149,7 @@ func (a *App) SetLogger(l *obs.Logger) {
 	}
 }
 
-// CronOverdue 定时巡检（S-10/S-11）：scheduler 重排 + 逾期通知学生。
+// CronOverdue 定时巡检（S-10/S-11）：scheduler 重排 + 逾期通知学生（§14 逾期日志）。
 func (a *App) CronOverdue() ([]int64, error) {
 	replanned, err := a.Sched.HandleOverdue()
 	if err != nil {
@@ -158,19 +169,25 @@ func (a *App) CronOverdue() ([]int64, error) {
 		}
 		a.Notify(l.StudentID, "课程已改期",
 			"你缺席了 "+origAt+" 的课，已改到 "+l.OpenAt.Format("1月2日 15:04")+"，别再错过啦")
+		a.Log.Warn("scheduler", "lesson_expired_replanned", map[string]any{
+			"student_id": l.StudentID, "old_lesson": origAt,
+			"new_lesson_id": id, "new_open_at": l.OpenAt.Format(time.RFC3339)})
 	}
 	return replanned, nil
 }
 
 // ---- Ticket（AR-01/R2-AR-03）----
 
-// IssueTicket enter 签发（同 lesson 复用同一 ticket）。
+// IssueTicket enter 签发（同 lesson 复用同一 ticket；R4-arch#3：含过期时间，判定时校验）。
 func (a *App) IssueTicket(lessonID, studentID int64) string {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	for t, tk := range a.tickets {
-		if tk.LessonID == lessonID && tk.StudentID == studentID {
+		if tk.LessonID == lessonID && tk.StudentID == studentID && !tk.expired(a) {
 			return t
+		}
+		if tk.LessonID == lessonID && tk.StudentID == studentID {
+			delete(a.tickets, t) // 过期清理
 		}
 	}
 	t := newToken()
@@ -178,12 +195,29 @@ func (a *App) IssueTicket(lessonID, studentID int64) string {
 	return t
 }
 
-// CheckTicket 校验并返回绑定。
+// expired ticket 过期判定：创建时间 + open_at 窗口 + overdueHours + 1h（R2-AR-03）。
+func (tk *Ticket) expired(a *App) bool {
+	lesson, err := a.Sched.Lesson(tk.LessonID)
+	if err != nil {
+		return true // 课不存在即失效
+	}
+	deadline := lesson.OpenAt.Add(time.Duration(a.Cfg.Int(tk.StudentID, "overdueHours")+1) * time.Hour)
+	return a.Clock.Now().After(deadline)
+}
+
+// CheckTicket 校验并返回绑定（含过期检查，R4-arch#3）。
 func (a *App) CheckTicket(t string) (*Ticket, bool) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	tk, ok := a.tickets[t]
-	return tk, ok
+	if !ok {
+		return nil, false
+	}
+	if tk.expired(a) {
+		delete(a.tickets, t)
+		return nil, false
+	}
+	return tk, true
 }
 
 // RevokeTicket 课堂结束销毁。

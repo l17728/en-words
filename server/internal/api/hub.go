@@ -11,8 +11,12 @@ import (
 
 	"enwords/internal/agent"
 	"enwords/internal/classroom"
+	"enwords/internal/scripts"
 	"enwords/internal/voicecmd"
 )
+
+// seedRng 话术确定性随机源（seed=lessonId，04 §7.1）。
+func seedRng(lessonID int64) *scripts.RNG { return scripts.NewSeededRNG(lessonID) }
 
 // Msg WS 帧。
 type Msg map[string]any
@@ -40,6 +44,8 @@ type Room struct {
 	FeedbackCh   chan string
 	phaseSince   time.Time
 	lastPhase    string
+	lastActions  []classroom.Action // 最近一批 machine 动作（话术层输入）
+	encourageCounter int             // 自上次鼓励的判对数（encourageEveryN）
 }
 
 // Hub 房间表。
@@ -160,19 +166,27 @@ func (r *Room) nextSeqLocked() int {
 }
 
 // broadcastLocked 排空 machine 动作→广播→返回（供 REST/WS 双通道）；
-// 判分接线：phase==Judging 时同步 Mock 判分；phase 变化时记录 phaseSince；
-// 每次迁移后快照持久化（IT-12）。
+// 判分接线：phase==Judging 时同步 Mock 判分；phase 变化时记录 phaseSince + §14 日志；
+// 每次迁移后快照持久化（IT-12）；老师话术层随关键动作异步注入（D-10）。
 func (r *Room) broadcastLocked() []Msg {
 	var out []Msg
-	for _, a := range r.machine.DrainActions() {
+	r.lastActions = r.machine.DrainActions()
+	for _, a := range r.lastActions {
 		m := Msg{"type": "ui_action", "seq": r.nextSeqLocked(), "action": a}
 		r.emitLocked(m)
 		out = append(out, m)
 	}
 	if ph := r.machine.Phase(); ph != r.lastPhase {
+		r.app.Log.Info("classroom", "phase_changed", map[string]any{
+			"lesson_id": r.lessonID, "from": r.lastPhase, "to": ph})
+		pm := Msg{"type": "phase_changed", "seq": r.nextSeqLocked(), // §11.2 帧
+			"from": r.lastPhase, "phase": ph, "lesson_id": r.lessonID}
+		r.emitLocked(pm)
+		out = append(out, pm)
 		r.lastPhase = ph
 		r.phaseSince = r.app.Clock.Now()
 	}
+	out = append(out, r.emitTeacherUtterancesLocked()...)
 	if r.machine.Phase() == classroom.PhaseJudging {
 		out = append(out, r.judgeLocked()...)
 	}
@@ -183,18 +197,87 @@ func (r *Room) broadcastLocked() []Msg {
 	return out
 }
 
+// emitTeacherUtterancesLocked 老师话术层（D-10 快路径伴生）：
+// 由本步动作推导事件 → 决策表选槽 → seed=lessonId 渲染 → say 帧 + 日志。
+func (r *Room) emitTeacherUtterancesLocked() []Msg {
+	var out []Msg
+	say := func(cat string, vars map[string]any) {
+		rng := seedRng(r.lessonID)
+		text := r.app.Bank.Render(rng, cat, vars, nil)
+		if text == "" {
+			return
+		}
+		m := Msg{"type": "ui_action", "seq": r.nextSeqLocked(),
+			"action": map[string]any{"type": "say", "text": text}}
+		r.emitLocked(m)
+		out = append(out, m)
+		r.app.Log.Info("classroom", "teacher_say", map[string]any{
+			"lesson_id": r.lessonID, "category": cat, "text": text})
+	}
+	name := r.studentName()
+	for _, a := range r.lastActions {
+		switch a.Type {
+		case classroom.ActStartQuiz:
+			cat := "transition"
+			vars := map[string]any{"name": name, "group": "下一", "word": a.Word}
+			if a.Kind == "cumulative" || a.Kind == "final" {
+				vars["group"] = "全部"
+			}
+			say(cat, vars)
+		case classroom.ActShowCross:
+			say("correct", map[string]any{"name": name, "word": a.Word,
+				"meaning": firstMeaning(r.words[a.WordID]), "n": r.reteachCount(a.WordID)})
+		case classroom.ActShowCheck:
+			r.encourageCounter++
+			// R4-arch#6：读配置中心生效值（一切参数可配置）
+			if r.encourageCounter >= r.app.Cfg.Int(r.studentID, "encourageEveryN") {
+				r.encourageCounter = 0
+				say("encourage", map[string]any{"name": name, "word": a.Word,
+					"n": r.machine.Snapshot().StreakBest})
+			}
+		case classroom.ActNudgeRepeat, classroom.ActNudgeAnswer:
+			say("nudge", map[string]any{"name": name, "word": a.Word})
+		case classroom.ActLessonSummary:
+			say("closing", map[string]any{"name": name, "n": len(r.words), "m": 0, "p": 0})
+		}
+	}
+	return out
+}
+
+func (r *Room) reteachCount(wordID int64) int {
+	return r.machine.Snapshot().ReteachN[wordID]
+}
+
+func (r *Room) studentName() string {
+	if u, err := r.app.Auth.GetUserByID(r.studentID); err == nil && u.Nickname != "" {
+		return u.Nickname
+	}
+	return "同学"
+}
+
+func firstMeaning(w classroom.Word) string {
+	if len(w.Meanings) > 0 {
+		return w.Meanings[0]
+	}
+	return ""
+}
+
 func (r *Room) emitLocked(m Msg) {
 	for c := range r.clients {
 		_ = c.Send(m)
 	}
 }
 
-// judgeLocked 判分：judge L1(+L2) → OnJudged → 后续动作广播。
+// judgeLocked 判分：judge L1(+L2) → OnJudged → 后续动作广播（§14 判分日志）。
 func (r *Room) judgeLocked() []Msg {
 	var out []Msg
 	it := r.machine.CurrentItem()
 	w := r.words[it.WordID]
 	j := r.app.Judge.Judge(w.Word, w.Meanings, r.lastAnswer)
+	r.app.Log.Info("judge", "quiz_judged", map[string]any{
+		"lesson_id": r.lessonID, "word": w.Word, "word_id": it.WordID,
+		"kind": it.Kind, "round": it.Round,
+		"asr_text": r.lastAnswer, "judgment": string(j)})
 	jm := Msg{"type": "judge_result", "seq": r.nextSeqLocked(),
 		"quiz_item": itemPayload(it), "judgment": string(j), "asr_text": r.lastAnswer}
 	r.emitLocked(jm)
@@ -204,18 +287,26 @@ func (r *Room) judgeLocked() []Msg {
 	return out
 }
 
-// broadcastActionsOnly 只排空动作不再触发判分（防递归）。
+// broadcastActionsOnly 只排空动作不再触发判分（防递归）；同样喂话术层与相位帧。
 func (r *Room) broadcastActionsOnly() []Msg {
 	var out []Msg
-	for _, a := range r.machine.DrainActions() {
+	r.lastActions = r.machine.DrainActions()
+	for _, a := range r.lastActions {
 		m := Msg{"type": "ui_action", "seq": r.nextSeqLocked(), "action": a}
 		r.emitLocked(m)
 		out = append(out, m)
 	}
 	if ph := r.machine.Phase(); ph != r.lastPhase {
+		r.app.Log.Info("classroom", "phase_changed", map[string]any{
+			"lesson_id": r.lessonID, "from": r.lastPhase, "to": ph})
+		pm := Msg{"type": "phase_changed", "seq": r.nextSeqLocked(),
+			"from": r.lastPhase, "phase": ph, "lesson_id": r.lessonID}
+		r.emitLocked(pm)
+		out = append(out, pm)
 		r.lastPhase = ph
 		r.phaseSince = r.app.Clock.Now()
 	}
+	out = append(out, r.emitTeacherUtterancesLocked()...)
 	if r.machine.Phase() == classroom.PhaseLessonEnd {
 		r.maybeFinishLocked()
 	}
@@ -326,7 +417,12 @@ func (r *Room) maybeFinishLocked() {
 	if res == nil {
 		return
 	}
-	_ = r.app.Sched.SettleLessonFinished(r.studentID, r.bookID, res.Correct, r.app.Clock.Now())
+	// 结算失败则停止后续决策（R4-arch#1）
+	if err := r.app.Sched.SettleLessonFinished(r.studentID, r.bookID, res.Correct, r.app.Clock.Now()); err != nil {
+		r.app.Log.Error("scheduler", "settle_failed", map[string]any{
+			"lesson_id": r.lessonID, "error": err.Error()})
+		return
+	}
 	// 结课即排下一课（F2 只排一课；已排/无词则忽略）
 	if _, err := r.app.Sched.PlanNext(r.studentID, r.bookID); err != nil {
 		r.app.Log.Info("scheduler", "plan_after_lesson", map[string]any{

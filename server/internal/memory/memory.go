@@ -260,11 +260,14 @@ func (s *Service) Recall(owner OwnerRole, studentID, bookID int64, kind, query s
 	if limit <= 0 {
 		limit = 10
 	}
-	// 加权分：importance*2 + 近因（每 7 天衰减 1 分，下限 0）
+	// 加权分：importance*2 + 近因（每满 7 天衰减 1 分，向上取整；R4-ai#4 修粒度）
 	now := s.now()
 	score := func(m *Memory) int {
 		days := int(now.Sub(m.UpdatedAt).Hours() / 24)
-		recency := 5 - days/7
+		if days < 0 {
+			days = 0
+		}
+		recency := 5 - (days+6)/7 // 向上取整衰减
 		if recency < 0 {
 			recency = 0
 		}

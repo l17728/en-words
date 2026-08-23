@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -204,13 +205,21 @@ func (r *Registry) Call(ctx context.Context, caller Caller, name string, args js
 		return nil, fmt.Errorf("tools: %s: %w", name, err)
 	}
 
-	// ⑤ 高风险 reason 双保险（Schema 之外的管线级兜底，TR-03）
+	// ⑤ 高风险 reason 双保险（Schema 之外的管线级兜底，TR-03；R4-sec#2 类型严格校验）
 	if t.Risk == RiskHigh {
 		var payload struct {
-			Reason string `json:"reason"`
+			Reason json.RawMessage `json:"reason"`
 		}
 		_ = json.Unmarshal(args, &payload)
-		if strings.TrimSpace(payload.Reason) == "" {
+		// 必须是 JSON 字符串且非空白（防 {"reason":123}/{"reason":null} 绕过）
+		if len(payload.Reason) == 0 || payload.Reason[0] != '"' {
+			err := fmt.Errorf("high-risk tool %q requires string reason", name)
+			done(false, err.Error())
+			return nil, err
+		}
+		var reason string
+		_ = json.Unmarshal(payload.Reason, &reason)
+		if strings.TrimSpace(reason) == "" {
 			err := fmt.Errorf("high-risk tool %q requires non-blank reason", name)
 			done(false, err.Error())
 			return nil, err
@@ -343,7 +352,12 @@ func validateType(typ string, raw json.RawMessage) error {
 
 func isInt(n json.Number) bool {
 	s := n.String()
-	return !strings.ContainsAny(s, ".eE")
+	// R4-sec#5：拒绝科学计数法/小数（json.Number 保留原文）
+	if strings.ContainsAny(s, ".eE") {
+		return false
+	}
+	_, err := strconv.ParseInt(s, 10, 64) // 范围校验（防溢出）
+	return err == nil
 }
 
 // ---- 装配层简写别名 ----

@@ -145,10 +145,15 @@ func (s *Service) Login(username, password string) (string, *User, error) {
 	return tok, &cp, nil
 }
 
-// Verify 校验 token。
+// Verify 校验 token（R4-sec#1：显式校验 header alg=HS256，防 alg=none 攻击）。
 func (s *Service) Verify(token string) (*Claims, error) {
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
+		return nil, ErrBadToken
+	}
+	// header 必须是固定字符串（sign() 产出），任何篡改都无法通过 HMAC
+	header, err := base64.RawURLEncoding.DecodeString(parts[0])
+	if err != nil || string(header) != `{"alg":"HS256","typ":"JWT"}` {
 		return nil, ErrBadToken
 	}
 	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
@@ -190,6 +195,79 @@ func (s *Service) HasAdmin() bool {
 		}
 	}
 	return false
+}
+
+// GetUserByID 按 ID 查询（api 装配层昵称回填用）。
+func (s *Service) GetUserByID(id int64) (*User, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	u, ok := s.byID[id]
+	if !ok {
+		return nil, fmt.Errorf("auth: user %d not found", id)
+	}
+	cp := *u
+	return &cp, nil
+}
+
+// ChangePassword 自助改密（校验旧密码）。
+func (s *Service) ChangePassword(username, oldPw, newPw string) error {
+	s.mu.RLock()
+	u, ok := s.users[username]
+	s.mu.RUnlock()
+	if !ok || u.hash != hashPassword(oldPw, u.salt) {
+		return ErrBadCredentials
+	}
+	if len(newPw) < 6 {
+		return fmt.Errorf("auth: new password too short (>=6)")
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	u.salt = newSalt()
+	u.hash = hashPassword(newPw, u.salt)
+	return nil
+}
+
+// ResetPassword 管理员重置密码（FR-A4）。
+func (s *Service) ResetPassword(username, newPw string) error {
+	if len(newPw) < 6 {
+		return fmt.Errorf("auth: password too short (>=6)")
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	u, ok := s.users[username]
+	if !ok {
+		return fmt.Errorf("auth: user %q not found", username)
+	}
+	u.salt = newSalt()
+	u.hash = hashPassword(newPw, u.salt)
+	if u.Status == "disabled" {
+		u.Status = "active"
+	}
+	return nil
+}
+
+// Enable 解除停用（FR-A4）。
+func (s *Service) Enable(username string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	u, ok := s.users[username]
+	if !ok {
+		return fmt.Errorf("auth: user %q not found", username)
+	}
+	u.Status = "active"
+	return nil
+}
+
+// ListUsers 全量用户（管理端列表；不含盐/哈希）。
+func (s *Service) ListUsers() []User {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make([]User, 0, len(s.users))
+	for _, u := range s.users {
+		out = append(out, User{ID: u.ID, Username: u.Username, Nickname: u.Nickname,
+			Role: u.Role, Status: u.Status})
+	}
+	return out
 }
 
 // SignService 服务账号直签（Agent 无密码登录通道：服务端持有账号即可签发）。

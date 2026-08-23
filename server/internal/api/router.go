@@ -32,15 +32,29 @@ func (a *App) Router() *gin.Engine {
 		p := body["password"]
 		tok, user, err := a.Auth.Login(u, p)
 		if err != nil {
+			a.Log.Warn("auth", "login_failed", map[string]any{"username": u})
 			c.JSON(http.StatusOK, fail(errUnauthorized, "用户名或密码错误"))
 			return
 		}
+		a.Log.Info("auth", "login_ok", map[string]any{
+			"username": u, "role": string(user.Role), "user_id": user.ID})
 		c.JSON(http.StatusOK, ok(gin.H{"token": tok, "role": string(user.Role),
 			"nickname": user.Nickname, "user_id": user.ID}))
 	})
 
 	// ---- 学生/管理员共用（需登录）----
 	authed := v.Group("", a.authMW())
+	authed.POST("/auth/change_password", func(c *gin.Context) {
+		var in struct{ OldPassword, NewPassword string }
+		_ = c.ShouldBindJSON(&in)
+		if err := a.Auth.ChangePassword(claimsOf(c).Username, in.OldPassword, in.NewPassword); err != nil {
+			c.JSON(http.StatusOK, fail(errBadRequest, "原密码错误或新密码不合规"))
+			return
+		}
+		a.Log.Info("auth", "password_changed", map[string]any{
+			"username": claimsOf(c).Username})
+		c.JSON(http.StatusOK, ok("changed"))
+	})
 	authed.GET("/me", func(c *gin.Context) {
 		cl := claimsOf(c)
 		u, err := a.Auth.GetUser(cl.Username)
@@ -74,6 +88,37 @@ func (a *App) Router() *gin.Engine {
 		}
 		c.JSON(http.StatusOK, ok(b))
 	})
+	// 词库 PUT/DELETE（§10.2 完整 CRUD）
+	adminOnly.PUT("/:id", func(c *gin.Context) {
+		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		b, err := a.Books.GetBook(id)
+		if err != nil {
+			c.JSON(http.StatusOK, fail(errNotFound, "book not found"))
+			return
+		}
+		var in struct{ Name, Grade, Description string }
+		_ = c.ShouldBindJSON(&in)
+		if in.Name != "" {
+			b.Name = in.Name
+		}
+		if in.Grade != "" {
+			b.Grade = in.Grade
+		}
+		b.Description = in.Description
+		if err := a.Books.UpdateBook(b); err != nil {
+			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
+			return
+		}
+		c.JSON(http.StatusOK, ok(b))
+	})
+	adminOnly.DELETE("/:id", func(c *gin.Context) {
+		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		if err := a.Books.DeleteBook(id); err != nil {
+			c.JSON(http.StatusOK, fail(errNotFound, "book not found"))
+			return
+		}
+		c.JSON(http.StatusOK, ok("deleted"))
+	})
 	adminOnly.POST("/:id/import/commit", func(c *gin.Context) {
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 		var in struct{ Entries []wordbook.EntryInput }
@@ -93,6 +138,8 @@ func (a *App) Router() *gin.Engine {
 		}
 		c.JSON(http.StatusOK, ok("published"))
 	})
+	// 词条 CRUD/导入解析/导出（FR-B2/B3/B6，总验收门补齐）
+	a.registerEntryRoutes(adminOnly.Group(""))
 	authed.GET("/wordbooks/:id/words", func(c *gin.Context) {
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 		if _, err := a.Books.GetBook(id); err != nil {
@@ -221,6 +268,7 @@ func (a *App) Router() *gin.Engine {
 		c.JSON(http.StatusOK, ok(gin.H{"ticket": ticket, "snapshot": snap, "status": room.Status()}))
 	})
 	// REST 事件通道（WS 不可用/测试/文本兜底；与 WS 同一 Room 管线）
+	// R4-sec#6：event 白名单校验（防任意字符串触发未定义行为）
 	cr.POST("/lessons/:id/event", func(c *gin.Context) {
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 		room, okk := a.Rooms.Room(id)
@@ -233,7 +281,11 @@ func (a *App) Router() *gin.Engine {
 			Text  string `json:"text"`
 		}
 		_ = c.ShouldBindJSON(&in)
-		msgs := room.HandleEvent(classroom.Event{Type: in.Event, Text: in.Text})
+		if !validClassroomEvent(in.Event) {
+			c.JSON(http.StatusOK, fail(errBadRequest, "unknown event"))
+			return
+		}
+		msgs := room.HandleEvent(classroom.Event{Type: in.Event, Text: sanitizeText(in.Text)})
 		c.JSON(http.StatusOK, ok(msgs))
 	})
 	cr.POST("/lessons/:id/voice", func(c *gin.Context) {
@@ -243,6 +295,12 @@ func (a *App) Router() *gin.Engine {
 		room, okk := a.Rooms.Room(id)
 		if !okk {
 			c.JSON(http.StatusOK, fail(errNotFound, "room not found"))
+			return
+		}
+		// R4-sec#3：长度限制+控制字符清洗（防注入下游管线）
+		in.Text = sanitizeText(in.Text)
+		if in.Text == "" {
+			c.JSON(http.StatusOK, fail(errBadRequest, "empty text"))
 			return
 		}
 		cmd, msgs := room.HandleVoiceText(in.Text)
@@ -286,11 +344,11 @@ func (a *App) Router() *gin.Engine {
 	})
 	cfgg.POST("/set", func(c *gin.Context) {
 		var in struct {
-			Scope   string `json:"scope"`
-			StudentID int64 `json:"studentId"`
-			Key     string `json:"key"`
-			Value   any    `json:"value"`
-			Reason  string `json:"reason"`
+			Scope     string `json:"scope"`
+			StudentID int64  `json:"studentId"`
+			Key       string `json:"key"`
+			Value     any    `json:"value"`
+			Reason    string `json:"reason"`
 		}
 		_ = c.ShouldBindJSON(&in)
 		who := claimsOf(c).Username
@@ -304,8 +362,13 @@ func (a *App) Router() *gin.Engine {
 			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
 			return
 		}
+		a.Log.Info("config", "config_set", map[string]any{
+			"actor": who, "scope": in.Scope, "student_id": in.StudentID,
+			"key": in.Key, "value": in.Value})
 		c.JSON(http.StatusOK, ok("set"))
 	})
+	// 覆盖删除（BE-08，总验收门补齐）
+	a.registerConfigRoutes(cfgg.Group(""))
 
 	// ---- 管理员：用户/审计 ----
 	admin := authed.Group("/admin", a.roleMW(auth.RoleAdmin))
@@ -322,6 +385,8 @@ func (a *App) Router() *gin.Engine {
 	admin.GET("/audit", func(c *gin.Context) {
 		c.JSON(http.StatusOK, ok(a.ToolAudit.Entries))
 	})
+	// 用户管理 + 待办（TX-01；总验收门补齐）
+	a.registerUserRoutes(admin.Group(""))
 
 	// ---- Agent 工具通道（I-3）----
 	agent := authed.Group("/agent", a.roleMW(auth.RoleTeacherAgent, auth.RoleSystemAgent))
@@ -330,16 +395,21 @@ func (a *App) Router() *gin.Engine {
 	})
 	agent.POST("/tools/call", func(c *gin.Context) {
 		var in struct {
-			Name string          `json:"name"`
-			Args tools.Args     `json:"args"`
+			Name string      `json:"name"`
+			Args tools.Args `json:"args"`
 		}
 		_ = c.ShouldBindJSON(&in)
 		caller := tools.Caller{Role: tools.Role(string(claimsOf(c).Role)), ID: claimsOf(c).Username}
 		res, err := a.Tools.Call(c.Request.Context(), caller, in.Name, in.Args)
 		if err != nil {
+			a.Log.Warn("tools", "tool_call_denied", map[string]any{ // §14 工具调用（含失败）
+				"caller": caller.ID, "role": string(caller.Role),
+				"tool": in.Name, "error": err.Error()})
 			c.JSON(http.StatusOK, fail(errForbidden, err.Error()))
 			return
 		}
+		a.Log.Info("tools", "tool_called", map[string]any{
+			"caller": caller.ID, "role": string(caller.Role), "tool": in.Name})
 		c.JSON(http.StatusOK, ok(res))
 	})
 

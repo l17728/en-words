@@ -333,7 +333,20 @@ func (m *Machine) TimeoutFor() (time.Duration, bool) {
 	case PhaseJudging:
 		return 5 * time.Second, true
 	case PhaseTTSSeg, PhaseReteachShow:
-		return time.Duration(len(m.CurrentWord().Word)+2) * time.Second, true
+		// R4-arch#7：zh 段（释义更长）超时按释义长度估算；RETEACH 视同 zh 段
+		w := m.CurrentWord()
+		base := len(w.Word) + 2
+		if m.state.TtsSegIdx > m.cfg.TtsEnRepeat || m.state.InReteach || m.state.InReview {
+			// zh 段：按首释义字符数估算（中文朗读约 2 字符/秒）
+			n := 3
+			if len(w.Meanings) > 0 {
+				n = len([]rune(w.Meanings[0]))/2 + 2
+			}
+			if n > base {
+				base = n
+			}
+		}
+		return time.Duration(base) * time.Second, true
 	}
 	return 0, false
 }

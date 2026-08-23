@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"enwords/internal/tools"
 )
@@ -57,3 +58,36 @@ const (
 	errBadRequest   = 400
 	errInternal     = 500
 )
+
+// ---- R4-sec#3/#6：输入清洗与事件白名单 ----
+
+// validClassroomEvent 课堂事件白名单（防任意 event 字符串触发未定义行为）。
+func validClassroomEvent(ev string) bool {
+	switch ev {
+	case "word_clicked", "tts_finished", "repeat_done", "repeat_skipped", "answer_submitted":
+		return true
+	}
+	return false
+}
+
+// sanitizeText 文本清洗：长度 ≤200、去控制字符与 HTML 标签（防注入下游）。
+func sanitizeText(s string) string {
+	if len(s) > 200 {
+		s = s[:200]
+	}
+	var b strings.Builder
+	inTag := false
+	for _, r := range s {
+		switch {
+		case r == '<':
+			inTag = true
+		case r == '>':
+			inTag = false
+		case r < 0x20 && r != '\n' && r != '\t':
+			// 控制字符丢弃
+		case !inTag:
+			b.WriteRune(r)
+		}
+	}
+	return strings.TrimSpace(b.String())
+}

@@ -84,16 +84,14 @@ func (j *Judge) Level1(word string, meanings []string, text string) Judgment {
 	return JudgmentWrong
 }
 
-// enMatch 英文匹配：整串等价 或 任一 token 等价（".apple APPle"含 apple 即对）。
+// enMatch 英文匹配：任一 token 等价（去冠词后完整 token 比对；R4-backend#5 简化单路径）。
 func enMatch(text, target string) bool {
 	nt := normEn(target)
 	if nt == "" {
 		return false
 	}
-	if normEn(text) == nt {
-		return true
-	}
 	for _, tok := range enTokens(text) {
+		tok = strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(tok, "the "), "an "), "a "))
 		if tok == nt {
 			return true
 		}
