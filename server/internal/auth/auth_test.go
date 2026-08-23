@@ -88,3 +88,43 @@ func TestHasAdmin(t *testing.T) {
 	_, _ = s.CreateUser("dad", "family123", "爸爸", RoleAdmin)
 	assert.True(t, s.HasAdmin())
 }
+
+func TestUserManagement(t *testing.T) {
+	s := newAuth()
+	_, _ = s.CreateUser("u1", "oldpw12", "", RoleStudent)
+
+	// GetUserByID
+	u, err := s.GetUserByID(1)
+	require.NoError(t, err)
+	assert.Equal(t, "u1", u.Username)
+	_, err = s.GetUserByID(999)
+	assert.Error(t, err)
+
+	// ChangePassword：旧密码错拒；成功后新密码可登录
+	assert.ErrorIs(t, s.ChangePassword("u1", "wrong", "newpw34"), ErrBadCredentials)
+	assert.NoError(t, s.ChangePassword("u1", "oldpw12", "newpw34"))
+	tok, _, err := s.Login("u1", "newpw34")
+	require.NoError(t, err)
+	require.NotEmpty(t, tok)
+	assert.Error(t, s.ChangePassword("u1", "newpw34", "12"), "新密码过短拒绝")
+
+	// ResetPassword（管理员）：不需旧密码；顺带解除停用
+	require.NoError(t, s.Disable("u1"))
+	_, _, err = s.Login("u1", "newpw34")
+	assert.ErrorIs(t, err, ErrDisabled)
+	require.NoError(t, s.ResetPassword("u1", "resetpw9"))
+	tok2, lu, err := s.Login("u1", "resetpw9")
+	require.NoError(t, err, "重置后自动解封可登录")
+	require.NotEmpty(t, tok2)
+	assert.Equal(t, "active", lu.Status)
+	assert.Error(t, s.ResetPassword("ghost", "x12345"), "不存在用户拒绝")
+	assert.Error(t, s.ResetPassword("u1", "123"), "过短拒绝")
+
+	// Enable
+	require.NoError(t, s.Disable("u1"))
+	require.NoError(t, s.Enable("u1"))
+	_, lu2, err := s.Login("u1", "resetpw9")
+	require.NoError(t, err)
+	assert.Equal(t, "active", lu2.Status)
+	assert.Error(t, s.Enable("ghost"))
+}
