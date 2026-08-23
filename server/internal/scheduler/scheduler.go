@@ -194,6 +194,8 @@ type Service struct {
 	clock Clock
 	// finishedAt 记录每课实际完成时间（内存版；GORM 版存 lessons.finished_at）
 	finishedAt map[int64]time.Time
+	// OnPlanned 排课成功钩子（§14 排课日志：api 装配层注入；可为 nil）
+	OnPlanned func(studentID, bookID int64, l *Lesson)
 }
 
 func NewService(repo Repo, cfg LadderSource, clock Clock) *Service {
@@ -289,8 +291,16 @@ func (s *Service) mainlineStep(cards []*Card) int {
 	return steps[len(steps)/2]
 }
 
-// PlanNext 排下一课（SDD §6.3）。
+// PlanNext 排下一课（SDD §6.3）。OnPlanned 钩子用于 §14 排课日志（api 装配层注入）。
 func (s *Service) PlanNext(studentID, bookID int64) (*Lesson, error) {
+	l, err := s.planNext(studentID, bookID)
+	if err == nil && s.OnPlanned != nil {
+		s.OnPlanned(studentID, bookID, l)
+	}
+	return l, err
+}
+
+func (s *Service) planNext(studentID, bookID int64) (*Lesson, error) {
 	now := s.clock.Now()
 	W := s.cfg.Int(studentID, "wordsPerLesson")
 	ladder := s.cfg.Ladder(studentID)

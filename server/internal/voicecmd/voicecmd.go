@@ -2,7 +2,10 @@
 // 词表匹配 + 归一化 + 编辑距离容错 + 反馈前缀捕获；不经 LLM，误识别率低、可单测。
 package voicecmd
 
-import "strings"
+import (
+	"sort"
+	"strings"
+)
 
 // 指令集（01 FR-L1/L3）。
 const (
@@ -44,13 +47,21 @@ var feedbackPrefixes = []string{"我想反馈", "我要反馈", "反馈", "我�
 // Parser 指令解析器。
 type Parser struct {
 	table Table
+	// cmds 有序指令键（构造时固化，消灭 map 迭代序非确定性：
+	// 同输入必须同执行路径——覆盖率稳定 + 行为可复现）
+	cmds []string
 }
 
 func New(t Table) *Parser {
 	if t == nil {
 		t = DefaultTable()
 	}
-	return &Parser{table: t}
+	cmds := make([]string, 0, len(t))
+	for cmd := range t {
+		cmds = append(cmds, cmd)
+	}
+	sort.Strings(cmds) // 字典序稳定
+	return &Parser{table: t, cmds: cmds}
 }
 
 // normalize 归一化：去空白/标点（中英）、容忍首尾语气词。
@@ -75,7 +86,7 @@ func normalize(s string) string {
 }
 
 // Match 教学指令匹配：精确触发词 → 触发词前缀（长词优先）→ 编辑距离 ≤1 容错。
-// 返回 (指令, 是否命中)。
+// 遍历按 cmds 固定序（确定性）。返回 (指令, 是否命中)。
 func (p *Parser) Match(text string) (string, bool) {
 	n := normalize(text)
 	if n == "" {
@@ -83,11 +94,11 @@ func (p *Parser) Match(text string) (string, bool) {
 	}
 	// 1) 精确/前缀（长触发词优先，避免"跳过这个词"被"跳过"截胡歧义）
 	bestCmd, bestLen := "", 0
-	for cmd, words := range p.table {
+	for _, cmd := range p.cmds {
 		if cmd == CmdFeedback {
 			continue
 		}
-		for _, w := range words {
+		for _, w := range p.table[cmd] {
 			wn := normalize(w)
 			if wn == "" {
 				continue
@@ -104,11 +115,11 @@ func (p *Parser) Match(text string) (string, bool) {
 		return bestCmd, true
 	}
 	// 2) 编辑距离 ≤1 容错（"下一下"→"下一个"）
-	for cmd, words := range p.table {
+	for _, cmd := range p.cmds {
 		if cmd == CmdFeedback {
 			continue
 		}
-		for _, w := range words {
+		for _, w := range p.table[cmd] {
 			wn := normalize(w)
 			if len([]rune(wn)) >= 2 && editDistanceLE1(n, wn) {
 				return cmd, true

@@ -86,11 +86,15 @@ func (a *App) handleWS(c *gin.Context) {
 		return
 	}
 	room.Join(client) // 首帧 state_snapshot（J4）
+	a.Log.Info("ws", "client_connected", map[string]any{
+		"lesson_id": lessonID, "student_id": tk.StudentID}) // §14 WS 连接
 
 	go func() {
 		defer func() {
 			room.Leave(client)
 			_ = conn.Close()
+			a.Log.Info("ws", "client_disconnected", map[string]any{ // §14 WS 断开
+				"lesson_id": lessonID, "student_id": tk.StudentID})
 		}()
 		for {
 			_ = conn.SetReadDeadline(time.Now().Add(90 * time.Second))

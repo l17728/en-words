@@ -39,6 +39,8 @@ func (a *App) HandleFeedback(studentID int64, text string) *FeedbackRecord {
 	rec := &FeedbackRecord{ID: a.nextFeedbackID, StudentID: studentID,
 		Text: text, Status: "processing", CreatedAt: a.Clock.Now()}
 	a.mu.Unlock()
+	a.Log.Info("feedback", "feedback_submitted", map[string]any{
+		"student_id": studentID, "text": text})
 
 	acts := a.System.Decide(sysFeedbackInput(studentID, text))
 	replyParts := []string{}
@@ -96,6 +98,9 @@ func (a *App) HandleFeedback(studentID int64, text string) *FeedbackRecord {
 	}
 	rec.Status = status
 	rec.Reply = strings.Join(replyParts, " ")
+	a.Log.Info("feedback", "feedback_handled", map[string]any{
+		"student_id": studentID, "id": rec.ID, "status": rec.Status,
+		"reply": rec.Reply})
 	// 意图清单
 	res := a.FB.Parse(text)
 	for _, it := range res.Intents {

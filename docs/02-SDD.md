@@ -317,6 +317,8 @@ LESSON（可跨多个 SESSION 续课，见 §5.5）
   │   └─ 同 QUIZ_ITEM 循环；答对毕业出池
   │   └─ REVIEW_WRONG                 # 打✗词回顾=轻量（显中文+TTS 朗读，无跟读）；
   │       └─ 重测仍错 → 升级 RETEACH 完整闭环（含跟读）   # R3-AI 边界明确
+  │       # 实现注记：REVIEW_WRONG 复用 tts_seg 相位 + InReview 上下文标志（非独立相位常量），
+  │       # 与 show_word(phase=with_zh) 同理——语义相位≠物理相位，快照含 InReview/ReviewIdx/ReviewList
   ├─ FINAL_TEST                       # 全批次完整测试（G 组全部完成后）
   │   └─ 同上 + REVIEW_WRONG + RETEST
   └─ LESSON_END                       # 总结话术 → 持久化 → 触发系统Agent
@@ -712,6 +714,7 @@ GET  /agent/tools                      # 该 Agent 可见工具清单（给 LLM 
 
 ### 11.3 可靠性
 
+- **双通道事件入口**（实现定案）：学生事件既可走 WS `student_event` 帧，也可走 REST `POST /classroom/lessons/:id/event`（文本兜底/弱网降级/测试通道）——两者进入同一 Room 管线，产生相同的 ui_action 广播流；REST `POST /classroom/lessons/:id/voice` 为语音转写文本入口（指令解析→反馈捕获→作答）。
 - seq 去重；断线指数退避重连（1s/2s/4s…60s）；重连成功即收 `state_snapshot`。
 - **重连鉴权**（R2-AR-03/FE-03 细化）：enter 签发 **签名 JWT ticket**，payload `{lesson_id, student_id, iat, exp}`，`exp = open_at + overdueHours + 1h`（覆盖续课窗口）；WS 连接校验签名+exp+绑定关系。ticket **持久化** `ws_tickets` 表（服务重启不失效）。防重放：连接数上限=2（双标签页），超出拒最旧连接；lesson finished/expired 后 ticket 立即失效。
 - **多连接策略**（AR-02）：同一学生允许多标签页连接，全部收广播；学生事件按 `(connId, seq)` 去重；**作答按 quizItemId 幂等**（R2-BE-06：quiz_items 有 `(lesson_id, word_id, kind, round)` 唯一约束，判分前 `INSERT OR IGNORE` 抢占——并发重复提交只有一行胜出，败者读既有判分返回，无双判分）。

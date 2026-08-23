@@ -348,7 +348,12 @@ func (s *Service) UpdateEntry(e *Entry) error {
 
 func (s *Service) GetEntry(id int64) (*Entry, error) { return s.repo.GetEntry(id) }
 
-func (s *Service) DeleteEntry(id int64) error { return s.repo.DeleteEntry(id) }
+func (s *Service) DeleteEntry(id int64) error {
+	if _, err := s.repo.GetEntry(id); err != nil {
+		return err // 不存在返回错误（REST 404 语义，删除非幂等盲成功）
+	}
+	return s.repo.DeleteEntry(id)
+}
 
 func (s *Service) ListEntries(bookID int64, page, size int) ([]*Entry, int64, error) {
 	return s.repo.ListEntries(bookID, page, size)
