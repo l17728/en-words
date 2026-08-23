@@ -124,40 +124,57 @@ Recognize(audio, mime):
 
 ```yaml
 providers:
-  llm:
-    provider: mock            # mock | dashscope
-    dashscope:
-      api_key: ""             # 用户提供（环境变量 ENWORDS_DASHSCOPE_KEY 优先）
-      base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
-      model: "qwen-plus"      # 兼容 OpenAI 协议，可换 qwen-max/turbo
+  llm:                             # D-12: 纯文本任务走智谱 GLM API 直连
+    provider: mock                 # mock | zhipu | dashscope(备选)
+    zhipu:
+      api_key: ""                  # 已有：secrets/dashscope.local.yaml zhipu 段（coding plan key 复用，实测 200）
+      base_url: "https://open.bigmodel.cn/api/coding/paas/v4"  # coding plan 端点(OpenAI 兼容)，实测 glm-4-flash/4.6/4.5-air 全通
+      model: "glm-4-flash"         # 小任务足够；可升 glm-4.6
       timeout_s: 20
       max_retries: 2
-  tts:
-    provider: mock            # mock | dashscope | browser
-    dashscope:
+    dashscope:                     # 备选（保留切换能力）
       api_key: ""
-      model: "cosyvoice-v2"   # 以用户提供样例为准
-      voice_en: "longwan_v2"  # 英文音色（待用户定）
-      voice_zh: "longxiaochun_v2"
-      format: "mp3"
-  asr:
-    provider: mock            # mock | dashscope
+      base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+      model: "qwen-plus"
+      timeout_s: 20
+      max_retries: 2
+  tts:                             # D-17: 单词朗读=Omni 非实时（砍掉 CosyVoice）
+    provider: mock                 # mock | dashscope
     dashscope:
-      api_key: ""
-      model: "paraformer-v2"  # 录音文件识别（文本兜底通道用）；以用户提供样例为准
+      api_key: ""                  # 已有（secrets/dashscope.local.yaml）
+      model: "qwen3.5-omni-plus"   # 非实时；单段合成+后端播放队列编排遍数/间隔+预生成缓存
+      voice: "Tina"                # 或克隆音色名（§4.6）
       format: "wav"
-  omni:                       # D-11: 课堂双向语音会话通道
-    provider: mock            # mock | dashscope
+  asr:                             # D-17: P2 可选（降级链下一级=文本框零成本；默认不启用）
+    provider: mock                 # mock | dashscope
     dashscope:
       api_key: ""
+      model: "paraformer-v2"
+      format: "wav"
+  omni:                            # D-11: 课堂双向语音会话通道（DashScope 独占）
+    provider: mock                 # mock | dashscope
+    dashscope:
+      api_key: ""                  # 已有（secrets/dashscope.local.yaml）
       model: "qwen3.5-omni-plus-realtime"        # 备选 qwen3-omni-flash-realtime / qwen-omni-turbo-realtime
-      url: "wss://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/api-ws/v1/realtime"  # {WorkspaceId} 待用户提供
-      voice: "Tina"           # 老师音色（qwen3.5 默认；音色列表以文档为准）
+      url: "wss://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/api-ws/v1/realtime"  # {WorkspaceId} 已实测可用
+      voice: "Tina"                # 老师音色（qwen3.5 默认；音色列表以文档为准）
       turn_detection: "server_vad"               # server_vad | semantic_vad
       input_sample_rate: 16000                    # PCM 16k mono 16bit
       output_sample_rate: 24000
-      session_idle_s: 300                        # 课堂语音会话空闲超时回收
+      session_idle_s: 300                         # 课堂语音会话空闲超时回收
 ```
+
+> **D-12 模型分工定案（2026-08-23，用户确认）**：产品运行时仅两个真实供应商——
+> ① **智谱 GLM（API 直连）**：全部纯文本任务（系统 Agent 反馈意图解析、判分第 2 级兜底、词库批量导入解析、音标补全）；
+> ② **阿里 DashScope**：语音全部（Omni-Realtime 课堂双工会话 + 单词朗读 + 语音克隆）。
+> 开发/测试期全部 Mock，零外部依赖。
+
+> **D-17 模型收敛定案（2026-08-23，用户确认）**：语音通道收敛为 Omni 双模式——
+> ① 单词朗读（en×3+zh×1）改用 **Omni 非实时**（qwen3.5-omni-plus）单段合成+后端播放队列精确编排遍数/间隔+预生成缓存，**砍掉 CosyVoice**；
+> ② paraformer ASR 兜底**降为 P2 可选**（降级链下一级已是零成本文本输入框，配置位保留不实现）；
+> ③ qwen-voice-enrollment 克隆音色保留（用户功能）。
+> 最终运行时=2 供应商 4 模型（3 必选 1 可选）：omni-realtime / omni 非实时 / glm-4-flash / enrollment(+paraformer P2)。
+> 风险预案：若实测 Omni 非实时朗读单词质量不达标（多音节/专有名词），恢复 CosyVoice 配置位即可（Provider 抽象下为配置变更）。
 
 > **占位说明**：模型名/音色/BaseURL 均按 DashScope 公开文档预填，**最终以用户提供的真实 API 请求样例为准**——Provider 实现层把样例请求原样映射为代码参数（见 3.2）。
 >
@@ -273,7 +290,28 @@ type OmniSession interface {
 
 ---
 
-## 5. 配置与切换
+### 4.6 语音克隆通道（叮当老师音色定制，2026-08-23 新增）
+
+> 依据官方文档实测结论：`qwen3.5-omni-plus-realtime / qwen3.5-omni-flash-realtime` 支持声音复刻
+> （模型 `qwen-voice-enrollment`，端点 `https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/api/v1/services/audio/tts/customization`，
+> 与 Omni 同 workspace 同 Key）。10~20 秒音频免训练克隆；创建的音色名直接填入 Omni 会话 `voice` 参数。
+
+```go
+// internal/voiceclone
+type Provider interface {
+    // Create 上传音频创建克隆音色；targetModel 必须与 Omni 会话模型一致（否则合成失败）
+    Create(ctx, in CreateInput) (voice string, err error)
+    // List 已创建音色（管理页下拉）
+    List(ctx) ([]VoiceInfo, error)
+}
+// CreateInput{AudioWAV []byte(16bit 单声道 ≥24kHz 10~20s), PreferredName(≤16字符字母数字下划线), Text?, Language?}
+// 校验(本地预检+服务端): 时长 10~60s / <10MB / ≥3s 连续清晰人声 / 无背景乐噪音
+// VoiceInfo{Voice string(如 qwen-omni-vc-dingdang-voice-...), Name, TargetModel, CreatedAt}
+```
+
+- **使用方式**：管理端"老师音色"配置项 = 预置音色（Tina/Cherry…）∪ 克隆音色列表；选定值写入 config `voice.teacherVoice`，课堂 Omni 会话 session.update 的 voice 参数读取该配置。
+- **Mock**：Create 返回 `mock-vc-<name>`；List 返回已创建集合——全流程可测。
+- **计费**：创建音色 0.01 元/次（近免费）；对话计费不变。配额：每账号 1000 音色。
 
 ```
 切换路径（零代码）:
@@ -302,5 +340,16 @@ type OmniSession interface {
 | V-6 | 真实 TTS/ASR | 20 词朗读可懂度人工评分；Omni 转写作答抽检 ≥90% 可用 |
 | V-7 | 缓存与配额 | TTS 缓存命中率日志；单课外部调用数上限告警配置 |
 | V-8 | Omni 通道（新增） | 真实会话：服务端 VAD 跟读判定准确率抽检 ≥90%；打断响应 <500ms；降级链演练（人为断 Omni）课堂零中断 |
+
+**V-8 细化：全双工语音分层测试法（2026-08-23 定案，用户提供思路+扩展）**
+
+| 层 | 方法 | 通过标准 |
+|---|---|---|
+| L1 内容回环 | 测试文本（正确/错误/近义/噪音/空）→ **异构 TTS**（Edge-TTS/本地 Piper，避免同源虚高；叠加白噪声/变速/换音色模拟不同学生）→ 喂 Omni `append_audio` → 收 `InputTranscript` → **拼音级模糊比对**（pypinyin 归一+编辑距离，同音"平果"≈"苹果"不算错）→ 接两级判分器断言 judgment | 100 用例转写可用率 ≥90%；判分准确率 ≥95% |
+| L2 时序行为 | 预生成 PCM 片段（纯语音段/纯静音段/语音+800ms 尾静默）直接注入：① Speak 播放中注入学生语音 → `speech_started` 触发且 AudioDelta ≤500ms 停止（打断）；② 尾静默 → `speech_stopped`/`committed` 时机正确（VAD）；③ 空闲 idle 超时回收 | 打断 <500ms；VAD 判定与预期一致 |
+| L3 课堂端到端 | Go 集成测试：真服务+真 Omni+Mock 学生行为（点击/发音节奏脚本）走完整课堂 | 全流程无卡死，事件序列完整 |
+| L4 人工抽测 | 真人 20 词朗读/作答 | 可懂度人工评分（V-6） |
+
+工具位置：`server/tests/omni_roundtrip/`（L1/L2 脚本，Edge-TTS 生成测试音频，可重复执行）；Mock 期用 MockOmniSession 跑同套用例（确定性），真实期切换 Provider 复跑。
 
 > V-4~V-6、V-8 在用户提供真实 API 后执行；当前阶段以 V-1/V-2/V-3 验收。
