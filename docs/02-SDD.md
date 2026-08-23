@@ -199,6 +199,18 @@ type Tool struct {
 | `scripts.pick` | category, context{studentName,word,...} | low | 抽话术并执行口语化微调 |
 | `scripts.list` | category | low | 话术库列表 |
 
+**记忆域 memory（D-16：Agent 自维护记忆，平台提供完整 CRUD 能力）**
+
+| 工具 | 入参摘要 | 风险 | 说明 |
+|---|---|---|---|
+| `memory.append` | scope(student_profile\|task_memory), studentId, bookId?, kind, content, importance | mid | Agent 追加记忆（学生档案或教学任务笔记） |
+| `memory.recall` | studentId, bookId?, kind?, query?, limit? | low | 检索记忆（近因+重要度加权排序；课堂开场/排课审视时调用） |
+| `memory.revise` | memoryId, content, importance? | mid | 修订自己早先的记忆（归纳更新） |
+| `memory.delete` | memoryId | mid | 删除失效记忆（如学生诉求已过时） |
+| `memory.list` | studentId, bookId?, kind? | low | 全量列出（管理端/Agent 大盘点用） |
+
+> 记忆 CRUD 全部经工具注册表（scope 校验：teacher_agent/system_agent 只能读写**自己 owner_role** 的记忆，互不可见；admin 只读全量用于审计）。写入带 source_lesson_id 关联课次，方便"查阅改进"时回溯。
+
 ### 3.3 调用管线
 
 ```
@@ -347,6 +359,38 @@ lessons 表状态字段独立成列（非单一 JSON）：
 - 超时/学生主动退出：进度落库，lesson.status=`in_progress_paused`，下次进入**从断点续课**（batch 不变，已完成组/词不重学；已判分题不重判）。
 - 续课超过 open_at+48h 未完成 → cron 判定课程过期，按 §6.4 逾期重排（已学部分记忆卡正常推进，未学部分 LadderStep 不变）。
 
+### 5.6 课后学习报告（D-13/D16）
+
+结课时 Machine.Result() 产出**结构化课报数据**，供老师 Agent 渲染与系统 Agent 审视：
+
+```go
+type LessonReport struct {
+    // 教学评价数据
+    TotalWords, CorrectCount, WrongFirstTry int
+    CorrectRate          float64            // 首答正确率
+    ReteachCount         int                // RETEACH 闭环触发次数（薄弱信号）
+    AvgAnswerMs          int                // 平均作答时长（偏慢→S-04 慢学生判定）
+    StreakBest           int                // 本课最长连对
+    SlowWords            []int64            // 作答 >15s 的词
+    // 建议数据
+    WrongWords           []int64            // 首答曾错的词（下节关注）
+    WeakMeaningWords     []int64            // RETEACH≥2 次的词（S-14 建议手动复习）
+    // 进展总结数据（系统 Agent 注入，跨课聚合）
+    CumLearned, CumGraduated, CumMastered int64
+    CorrectRateTrend     []float64          // 最近 5 课正确率
+    // 记忆曲线对照（S-13 审视输入）
+    DueReviewPlanned, DueReviewDone int     // 到期复习词 计划/实际完成
+    OverdueWords         int                // 本课开始时已逾期词数
+    LadderHealth         float64            // 阶梯健康度=未逾期 learning 词占比
+}
+```
+
+- **渲染分工**：老师 Agent 用 04 §5.9 课报话术模板（RB 系列）+ 口语化管线渲染三段式总结（下课时 `lesson_summary` UI + 通知中心存档）；系统 Agent 消费同数据走 S-13~S-15 决策。
+- **量化+定性双段结构**（用户要求 2026-08-23）：
+  - **量化统计表**（数字，学生端课程详情直显）：本课词数/首答正确率/RETEACH 次数/最长连对/平均作答时长/到期复习完成率 done÷plan/与上一课对比Δ（正确率、用时）；
+  - **定性总结**（文字评语）：`定性标签`由规则从量化数据映射——`节奏快/适中/偏慢`（AvgAnswerMs 阈值 8s/15s）、`扎实/波动/需巩固`（CorrectRate ≥90/70~90/<70）、`记忆健康/阶梯粘滞`（LadderHealth ≥0.7/<0.6）——标签注入 RB 模板渲染成老师口吻评语；标签规则常量表 `reportQualitativeRules` 可配置。
+- **持久化**：lessons.result JSON 存全量课报；/student/lessons/:id 详情返回。
+
 ---
 
 ## 6. 调度器设计（等间隔复习）
@@ -395,8 +439,8 @@ ladderDefault = [1,1,2,2,4,7,14,30]  // 天；ladder[k]=第k+1次复习距上次
 1. dueWords  = {status=learning, NextDueAt ≤ now+24h} 按 NextDueAt 升序   ← 全部保留
 2. boosted   = {BoostFlag=true 且未在 due} 按标记时间倒序
 3. newWords  = {status=new, 未被摸底标记 mastered} 按词库序
-4. 批次 = due + boosted + new 按此优先级补足至 W；且 newWords 数量 ≤ 0.6×W（复习优先）
-   （new 不足时批次可小于 W，不强凑）
+4. 批次构造（顺序与保留性，SC-04 语义）：顺序 = **boosted 头部 → due（按到期升序）→ new（按词库序）补足**；
+   保留性 = due 全保留；new 数量 ≤ max(0.6×W, W−已填复习词数)——首课可全为新词补满 W，new 不足不强凑
 5. 主线step（R2 定义）= 该生该库未毕业词(learning/mastered) LadderStep 的**中位数**（无词时取 0）
    lessonTime = 最近一次 status=finished 课程的 finished_at + ladder[min(主线step, len-1)]
    ★ 基线取 finished_at 而非 scheduled openAt（R2-BE-04：逾期补课后排期不漂移）
@@ -539,6 +583,11 @@ feedbacks(id, student_id, channel: in_lesson|page, text, status: submitted|proce
           parsed_intent, parsed_params JSON, adjust_result JSON, admin_id, created_at, updated_at)
 notifications(id, user_id, type, title, body, ref_id, read_at, created_at)
 
+-- D-16: Agent 自维护记忆（平台只存取，内容由 Agent 决定）
+agent_memories(id, owner_role: teacher_agent|system_agent, student_id, book_id NULL, -- NULL=学生档案, 否则=任务记忆
+               kind, content TEXT, importance INT(1..5), source_lesson_id NULL,
+               revised_from NULL, created_at, updated_at)  -- 索引(owner_role,student_id,book_id,updated_at)
+
 config_globals(key, value JSON, updated_by, reason, updated_at)
 config_overrides(id, student_id, key, value JSON, updated_by, reason, updated_at)
 audit_logs(id, ts, actor_type: user|agent|system, actor_id, action, tool_name,
@@ -673,7 +722,21 @@ GET  /agent/tools                      # 该 Agent 可见工具清单（给 LLM 
 
 ## 12. 语音能力设计
 
-### 12.1 TTS（SpeechService）
+### 12.4 语音指令解析（D-14，全语音操作）
+
+```
+输入源: 课堂内 = Omni InputTranscript 流（每个转写文本先过指令解析器再进判分/反馈）
+       课堂外 = 浏览器 Web Speech 识别结果(REST 上报)
+解析器: internal/voicecmd —— 确定性词表匹配, 不经 LLM
+  指令集: 下一个/继续 | 跳过 | 我读完了 | 重听一遍 | 暂停 | 退出课堂 |
+          我想反馈*(捕获至句尾→feedbacks 表, 走 §7 G2 管线) |
+          首页/课程表/统计/开始学习(L3 导航)
+  匹配: 归一化(去标点/全半角) + 编辑距离≤1 容错("下一下"→下一个) + 前缀触发(反馈类)
+  优先级: 教学指令 > 反馈触发 > 测试作答(quiz 阶段转写只进判分, 指令仅"跳过"生效)
+产出: VoiceCommand{Type, Payload} → 注入课堂事件总线(等价对应 UI 按钮点击) → UI 按钮高亮回执(L4)
+```
+
+### 12.5 TTS（SpeechService）
 
 ```
 接口: TTSProvider.Synthesize(ctx, text, lang, voice) → audio bytes/URL
@@ -685,7 +748,7 @@ GET  /agent/tools                      # 该 Agent 可见工具清单（给 LLM 
       上报，流程不阻塞（评审发现 FE-03，P0）
 ```
 
-### 12.2 VAD 跟读判定（前端 audio/vad.ts）
+### 12.5 VAD 跟读判定（前端 audio/vad.ts）
 
 ```
 0. 回声抑制（评审发现 FE-02，P0）：REPEATING 阶段老师通道只用文字气泡、
@@ -699,7 +762,7 @@ GET  /agent/tools                      # 该 Agent 可见工具清单（给 LLM 
 输出: repeat_done(n) 事件（不录音、不上传——只上传判定结果）
 ```
 
-### 12.3 ASR + LLM 判分（测试作答）
+### 12.6 ASR + LLM 判分（测试作答）
 
 ```
 学生点击麦克风说话（≤20s）→ MediaRecorder 采集 → Web Audio API 解码转
