@@ -1,0 +1,40 @@
+{
+ "model": "qwen-plus",
+ "problems": [
+  {
+   "severity": "P0",
+   "doc": "01-需求分析.md",
+   "section": "4.3 学生+老师Agent：课堂学习流程（核心）",
+   "problem": "流程中要求'老师 Agent 过渡话术 → 下一个词'，但未定义过渡话术触发时机与状态机迁移关系；同时在 FR-D13 明确要求话术从话术库抽取+口语化微调，而 02-SDD §4.2 明确采用'确定性快路径 + LLM 异步话术注入'双层模型，即话术不参与状态迁移决策。此处存在逻辑矛盾：需求文档将话术作为推进动作（→ 下一个词），而设计文档规定话术纯属渲染层输出，不可驱动状态变更。",
+   "fix": "在 01-需求分析.md §4.3 中删除'老师 Agent 过渡话术 → 下一个词'表述，改为'平台状态机按决策表自动推进至下一词，同时异步请求话术层生成过渡话术并下发'；同步在 FR-D13 补充说明'话术仅用于 UI 呈现，不改变课堂状态或控制流程'。"
+  },
+  {
+   "severity": "P0",
+   "doc": "02-SDD.md",
+   "section": "5.1 顶层阶段（Phase）",
+   "problem": "状态机图中 `TEACHING_GROUP` 下的 `TEACH_WORD` 阶段包含 `SHOW_WORD` → `TTS_PLAYING` → `REPEATING` → `WORD_DONE`，但 01-需求分析.md §4.3 要求'点击单词 → 发音（TTS 读 3 遍英文，每遍间隙约 1.5s）→ TTS 读 1 遍中文释义 → 学生跟读 3 遍'，即 TTS 英文朗读与中文朗读是两个独立动作，应分属不同子阶段；而当前状态机将整个 TTS 播放（en×3+zh×1）压缩为单一 `TTS_PLAYING` 阶段，无法支持 FR-K5 '每词朗读内容：英文 3 遍（间隔 1.5s，可配）+ 中文释义 1 遍' 的精确控制与超时配置，且违反 02-SDD §5.3 '超时兜底矩阵' 中对 `TTS 播放` 阶段需按遍数动态计算超时的要求。",
+   "fix": "拆分 `TTS_PLAYING` 阶段为 `TTS_EN_PLAYING(n)`（n=1..3）和 `TTS_ZH_PLAYING`，每个子阶段独立配置超时（`timeoutTtsEnS`、`timeoutTtsZhS`），并在状态迁移规则中明确 `TTS_EN_PLAYING(3) → TTS_ZH_PLAYING → REPEATING`；同步更新 02-SDD §5.3 超时矩阵表格，增加对应子阶段及默认值。"
+  },
+  {
+   "severity": "P0",
+   "doc": "02-SDD.md",
+   "section": "11.3 可靠性",
+   "problem": "断线重连鉴权机制描述为'WS ticket 绑定 (lessonId, studentId)、有效期=课堂生命周期（非一次性）——首次 enter 签发，断线重连复用同一 ticket'，但 01-需求分析.md §4.3 明确要求'断线恢复：学生刷新/断网重连后课堂状态不丢失，可继续'，而 02-SDD §5.2 规定'进程重启 → Runtime 从 lesson_state 恢复'，二者未协同：若 ticket 复用但服务端已重启，lesson_state 已持久化，但 ticket 校验依赖内存 session 或未持久化的 ticket 状态，导致重连失败或状态错乱；且 02-SDD §11.1 帧结构未定义 ticket 复用所需的会话上下文绑定字段。",
+   "fix": "在 02-SDD §11.3 中明确 ticket 必须持久化到 SQLite 的 `ws_tickets` 表（含 lesson_id, student_id, created_at, expires_at, used_count），校验逻辑为 `(lesson_id, student_id) 匹配且 expires_at > now() 且 used_count < 2`；在 `state_snapshot` payload 中新增 `ticket_id` 字段供重连时携带；删除'有效期=课堂生命周期'模糊表述，改为'有效期 ≥ 课堂 open_at + overdueHours + 1h，确保覆盖重连窗口'。"
+  },
+  {
+   "severity": "P1",
+   "doc": "04-Agent与话术库设计.md",
+   "section": "5.7 feedback_reply 反馈回复",
+   "problem": "FR-G2 要求系统 Agent 解析反馈时支持'多意图拆分（一条反馈含多诉求时逐项处理、合并回复）'，但 04 文档 §4 决策表 S-05~S-09 仅针对单意图设计，且 5.7 话术模板 FR-1~FR-10 均为单意图回复，缺失多意图合并回复的话术模板（如同时减量+推迟的复合回复），导致反馈闭环功能遗漏。",
+   "fix": "在 04 文档 §5.7 新增 `FR-11` 模板：'收到！已为你调整：词量改为 {n} 个，{date} 的课挪到 {newDate}，下次见！'，并注明该模板用于 A+D 复合意图；同步在 §4 决策表 S-05~S-09 后补充 S-12：'多意图反馈 → 按优先级顺序执行各子意图，合并结果调用 scripts.pick(category=feedback_reply, context={intentList})'。"
+  },
+  {
+   "severity": "P1",
+   "doc": "02-SDD.md",
+   "section": "6.3 排课算法（plan_next_lesson）",
+   "problem": "算法步骤 5 'lessonTime = lastLessonTime + ladder[该生当前主线step]' 中'主线step'未定义，且与 6.2 '词走完阶梯（step 到顶且最近一次到期测试答对）→ graduated' 冲突：graduated 词不再参与排课，但'主线step'若取所有词的最大 step，则可能引用已 graduated 词的 step，导致时间计算错误；同时 FR-F5 要求'逾期未上课 → 顺延至下一天同时段，间隔阶梯不前进'，但算法未体现逾期词的 ladder_step 不变逻辑。",
+   "fix": "在 6.3 步骤 5 中明确定义'主线step = 未毕业词（status ∈ {learning, mastered}）中 ladder_step 的中位数（或平均值，避免极端值）'；在步骤 4 后插入步骤 4.5：'对逾期词（NextDueAt ≤ now - overdueHours），其 ladder_step 不变，仍参与本次批次选取'；同步在 6.2 末尾补充说明'graduated 词的 ladder_step 固定为 max_index，不参与主线step计算'。"
+  }
+ ]
+}

@@ -1,0 +1,40 @@
+{
+ "model": "qwen-plus",
+ "problems": [
+  {
+   "severity": "P0",
+   "doc": "01-需求分析.md",
+   "section": "4.3 学生+老师Agent：课堂学习流程（核心）",
+   "problem": "流程描述中'学生跟读 3 遍（前端 VAD 判定每遍完成）'与'答错 → 重新显示中文释义 → 重复学习 → 再测'存在时序漏洞：当学生在组内小测中答错后，系统要求'重复学习'，但未定义该重复学习环节是否包含再次跟读（即是否触发新的 VAD 判定循环）。若不包含，则违反 D5 跟读功能需求；若包含，则当前流程未说明其触发条件、次数及与原教学阶段的嵌套关系，导致状态机无法建模。",
+   "fix": "在 4.3 流程中明确'重复学习'环节的行为：必须包含完整一轮跟读（即 show_word → play_tts → start_repeat ×3），并将其作为独立子流程嵌入小测答错处理路径；同步在 02-SDD §5.1 状态机中增加 REPEAT_LEARNING 子状态，并在 02-SDD §5.3 超时兜底矩阵中补充该状态超时规则。"
+  },
+  {
+   "severity": "P0",
+   "doc": "02-SDD.md",
+   "section": "5.1 顶层阶段（Phase）",
+   "problem": "状态机图中 'GROUP_QUIZ' 下的 'QUIZ_ITEM' 子状态缺少对'多题并发作答'的支持：当前设计为串行处理单题（WAIT_ANSWER → JUDGING → WRONG→...），但 FR-D6 明确要求'小测：本组词+随机已学旧词'，且 FR-D9 综合测试为'打乱测试'，意味着 quiz_items 是一个集合而非单题。而状态机未定义如何管理多个 QUIZ_ITEM 的并发生命周期（如：学生可任意顺序作答、部分提交、超时自动判错等），导致无法支持真实考试场景。",
+   "fix": "将 'QUIZ_ITEM' 从原子状态升级为可并发实例化的状态集，引入 'quiz_session' 容器状态；每个 QUIZ_ITEM 实例拥有独立生命周期（pending/answered/judged），状态机需支持：① 并发 WAIT_ANSWER（多题同时等待）；② 异步 JUDGING（ASR/LLM 返回无序）；③ 全局 QUIZ_DONE 触发条件为所有非超时项均 judged；④ 单题超时直接置为 wrong 并推进。同步更新 02-SDD §5.2 持久化结构，lesson_state 中 quiz 字段需支持数组存储多题状态。"
+  },
+  {
+   "severity": "P0",
+   "doc": "02-SDD.md",
+   "section": "6.2 间隔阶梯（可配置，等间隔思想）",
+   "problem": "数据结构 MemoryCard.LadderStep 定义为 '当前在间隔阶梯的位置（0-based）'，但排课算法 §6.3 步骤 5 中 'lessonTime = lastLessonTime + ladder[该生当前主线step]' 与逾期重排 §6.4 中 'LadderStep 不变' 存在逻辑矛盾：'主线step' 未定义，且逾期重排时若仅重置 lessonTime 而不更新 MemoryCard.NextDueAt，则会导致 NextDueAt 与实际排课时间脱钩；更严重的是，'LadderStep 不变' 与 '省力再学' 原则冲突——若用户连续逾期，LadderStep 永远卡在首级，系统无法推进复习深度，违背等间隔策略目标。",
+   "fix": "重构 MemoryCard：删除 LadderStep 字段，改为存储 'current_interval_days'（当前应间隔天数）和 'last_review_at'；排课算法中 'lessonTime = lastReviewAt + current_interval_days'；逾期重排时，current_interval_days 不变，但 last_review_at 更新为新 lessonTime，确保 NextDueAt = lessonTime + current_interval_days；'省力再学' 通过保持 current_interval_days 不变实现，而非冻结索引。"
+  },
+  {
+   "severity": "P1",
+   "doc": "04-Agent与话术库设计.md",
+   "section": "2. 老师 Agent：决策表",
+   "problem": "决策表 T-10（答错处理）规定 'show_word(含中文释义) → play_tts(en×1) → say(reassure) → RETEST'，但与 01-需求分析 §4.3 '答错 → 重新显示中文释义 → 重复学习 → 再测' 及 02-SDD §5.1 状态机中 'WRONG→SHOW_MEANING→RETEACH→RETEST' 存在功能遗漏：'重复学习' 应包含完整的单词教学闭环（TTS 英文朗读 + 中文释义 + 跟读），而 T-10 仅执行 play_tts(en×1)，缺失中文释义朗读（play_tts(zh×1)）和跟读环节（start_repeat），导致教学完整性被破坏。",
+   "fix": "修改 T-10 动作序列为：show_word(含中文释义) → play_tts(zh×1) → play_tts(en×1) → start_repeat(3遍) → say(reassure) → start_quiz（重测）；同步在 02-SDD §5.1 状态机中为 WRONG 分支补充 SHOW_MEANING → TTS_PLAYING(zh) → TTS_PLAYING(en) → REPEATING → QUIZ_ITEM 迁移路径。"
+  },
+  {
+   "severity": "P1",
+   "doc": "05-Mock接口与真实API替换方案.md",
+   "section": "4. Omni-Realtime 双向语音会话通道（D-11）",
+   "problem": "4.3 节'课堂接线'中规定 'REPEATING 阶段 instructions 限定\"仅听不说\"（output_modalities=[text]）'，但此设计与 02-SDD §12.2 VAD 规则 0 'REPEATING 阶段老师通道只用文字气泡、不发 TTS' 冲突：Omni 通道的 '仅听不说' 是通过服务端指令控制，而 02-SDD 的规则是前端行为约束；两者未对齐，且 Omni 设计未覆盖 '老师气泡说话'（classroom.say）与 Omni 流式语音的协同机制——当老师需说鼓励话术时，是走 classroom.say（文字气泡）还是 Speak(text)（流式语音）？若后者，则违反 VAD 规则 0；若前者，则 Omni 通道在此场景下未被利用，造成能力冗余。",
+   "fix": "统一 Omni 通道使用策略：① REPEATING 阶段禁用 Speak()，仅允许 classroom.say 发送文字气泡；② 在非 REPEATING 阶段（如 transition/closing），优先调用 Omni Speak() 输出流式语音，fallback 为独立 TTS；③ 在 02-SDD §4.2 话术层描述中明确 '话术输出类型由当前 phase 决定：REPEATING 期强制 text-only，其余期按配置启用 Omni'，并在 04 文档决策表中为 say 动作标注 'phase-aware output modality'。"
+  }
+ ]
+}
