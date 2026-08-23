@@ -1,0 +1,48 @@
+{
+ "model": "qwen-plus",
+ "kb": 111,
+ "problems": [
+  {
+   "severity": "P0",
+   "where": "server/internal/scheduler/scheduler.go:PlanNext",
+   "problem": "批次构造逻辑违反 SDD §6.3 '保留性'语义：newWords 补充上限为 max(0.6×W, W−已填复习词数)，但代码中 newLimit = W * 6 / 10（整除），当 W=41 时 newLimit=24，而 W−len(boosted+due)=41−0=41，此时应允许补足 41 个 new 词，但代码只补 24 个，导致批次严重不足且违反 '首课可全为新词补满 W' 承诺。",
+   "fix": "将 newLimit 计算改为 newLimit := W - len(batch); if newLimit > W*6/10 { newLimit = W*6/10 }，确保 newCount 上限严格遵循 '≤ max(0.6×W, 剩余额度)' 且首课能补满。"
+  },
+  {
+   "severity": "P0",
+   "where": "server/internal/scheduler/scheduler.go:SettleLessonFinished",
+   "problem": "结课结算中 '新学不算复习' 规则（SDD §6.2）未被严格执行：当词 status=new 且本课答对时，代码将 c.LadderStep 置为 0（正确），但未重置 NextDueAt 为 finishedAt + ladder[0]；而当词 status=learning 且答对时，c.LadderStep++ 后若未达毕业阈值，NextDueAt 被设为 finishedAt + ladder[c.LadderStep]，但若 ladder 配置缩短（如从8项缩为5项），c.LadderStep 可能越界（>len(ladder)-1），导致 interval(ladder, c.LadderStep) 返回 ladder[len(ladder)-1]，但后续 LadderStep++ 可能持续越界，破坏阶梯语义。",
+   "fix": "在 SettleLessonFinished 中，所有 NextDueAt 更新前必须调用 interval(ladder, step) 安全取值；且对 new 词答对分支，必须显式设置 d := finishedAt.Add(time.Duration(interval(ladder, 0)) * 24 * time.Hour); c.NextDueAt = &d。同时，在 ladder 缩短后，TruncateLadderSteps 必须同步截断所有 memory_cards 的 LadderStep 并重算 NextDueAt（当前仅截断 step，未更新 NextDueAt）。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/config/config.go:Ladder",
+   "problem": "Ladder 方法返回副本，但 SDD §6.2 要求 'ladder 配置缩短时，同事务内将全部 memory_cards.ladder_step 截断为 min(step, 新len-1)'，而当前 Store.Ladder 返回副本，Scheduler.TruncateLadderSteps 无法感知配置变更后的实际长度，导致截断逻辑与配置不一致。",
+   "fix": "Ladder 方法应返回不可变副本，但 Scheduler 在调用 TruncateLadderSteps 前必须先通过 Store.LadderLocked 获取当前生效 ladder，再传入其长度；或 Store 应暴露一个原子的 GetLadderLength() 方法供 Scheduler 使用。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/wordbook/wordbook.go:ImportBatch",
+   "problem": "批量导入时，重复词条跳过逻辑（EntryByKey 检查）与 validateEntry 的 normKey 计算口径不一致：validateEntry 调用 normKey(w)，而 EntryByKey 查询使用 e.NormKey，但 ImportBatch 中新建 Entry 时未调用 validateEntry 设置 NormKey，导致重复检查失效（e.NormKey 为空字符串）。",
+   "fix": "在 ImportBatch 循环内，创建 Entry 前必须先调用 validateEntry(in) 获取带 NormKey 的 e，再执行 s.repo.CreateEntry(e)；当前代码在 validateEntry 失败时跳过，但成功时未将 e.NormKey 写入 repo，导致 EntryByKey 查不到。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/judge/judge.go:Level1",
+   "problem": "英文判分 enMatch 逻辑存在边界缺陷：当 text='a apple' 时，enTokens 返回 ['a', 'apple']，target='apple' 的 normEn 为 'apple'，匹配成功；但当 text='the apple' 时，normEn(text)='apple' 直接匹配，而 enTokens(['the','apple']) 中 'apple' 也匹配——双重路径导致同一文本被多次匹配，虽不影响结果但逻辑冗余且易引发误判（如 text='an apple and banana' 对 word='banana' 会因 'banana' token 匹配而正确，但若 word='apple' 则因 'apple' token 存在也正确，这符合需求，但代码中 normEn(text)==nt 分支与 token 循环分支逻辑重叠，未明确优先级，且未处理 'apple' 作为子串出现在其他 token 中的情况（如 'pineapple'）。",
+   "fix": "删除 normEn(text)==nt 分支，统一走 enTokens 循环匹配，并在循环内增加完整 token 等价校验（token == nt），避免子串误判；同时确保 enTokens 正确剥离冠词（当前仅在 normEn 中剥离，需在 token 提取时也剥离）。"
+  },
+  {
+   "severity": "P2",
+   "where": "docs/02-SDD.md §6.3",
+   "problem": "文档承诺 '批次构造顺序 = boosted 头部 → due（按到期升序）→ new（按词库序）'，但代码中 fresh（new）列表是通过 ListCards 获取后按 WordID 排序（sort.Slice(fresh, ...WordID)），而 SDD §9 数据模型 word_entries.id 是自增主键，词库序即 id 序，但文档未明确定义 '词库序' 为 id 序还是原始导入序，易引发歧义。",
+   "fix": "在 docs/02-SDD.md §6.3 明确 'new（按 word_entries.id 升序）'，并在 wordbook.Service.EntriesByIDs 注释中强调 '保持入参 ids 顺序' 用于课堂组装，确保批次顺序可预测。"
+  },
+  {
+   "severity": "P2",
+   "where": "server/internal/feedback/feedback.go:parseOne",
+   "problem": "日期解析中 '下个月X号' 逻辑错误：time.Date(now.Year(), now.Month(), da, ...) AddDate(0,1,0) 可能导致月份溢出（如 now.Month()=12），且未处理跨年场景；同时 '月日' 解析中 t.Before(now) 判断后直接 AddDate(1,0,0)，但若 now 是 2024-12-31，t 是 2024-12-01，则 t.Before(now) 为 true 但不应加一年。",
+   "fix": "将 '月日' 解析改为：t := time.Date(now.Year(), time.Month(mo), da, 0, 0, 0, 0, now.Location()); if t.Before(now) || t.After(now.AddDate(0,1,0)) { t = t.AddDate(1,0,0) }；'下个月X号' 改为 t := now.AddDate(0,1,0); t = time.Date(t.Year(), t.Month(), da, 0, 0, 0, 0, now.Location())。"
+  }
+ ]
+}

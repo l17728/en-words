@@ -1,0 +1,36 @@
+{
+ "model": "qwen-plus",
+ "kb": 72,
+ "problems": [
+  {
+   "severity": "P0",
+   "where": "server/internal/classroom/classroom_test.go:TestWrongAnswerReteachLoop",
+   "problem": "RETEACH 闭环中，`EvTTSFinished` 事件被无条件触发两次（zh/en），但未校验当前 Phase 是否为 `PhaseReteachShow`；若在非 `PhaseReteachShow` 下误触发（如因状态机异常或竞态），会导致非法迁移或静默失败。文档 SM-05/R2-06 明确要求动作序列严格为 `show_word(含中)+tts(zh)+tts(en)+repeat×3+retest`，当前测试未断言 Phase 迁移路径，仅依赖 `findAction`，无法捕获 Phase 错位导致的逻辑跳变。",
+   "fix": "在 `TestWrongAnswerReteachLoop` 中，在每次 `OnEvent(EvTTSFinished)` 前插入 `assert.Equal(t, PhaseReteachShow, m.Phase())` 和 `assert.Equal(t, PhaseTTSSeg, m.Phase())` 断言；并在 `EvRepeatDone` 循环前断言 `PhaseRepeating`；补全 Phase 序列断言链，确保与文档 R2-06 动作序列完全一致。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/scheduler/scheduler_test.go:TestEqualIntervalLadderAndStepAdvance",
+   "problem": "R2-01 要求 '新词首复习用 ladder[0]；第k次成功后 step=k；排课/毕业/逾期三处计算一致'，但测试中 `SettleLessonFinished` 后仅检查单张卡片 `c1.LadderStep`，未验证 `ladder[min(step,len-1)]` 在 `NextDueAt` 计算中的实际索引行为。当 `step=2` 且 `ladder=[1,1,2]`（len=3）时，`min(2,2)=2` → `ladder[2]=2`，但测试未构造 `step >= len` 场景验证截断逻辑，也未覆盖 `step=len-1` 与 `step=len` 的边界跃迁（毕业触发点）。",
+   "fix": "在 `TestEqualIntervalLadderAndStepAdvance` 末尾追加：构造 `ladder=[1,1,2]`，推进至 `step=2` 后再成功一次，验证 `c1.NextDueAt == fin3.Add(2*day)`（即仍用 `ladder[2]`）；再推进一次成功，验证 `c1.Status == StatusGraduated` 且 `c1.LadderStep == 2`（未越界），并断言 `NextDueAt` 不再更新（毕业卡无 NextDueAt）。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/classroom/classroom_test.go:TestCumulativePoolDeterministic",
+   "problem": "R2-10 要求 'seed=lessonId*31+bookId 的 Fisher-Yates；同课重放顺序一致'，但测试 `run()` 函数内 `newMachine(t, batchN(15))` 每次创建新 `lessonID=12`（硬编码），且未传入 `bookID`，导致 `seed` 恒为 `12*31+0=372`，无法验证 `bookID` 参与 seed 的确定性。测试未覆盖多 bookID 场景，也未校验 `batchN(15)` 的 word ID 分布是否影响打乱结果（Fisher-Yates 应对任意 ID 序列稳定）。",
+   "fix": "将 `newMachine` 调用改为 `NewMachine(lessonID, groupSize, quizOldWords, words, cfg, clk)` 并动态生成 lessonID（如 `100+t.Nanosecond()%100`）和 bookID（如 `1+t.Nanosecond()/100%3`）；在 `run()` 内显式记录 `seed=lessonID*31+bookID` 并断言两次运行该 seed 值相同；改用 `batchN(15)` 生成固定 ID 序列（1..15）以消除随机性干扰。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/api/integration_test.go:TestIT04_ClassroomFullFlow",
+   "problem": "IT-04 要求 '课堂全流程...quiz_items 全落库'，但测试仅断言 `res.Report.TotalWords` 和 `room.Status()`，未查询数据库验证 `quiz_items` 表是否写入 5（组小测）+5（期末）=10 条记录，且未校验每条 `quiz_item.word_id`、`kind`、`round` 符合设计（如组小测 `round=0`，期末 `round=1`，RETEACH 重测 `round=2`）。缺少对持久化层的直接断言，无法保证事务完整性。",
+   "fix": "在 `TestIT04_ClassroomFullFlow` 结课后，调用 `app.QuizRepo.ListByLesson(lessonID)` 获取所有 quiz items，断言长度为 10；遍历检查前5条 `kind='group_quiz' && round=0`，后5条 `kind='final' && round=1`；对每个 item 断言 `word_id` 在 `{1,2,3,4,5}` 内且不重复；补全数据库层断言。"
+  },
+  {
+   "severity": "P2",
+   "where": "server/internal/classroom/classroom_test.go:TestSessionTimeoutPauseResume",
+   "problem": "R2-09 要求 'session 超时续课 → in_progress_paused → 重进从断点继续；已完成词不重教、已判题不重判'，但测试中 `m.state.StartedAt = m.state.StartedAt.Add(-61 * time.Minute)` 直接篡改内部字段，绕过 `OnSessionTimeout` 的真实状态机流转逻辑；未验证 `Paused` 状态下 `OnEvent` 是否被正确拦截（如 `EvWordClicked` 应被忽略），也未测试恢复后 `CurrentWord().ID` 是否精确等于断点位置（测试仅断言 `int64(2)`，但未说明为何是2——缺乏前置教学步数定义）。",
+   "fix": "重构测试：先正常教学至第2词（`teachWord`×2），再触发 `OnSessionTimeout`；断言 `Paused()==true` 且 `Phase()` 保持原值；尝试 `OnEvent(EvWordClicked)` 后断言 `Phase()` 不变；`Resume()` 后断言 `CurrentWord().ID == 3`（第3词），并 `teachWord` 验证推进到第4词，确保断点精确。"
+  }
+ ]
+}

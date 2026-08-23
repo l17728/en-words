@@ -1,0 +1,48 @@
+{
+ "model": "qwen-plus",
+ "kb": 92,
+ "problems": [
+  {
+   "severity": "P0",
+   "where": "web/src/pages/Classroom.tsx:124",
+   "problem": "课堂页未实现 WebSocket 连接，完全依赖 REST /event 和 /voice 接口轮询式更新，违反 docs/02 §11.3 '前端一切实时性走 WS' 架构决策（A6）及 docs/07 §7.7 'TTS 播放期操作区 pointer-events:none' 等实时状态同步前提；导致相位渲染与后端状态严重脱节、竞态无法收敛。",
+   "fix": "移除 useEffect 中的 REST enter 轮询逻辑，改用 ws/client 初始化连接；监听 'state_snapshot' 首帧初始化 snapshot，并持续订阅 'ui_action'/'phase_changed'/'judge_result' 帧驱动状态更新；所有 sendEvent 必须通过 WS 发送 student_event 帧，而非 REST。"
+  },
+  {
+   "severity": "P0",
+   "where": "web/src/pages/Classroom.tsx:159",
+   "problem": "TTS 播放使用 Web Speech API，但未实现 docs/02 §12.5 '兜底：Web Speech 完全不可用 → 静音计时+视觉动画，tts_finished 照常'，也未实现 docs/02 §12.5 '回声抑制：REPEATING 阶段老师通道只用文字气泡、不发 TTS'，导致 VAD 误判风险（FE-02）和静音流程断裂（FE-03）。",
+   "fix": "在 speak() 函数中增加 navigator.mediaDevices?.getUserMedia 检测；若不可用则跳过语音播放，仅触发视觉动画（如喇叭图标脉冲），并立即调用 applyFrames 模拟 'tts_finished' 事件；REPEATING 阶段禁止调用 speak()，仅保留文字气泡。"
+  },
+  {
+   "severity": "P1",
+   "where": "web/src/pages/Classroom.tsx:208",
+   "problem": "判分动画（✓/✗）仅靠 CSS 动画控制，但未实现 docs/07 §7.3 '✓ = scale 0.8→1.1→1 弹跳 300ms + 轻音效' 和 '✗ = 水平抖动 200ms + 释义滑入' 的完整语义；且未处理 docs/07 §10 '色盲安全：✓/✗ 除颜色外加形状差异'，当前仅靠 border-color 区分，无图标。",
+   "fix": "将 <div> 主角卡内嵌 SVG ✓/✗ 图标（非纯色块），动画拆分为独立 keyframes；添加 aria-label='正确'/'错误'；✓ 动画绑定 audio.play()（静音策略下可选）；✗ 动画后自动展开中文释义区域（需 zhShow 逻辑联动）。"
+  },
+  {
+   "severity": "P1",
+   "where": "web/src/pages/Classroom.tsx:102",
+   "problem": "老师气泡文案硬编码为 '叮当老师：{bubble}'，违反 docs/02 §4.2 '话术层只输出话术，无任何状态推进能力' 及 docs/04 §5.9 '课报话术模板（RB 系列）+ 口语化管线'，导致无法支持多语言、个性化音色切换（docs/07 §2.0）、家长定制语音等核心功能。",
+   "fix": "气泡内容应直接渲染 payload.text（来自 ui_action.say 的 action.text），去除 '叮当老师：' 前缀；前缀由后端话术模板注入或前端根据 role 动态拼接；确保所有 say 指令携带 tone 字段以驱动语音克隆。"
+  },
+  {
+   "severity": "P1",
+   "where": "web/src/pages/Classroom.tsx:277",
+   "problem": "下课 Modal 中 summary 渲染字段（total_words, correct_count, first_try_rate 等）与 docs/02 §5.6 LessonReport 结构严重不一致（如 first_try_rate 应为 CorrectRate，streak_best 应为 StreakBest），且未实现 '量化+定性双段结构'（定性标签 qual_solid/qual_pace 来源不明），导致课报数据契约断裂。",
+   "fix": "严格按 LessonReport TS 接口定义映射字段：summary.total_words → summary.TotalWords，summary.correct_count → summary.CorrectCount，summary.first_try_rate → summary.CorrectRate；定性标签必须从后端 reportQualitativeRules 规则计算得出，前端不得硬编码逻辑。"
+  },
+  {
+   "severity": "P2",
+   "where": "web/src/pages/Placement.tsx:65",
+   "problem": "摸底页词芯片点击区域未满足 docs/07 §10 '按钮实触区 ≥ 44×44px' 可访问性基线，当前 padding='10px 18px' + fontSize=18px 计算宽高约 36×40px，不达标。",
+   "fix": "增大 chip padding 至至少 14px 以上，或显式设置 min-width/min-height 为 44px，确保触控热区达标。"
+  },
+  {
+   "severity": "P2",
+   "where": "web/src/pages/Dashboard.tsx:65",
+   "problem": "课程表页 '下一节课' 卡片中进度条使用 antd Progress 组件，但未配置 docs/07 §3.1 'primary-300 #5EEAD4' 作为亮段色，仍为 antd 默认蓝色，违反色彩令牌一致性。",
+   "fix": "Progress 组件添加 strokeColor='#5EEAD4' 属性。"
+  }
+ ]
+}

@@ -1,0 +1,36 @@
+{
+ "model": "qwen-plus",
+ "kb": 65,
+ "problems": [
+  {
+   "severity": "P1",
+   "where": "server/internal/agent/agent.go:Decide:case \"word_done\"",
+   "problem": "T-04 决策要求 '本组还有词' 时才触发 transition_word，但代码未检查上下文条件（如当前组剩余词数），无条件返回 transition 话术或 nil，导致组末尾错误触发转场话术。",
+   "fix": "在 case \"word_done\" 分支中增加对 classroom.Word 的上下文判断（需传入 GroupRemaining 或 LessonState），仅当组内非最后一词时才返回 transition；否则返回 nil 或走 T-05 逻辑。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/agent/agent.go:Decide:case \"judged_wrong\"",
+   "problem": "T-10 要求 RETEACH 完整闭环（show_word+play_tts×2+start_repeat×3+say(reassure)+RETEST），但 Decide 仅返回 correct 类话术，未触发任何工具调用序列，完全缺失 RETEACH 流程控制，违反决策表语义。",
+   "fix": "TeacherAgent.Decide 不应承担流程控制，而应只输出话术槽；RETEACH 流程必须由平台状态机根据事件 + 决策表自动注入 tool_calls 序列。当前实现将流程逻辑错误下移到 Decide，导致 T-10 无法执行。应删除该 case 的话术返回，改为由平台层在 student_answered+wrong 事件后主动触发 RETEACH 工具链。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/scripts/scripts.go:colloquialize",
+   "problem": "口语化规则 b. 称呼变体（25%）逻辑错误：代码中 `if name, ok := vars[\"name\"].(string); ok && name != \"\" && rng.Float64() < 0.25` 后直接 `strings.Replace(text, name, name+\"同学\", 1)`，但 text 中 {name} 占位符已在 replaceVars 阶段被替换为具体昵称，此处 name 是原始变量值而非文本中实际出现的字符串；若模板含多个 {name} 或昵称含空格/标点，替换会失败或错位。",
+   "fix": "应在 colloquialize 中改为正则匹配整个昵称字符串（如 `regexp.MustCompile(\"(^|[^\\w])\" + regexp.QuoteMeta(name) + \"([^\\w]|$)\")`），并确保只替换首次完整匹配且不破坏周边字符；或更安全地，在 replaceVars 前预留占位符标记，由 colloquialize 统一处理。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/memory/memory.go:Recall:score",
+   "problem": "记忆 Recall 加权排序中近因衰减公式 `days/7` 导致整数除法截断，例如 6 天衰减为 0 分（5 - 0 = 5），13 天才衰减为 1 分（5 - 1 = 4），衰减粒度粗、不符合 '每 7 天衰减 1 分' 的文档承诺（§9.2.3），且未处理负分下限边界（`recency < 0` 检查在计算后，但 `days/7` 可能为 0 导致 recency=5 不衰减）。",
+   "fix": "将 `days/7` 改为 `(days + 6) / 7` 实现向上取整衰减，或使用浮点运算 `int(math.Floor(float64(days)/7.0))`；同时将 `recency := 5 - days/7` 改为 `recency := 5 - ((days + 6) / 7)`，并在赋值后立即 `if recency < 0 { recency = 0 }`。"
+  },
+  {
+   "severity": "P2",
+   "where": "server/internal/voicecmd/voicecmd.go:Match",
+   "problem": "指令匹配优先级逻辑缺陷：前缀匹配（'跳过这个词'）与精确匹配（'跳过'）共存时，因遍历 cmds 字典序且未按触发词长度倒序，可能导致短触发词（'跳过'）先命中，覆盖长触发词（'跳过这个词'）的更高优先级匹配，违反 '长词优先' 文档要求（D-14 §2）。",
+   "fix": "在 Match 方法中，对每个 cmd 的触发词列表按 normalized 长度降序排序后再遍历，确保长触发词优先匹配；或预构建 trie 树实现最长前缀匹配。"
+  }
+ ]
+}
