@@ -81,7 +81,8 @@ export default function PlacementPage() {
                 setKnown(next)
               }}
               style={{
-                padding: '10px 18px',
+                padding: '12px 20px', // R4-fe#6：≥44px 触控热区
+                minHeight: 44,
                 borderRadius: 999,
                 cursor: 'pointer',
                 userSelect: 'none',
@@ -92,6 +93,9 @@ export default function PlacementPage() {
                 boxShadow: '0 2px 12px rgba(28,43,51,.06)',
                 transition: 'all .15s',
               }}
+              role="button"
+              aria-pressed={on}
+              aria-label={`${w.word}${on ? '，已标记认识' : ''}`}
             >
               {w.word}
             </div>
