@@ -1,0 +1,54 @@
+{
+ "model": "qwen-plus",
+ "problems": [
+  {
+   "severity": "P0",
+   "doc": "02-SDD.md",
+   "section": "6.1 数据结构",
+   "problem": "MemoryCard.LadderStep 语义定义与 §6.2 推进规则矛盾：文档称 '已成功完成的复习次数 = 下次复习应取的间隔索引'，但推进规则写 '本课该词任一测试答对 ≥1 次 → 视为本次复习成功，LadderStep+1'。这导致 '首次复习成功后 LadderStep=1'，而按定义应取 ladder[1]（即第二级间隔），但首课后首次复习理应取 ladder[0]（第一级）。语义错位将使所有排课、毕业、逾期逻辑全部偏移一级。",
+   "fix": "统一 LadderStep 定义为 '下一次复习应使用的阶梯索引'（初始为 0），并修正推进规则为：'本课该词在到期测试中答对 ≥1 次 → LadderStep = min(LadderStep + 1, len(ladder)-1)'；同时确保排课算法（§6.3）、毕业判定（§6.2）、逾期处理（§6.4）三处均严格按此定义读取 ladder[LadderStep]。"
+  },
+  {
+   "severity": "P0",
+   "doc": "02-SDD.md",
+   "section": "5.2 状态持久化",
+   "problem": "lessons 表状态字段拆列设计与崩溃恢复推演冲突：文档要求 '每次状态迁移 = 单一 GORM 事务：UPDATE lessons 状态列 + INSERT classroom_events'，但 SQLite 的 WAL 模式不保证跨表事务的原子性（INSERT 和 UPDATE 可能仅部分落盘），且 classroom_events 仅作审计回放，而恢复逻辑 '以 lessons 各列为当前态' 忽略了 events 表可能存在的未提交事件。若进程在 UPDATE 成功但 INSERT 失败时崩溃，events 缺失将导致状态机无法重放关键事件（如 quiz_completed），造成课堂卡死或判分丢失。",
+   "fix": "移除 classroom_events 表的独立 INSERT；改为在 lessons 表中增加 JSON 字段 `pending_events`，将待落库事件序列化存入同一事务；恢复时先重放 pending_events，再清空；events 表仅作只读归档，由后台异步任务从 pending_events 迁移，不参与主恢复路径。"
+  },
+  {
+   "severity": "P0",
+   "doc": "02-SDD.md",
+   "section": "11.3 可靠性",
+   "problem": "WS ticket 持久化与 lesson finished/expired 后立即失效机制存在竞态漏洞：ticket 表记录 `expires_at = open_at + overdueHours + 1h`，但 'lesson finished/expired 后 ticket 立即失效' 依赖应用层 DELETE 或 UPDATE，而 WS 连接校验仅查 `expires_at`。若学生在 lesson_finished 后立即重连（如刷新页面），旧 ticket 仍处于 expires_at 有效期内，可被重复使用，导致非法续课或状态污染。",
+   "fix": "在 ws_tickets 表增加 `status TEXT CHECK(status IN ('active','expired','revoked'))` 列；lesson 状态变更（finished/expired）时同步 UPDATE ticket.status='revoked'；WS 连接校验必须同时满足 `status='active' AND expires_at > NOW()`；重启时通过 cron 清理过期/revoked ticket。"
+  },
+  {
+   "severity": "P1",
+   "doc": "01-需求分析.md",
+   "section": "4.3 学生+老师Agent：课堂学习流程（核心）",
+   "problem": "话术定位描述 '不驱动状态机' 与 §4.2 老师 Agent 设计中的 `advance_phase` 工具功能矛盾：R2-FE-01 明确话术不驱动状态机，但 02-SDD §3.2 注册了 high 风险工具 `classroom.advance_phase`，且 04 文档决策表 T-15/T-16 明确调用它。这违反了 '平台状态机是唯一事实源' 的架构原则（A3），引入 LLM 幻觉操作风险。",
+   "fix": "删除 `classroom.advance_phase` 工具；所有阶段推进均由平台状态机根据决策表（T-01..T-20）自动触发，LLM 输出中禁止包含 advance_phase 调用；快路径模型（§4.2）完全接管 phase 迁移，LLM 仅输出话术和 UI 指令。"
+  },
+  {
+   "severity": "P1",
+   "doc": "02-SDD.md",
+   "section": "6.2 间隔阶梯",
+   "problem": "长期毕业条件 'LadderStep ≥ len(ladder)' 与 ladder 配置缩短逻辑（§6.2）冲突：当 ladder 缩短（如从 [1,1,2,2,4,7,14,30] → [1,1,2,2]）时，截断 `ladder_step = min(step, 新len-1)` 会将原 step=8 的卡强制设为 step=3，但此时 step=3 < len(new_ladder)=4，不满足 '≥ len(ladder)' 条件，导致已毕业词无法进入 graduated 状态，违背毕业语义。",
+   "fix": "长期毕业条件改为 'LadderStep >= len(ladder) - 1'（即最后一级索引），并同步更新 ladder 截断逻辑为 'ladder_step = min(step, len(new_ladder) - 1)'；确保毕业判定始终基于当前 ladder 长度的末尾索引。"
+  },
+  {
+   "severity": "P1",
+   "doc": "02-SDD.md",
+   "section": "9. 数据模型设计",
+   "problem": "memory_cards 表缺少复合索引支持排课主查询：文档声明 'idx_mc_due ON memory_cards(status, next_due_at) WHERE status IN (\"new\",\"learning\")'，但 SQLite 的 partial index 在 WHERE 子句含 OR 时（如 status=\"new\" OR status=\"learning\"）性能不佳，且排课算法（§6.3）需同时扫描 new 和 learning 状态，当前索引无法高效覆盖。",
+   "fix": "将 partial index 改为完整索引：'CREATE INDEX idx_mc_due_status_next ON memory_cards(status, next_due_at)'；并确保 WHERE 条件使用 'status IN (\"new\",\"learning\")'（SQLite 对 IN 优化良好），删除 WHERE 子句。"
+  },
+  {
+   "severity": "P1",
+   "doc": "03-测试用例.md",
+   "section": "2.9 二轮评审回归用例（R2，P0/P1 修复项）",
+   "problem": "R2-01 用例 'LadderStep 语义统一' 仅做性质测试，未覆盖排课/毕业/逾期三处共用逻辑的集成验证：该用例要求 '随机 1000 次复习序列不变式校验'，但未指定具体场景（如逾期后重排是否仍用原 step），无法保证三处实现真正一致，易出现边界 case 漏洞。",
+   "fix": "将 R2-01 拆分为三个明确集成用例：① R2-01a 排课：构造一个词在 overdueHours 内多次逾期，验证每次重排都使用相同 LadderStep 值；② R2-01b 毕业：让词走完 ladder 后答对，验证 status=graduated 且 NextDueAt 为空；③ R2-01c 逾期：词在 ladder[0] 逾期，验证 LadderStep 不变且下次排课仍用 ladder[0]。"
+  }
+ ]
+}

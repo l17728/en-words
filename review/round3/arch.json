@@ -1,0 +1,54 @@
+{
+ "model": "qwen-plus",
+ "problems": [
+  {
+   "severity": "P0",
+   "doc": "02-SDD.md",
+   "section": "5.2 状态持久化（N2 可靠性，R2-BE-02 改列存）",
+   "problem": "状态字段拆分为多个独立列（phase, group_idx, word_idx等）但未声明主键或唯一约束，且与classroom_events表同事务写入。SQLite在WAL模式下并发写入时，若lessons表无主键，UPDATE可能因行锁粒度粗导致竞态；更严重的是，当lesson_id非主键时，lessons表无法保证单行原子更新，崩溃恢复时lessons各列状态可能不一致（如phase已更新但word_idx未更新），破坏状态机唯一事实源语义。",
+   "fix": "在lessons表中将id设为PRIMARY KEY，并确保所有状态迁移UPDATE语句WHERE条件精确匹配id；移除所有非主键的UPDATE操作；验证崩溃恢复逻辑：重启后仅依据lessons.id + lessons.updated_at + classroom_events.lesson_id联合查询最新事件快照，而非依赖lessons各列独立值。"
+  },
+  {
+   "severity": "P0",
+   "doc": "02-SDD.md",
+   "section": "9. 数据模型设计",
+   "problem": "memory_cards表中ladder_step字段定义为int，但6.2节明确其语义为'已成功完成的复习次数'，而排课算法6.3要求取'未毕业词LadderStep的中位数'。当学生学习大量单词时，ladder_step可能超过SQLite int最大值（2^31-1），且中位数计算需对ladder_step排序，但表中无索引支持该查询，导致排课性能随词量线性恶化（O(n log n)），违背家用单机部署目标。",
+   "fix": "将memory_cards.ladder_step改为INTEGER（保持兼容），并在idx_mc_due索引基础上新增复合索引：CREATE INDEX idx_mc_ladder ON memory_cards(student_id, status, ladder_step) WHERE status IN ('new','learning');同时在排课算法中改用COUNT(*)/2偏移查询替代全排序求中位数，或引入预计算字段（如student_books.median_ladder_step）并维护其事务一致性。"
+  },
+  {
+   "severity": "P0",
+   "doc": "02-SDD.md",
+   "section": "11.3 可靠性",
+   "problem": "WS ticket持久化至ws_tickets表，但ticket校验逻辑（R2-AR-03）要求'lesson finished/expired后ticket立即失效'，而表结构未包含lesson_status字段或失效时间戳，导致无法在连接校验时原子判断ticket是否仍有效（需JOIN lessons表查status，存在读写分离或事务隔离问题），且服务重启后无法区分已结束课堂的ticket是否应拒绝。",
+   "fix": "在ws_tickets表中增加lesson_status TEXT NOT NULL DEFAULT 'scheduled'和expires_at DATETIME NOT NULL字段；每次lesson状态变更（如finished/expired）时，同步UPDATE ws_tickets SET lesson_status = ? WHERE lesson_id = ?；WS连接校验时直接WHERE lesson_id = ? AND lesson_status IN ('open','in_progress','in_progress_paused') AND expires_at > NOW()，避免JOIN。"
+  },
+  {
+   "severity": "P1",
+   "doc": "01-需求分析.md",
+   "section": "4.3 学生+老师Agent：课堂学习流程（核心）",
+   "problem": "流程描述中'答错 → 重复学习（R2-AI-01 明确：完整教学闭环 = 重显中文释义 + 朗读英文 + 中文释义朗读 + 跟读 3 遍）→ 再测同词'，但02-SDD §5.1状态机中RETEACH分支仅包含SHOW_MEANING → TTS_SEG(zh×1, en×1) → REPEATING(3遍) → RETEST，缺少'重显中文释义'（即SHOW_WORD含中文）动作，导致学生在RETEACH时看不到中文释义，违反R2-AI-01闭环要求。",
+   "fix": "在5.1状态机RETEACH分支中，将'RETEACH = SHOW_MEANING → TTS_SEG(zh×1, en×1) → REPEATING(3遍) → RETEST'修正为'RETEACH = SHOW_WORD(含中文) → TTS_SEG(zh×1, en×1) → REPEATING(3遍) → RETEST'，并确保SHOW_WORD动作在RETEACH路径中显式触发。"
+  },
+  {
+   "severity": "P1",
+   "doc": "02-SDD.md",
+   "section": "6.2 间隔阶梯（可配置，等间隔思想）",
+   "problem": "毕业规则中'长期毕业：LadderStep ≥ len(ladder) 且最近一次到期测试答对 → status=graduated'，但6.3排课算法中'主线step = 未毕业词LadderStep的中位数'，当存在已graduated词时，其ladder_step可能远大于ladder长度（如ladder=[1,1,2]但graduated词ladder_step=100），导致中位数计算被污染，排课基线漂移。",
+   "fix": "在6.3排课算法中，将'未毕业词(learning/mastered)'明确限定为status IN ('learning','mastered')，排除graduated词；同时在memory_cards表索引idx_mc_due中WHERE条件补充AND status IN ('learning','mastered')，确保排课查询只覆盖有效复习词。"
+  },
+  {
+   "severity": "P1",
+   "doc": "04-Agent与话术库设计.md",
+   "section": "2. 老师 Agent：决策表",
+   "problem": "T-10决策条目要求'RETEACH完整闭环'，但02-SDD §5.1状态机中RETEACH分支未包含SHOW_WORD(含中文)，且T-10动作序列描述为'show_word(含中文) → play_tts(zh释义×1) → play_tts(en×1) → start_repeat(3遍) → say(reassure) → RETEST'，而02-SDD §5.1实际状态迁移图中RETEACH路径缺失SHOW_WORD节点，导致设计文档间逻辑矛盾。",
+   "fix": "统一02-SDD §5.1状态机图，在RETEACH分支中显式添加SHOW_WORD(含中文)状态节点，并同步更新5.1文本描述：'RETEACH = SHOW_WORD(含中文) → TTS_SEG(zh×1) → TTS_SEG(en×1) → REPEATING(3遍) → RETEST'；确保所有文档引用同一状态迁移定义。"
+  },
+  {
+   "severity": "P1",
+   "doc": "05-Mock接口与真实API替换方案.md",
+   "section": "4.3 课堂接线（与 02-SDD 状态机对接）",
+   "problem": "REPEATING阶段双保险防回声策略中'① 后端硬拦——REPEATING期间对Omni Session的Speak()调用一律拒绝'，但02-SDD §4.2明确'话术层异步预取'，且T-03/T-04等决策表动作包含'say'，若后端在REPEATING期间拒绝所有Speak()，则老师话术语音将完全丢失，仅剩文字气泡，违背'协作软件'核心理念（UI同时服务学生和老师Agent）。",
+   "fix": "将'后端硬拦'修正为'后端拦截REPEATING阶段的Speak()调用，但允许非REPEATING阶段（如TEACH_WORD、GROUP_QUIZ）的Speak()正常执行；同时确保前端vad.ts在REPEATING阶段mute老师音频通道，形成双重保障'；在02-SDD §4.2中补充说明：'话术层预取仅在非REPEATING阶段生效，REPEATING阶段话术强制走文字气泡'。"
+  }
+ ]
+}
