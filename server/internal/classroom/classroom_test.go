@@ -167,6 +167,62 @@ func TestHappyPathTeachOneWord(t *testing.T) {
 	assert.Equal(t, int64(2), m.CurrentWord().ID)
 }
 
+// ---- 用户定案：每词最多 2 次机会（第 2 次错/说不会 → 记未掌握跳下一题）----
+
+func TestTwoChancesThenSkip(t *testing.T) {
+	m, cfg := newMachine(t, batchN(5))
+	teachGroup(m, cfg)
+	m.DrainActions()
+
+	// 第 1 题连错 2 次（Round 0 错 → RETEACH → 重测 Round 1 再错 → 跳过）
+	it1 := m.CurrentItem().ID()
+	require.Equal(t, JudgmentWrong, m.OnJudged(it1, JudgmentWrong))
+	m.DrainActions()
+	require.Equal(t, PhaseReteachShow, m.Phase())
+	// 走完 RETEACH 闭环到重测
+	require.NoError(t, m.OnEvent(Event{Type: EvTTSFinished})) // zh
+	require.NoError(t, m.OnEvent(Event{Type: EvTTSFinished})) // en
+	m.DrainActions()
+	for i := 0; i < cfg.RepeatTimes; i++ {
+		require.NoError(t, m.OnEvent(Event{Type: EvRepeatDone}))
+	}
+	as := m.DrainActions()
+	require.NotNil(t, findAction(as, ActStartQuiz), "重测")
+	// 重测（Round 1）再错 → 不再 RETEACH，跳下一题
+	require.Equal(t, PhaseWaitAnswer, m.Phase())
+	it1Retry := m.CurrentItem().ID()
+	require.EqualValues(t, it1.WordID, it1Retry.WordID, "重测同词")
+	require.Equal(t, JudgmentWrong, m.OnJudged(it1Retry, JudgmentWrong))
+	as = m.DrainActions()
+	require.NotNil(t, findAction(as, ActSayHint), "两次用尽发提示帧")
+	assert.Equal(t, PhaseWaitAnswer, m.Phase(), "直接进入下一题")
+	next := m.CurrentItem()
+	assert.Equal(t, int64(2), next.WordID, "跳到下一词")
+	assert.Equal(t, 2, m.state.ReteachN[it1.WordID], "未掌握已记录（两轮各+1）")
+}
+
+// 说"不会"（判 wrong）同理：重测轮放弃 → 跳过
+func TestGiveUpSkipsOnRetest(t *testing.T) {
+	m, cfg := newMachine(t, batchN(5))
+	teachGroup(m, cfg)
+	m.DrainActions()
+	it := m.CurrentItem().ID()
+	require.Equal(t, JudgmentWrong, m.OnJudged(it, JudgmentWrong))
+	require.NoError(t, m.OnEvent(Event{Type: EvTTSFinished}))
+	require.NoError(t, m.OnEvent(Event{Type: EvTTSFinished}))
+	for i := 0; i < cfg.RepeatTimes; i++ {
+		require.NoError(t, m.OnEvent(Event{Type: EvRepeatDone}))
+	}
+	m.DrainActions()
+	retry := m.CurrentItem().ID()
+	// 学生说"不知道"（L1 判 wrong=放弃）
+	require.Equal(t, JudgmentWrong, m.OnJudged(retry, JudgmentWrong))
+	as := m.DrainActions()
+	require.NotNil(t, findAction(as, ActSayHint))
+	assert.Equal(t, PhaseWaitAnswer, m.Phase())
+	assert.Equal(t, int64(2), m.CurrentItem().WordID)
+}
+
 // ---- R4-arch#7：zh 段超时按释义长度（区分 en/zh）----
 
 func TestTTSSegTimeoutZhLonger(t *testing.T) {
@@ -217,7 +273,7 @@ func TestShowWordTimeoutAutoPlay(t *testing.T) {
 	m, _ := newMachine(t, batchN(5))
 	d, ok := m.TimeoutFor()
 	require.True(t, ok)
-	assert.Equal(t, 8*time.Second, d)
+	assert.Equal(t, 800*time.Millisecond, d) // 用户定案：show_word 0.8s 自动开读（二合一节奏）
 	require.NoError(t, m.OnTimeout(PhaseShowWord))
 	assert.Equal(t, PhaseTTSSeg, m.Phase())
 	assert.NotNil(t, findAction(m.DrainActions(), ActPlayTTS))
@@ -473,7 +529,7 @@ func TestTimeoutMatrix(t *testing.T) {
 	m, cfg := newMachine(t, batchN(5))
 	d, ok := m.TimeoutFor()
 	require.True(t, ok)
-	assert.Equal(t, 8*time.Second, d)
+	assert.Equal(t, 800*time.Millisecond, d) // 用户定案：show_word 0.8s 自动开读（二合一节奏）
 
 	teachToRepeating(m, cfg)
 	d, ok = m.TimeoutFor()

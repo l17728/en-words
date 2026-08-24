@@ -40,6 +40,7 @@ const (
 	ActJudgeRequest  = "judge_request"
 	ActJudgeFallback = "judge_fallback"
 	ActStartReview   = "start_review"
+	ActSayHint       = "say_hint" // 老师提示帧（如两次机会用尽的安抚）
 	ActLessonSummary = "lesson_summary"
 	ActLessonPaused  = "lesson_paused"
 )
@@ -325,7 +326,8 @@ func (m *Machine) buildReport(correct map[int64]bool) LessonReport {
 func (m *Machine) TimeoutFor() (time.Duration, bool) {
 	switch m.state.Phase {
 	case PhaseShowWord:
-		return time.Duration(m.cfg.TimeoutShowWordS) * time.Second, true
+		// 用户定案（二合一节奏）：show_word 仅 0.8s 自动开读（不等长思考；点击仍可立即开始）
+		return 800 * time.Millisecond, true
 	case PhaseRepeating:
 		return time.Duration(m.cfg.TimeoutRepeatS) * time.Second, true
 	case PhaseWaitAnswer:
@@ -443,8 +445,18 @@ func (m *Machine) enterTTS() error {
 	st.Phase = PhaseTTSSeg
 	st.TtsSegIdx = 1
 	w := m.CurrentWord()
-	m.acts = append(m.acts, Action{Type: ActPlayTTS, Lang: "en", SegIdx: 1, WordID: w.ID})
+	// Meanings：点击即显示中英对照（原始需求：点击后发音并显示汉语意思——不等到 zh 段）
+	m.acts = append(m.acts, Action{Type: ActPlayTTS, Lang: "en", SegIdx: 1,
+		WordID: w.ID, Word: w.Word, Meanings: w.Meanings})
 	return nil
+}
+
+// firstMeaning 首条释义（zh 段朗读文本）。
+func firstMeaning(w Word) string {
+	if len(w.Meanings) > 0 {
+		return w.Meanings[0]
+	}
+	return w.Word
 }
 
 func (m *Machine) ttsAdvance() error {
@@ -453,10 +465,13 @@ func (m *Machine) ttsAdvance() error {
 	switch {
 	case st.TtsSegIdx < m.cfg.TtsEnRepeat:
 		st.TtsSegIdx++
-		m.acts = append(m.acts, Action{Type: ActPlayTTS, Lang: "en", SegIdx: st.TtsSegIdx, WordID: w.ID})
+		m.acts = append(m.acts, Action{Type: ActPlayTTS, Lang: "en", SegIdx: st.TtsSegIdx,
+			WordID: w.ID, Word: w.Word}) // Word=朗读文本（前端直接发声，无需查表）
 	case st.TtsSegIdx == m.cfg.TtsEnRepeat:
 		st.TtsSegIdx = m.cfg.TtsEnRepeat + 1
-		m.acts = append(m.acts, Action{Type: ActPlayTTS, Lang: "zh", SegIdx: st.TtsSegIdx, WordID: w.ID})
+		zh := firstMeaning(w) // zh 段朗读文本=中文释义（非英文单词——防 zh 嗓音硬读英文）
+		m.acts = append(m.acts, Action{Type: ActPlayTTS, Lang: "zh", SegIdx: st.TtsSegIdx,
+			WordID: w.ID, Word: zh})
 	default:
 		st.Phase = PhaseRepeating
 		st.RepeatCount = 0
@@ -647,6 +662,9 @@ func (m *Machine) OnJudged(item QuizItemID, j Judgment) Judgment {
 }
 
 // applyJudge 执行判分迁移；auto=超时自动判错。
+// 用户定案（2026-08-23）：每词最多 2 次机会——
+//   第 1 次错（Round==0）→ RETEACH 完整闭环后重测；
+//   第 2 次错（Round>=1 重测仍错）或说"不会"→ 记未掌握，直接下一题。
 func (m *Machine) applyJudge(item QuizItemID, j Judgment, auto bool) error {
 	st := m.state
 	if _, done := st.Judged[item]; done {
@@ -669,7 +687,13 @@ func (m *Machine) applyJudge(item QuizItemID, j Judgment, auto bool) error {
 	if item.Kind == "final" {
 		st.FinalWrong = appendUnique(st.FinalWrong, item.WordID)
 	}
-	// RETEACH 完整闭环（R2-AI-01）：显中文 → zh → en → 跟读 → 重测
+	if item.Round >= 1 {
+		// 第 2 次机会用尽：记未掌握，跳下一题（用户定案；不再无限重试）
+		m.acts = append(m.acts, Action{Type: ActSayHint, WordID: item.WordID,
+			Reason: "give_up_next"}) // 前端渲染"没关系，记住它，我们继续"
+		return m.quizNext()
+	}
+	// 第 1 次错：RETEACH 完整闭环（显中文→zh→en→跟读→重测）
 	st.Phase = PhaseReteachShow
 	st.ReteachSeg = 0
 	st.InReteach = true
