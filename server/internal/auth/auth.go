@@ -290,6 +290,36 @@ func (s *Service) ListUsers() []User {
 	return out
 }
 
+// HasUser 用户名存在性（不加锁读）。
+func (s *Service) HasUser(username string) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	_, ok := s.users[username]
+	return ok
+}
+
+// RestoreUser 持久化恢复专用：带指定 ID/盐/哈希重建用户（SQLite 启动加载）。
+// 幂等：已存在跳过成功。禁止业务代码调用（仅 store 层持久化恢复）。
+func (s *Service) RestoreUser(id int64, username, nickname string, role Role, status, salt, hash string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, dup := s.users[username]; dup {
+		return nil // 幂等跳过
+	}
+	u := &User{ID: id, Username: username, Nickname: nickname, Role: role,
+		Status: status, salt: salt, hash: hash}
+	s.users[username] = u
+	s.byID[id] = u
+	if id > s.next {
+		s.next = id // 自增序列对齐
+	}
+	return nil
+}
+
+// SaltForStore/HashForStore 持久化访问器（仅 store 层序列化用）。
+func (u *User) SaltForStore() string { return u.salt }
+func (u *User) HashForStore() string { return u.hash }
+
 // SignService 服务账号直签（Agent 无密码登录通道：服务端持有账号即可签发）。
 func (s *Service) SignService(username string) (string, error) {
 	u, err := s.GetUser(username)

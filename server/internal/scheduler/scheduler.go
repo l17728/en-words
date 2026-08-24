@@ -318,16 +318,34 @@ func (s *Service) MarkPlacement(studentID, bookID int64, knownWordIDs []int64) e
 			return err
 		}
 	}
+	if dr, ok := s.repo.(draftRepo); ok {
+		if err := dr.SavePlacementDraft(studentID, bookID, knownWordIDs); err != nil {
+			return err
+		}
+		return nil
+	}
 	s.placementDrafts[placementKey{studentID, bookID}] = knownWordIDs
 	return nil
 }
 
 // PlacementDraft 读取摸底草稿（已勾选词 ID；无草稿返回 nil）。
 func (s *Service) PlacementDraft(studentID, bookID int64) []int64 {
+	if dr, ok := s.repo.(draftRepo); ok {
+		if ids, err := dr.LoadPlacementDraft(studentID, bookID); err == nil {
+			return ids
+		}
+		return nil
+	}
 	return s.placementDrafts[placementKey{studentID, bookID}]
 }
 
 type placementKey struct{ studentID, bookID int64 }
+
+// 草稿 Repo 扩展接口（可选）：SQLite 版实现（内存版走 map）。
+type draftRepo interface {
+	SavePlacementDraft(studentID, bookID int64, knownIDs []int64) error
+	LoadPlacementDraft(studentID, bookID int64) ([]int64, error)
+}
 
 // mainlineStep 主线 step = 未毕业词(learning) LadderStep 的中位数（R2-04）。
 func (s *Service) mainlineStep(cards []*Card) int {
@@ -599,8 +617,19 @@ func (s *Service) HandleOverdue() ([]int64, error) {
 	return replanned, nil
 }
 
-// repoLessonsAll 内存仓库专用：列出全部课（跨学生）。
+// Repo 扩展接口（可选）：全量课程列举——SQLite 版实现（内存版走下方分支）。
+type allLessoner interface {
+	ListLessonsAll() ([]*Lesson, error)
+}
+
+// repoLessonsAll 列出全部课（跨学生）：优先 allLessoner（SQLite）；内存版遍历。
 func (s *Service) repoLessonsAll() []*Lesson {
+	if al, ok := s.repo.(allLessoner); ok {
+		if ls, err := al.ListLessonsAll(); err == nil {
+			return ls
+		}
+		return nil
+	}
 	if all, ok := s.repo.(*MemRepo); ok {
 		var out []*Lesson
 		for _, l := range all.lessons {
@@ -609,7 +638,6 @@ func (s *Service) repoLessonsAll() []*Lesson {
 		}
 		return out
 	}
-	// GORM 版 Repo 自带全量接口时替换
 	return nil
 }
 
