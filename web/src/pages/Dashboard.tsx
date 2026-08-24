@@ -17,8 +17,8 @@ export default function DashboardPage() {
   const [fbText, setFbText] = useState('')
 
   const refresh = () => {
-    api.get<Book[]>('/wordbooks').then(setBooks).catch(() => {})
-    api.get<Notification[]>('/student/notifications').then(setNotifs).catch(() => {})
+    api.get<Book[]>('/wordbooks').then((bs) => setBooks(bs || [])).catch(() => {})
+    api.get<Notification[]>('/student/notifications').then((ns) => setNotifs(ns || [])).catch(() => {})
   }
   useEffect(refresh, [])
 
