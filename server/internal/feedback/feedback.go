@@ -5,6 +5,7 @@
 package feedback
 
 import (
+	"context"
 	"regexp"
 	"strconv"
 	"strings"
@@ -73,14 +74,35 @@ const (
 
 type Parser struct {
 	now func() time.Time
+	// LLM 真实解析通道（智谱 GLM，D-12；nil=纯规则 Mock）。
+	// LLM 失败时回退规则解析（课堂永不因外部 API 阻塞）。
+	llm LLMParser
 }
+
+// LLMParser LLM 解析最小接口（适配器满足）。
+type LLMParser interface {
+	ParseIntents(ctx context.Context, text string, now time.Time) ([]Intent, error)
+}
+
+// SetLLM 注入真实 LLM 解析器。
+func (p *Parser) SetLLM(l LLMParser) { p.llm = l }
 
 func NewParser(now func() time.Time) *Parser {
 	return &Parser{now: now}
 }
 
-// Parse 意图解析（可多意图；同段拆出的同类意图合并为一个）。
+// Parse 意图解析（可多意图；LLM 真实解析优先，失败回退规则）。
 func (p *Parser) Parse(text string) ParseResult {
+	if p.llm != nil {
+		if intents, err := p.llm.ParseIntents(context.Background(), text, p.now()); err == nil && len(intents) > 0 {
+			return ParseResult{Intents: intents, Raw: text}
+		}
+	}
+	return p.ParseRules(text)
+}
+
+// ParseRules 规则解析（Mock/兜底）。
+func (p *Parser) ParseRules(text string) ParseResult {
 	res := ParseResult{Raw: text}
 	segs := splitSegments(text)
 	for _, seg := range segs {

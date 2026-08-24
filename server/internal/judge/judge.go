@@ -4,6 +4,7 @@
 package judge
 
 import (
+	"context"
 	"strings"
 	"unicode"
 )
@@ -26,6 +27,37 @@ type LLMJudge interface {
 type Judge struct {
 	syn map[string][]string // 规范词 → 同义词组
 	LLM LLMJudge
+}
+
+// ZhipuLLM 真实智谱判分适配器（L2；D-12）。
+type ZhipuLLM struct {
+	Client ZhipuChat // 接口化避免包依赖：由 llmzhipu.Client 满足
+}
+
+// ZhipuChat 智谱最小接口（llmzhipu.Client 满足）。
+type ZhipuChat interface {
+	ChatJSON(ctx context.Context, system, user string, out any) error
+}
+
+// NewZhipu 构造真实 L2。
+func NewZhipu(c ZhipuChat) *ZhipuLLM { return &ZhipuLLM{Client: c} }
+
+// Judge L2 判分（智谱 GLM 真实调用）。
+func (z *ZhipuLLM) Judge(word string, meanings []string, text string) (string, error) {
+	var out struct {
+		Judgment string `json:"judgment"`
+	}
+	sys := "你是单词学习判分器。给定单词、标准中文释义与学生口头回答，判断掌握情况。只输出 JSON：{\"judgment\":\"correct|near|wrong\"}。规则：意思相同=correct；同义/近义=near；无关/不知道/空=wrong。"
+	user := "单词: " + word + "；标准释义: " + strings.Join(meanings, "；") +
+		"；学生回答: \"" + text + "\"。请判分。"
+	if err := z.Client.ChatJSON(context.Background(), sys, user, &out); err != nil {
+		return "", err
+	}
+	switch out.Judgment {
+	case "correct", "near", "wrong":
+		return out.Judgment, nil
+	}
+	return "wrong", nil
 }
 
 // New 构造；syn 同义表（key/value 均为规范词）。
