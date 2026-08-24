@@ -18,6 +18,7 @@ interface Snapshot {
   phase: string
   word?: string
   quiz_word?: string
+  zhMeaning?: string // 教学阶段中英对照（来自 play_tts zh 段文本）
   paused?: boolean
 }
 
@@ -47,17 +48,73 @@ export default function ClassroomPage() {
   const wsRef = useRef<ClassroomWS | null>(null)
   const phaseRef = useRef<string>('show_word')
   const ttsAvail = useRef<boolean>(typeof window !== 'undefined' && 'speechSynthesis' in window)
+  // TTS 完成回执通过 WS 上报（声明在前供 speak 闭包引用）
+  const sendEventRef = useRef<((ev: string, text?: string) => void) | null>(null)
+  const sendVoiceRef = useRef<((text: string) => void) | null>(null)
 
-  const speak = useCallback((text: string, lang: 'en-US' | 'zh-CN') => {
-    // R4-fe#2：REPEATING 阶段禁 TTS（回声抑制）；不可用降级纯视觉（tts_finished 照常由交互驱动）
-    if (phaseRef.current === 'repeating' || !ttsAvail.current) return
+  // ===== TTS 串行播放器（修复：连续段被吞/哑火——cancel+speak 快速连发会杀掉未入队段）=====
+  // 每段排队逐个播（onend 驱动出队），看门狗兜底 onend 失联；tts_finished 每段上报一次。
+  const ttsQueueRef = useRef<Array<{ text: string; lang: 'en-US' | 'zh-CN' }>>([])
+  const ttsBusyRef = useRef(false)
+  const ttsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const segDur = useCallback((text: string, lang: string): number => {
+    const per = lang === 'zh-CN' ? 250 : 300
+    return Math.max(800, text.length * per) + 400
+  }, [])
+
+  // pumpQueue 取队首播放；REPEATING 阶段静默跳过（回声抑制 FE-02）
+  const pumpTts = useCallback(() => {
+    if (ttsBusyRef.current) return
+    const next = ttsQueueRef.current.shift()
+    if (!next) return
+    // 回声抑制：跟读阶段不发声，但流程回执照发（估时）
+    if (phaseRef.current === 'repeating' || !ttsAvail.current) {
+      ttsBusyRef.current = true
+      ttsTimerRef.current = setTimeout(() => {
+        ttsBusyRef.current = false
+        sendEventRef.current?.('tts_finished')
+        pumpTts()
+      }, 40) // 静默段即时完成
+      return
+    }
+    ttsBusyRef.current = true
+    let fired = false
+    const once = () => {
+      if (fired) return
+      fired = true
+      if (ttsTimerRef.current) clearTimeout(ttsTimerRef.current)
+      ttsBusyRef.current = false
+      sendEventRef.current?.('tts_finished')
+      pumpTts() // 链式出队（间隔由后端 ttsIntervalMs 配置，此处紧接）
+    }
     try {
-      const u = new SpeechSynthesisUtterance(text)
-      u.lang = lang
-      u.rate = 0.85
+      const u = new SpeechSynthesisUtterance(next.text)
+      u.lang = next.lang
+      u.rate = next.lang === 'en-US' ? 0.8 : 0.95
+      u.onend = once
+      u.onerror = once
       window.speechSynthesis.speak(u)
+      ttsTimerRef.current = setTimeout(once, segDur(next.text, next.lang) * 2.5) // 看门狗
     } catch {
-      /* 静默降级 */
+      once()
+    }
+  }, [segDur])
+
+  // speak = 入队（保持外部签名；word 参数已内聚在 text）
+  const speak = useCallback(
+    (text: string, lang: 'en-US' | 'zh-CN') => {
+      ttsQueueRef.current.push({ text, lang })
+      pumpTts()
+    },
+    [pumpTts],
+  )
+  // 阶段切换清队列（防旧词语音溢到新词）
+  useEffect(() => {
+    return () => {
+      ttsQueueRef.current = []
+      ttsBusyRef.current = false
+      if (ttsTimerRef.current) clearTimeout(ttsTimerRef.current)
+      try { window.speechSynthesis?.cancel() } catch { /* noop */ }
     }
   }, [])
 
@@ -77,7 +134,7 @@ export default function ClassroomPage() {
         case 'state_snapshot':
           setSnapshot({ phase: f.phase, word: f.word, quiz_word: f.quiz_word, paused: f.paused })
           phaseRef.current = f.phase
-          if (f.word && f.phase === 'show_word') speak(f.word, 'en-US')
+          // 朗读唯一驱动源=play_tts 帧（此快照朗读曾是"英文读两遍"根因——删除）
           break
         case 'phase_changed':
           phaseRef.current = f.phase
@@ -87,12 +144,22 @@ export default function ClassroomPage() {
           const a = f.action ?? {}
           switch (a.type) {
             case 'show_word':
-              setSnapshot((s) => ({ ...(s ?? { phase: 'show_word' }), phase: 'show_word', word: a.word }))
+              setSnapshot((s) => ({ ...(s ?? { phase: 'show_word' }), phase: 'show_word',
+                word: a.word, zhMeaning: undefined })) // 新词清空旧释义
               setJudge(null)
               phaseRef.current = 'show_word'
               break
             case 'play_tts':
               setTtsSeg(a.seg_idx || 1)
+              // Meanings：en 首段即携带中文释义（点击即显示中英对照——原始需求）
+              {
+                const zh = a.lang === 'zh' && a.word ? a.word
+                  : Array.isArray(a.meanings) && a.meanings.length > 0 ? a.meanings[0] : ''
+                if (zh) {
+                  setSnapshot((s) => ({ ...(s ?? { phase: 'tts_seg' }), phase: 'tts_seg',
+                    word: s?.word, zhMeaning: zh }))
+                }
+              }
               if (a.word) speak(a.word, a.lang === 'zh' ? 'zh-CN' : 'en-US')
               break
             case 'start_repeat':
@@ -112,6 +179,11 @@ export default function ClassroomPage() {
               break
             case 'show_cross':
               setJudge('bad')
+              break
+            case 'say_hint': // 两次机会用尽：老师安抚"没关系，记住它，我们继续"
+              setBubble(a.reason === 'give_up_next' ? '没关系，这个词先记住样子，我们继续下一个！' : (a.text ?? ''))
+              setJudge('bad')
+              setTimeout(() => setJudge(null), 1200)
               break
             case 'say':
               setBubble(a.text ?? '')
@@ -166,10 +238,65 @@ export default function ClassroomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonId])
 
-  // 心跳（30s）
-  useEffect(() => {
-    const hb = setInterval(() => wsRef.current?.send({ type: 'heartbeat' }), 30000)
-    return () => clearInterval(hb)
+  // ===== 默认语音监听模式（用户定案：语音是默认作答方式，无需点击按钮）=====
+  // wait_answer 相位自动启动 SpeechRecognition；识别结果→sendVoice（voice_text 管线）。
+  // E2E/不支持环境：window.__TEST_VOICE__ 注入 mock 或降级文本框。
+  const recogRef = useRef<any>(null)
+  const listenActiveRef = useRef(false)
+  const [listening, setListening] = useState(false)
+
+  const stopListening = useCallback(() => {
+    listenActiveRef.current = false
+    setListening(false)
+    try {
+      recogRef.current?.stop()
+    } catch {
+      /* noop */
+    }
+    recogRef.current = null
+  }, [])
+
+  const startListening = useCallback(() => {
+    if (listenActiveRef.current) return
+    // E2E 测试模式：URL 带 ?e2e=1 时禁自动监听（避免 TTS 朗读被拾音→自动提交
+    // 与测试显式提交叠加造成"回答两次"；真实拾音路径由 omni 回环测试覆盖）
+    if (new URLSearchParams(window.location.search).get('e2e') === '1') return
+    const W = window as any
+    const SR = W.SpeechRecognition || W.webkitSpeechRecognition
+    if (!SR) return // 不支持：文本框兜底（输入框已自动聚焦）
+    listenActiveRef.current = true
+    setListening(true)
+    const recog = new SR()
+    recogRef.current = recog
+    recog.lang = 'zh-CN'
+    recog.interimResults = false
+    recog.continuous = false
+    recog.onresult = (ev: any) => {
+      const text = ev.results?.[0]?.[0]?.transcript || ''
+      if (text) sendVoiceRef.current?.(text.trim()) // 语音作答/指令统一管线
+    }
+    recog.onend = () => {
+      // 相位仍在答题且未停止 → 持续监听（用户可以说多次）
+      if (listenActiveRef.current && phaseRef.current === 'wait_answer') {
+        try {
+          recog.start()
+        } catch {
+          /* restart 竞态忽略 */
+        }
+      } else {
+        listenActiveRef.current = false
+        setListening(false)
+      }
+    }
+    recog.onerror = () => {
+      /* onend 会接手重启/停止 */
+    }
+    try {
+      recog.start()
+    } catch {
+      listenActiveRef.current = false
+      setListening(false)
+    }
   }, [])
 
   const sendEvent = (event: string, text?: string) => {
@@ -181,6 +308,7 @@ export default function ClassroomPage() {
         .catch((e) => message.error((e as Error).message))
     }
   }
+  sendEventRef.current = sendEvent // TTS onend 回执上报通道
 
   const sendVoice = (text: string) => {
     if (!wsRef.current?.sendVoiceText(text)) {
@@ -190,9 +318,25 @@ export default function ClassroomPage() {
         .catch((e) => message.error((e as Error).message))
     }
   }
+  sendVoiceRef.current = sendVoice // 语音识别结果上报通道
 
   const phase = snapshot?.phase || 'show_word'
+
+  // 相位驱动：进答题自动开麦；离场停麦（phase 声明之后）
+  useEffect(() => {
+    if (phase === 'wait_answer') {
+      const t = setTimeout(() => startListening(), 300) // 等 UI 稳定
+      return () => clearTimeout(t)
+    }
+    stopListening()
+    return undefined
+  }, [phase, startListening, stopListening])
+  useEffect(() => () => stopListening(), [stopListening])
+
   const bigWord = phase === 'repeating' || phase === 'tts_seg' ? snapshot?.word : snapshot?.quiz_word || snapshot?.word
+  // 教学阶段（tts_seg/repeating）中英对照常显（原始需求：点击后发音并显示汉语意思）；
+  // 答题阶段（wait_answer）不显中文（测试不能看答案）
+  const teachingZh = phase === 'tts_seg' || phase === 'repeating' || phase === 'reteach_show'
   const zhShow = phase === 'reteach_show' || judge === 'bad'
 
   return (
@@ -240,7 +384,13 @@ export default function ClassroomPage() {
                 🔊 第 {ttsSeg} 遍
               </div>
             )}
-            {zhShow && (
+            {/* 教学阶段中英对照（原始需求：学习时显示中英文对照） */}
+            {teachingZh && snapshot?.zhMeaning && (
+              <Typography.Text strong style={{ fontSize: 40, color: '#0D9488' }}>
+                {snapshot.zhMeaning}
+              </Typography.Text>
+            )}
+            {zhShow && !teachingZh && (
               <Typography.Text type="secondary" style={{ fontSize: 24 }}>
                 看中文意思回忆一下
               </Typography.Text>
@@ -294,11 +444,15 @@ export default function ClassroomPage() {
         )}
         {phase === 'wait_answer' && (
           <>
+            {/* 默认语音监听指示（无需点击；识别结果自动提交） */}
+            <Tag color={listening ? 'processing' : 'default'} aria-live="polite">
+              {listening ? '🎙 正在听你说…（说出中文意思即可）' : '语音就绪'}
+            </Tag>
             <Input
               ref={inputRef}
               size="large"
               style={{ width: 320 }}
-              placeholder="输入中文意思"
+              placeholder={listening ? '或直接打字（语音优先）' : '输入中文意思'}
               aria-label="答案输入框"
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
@@ -306,9 +460,6 @@ export default function ClassroomPage() {
             />
             <Button type="primary" size="large" onClick={() => sendEvent('answer_submitted', answer)}>
               回答
-            </Button>
-            <Button size="large" aria-label="语音回答" onClick={() => sendVoice('测试')}>
-              语音回答
             </Button>
           </>
         )}
