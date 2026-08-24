@@ -48,6 +48,15 @@ export default function ClassroomPage() {
   const wsRef = useRef<ClassroomWS | null>(null)
   const phaseRef = useRef<string>('show_word')
   const ttsAvail = useRef<boolean>(typeof window !== 'undefined' && 'speechSynthesis' in window)
+  // voices 预热：Chrome 的语音列表异步加载，未就绪时 speak() 静默失败（曾致"头几个词哑火"）。
+  // 页面加载即触发 getVoices + voiceschanged 监听重取，确保第一词就有声。
+  useEffect(() => {
+    if (!('speechSynthesis' in window)) return
+    const warm = () => { void window.speechSynthesis.getVoices() }
+    warm()
+    window.speechSynthesis.onvoiceschanged = warm
+    return () => { window.speechSynthesis.onvoiceschanged = null }
+  }, [])
   // TTS 完成回执通过 WS 上报（声明在前供 speak 闭包引用）
   const sendEventRef = useRef<((ev: string, text?: string) => void) | null>(null)
   const sendVoiceRef = useRef<((text: string) => void) | null>(null)
@@ -132,7 +141,8 @@ export default function ClassroomPage() {
     (f: Frame) => {
       switch (f.type) {
         case 'state_snapshot':
-          setSnapshot({ phase: f.phase, word: f.word, quiz_word: f.quiz_word, paused: f.paused })
+          setSnapshot({ phase: f.phase, word: f.word, quiz_word: f.quiz_word,
+            zhMeaning: f.zhMeaning, paused: f.paused })
           phaseRef.current = f.phase
           // 朗读唯一驱动源=play_tts 帧（此快照朗读曾是"英文读两遍"根因——删除）
           break
@@ -145,7 +155,7 @@ export default function ClassroomPage() {
           switch (a.type) {
             case 'show_word':
               setSnapshot((s) => ({ ...(s ?? { phase: 'show_word' }), phase: 'show_word',
-                word: a.word, zhMeaning: undefined })) // 新词清空旧释义
+                word: a.word, zhMeaning: a.meanings?.[0] })) // show_word 即带中文（消灭第一屏：直接中英对照）
               setJudge(null)
               phaseRef.current = 'show_word'
               break
@@ -334,9 +344,8 @@ export default function ClassroomPage() {
   useEffect(() => () => stopListening(), [stopListening])
 
   const bigWord = phase === 'repeating' || phase === 'tts_seg' ? snapshot?.word : snapshot?.quiz_word || snapshot?.word
-  // 教学阶段（tts_seg/repeating）中英对照常显（原始需求：点击后发音并显示汉语意思）；
-  // 答题阶段（wait_answer）不显中文（测试不能看答案）
-  const teachingZh = phase === 'tts_seg' || phase === 'repeating' || phase === 'reteach_show'
+  // 教学相位（show_word 起即中英对照——用户定案：不要第一屏，直接显示英文和汉语）
+  const teachingZh = phase === 'show_word' || phase === 'tts_seg' || phase === 'repeating' || phase === 'reteach_show'
   const zhShow = phase === 'reteach_show' || judge === 'bad'
 
   return (

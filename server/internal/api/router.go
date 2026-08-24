@@ -65,6 +65,21 @@ func (a *App) Router() *gin.Engine {
 		c.JSON(http.StatusOK, ok(gin.H{"username": u.Username, "nickname": u.Nickname,
 			"role": string(u.Role), "user_id": u.ID}))
 	})
+	// 修改昵称（含编码防御）
+	authed.POST("/me/nickname", func(c *gin.Context) {
+		var in struct{ Nickname string `json:"nickname"` }
+		if err := c.ShouldBindJSON(&in); err != nil || strings.TrimSpace(in.Nickname) == "" {
+			c.JSON(http.StatusOK, fail(errBadRequest, "nickname required"))
+			return
+		}
+		if err := a.Auth.UpdateNickname(claimsOf(c).Username, in.Nickname); err != nil {
+			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
+			return
+		}
+		a.Log.Info("auth", "nickname_updated", map[string]any{
+			"username": claimsOf(c).Username})
+		c.JSON(http.StatusOK, ok("updated"))
+	})
 
 	// 词库：学生看已发布；管理员全量 CRUD
 	authed.GET("/wordbooks", func(c *gin.Context) {
@@ -173,7 +188,7 @@ func (a *App) Router() *gin.Engine {
 			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
 			return
 		}
-		// 摸底仅英文（C2）
+		// 摸底仅英文（C2）+ 已保存草稿勾选（FR-C4 分次完成：不清空可续选）
 		type w struct {
 			ID int64  `json:"id"`
 			W  string `json:"word"`
@@ -182,7 +197,11 @@ func (a *App) Router() *gin.Engine {
 		for _, e := range es {
 			out = append(out, w{ID: e.ID, W: e.Word})
 		}
-		c.JSON(http.StatusOK, ok(out))
+		draft := a.Sched.PlacementDraft(claimsOf(c).UID, bid)
+		if draft == nil {
+			draft = []int64{}
+		}
+		c.JSON(http.StatusOK, ok(gin.H{"words": out, "knownWordIds": draft}))
 	})
 	student.POST("/books/:bookId/placement", func(c *gin.Context) {
 		bid, _ := strconv.ParseInt(c.Param("bookId"), 10, 64)

@@ -15,8 +15,12 @@ export default function PlacementPage() {
   const PAGE = 100
 
   useEffect(() => {
-    api.get<PWord[]>(`/student/books/${bookId}/placement`)
-      .then(setWords)
+    api.get<{ words: PWord[]; knownWordIds: number[] }>(`/student/books/${bookId}/placement`)
+      .then((r) => {
+        setWords(r.words || [])
+        // 草稿恢复：二次进入不清空已选（FR-C4 用户定案：可续选可取消）
+        setKnown(new Set(r.knownWordIds || []))
+      })
       .catch((e) => message.error((e as Error).message))
   }, [bookId])
 
@@ -105,6 +109,9 @@ export default function PlacementPage() {
       <div style={{ marginTop: 28, display: 'flex', justifyContent: 'space-between' }}>
         <Button size="large" disabled={screen === 0} onClick={() => goScreen(screen - 1)}>
           ← 上一屏
+        </Button>
+        <Button size="large" onClick={() => { submit(false); nav('/books') }}>
+          返回词库广场（进度已保存）
         </Button>
         {screen === screens - 1 ? (
           <Button type="primary" size="large" onClick={() => submit(true)}>

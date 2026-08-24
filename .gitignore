@@ -24,3 +24,4 @@ e2e-dev.log
 web/e2e/results/
 web/e2e/report/
 web/e2e/playwright/.cache/
+web/e2e/results-bugs/

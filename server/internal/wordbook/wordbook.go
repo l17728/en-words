@@ -269,6 +269,10 @@ func (s *Service) CreateBook(name, grade, description string) (*Book, error) {
 	if !validGrades[grade] {
 		return nil, fmt.Errorf("%w: bad grade %q", ErrInvalidInput, grade)
 	}
+	// R16-编码防御：坏编码词库名拒绝入库（防前端显示 ??? 一类问题）
+	if strings.ContainsAny(name+description, "\uFFFD") || strings.Contains(name, "??") {
+		return nil, fmt.Errorf("%w: name/description contains invalid encoding (send UTF-8 with charset=utf-8)", ErrInvalidInput)
+	}
 	b := &Book{Name: name, Grade: grade, Description: description, Status: StatusDraft}
 	if err := s.repo.CreateBook(b); err != nil {
 		return nil, err

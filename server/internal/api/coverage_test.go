@@ -69,13 +69,16 @@ func TestCov_MeWordsPlacementGet(t *testing.T) {
 	resp = req2(t, app.Router(), "GET", "/api/v1/wordbooks/999/words", stok, nil)
 	assert.Equal(t, errBadRequest, resp.Code)
 
-	// 摸底词表（仅英文 C2）
+	// 摸底词表（仅英文 C2 + 草稿恢复字段 R17）
 	resp = req2(t, app.Router(), "GET", "/api/v1/student/books/"+itoa64(bid)+"/placement", stok, nil)
 	require.Equal(t, 0, resp.Code)
-	list, _ := resp.Data.([]any)
+	pm, _ := resp.Data.(map[string]any)
+	list, _ := pm["words"].([]any)
 	require.Len(t, list, 2)
 	w0, _ := list[0].(map[string]any)
 	assert.Equal(t, "apple", w0["word"])
+	draft, _ := pm["knownWordIds"].([]any)
+	assert.Empty(t, draft, "未摸底无草稿")
 
 	_ = uid
 }

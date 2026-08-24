@@ -135,8 +135,15 @@ func (r *Room) snapshotLocked() Msg {
 		"lesson_id": r.lessonID, "phase": phase,
 		"paused": r.machine.Paused(),
 	}
-	if phase == classroom.PhaseShowWord {
-		m["word"] = r.machine.CurrentWord().Word
+	// 教学相位（show/tts/repeating/reteach）补全 word+zhMeaning：
+	// 重进课堂任何相位都能立即渲染完整中英对照（修复"重进只有…"）
+	w := r.machine.CurrentWord()
+	switch phase {
+	case classroom.PhaseShowWord, classroom.PhaseTTSSeg, classroom.PhaseRepeating, classroom.PhaseReteachShow:
+		m["word"] = w.Word
+		if len(w.Meanings) > 0 {
+			m["zhMeaning"] = w.Meanings[0]
+		}
 	}
 	if it, ok := r.currentItemView(); ok {
 		m["quiz_word"] = it.Word

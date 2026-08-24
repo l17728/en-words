@@ -63,17 +63,30 @@ export default function DashboardPage() {
         {books.length === 0 ? (
           <Typography.Text type="secondary">还没有词库，去 <a onClick={() => nav('/books')}>词库广场</a> 选一个吧</Typography.Text>
         ) : (
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
             {books.map((b) => (
-              <Card.Grid
+              <div
                 key={b.ID}
-                style={{ width: '31%', cursor: 'pointer', padding: 16 }}
-                hoverable
+                role="button"
+                tabIndex={0}
+                aria-label={`查看 ${b.Name} 的课程`}
                 onClick={() => pick(b)}
+                onKeyDown={(e) => e.key === 'Enter' && pick(b)}
+                style={{
+                  padding: 16,
+                  background: '#fff',
+                  border: '1px solid #E5EAEC',
+                  borderRadius: 10,
+                  cursor: 'pointer',
+                  minHeight: 44,
+                  transition: 'all .15s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#14B8A6')}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#E5EAEC')}
               >
                 <b>{b.Name}</b>
                 <div style={{ color: '#5C6B73', marginTop: 4 }}>{b.WordCount} 个词</div>
-              </Card.Grid>
+              </div>
             ))}
           </div>
         )}

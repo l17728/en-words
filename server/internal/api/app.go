@@ -191,6 +191,10 @@ func (a *App) EnableBook(studentID, bookID int64) error {
 		return err
 	}
 	for _, e := range entries {
+		// 幂等（R17 类）：卡已存在（含已摸底 mastered）跳过——重复 enable 不得抹掉摸底结果
+		if _, err := a.Sched.GetCard(studentID, bookID, e.ID); err == nil {
+			continue
+		}
 		if err := a.Sched.SeedCard(studentID, bookID, e.ID); err != nil {
 			return err
 		}
@@ -199,11 +203,16 @@ func (a *App) EnableBook(studentID, bookID int64) error {
 }
 
 // PlacementSubmit 摸底提交（known=已会词 entryID；finish=true 触发首课）。
+// 用户定案（2026-08-23）：重新摸底完成 = 覆盖旧摸底结果并重排学习计划——
+// 未开始的课作废+批次卡重置（ResetForReplacement），再以新摸底结果排新课。
 func (a *App) PlacementSubmit(studentID, bookID int64, known []int64, finish bool) error {
 	if err := a.Sched.MarkPlacement(studentID, bookID, known); err != nil {
 		return err
 	}
 	if finish {
+		if err := a.Sched.ResetForReplacement(studentID, bookID); err != nil {
+			return err
+		}
 		l, err := a.Sched.PlanNext(studentID, bookID)
 		if err != nil {
 			return err

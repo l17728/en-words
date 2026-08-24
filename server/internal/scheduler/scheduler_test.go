@@ -34,7 +34,38 @@ func (s *Service) seedWords(t *testing.T, sid, bid int64, ids ...int64) {
 
 var day = 24 * time.Hour
 
-// ---- SC-01: 摸底 → 首课 ----
+// ---- R17（用户 2026-08-23 BUG 定案）：重新摸底覆盖语义 ----
+
+// 摸底草稿保存与恢复（FR-C4：二次进入不清空）
+func TestPlacementDraftPersist(t *testing.T) {
+	s, _, _ := newSched(t)
+	s.seedWords(t, 7, 1, 1, 2, 3)
+	require.NoError(t, s.MarkPlacement(7, 1, []int64{1, 2})) // 中间保存（不 finish）
+	draft := s.PlacementDraft(7, 1)
+	require.Equal(t, []int64{1, 2}, draft, "草稿保存")
+	// 覆盖式更新
+	require.NoError(t, s.MarkPlacement(7, 1, []int64{1, 3}))
+	assert.Equal(t, []int64{1, 3}, s.PlacementDraft(7, 1), "草稿覆盖为最新勾选")
+}
+
+// 取消勾选的词回退 new（点错了可取消——覆盖语义核心）
+func TestPlacementUncheckReverts(t *testing.T) {
+	s, _, _ := newSched(t)
+	s.seedWords(t, 7, 1, 1, 2, 3)
+	require.NoError(t, s.MarkPlacement(7, 1, []int64{1, 2}))
+	c1, _ := s.repo.GetCard(7, 1, 1)
+	c2, _ := s.repo.GetCard(7, 1, 2)
+	assert.Equal(t, StatusMastered, c1.Status)
+	assert.Equal(t, StatusMastered, c2.Status)
+	// 重新摸底：取消词 2，新增词 3
+	require.NoError(t, s.MarkPlacement(7, 1, []int64{1, 3}))
+	c1, _ = s.repo.GetCard(7, 1, 1)
+	c2, _ = s.repo.GetCard(7, 1, 2)
+	c3, _ := s.repo.GetCard(7, 1, 3)
+	assert.Equal(t, StatusMastered, c1.Status, "仍勾选保持")
+	assert.Equal(t, StatusNew, c2.Status, "取消勾选回退 new（BUG 修复锁定）")
+	assert.Equal(t, StatusMastered, c3.Status, "新勾选生效")
+}
 
 func TestPlacementFirstLesson(t *testing.T) {
 	s, clk, _ := newSched(t)

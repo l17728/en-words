@@ -194,12 +194,15 @@ type Service struct {
 	clock Clock
 	// finishedAt 记录每课实际完成时间（内存版；GORM 版存 lessons.finished_at）
 	finishedAt map[int64]time.Time
+	// placementDrafts 摸底草稿（多次完成 FR-C4；GORM 版存 placements 表）
+	placementDrafts map[placementKey][]int64
 	// OnPlanned 排课成功钩子（§14 排课日志：api 装配层注入；可为 nil）
 	OnPlanned func(studentID, bookID int64, l *Lesson)
 }
 
 func NewService(repo Repo, cfg LadderSource, clock Clock) *Service {
-	return &Service{repo: repo, cfg: cfg, clock: clock, finishedAt: map[int64]time.Time{}}
+	return &Service{repo: repo, cfg: cfg, clock: clock, finishedAt: map[int64]time.Time{},
+		placementDrafts: map[placementKey][]int64{}}
 }
 
 // interval 安全取阶梯值（防配置缩短越界）。
@@ -256,18 +259,56 @@ func (s *Service) BoostWord(studentID, bookID, wordID int64) error {
 	return s.repo.Boost(studentID, bookID, wordID)
 }
 
-// MarkPlacement 摸底结算：勾选词 mastered，其余保持 new。
-func (s *Service) MarkPlacement(studentID, bookID int64, knownWordIDs []int64) error {	known := map[int64]bool{}
+// ResetForReplacement 重新摸底后的计划重置（用户定案 2026-08-23 BUG-5）：
+// 作废全部未开始的 scheduled 课（含重排生成的），并把对应批次的学习卡回退 new
+// （NextDueAt/Boost 清空）——重新摸底结果以全新状态重建计划。
+// 已开始/已完成的课与其卡片不动（历史保留）。
+func (s *Service) ResetForReplacement(studentID, bookID int64) error {
+	lessons, err := s.repo.ListLessons(studentID, bookID)
+	if err != nil {
+		return err
+	}
+	for _, l := range lessons {
+		if l.Status != LessonScheduledStr {
+			continue
+		}
+		l.Status = "voided_replacement"
+		if err := s.repo.SaveLesson(l); err != nil {
+			return err
+		}
+		// 批次卡回退 new
+		for _, wid := range l.BatchWordIDs {
+			if c, err := s.repo.GetCard(studentID, bookID, wid); err == nil {
+				c.Status = StatusNew
+				c.NextDueAt = nil
+				c.BoostFlag = false
+				if err := s.repo.SaveCard(c); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+// MarkPlacement 摸底结算：勾选词 mastered，**取消勾选的回退 new**（覆盖语义——
+// 用户定案：重新摸底以最新勾选为准，点错的可取消）。
+// 草稿保存（FR-C4 分次完成）：不 finish 也保存当前勾选。
+func (s *Service) MarkPlacement(studentID, bookID int64, knownWordIDs []int64) error {
+	known := map[int64]bool{}
 	for _, id := range knownWordIDs {
 		known[id] = true
 	}
+	s.placementDrafts[placementKey{studentID, bookID}] = knownWordIDs
 	cards, err := s.repo.ListCards(studentID, bookID)
 	if err != nil {
 		return err
 	}
 	for _, c := range cards {
-		if known[c.WordID] {
+		switch {
+		case known[c.WordID] && c.Status == StatusNew:
 			c.Status = StatusMastered
+		case !known[c.WordID] && c.Status == StatusMastered:
+			c.Status = StatusNew // 取消勾选回退（教学中的卡不动）
 		}
 		if err := s.repo.SaveCard(c); err != nil {
 			return err
@@ -275,6 +316,13 @@ func (s *Service) MarkPlacement(studentID, bookID int64, knownWordIDs []int64) e
 	}
 	return nil
 }
+
+// PlacementDraft 读取摸底草稿（已勾选词 ID；无草稿返回 nil）。
+func (s *Service) PlacementDraft(studentID, bookID int64) []int64 {
+	return s.placementDrafts[placementKey{studentID, bookID}]
+}
+
+type placementKey struct{ studentID, bookID int64 }
 
 // mainlineStep 主线 step = 未毕业词(learning) LadderStep 的中位数（R2-04）。
 func (s *Service) mainlineStep(cards []*Card) int {

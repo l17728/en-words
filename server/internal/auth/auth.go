@@ -84,9 +84,14 @@ func newSalt() string {
 }
 
 // CreateUser 创建用户（username 唯一）。
+// R16-编码防御：昵称含 U+FFFD（�）或连续 '?' 的 GBK/UTF-8 错解码残迹时拒绝——
+// 消灭"坏编码昵称入库后前端显示 ???"这一类问题（PowerShell GBK Body 直发的实测根因）。
 func (s *Service) CreateUser(username, password, nickname string, role Role) (*User, error) {
 	if strings.TrimSpace(username) == "" || strings.TrimSpace(password) == "" {
 		return nil, fmt.Errorf("auth: username/password required")
+	}
+	if strings.ContainsAny(nickname, "\uFFFD") || strings.Contains(nickname, "??") {
+		return nil, fmt.Errorf("auth: nickname contains invalid encoding (must be valid UTF-8, e.g. send with charset=utf-8)")
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -182,6 +187,21 @@ func (s *Service) Disable(username string) error {
 		return fmt.Errorf("auth: user %q not found", username)
 	}
 	u.Status = "disabled"
+	return nil
+}
+
+// UpdateNickname 修改昵称（含同编码防御）。
+func (s *Service) UpdateNickname(username, nickname string) error {
+	if strings.ContainsAny(nickname, "\uFFFD") || strings.Contains(nickname, "??") {
+		return fmt.Errorf("auth: nickname contains invalid encoding")
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	u, ok := s.users[username]
+	if !ok {
+		return fmt.Errorf("auth: user %q not found", username)
+	}
+	u.Nickname = nickname
 	return nil
 }
 
