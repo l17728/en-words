@@ -17,11 +17,22 @@ import (
 func main() {
 	port := flag.Int("port", 8080, "listen port")
 	testmode := flag.Bool("testmode", false, "test mode (in-memory everything, no seed)")
+	providers := flag.String("providers", "mock", "mock | real（real=智谱 GLM 判分L2+反馈解析，secrets 密钥）")
 	flag.Parse()
 
 	app := api.NewApp(nil)
 	log := obs.New(os.Stdout)
 	app.SetLogger(log)
+	if *testmode {
+		app.SetTestMode()
+		log.Info("main", "testmode_enabled", nil)
+	}
+	if *providers == "real" {
+		if err := app.EnableRealProviders(); err != nil {
+			log.Error("main", "real_providers_failed", map[string]any{"error": err.Error()})
+			os.Exit(1) // fail-fast：要求真实却配不了=配置错误
+		}
+	}
 
 	// 首启自动播种（SDD §17：无 admin = 第一次运行 → 种子词库就位，双击即用）
 	if !app.Auth.HasAdmin() {

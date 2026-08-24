@@ -3,6 +3,11 @@
 package api
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -12,6 +17,7 @@ import (
 	"enwords/internal/config"
 	"enwords/internal/feedback"
 	"enwords/internal/judge"
+	"enwords/internal/llmzhipu"
 	"enwords/internal/memory"
 	"enwords/internal/obs"
 	"enwords/internal/scheduler"
@@ -50,8 +56,70 @@ type App struct {
 	nextNotifID int64
 	feedbackRecs []FeedbackRecord
 	nextFeedbackID int64
+	TestMode bool // -testmode：跳过课程开放时间校验（E2E 用）
 	mu      sync.Mutex
 }
+
+// SetTestMode 开启测试模式。
+func (a *App) SetTestMode() { a.TestMode = true }
+
+// EnableRealProviders 接入真实大模型 Provider（智谱 GLM：判分 L2 + 反馈解析；
+// 规则 L1 保留为兜底，LLM 失败自动降级——课堂永不因外部 API 阻塞）。
+// 密钥从 secrets/dashscope.local.yaml 的 zhipu: 段读取（严禁入库出日志）。
+func (a *App) EnableRealProviders() error {
+	key, baseURL, model, err := loadZhipuSecrets()
+	if err != nil {
+		return err
+	}
+	zc := llmzhipu.New(key, baseURL, model)
+	a.Judge.LLM = judge.NewZhipu(zc)                      // L2 真实判分
+	a.FB.SetLLM(feedback.NewZhipuParser(zc))               // LLM 意图解析
+	a.Log.Info("providers", "real_providers_enabled", map[string]any{
+		"llm": model, "judge": "zhipu_l2", "feedback": "zhipu_llm"})
+	return nil
+}
+
+// loadZhipuSecrets 读 secrets 的 zhipu 段（多段 yaml 手工切分，不引依赖）。
+func loadZhipuSecrets() (key, baseURL, model string, err error) {
+	for _, p := range []string{
+		filepath.Join("secrets", "dashscope.local.yaml"),
+		filepath.Join("..", "secrets", "dashscope.local.yaml"),
+		filepath.Join("..", "..", "secrets", "dashscope.local.yaml"),
+	} {
+		raw, e := os.ReadFile(p)
+		if e != nil {
+			continue
+		}
+		c := string(raw)
+		i := strings.Index(c, "zhipu:")
+		if i < 0 {
+			continue
+		}
+		seg := c[i:]
+		if m := regexpZhipuKey.FindStringSubmatch(seg); m != nil && m[1] != "" {
+			key = m[1]
+		}
+		if m := regexpZhipuURL.FindStringSubmatch(seg); m != nil && m[1] != "" {
+			baseURL = m[1]
+		}
+		if m := regexpZhipuModel.FindStringSubmatch(seg); m != nil && m[1] != "" {
+			model = m[1]
+		}
+		if key != "" && baseURL != "" {
+			if model == "" {
+				model = "glm-4-flash"
+			}
+			return key, baseURL, model, nil
+		}
+	}
+	return "", "", "", fmt.Errorf("secrets zhipu 段未配置")
+}
+
+var (
+	regexpZhipuKey   = regexp.MustCompile(`api_key:\s*"([^"]+)"`)
+	regexpZhipuURL   = regexp.MustCompile(`base_url:\s*"([^"]+)"`)
+	regexpZhipuModel = regexp.MustCompile(`model:\s*"([^"]+)"`)
+)
 
 // Ticket 课堂连接票据（AR-01/R2：绑定 lesson+student，课堂生命周期内可复用）。
 type Ticket struct {
@@ -136,10 +204,23 @@ func (a *App) PlacementSubmit(studentID, bookID int64, known []int64, finish boo
 		return err
 	}
 	if finish {
-		_, err := a.Sched.PlanNext(studentID, bookID)
-		return err
+		l, err := a.Sched.PlanNext(studentID, bookID)
+		if err != nil {
+			return err
+		}
+		a.openNowIfTestMode(l)
 	}
 	return nil
+}
+
+// openNowIfTestMode testmode 下把课拨到当前时刻（E2E：前端"还没到时间"禁用态自然放行）。
+func (a *App) openNowIfTestMode(l *scheduler.Lesson) {
+	if !a.TestMode || l == nil || l.Status != scheduler.LessonScheduledStr {
+		return
+	}
+	l.OpenAt = a.Clock.Now()
+	_ = a.Sched.SaveLesson(l)
+	a.Sched.ReserveCards(l.StudentID, l.BookID, l.BatchWordIDs, l.OpenAt)
 }
 
 // SetLogger 注入生产日志器（main/测试用；默认 Nop）。

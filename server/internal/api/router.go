@@ -249,13 +249,13 @@ func (a *App) Router() *gin.Engine {
 	cr := authed.Group("/classroom", a.roleMW(auth.RoleStudent))
 	cr.POST("/lessons/:id/enter", func(c *gin.Context) {
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-		// 开放时间校验（D1）
+		// 开放时间校验（D1；-testmode 跳过：E2E 可立即上课）
 		lesson, err := a.Sched.Lesson(id)
 		if err != nil {
 			c.JSON(http.StatusOK, fail(errNotFound, "lesson not found"))
 			return
 		}
-		if a.Clock.Now().Before(lesson.OpenAt) {
+		if !a.TestMode && a.Clock.Now().Before(lesson.OpenAt) {
 			c.JSON(http.StatusOK, fail(errForbidden, "lesson not open yet"))
 			return
 		}

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"enwords/internal/tools"
@@ -45,7 +46,27 @@ type Resp struct {
 	Data any    `json:"data,omitempty"`
 }
 
-func ok(c any) Resp    { return Resp{Code: 0, Msg: "ok", Data: c} }
+func ok(c any) Resp {
+	return Resp{Code: 0, Msg: "ok", Data: nonNilSlice(c)}
+}
+
+// nonNilSlice 消灭 Go nil slice → JSON null 的前端炸弹：
+// 空 slice 序列化为 null 时前端 .filter/.map/.length 全崩（E2E 实测发现）。
+// 统一在响应包装层把 nil slice 替换为对应类型的空数组。
+func nonNilSlice(v any) any {
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Slice, reflect.Array:
+		if rv.IsNil() {
+			return reflect.MakeSlice(rv.Type(), 0, 0).Interface()
+		}
+	case reflect.Map:
+		if rv.IsNil() {
+			return reflect.MakeMap(rv.Type()).Interface()
+		}
+	}
+	return v
+}
 func fail(code int, msg string) Resp {
 	return Resp{Code: code, Msg: msg}
 }

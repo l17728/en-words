@@ -402,7 +402,11 @@ func (s *Service) planNext(studentID, bookID int64) (*Lesson, error) {
 	return l, nil
 }
 
-// reserveCards 约课到课：NextDueAt=lessonTime。
+// ReserveCards 约课到课：NextDueAt=lessonTime（api 装配层 testmode 重拨时复用）。
+func (s *Service) ReserveCards(studentID, bookID int64, batch []int64, at time.Time) {
+	s.reserveCards(studentID, bookID, batch, at)
+}
+
 func (s *Service) reserveCards(studentID, bookID int64, batch []int64, at time.Time) {
 	for _, w := range batch {
 		if c, err := s.repo.GetCard(studentID, bookID, w); err == nil {
