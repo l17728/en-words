@@ -7,20 +7,45 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
 	"enwords/internal/api"
 	"enwords/internal/obs"
+	"enwords/internal/store"
+
+	"gorm.io/gorm"
 )
 
 func main() {
 	port := flag.Int("port", 8080, "listen port")
 	testmode := flag.Bool("testmode", false, "test mode (in-memory everything, no seed)")
 	providers := flag.String("providers", "mock", "mock | real（real=智谱 GLM 判分L2+反馈解析，secrets 密钥）")
+	dbPath := flag.String("db", "", "SQLite 路径（空=纯内存；默认 data/enwords.db 当 -persist）")
+	persist := flag.Bool("persist", false, "启用 SQLite 持久化（等价 -db data/enwords.db）")
 	flag.Parse()
 
-	app := api.NewApp(nil)
+	// 持久化决策：-db 指定路径 或 -persist 默认路径
+	var db *gorm.DB
+	if *dbPath != "" || *persist {
+		p := *dbPath
+		if p == "" {
+			p = filepath.Join("data", "enwords.db")
+		}
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			fmt.Println("mkdir fail:", err)
+			os.Exit(1)
+		}
+		var err error
+		db, err = store.Open(p)
+		if err != nil {
+			fmt.Println("open db fail:", err)
+			os.Exit(1) // fail-fast
+		}
+	}
+
+	app := api.NewApp(nil, db)
 	log := obs.New(os.Stdout)
 	app.SetLogger(log)
 	if *testmode {

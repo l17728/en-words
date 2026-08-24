@@ -399,6 +399,7 @@ func (a *App) Router() *gin.Engine {
 			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
 			return
 		}
+		a.persistUser(in.Username) // 持久化落库（重启不丢账号——R18）
 		c.JSON(http.StatusOK, ok(u))
 	})
 	admin.GET("/audit", func(c *gin.Context) {

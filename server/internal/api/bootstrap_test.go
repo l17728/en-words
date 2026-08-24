@@ -18,7 +18,7 @@ import (
 
 // newBareApp 裸 App（无预建账号——向导测试需要真正的"首次启动"状态）。
 func newBareApp() *App {
-	return NewApp(&fakeClock{t: time.Date(2026, 8, 23, 10, 0, 0, 0, time.UTC)})
+	return NewApp(&fakeClock{t: time.Date(2026, 8, 23, 10, 0, 0, 0, time.UTC)}, nil)
 }
 
 func TestBootstrapWizard(t *testing.T) {

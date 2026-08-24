@@ -52,6 +52,7 @@ func (a *App) registerBootstrap(r *gin.RouterGroup) {
 			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
 			return
 		}
+		a.persistUser(in.Username) // 持久化落库（bootstrap admin 重启不丢——R18）
 		a.Log.Info("bootstrap", "admin_created", map[string]any{"username": in.Username})
 		c.JSON(http.StatusOK, ok("admin created"))
 	})

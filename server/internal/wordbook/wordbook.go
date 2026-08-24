@@ -274,6 +274,9 @@ func (s *Service) CreateBook(name, grade, description string) (*Book, error) {
 		return nil, fmt.Errorf("%w: name/description contains invalid encoding (send UTF-8 with charset=utf-8)", ErrInvalidInput)
 	}
 	b := &Book{Name: name, Grade: grade, Description: description, Status: StatusDraft}
+	if nid, ok := s.repo.(interface{ NextBookID() int64 }); ok {
+		b.ID = nid.NextBookID() // SQLite 自增（内存版 CreateBook 内部分配）
+	}
 	if err := s.repo.CreateBook(b); err != nil {
 		return nil, err
 	}
@@ -333,6 +336,11 @@ func (s *Service) AddEntry(bookID int64, in EntryInput) (*Entry, error) {
 		return nil, ErrDuplicateWord
 	}
 	e.BookID = bookID
+	if e.ID == 0 {
+		if nid, ok := s.repo.(interface{ NextEntryID() int64 }); ok {
+			e.ID = nid.NextEntryID() // SQLite 自增（内存版 repo.CreateEntry 自分配）
+		}
+	}
 	if err := s.repo.CreateEntry(e); err != nil {
 		return nil, err
 	}
@@ -409,6 +417,11 @@ func (s *Service) ImportBatch(bookID int64, ins []EntryInput) (*ImportResult, er
 			continue
 		}
 		e.BookID = bookID
+		if e.ID == 0 {
+			if nid, ok := s.repo.(interface{ NextEntryID() int64 }); ok {
+				e.ID = nid.NextEntryID() // SQLite 自增
+			}
+		}
 		if err := s.repo.CreateEntry(e); err != nil {
 			res.Skipped = append(res.Skipped, in.Word)
 			continue

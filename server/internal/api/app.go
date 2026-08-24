@@ -22,8 +22,11 @@ import (
 	"enwords/internal/obs"
 	"enwords/internal/scheduler"
 	"enwords/internal/scripts"
+	"enwords/internal/store"
 	"enwords/internal/tools"
 	"enwords/internal/wordbook"
+
+	"gorm.io/gorm"
 )
 
 // Clock 可注入时钟（测试快进；生产 RealClock）。
@@ -57,11 +60,23 @@ type App struct {
 	feedbackRecs []FeedbackRecord
 	nextFeedbackID int64
 	TestMode bool // -testmode：跳过课程开放时间校验（E2E 用）
+	DB *gorm.DB   // SQLite 持久化句柄（nil=纯内存模式）
 	mu      sync.Mutex
 }
 
 // SetTestMode 开启测试模式。
 func (a *App) SetTestMode() { a.TestMode = true }
+
+// persistUser 持久化模式落库（router/extra 共用；nil DB 时 no-op）。
+func (a *App) persistUser(username string) {
+	if a.DB == nil {
+		return
+	}
+	if err := store.NewAuthStore(a.DB).SaveUser(a.Auth, username); err != nil {
+		a.Log.Warn("store", "user_save_failed", map[string]any{
+			"username": username, "error": err.Error()})
+	}
+}
 
 // EnableRealProviders 接入真实大模型 Provider（智谱 GLM：判分 L2 + 反馈解析；
 // 规则 L1 保留为兜底，LLM 失败自动降级——课堂永不因外部 API 阻塞）。
@@ -129,22 +144,35 @@ type Ticket struct {
 }
 
 // NewApp 装配（默认真实时钟；测试传 FakeClock）。
-func NewApp(clock Clock) *App {
+// db 非 nil 时启用 SQLite 持久化（wordbook/scheduler/auth + 通知/反馈/课报/快照落库）。
+func NewApp(clock Clock, db *gorm.DB) *App {
 	if clock == nil {
 		clock = scheduler.RealClock{}
 	}
+	var bookRepo wordbook.Repo = wordbook.NewMemRepo()
+	var schedRepo scheduler.Repo = scheduler.NewMemRepo()
+	if db != nil {
+		bookRepo = store.NewWordbookRepo(db)
+		schedRepo = store.NewSchedulerRepo(db)
+	}
 	cfgStore, _ := config.NewStore(nil, nil)
-	sched := scheduler.NewService(scheduler.NewMemRepo(), cfgStore, clock)
+	sched := scheduler.NewService(schedRepo, cfgStore, clock)
 	bank := scripts.NewBank()
 	bank.SeedAll()
 	mem := memory.NewService(memory.NewMemRepo())
 	fb := feedback.NewParser(clock.Now)
 	authSvc := auth.NewService("enwords-dev-secret", 7*24*time.Hour)
 	authSvc.EnsureAgentAccounts()
+	restoredUsers := 0
+	if db != nil { // 持久化：启动加载全部用户（重启不丢账号）
+		if n, err := store.NewAuthStore(db).LoadAll(authSvc); err == nil {
+			restoredUsers = n
+		}
+	}
 	toolAudit := &tools.MemAuditor{}
 	app := &App{
 		Auth:      authSvc,
-		Books:     wordbook.NewService(wordbook.NewMemRepo()),
+		Books:     wordbook.NewService(bookRepo),
 		Cfg:       cfgStore,
 		Sched:     sched,
 		Judge:     judge.New(judge.DefaultSynonyms()),
@@ -159,6 +187,9 @@ func NewApp(clock Clock) *App {
 		Clock:     clock,
 		tickets:   map[string]*Ticket{},
 	}
+	if restoredUsers > 0 {
+		app.Log.Info("store", "users_restored", map[string]any{"count": restoredUsers})
+	}
 	// §14 排课日志钩子（logger 在 SetLogger 注入后生效；这里闭包引用 app.Log）
 	sched.OnPlanned = func(studentID, bookID int64, l *scheduler.Lesson) {
 		app.Log.Info("scheduler", "lesson_planned", map[string]any{
@@ -172,6 +203,7 @@ func NewApp(clock Clock) *App {
 	}
 	app.Rooms = NewHub(app)
 	app.registerTools()
+	app.DB = db
 	return app
 }
 

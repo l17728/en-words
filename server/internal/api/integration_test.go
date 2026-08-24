@@ -30,7 +30,7 @@ func tAdd(t time.Time, d time.Duration) time.Time { return t.Add(d) }
 func newTestApp(t *testing.T) (*App, *fakeClock) {
 	t.Helper()
 	clk := &fakeClock{t: time.Date(2026, 8, 23, 10, 0, 0, 0, time.UTC)}
-	app := NewApp(clk)
+	app := NewApp(clk, nil)
 	_, err := app.Auth.CreateUser("admin", "adminpw", "管理员", auth.RoleAdmin)
 	require.NoError(t, err)
 	return app, clk

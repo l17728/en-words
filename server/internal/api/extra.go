@@ -96,6 +96,7 @@ func (a *App) registerUserRoutes(g *gin.RouterGroup) {
 			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
 			return
 		}
+		a.persistUser(c.Param("username")) // 持久化（R18：重置后落库）
 		a.Log.Info("auth", "password_reset", map[string]any{
 			"operator": claimsOf(c).Username, "target": c.Param("username")})
 		c.JSON(http.StatusOK, ok("reset"))
