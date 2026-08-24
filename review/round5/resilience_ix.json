@@ -1,0 +1,48 @@
+{
+ "model": "qwen-plus",
+ "kb": 57,
+ "problems": [
+  {
+   "severity": "P0",
+   "where": "ClassroomPage: useEffect cleanup (TTS queue)",
+   "problem": "TTS 队列清理副作用在组件卸载时执行，但未清除 pending setTimeout（ttsTimerRef），导致内存泄漏及可能的 onend 回调在已卸载组件上调用 setState（React 18 严格模式下会报错或静默失败）；且 ttsBusyRef.current = false 未同步重置，下次进入课堂可能因 busy 状态卡住首段播放。",
+   "fix": "在 useEffect 清理函数中增加 clearTimeout(ttsTimerRef.current) 和 ttsBusyRef.current = false；同时确保 pumpTts 入口检查 !ttsBusyRef.current && ttsQueueRef.current.length > 0"
+  },
+  {
+   "severity": "P1",
+   "where": "ClassroomPage: handleFrame → 'show_word' case",
+   "problem": "'show_word' 帧处理中直接 setSnapshot 并覆盖 zhMeaning，但未校验 a.meanings?.[0] 是否存在，若后端传空数组或 undefined，会导致 snapshot.zhMeaning = undefined，进而 teachingZh 分支渲染空中文（用户看到单词但无释义），违反‘show_word 即中英对照’需求；且该分支未 fallback 到 machine 当前词的 Meanings。",
+   "fix": "将 a.meanings?.[0] 替换为 (Array.isArray(a.meanings) && a.meanings.length > 0 ? a.meanings[0] : w?.Meanings?.[0] ?? '')，其中 w 可从当前 snapshot.word 关联的 classroom.Word 补全（需在 handleFrame 外部注入或通过 phaseRef.current === 'show_word' 时主动 fetch）"
+  },
+  {
+   "severity": "P1",
+   "where": "ClassroomPage: TTS 播放逻辑（pumpTts）",
+   "problem": "REPEATING 阶段静默跳过 TTS 时，仅设置 40ms 定时器模拟完成，但未同步更新 phaseRef.current 或 snapshot.phase，导致后续帧（如 play_tts）仍可能被误判为非 REPEATING 而触发 speak；且静默段上报 tts_finished 后未重置 ttsBusyRef，破坏串行队列状态机。",
+   "fix": "在 REPEATING 分支中显式调用 sendEventRef.current?.('tts_finished') 并立即 pumpTts()，同时确保 ttsBusyRef.current = false 在 timeout 内执行；移除重复的 pumpTts() 调用，改为统一由 once() 驱动"
+  },
+  {
+   "severity": "P1",
+   "where": "DashboardPage: books map rendering",
+   "problem": "词库卡片 onClick/pick 未做 loading 状态反馈，网络延迟或错误时用户点击无响应，易误认为按钮失效；且 pick 成功后未清空 lessons 状态，若上次请求失败残留旧数据，新请求成功后可能显示混合课程列表。",
+   "fix": "在 pick 函数内添加 setLessons([]) 初始化，并在 api.get.then 前加 loading 状态（如 Button loading 属性或全局 message.loading）；catch 中保留 error message 且不重置 lessons"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/api/hub.go: Room.snapshotLocked",
+   "problem": "snapshotLocked 中对 quiz_word 的赋值依赖 currentItemView()，但该函数在非 quiz 相位（如 show_word）返回空结构体，导致 quiz_word 字段缺失；而 ClassroomPage 中 bigWord 逻辑依赖 snapshot?.quiz_word || snapshot?.word，若 quiz_word 为 undefined 会 fallback 错误 word（如 show_word 相位本应显示当前教学词，却 fallback 到 snapshot.word，但 snapshot.word 在非 show_word 相位可能为空）。",
+   "fix": "在 snapshotLocked 中，无论相位均确保 quiz_word 存在：若 currentItemView 返回有效 it，则设 quiz_word = it.Word；否则设 quiz_word = r.machine.CurrentWord().Word（保证所有相位都有可渲染的 quiz_word）"
+  },
+  {
+   "severity": "P2",
+   "where": "ClassroomPage: voice recognition restart logic",
+   "problem": "onend 回调中重启 recog.start() 时未检查 listenActiveRef.current 是否仍为 true，且未处理 Chrome 下连续 start() 抛异常（'SpeechRecognition already started'），导致监听中断后无法自动恢复，用户需手动刷新。",
+   "fix": "在 onend 回调中增加 if (listenActiveRef.current && phaseRef.current === 'wait_answer') { try { recog.start() } catch (e) { console.warn('recog restart failed', e); stopListening() } }"
+  },
+  {
+   "severity": "P2",
+   "where": "server/internal/judge/judge.go: Level1",
+   "problem": "enMatch 对英文回答的 token 匹配未归一化目标词（normEn(target) 已做），但对回答文本的 token 未做 normEn 处理（仅 trimPrefix 冠词），导致大小写/标点残留影响匹配（如 'The Apple' vs 'apple'）；且 candidates 中 stripParen 未处理中文括号全角/半角混用。",
+   "fix": "在 enMatch 中对每个 tok 执行 normEn(tok) 再比对；stripParen 中补充全角括号 '（' 和 '）' 的处理"
+  }
+ ]
+}

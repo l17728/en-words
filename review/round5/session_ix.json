@@ -1,0 +1,54 @@
+{
+ "model": "qwen-plus",
+ "kb": 32,
+ "problems": [
+  {
+   "severity": "P0",
+   "where": "web/src/api/client.ts:64-72",
+   "problem": "401 统一恢复逻辑存在死循环风险：当 location.href = '/login' 后，若登录页自身也发起带 token 的请求（如自动拉用户信息），且此时 localStorage 已清空但页面未完全刷新，liveToken() 返回空字符串 → 请求不带 Authorization → 服务端仍返回 401 → 再次触发重定向 → 无限跳转。",
+   "fix": "在 401 处理分支中增加路径守卫：仅当当前页面非 '/login' 且非 '/login*'（含 query）时才跳转；或更健壮地在跳转前设置临时标志位（如 sessionStorage.setItem('skipAuthCheck', 'true')），并在 request 函数开头检查该标志跳过 token 注入和 401 拦截。"
+  },
+  {
+   "severity": "P1",
+   "where": "web/src/stores/auth.ts:12-28",
+   "problem": "AuthStore 与 localStorage 状态双源：store 初始化从 localStorage 读取，但后续 login/logout 仅同步写 localStorage + store，未监听 localStorage 变化（如多标签页登出），导致其他标签页 auth state 滞后（如 nickname 仍显示旧值、role 错误），破坏登出一致性。",
+   "fix": "在 useAuthStore 中添加 window.addEventListener('storage', ...) 监听 'token'/'role'/'nickname'/'userId' 变更，并调用 set() 同步状态；或彻底移除 store 中的冗余字段，改为所有读取均通过 liveToken()/currentRole() 等封装函数（与 client.ts 对齐），store 仅存副作用控制状态（如 isLoggingIn）。"
+  },
+  {
+   "severity": "P1",
+   "where": "web/src/ws/client.ts:35-49",
+   "problem": "WS 重连未与 REST 登录态联动：当 token 过期触发 401 跳转登录后，已存在的 ClassroomWS 实例仍在后台重连（使用旧 ticket），而 ticket 校验依赖 student_id 和 lesson_id，但服务端 CheckTicket 不校验 token 有效性，仅校验 ticket 绑定与过期时间 —— 导致 WS 连接成功但后续帧因无有效 token 被服务端静默拒绝（如 student_event 不生效），用户卡在课堂无响应，且前端无降级提示。",
+   "fix": "ClassroomWS 构造函数增加 onAuthInvalid 回调；在 connect() 前检查 hasToken()，若为 false 则立即触发 onClose 并停止重连；同时在 onclose 处理中增加对 localStorage.token 变更的感知（如对比上次连接时的 token 快照），发现变更则主动 close 并通知上层销毁实例。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/api/app.go:522-532",
+   "problem": "IssueTicket 复用逻辑缺陷：ticket 复用仅基于 lessonID+studentID 匹配，但未校验 lesson 状态（如 lesson.Status != 'open' 或已过期），导致重进课堂时复用已失效 ticket，WS 连接成功但 Join 时 Rooms.Enter() 可能失败（lesson 不存在或已关闭），首帧快照丢失，前端显示 '…' 或白屏。",
+   "fix": "在 IssueTicket 的复用查找循环中，增加对 lesson 状态的校验：获取 lesson := a.Sched.Lesson(tk.LessonID)，确认 lesson != nil && lesson.Status == scheduler.LessonOpenStr；若不满足则视为 ticket 失效，删除并签发新 ticket。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/api/ws.go:75-78",
+   "problem": "WS 连接建立后未做 ticket 绑定时效性二次校验：handleWS 中 CheckTicket 成功仅保证 ticket 创建时有效，但若在 Upgrade 完成到 room.Join() 之间 ticket 过期（如恰好超时），room.Join() 仍会执行并发送快照，但后续事件处理可能因 ticket 失效而异常（如 HandleEvent 依赖 tk.StudentID 但 tk 已被 RevokeTicket 清理），造成状态不一致。",
+   "fix": "在 room.Join(client) 前，再次调用 a.CheckTicket(ticket) 并校验返回的 tk 是否非 nil 且未 expired；若失效，直接 conn.Close() 并 return，避免进入 room 生命周期。"
+  },
+  {
+   "severity": "P2",
+   "where": "web/src/api/client.ts:25-29",
+   "problem": "liveToken() 异常捕获过于宽泛：localStorage 访问可能因浏览器隐私模式/禁用抛出 SecurityError，但当前 catch {} 吞掉错误并返回空字符串，导致用户看到 '登录已过期' 但实际是存储不可用，易混淆。",
+   "fix": "在 liveToken() 的 catch 块中区分错误类型：若为 SecurityError 或 QuotaExceededError，记录 warn 日志并 throw 新错误（如 '本地存储不可用，请检查浏览器设置'），引导用户而非静默降级。"
+  },
+  {
+   "severity": "P2",
+   "where": "server/internal/auth/auth.go:212-214",
+   "problem": "UpdateNickname 编码防御与 CreateUser 不一致：CreateUser 检查 U+FFFD 和 '??'，但 UpdateNickname 仅检查前者，遗留 '??' 昵称可被更新，导致前端再次显示 ???。",
+   "fix": "在 UpdateNickname 中同步增加 strings.Contains(nickname, \"??\") 校验，保持与 CreateUser 逻辑完全一致。"
+  },
+  {
+   "severity": "P2",
+   "where": "web/src/ws/client.ts:62-64",
+   "problem": "send() 方法未处理 WebSocket.CLOSING 状态：当 ws.readyState === WebSocket.CLOSING 时，send() 返回 false 但无任何反馈，上层调用者（如课堂事件上报）无法感知失败，可能导致用户操作丢失（如点击按钮无响应）。",
+   "fix": "在 send() 中扩展状态判断：若 readyState 为 CLOSING 或 CLOSED，返回 false 并可选触发 handlers.onClose（或新增 onSendFailed 回调），使业务层能降级为 REST 提交或提示用户。"
+  }
+ ]
+}

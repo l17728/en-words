@@ -76,14 +76,16 @@ export default function ClassroomPage() {
     if (ttsBusyRef.current) return
     const next = ttsQueueRef.current.shift()
     if (!next) return
-    // 回声抑制：跟读阶段不发声，但流程回执照发（估时）
+    // 回声抑制：跟读阶段不发声——静默段仍链式出队+回执（R5-P0：防队列卡死）
     if (phaseRef.current === 'repeating' || !ttsAvail.current) {
       ttsBusyRef.current = true
       ttsTimerRef.current = setTimeout(() => {
+        if (ttsTimerRef.current) clearTimeout(ttsTimerRef.current)
+        ttsTimerRef.current = null
         ttsBusyRef.current = false
         sendEventRef.current?.('tts_finished')
-        pumpTts()
-      }, 40) // 静默段即时完成
+        pumpTts() // 链式出队（修复：静默后队列卡死）
+      }, 200) // 静默段统一 200ms（模拟段间隔，保持节奏）
       return
     }
     ttsBusyRef.current = true
@@ -92,6 +94,7 @@ export default function ClassroomPage() {
       if (fired) return
       fired = true
       if (ttsTimerRef.current) clearTimeout(ttsTimerRef.current)
+      ttsTimerRef.current = null
       ttsBusyRef.current = false
       sendEventRef.current?.('tts_finished')
       pumpTts() // 链式出队（间隔由后端 ttsIntervalMs 配置，此处紧接）
@@ -117,12 +120,13 @@ export default function ClassroomPage() {
     },
     [pumpTts],
   )
-  // 阶段切换清队列（防旧词语音溢到新词）
+  // 阶段切换清队列（防旧词语音溢到新词）；R5：cancel 中断正在播的段+清 timer
   useEffect(() => {
     return () => {
       ttsQueueRef.current = []
       ttsBusyRef.current = false
       if (ttsTimerRef.current) clearTimeout(ttsTimerRef.current)
+      ttsTimerRef.current = null
       try { window.speechSynthesis?.cancel() } catch { /* noop */ }
     }
   }, [])
@@ -155,7 +159,7 @@ export default function ClassroomPage() {
           switch (a.type) {
             case 'show_word':
               setSnapshot((s) => ({ ...(s ?? { phase: 'show_word' }), phase: 'show_word',
-                word: a.word, zhMeaning: a.meanings?.[0] })) // show_word 即带中文（消灭第一屏：直接中英对照）
+                word: a.word, zhMeaning: Array.isArray(a.meanings) && a.meanings.length > 0 ? a.meanings[0] : s?.zhMeaning })) // R5：meanings 防空保旧
               setJudge(null)
               phaseRef.current = 'show_word'
               break
@@ -343,7 +347,9 @@ export default function ClassroomPage() {
   }, [phase, startListening, stopListening])
   useEffect(() => () => stopListening(), [stopListening])
 
-  const bigWord = phase === 'repeating' || phase === 'tts_seg' ? snapshot?.word : snapshot?.quiz_word || snapshot?.word
+  const bigWord = phase === 'repeating' || phase === 'tts_seg' ? snapshot?.word
+    : phase === 'reteach_show' ? (snapshot?.quiz_word || snapshot?.word) // R5-P2：RETEACH 显示错词
+    : snapshot?.quiz_word || snapshot?.word
   // 教学相位（show_word 起即中英对照——用户定案：不要第一屏，直接显示英文和汉语）
   const teachingZh = phase === 'show_word' || phase === 'tts_seg' || phase === 'repeating' || phase === 'reteach_show'
   const zhShow = phase === 'reteach_show' || judge === 'bad'

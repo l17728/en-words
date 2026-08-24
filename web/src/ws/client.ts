@@ -29,6 +29,14 @@ export class ClassroomWS {
 
   private connect(): void {
     if (this.closed) return
+    // R5-P1：token 感知——401 登出后停止重连（防旧 ticket 僵尸连接）
+    try {
+      if (!localStorage.getItem('token')) {
+        this.closed = true
+        this.handlers.onClose?.()
+        return
+      }
+    } catch { /* 存储不可用时继续尝试连接 */ }
     this.ws = new WebSocket(this.url())
     this.ws.onopen = () => {
       this.retry = 0

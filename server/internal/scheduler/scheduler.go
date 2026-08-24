@@ -262,6 +262,7 @@ func (s *Service) BoostWord(studentID, bookID, wordID int64) error {
 // ResetForReplacement 重新摸底后的计划重置（用户定案 2026-08-23 BUG-5）：
 // 作废全部未开始的 scheduled 课（含重排生成的），并把对应批次的学习卡回退 new
 // （NextDueAt/Boost 清空）——重新摸底结果以全新状态重建计划。
+// R5-P0 守卫：mastered 卡跳过（摸底成果不被批次重置抹掉）。
 // 已开始/已完成的课与其卡片不动（历史保留）。
 func (s *Service) ResetForReplacement(studentID, bookID int64) error {
 	lessons, err := s.repo.ListLessons(studentID, bookID)
@@ -276,9 +277,12 @@ func (s *Service) ResetForReplacement(studentID, bookID int64) error {
 		if err := s.repo.SaveLesson(l); err != nil {
 			return err
 		}
-		// 批次卡回退 new
+		// 批次卡回退 new（mastered 跳过——R5-P0）
 		for _, wid := range l.BatchWordIDs {
 			if c, err := s.repo.GetCard(studentID, bookID, wid); err == nil {
+				if c.Status == StatusMastered || c.Status == StatusGraduated {
+					continue
+				}
 				c.Status = StatusNew
 				c.NextDueAt = nil
 				c.BoostFlag = false
@@ -292,13 +296,13 @@ func (s *Service) ResetForReplacement(studentID, bookID int64) error {
 }
 // MarkPlacement 摸底结算：勾选词 mastered，**取消勾选的回退 new**（覆盖语义——
 // 用户定案：重新摸底以最新勾选为准，点错的可取消）。
-// 草稿保存（FR-C4 分次完成）：不 finish 也保存当前勾选。
+// R5-P0 守卫：Learning/Graduated 卡不可被摸底覆盖（教学成果保护）。
+// 草稿保存（FR-C4 分次完成）移至卡片状态全部持久化成功之后（R5：防草稿与实态失同步）。
 func (s *Service) MarkPlacement(studentID, bookID int64, knownWordIDs []int64) error {
 	known := map[int64]bool{}
 	for _, id := range knownWordIDs {
 		known[id] = true
 	}
-	s.placementDrafts[placementKey{studentID, bookID}] = knownWordIDs
 	cards, err := s.repo.ListCards(studentID, bookID)
 	if err != nil {
 		return err
@@ -308,12 +312,13 @@ func (s *Service) MarkPlacement(studentID, bookID int64, knownWordIDs []int64) e
 		case known[c.WordID] && c.Status == StatusNew:
 			c.Status = StatusMastered
 		case !known[c.WordID] && c.Status == StatusMastered:
-			c.Status = StatusNew // 取消勾选回退（教学中的卡不动）
+			c.Status = StatusNew // 仅 mastered 可回退（摸底产生的状态只有摸底能撤销）
 		}
 		if err := s.repo.SaveCard(c); err != nil {
 			return err
 		}
 	}
+	s.placementDrafts[placementKey{studentID, bookID}] = knownWordIDs
 	return nil
 }
 
@@ -359,6 +364,7 @@ func (s *Service) planNext(studentID, bookID int64) (*Lesson, error) {
 	}
 
 	// 已有 scheduled 未过期课 → 不重复排（只排下一课 F2）
+	// R5：voided_replacement 是作废课不拦截；其余非 scheduled 状态（finished/expired/voided）同样放行
 	lessons, _ := s.repo.ListLessons(studentID, bookID)
 	for _, l := range lessons {
 		if l.Status == LessonScheduledStr {

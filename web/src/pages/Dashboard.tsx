@@ -22,10 +22,15 @@ export default function DashboardPage() {
   }
   useEffect(refresh, [])
 
+  const [picking, setPicking] = useState(false) // R5：防连点+清旧课表防混合
   const pick = (b: Book) => {
+    if (picking) return
+    setPicking(true)
+    setLessons([]) // 清空旧数据（防上一词库残留与新课混合）
     api.get<Lesson[]>(`/student/lessons?bookId=${b.ID}`)
       .then(setLessons)
       .catch((e) => message.error((e as Error).message))
+      .finally(() => setPicking(false))
   }
 
   const nextLesson = lessons.find((l) => l.Status === 'scheduled')

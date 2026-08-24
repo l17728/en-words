@@ -99,9 +99,7 @@ func TestR17_ReenableKeepsPlacement(t *testing.T) {
 	// 再次 enable（二次选库场景）：摸底结果保持
 	require.NoError(t, app.EnableBook(uid, bid), "重复 enable 幂等成功")
 	c1b, _ := app.Sched.GetCard(uid, bid, es[0].ID)
-	assert.Equal(t, scheduler.StatusMastered, c1b, "重复 enable 不得抹掉摸底 mastered（BUG 锁定）")
+	assert.Equal(t, scheduler.StatusMastered, c1b.Status, "重复 enable 不得抹掉摸底 mastered（BUG 锁定）")
 	// 草稿也保持
 	assert.Equal(t, []int64{es[0].ID}, app.Sched.PlacementDraft(uid, bid))
-}
-
 }

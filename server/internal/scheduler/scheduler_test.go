@@ -49,6 +49,7 @@ func TestPlacementDraftPersist(t *testing.T) {
 }
 
 // 取消勾选的词回退 new（点错了可取消——覆盖语义核心）
+// R5-P0 守卫：Learning/Graduated 卡不被摸底覆盖
 func TestPlacementUncheckReverts(t *testing.T) {
 	s, _, _ := newSched(t)
 	s.seedWords(t, 7, 1, 1, 2, 3)
@@ -65,6 +66,36 @@ func TestPlacementUncheckReverts(t *testing.T) {
 	assert.Equal(t, StatusMastered, c1.Status, "仍勾选保持")
 	assert.Equal(t, StatusNew, c2.Status, "取消勾选回退 new（BUG 修复锁定）")
 	assert.Equal(t, StatusMastered, c3.Status, "新勾选生效")
+}
+
+// R5-P0：教学成果保护——learning/graduated 卡不可被摸底重置
+func TestPlacementGuardsLearningGraduated(t *testing.T) {
+	s, _, _ := newSched(t)
+	s.seedWords(t, 7, 1, 1, 2, 3, 4)
+	require.NoError(t, s.MarkPlacement(7, 1, []int64{1})) // 词1 mastered
+	// 模拟词2 学到 learning（LadderStep=2）、词4 graduated
+	c2, _ := s.repo.GetCard(7, 1, 2)
+	c2.Status = StatusLearning
+	c2.LadderStep = 2
+	require.NoError(t, s.repo.SaveCard(c2))
+	c4, _ := s.repo.GetCard(7, 1, 4)
+	c4.Status = StatusGraduated
+	require.NoError(t, s.repo.SaveCard(c4))
+
+	// 重新摸底勾 2/4（learning/graduated 不变 mastered）+ 取消 1
+	require.NoError(t, s.MarkPlacement(7, 1, []int64{2, 4}))
+	c1b, _ := s.repo.GetCard(7, 1, 1)
+	assert.Equal(t, StatusNew, c1b.Status, "mastered 取消回退")
+	c2b, _ := s.repo.GetCard(7, 1, 2)
+	assert.Equal(t, StatusLearning, c2b.Status, "learning 不被摸底覆盖（R5-P0 守卫）")
+	assert.Equal(t, 2, c2b.LadderStep, "学习进度保持")
+	c4b, _ := s.repo.GetCard(7, 1, 4)
+	assert.Equal(t, StatusGraduated, c4b.Status, "graduated 不被摸底覆盖（R5-P0 守卫）")
+
+	// ResetForReplacement 同样跳过 mastered/graduated
+	require.NoError(t, s.ResetForReplacement(7, 1))
+	c4c, _ := s.repo.GetCard(7, 1, 4)
+	assert.Equal(t, StatusGraduated, c4c.Status, "Reset 不抹 graduated（R5-P0）")
 }
 
 func TestPlacementFirstLesson(t *testing.T) {

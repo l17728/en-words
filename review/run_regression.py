@@ -10,7 +10,9 @@ t0 = time.time()
 def run(title, cwd, cmd, timeout_s):
     r = {'step': title, 'cmd': ' '.join(cmd)}
     try:
-        p = subprocess.run(cmd, cwd=cwd, capture_output=True, timeout=timeout_s)
+        # Windows: npm/npx 是 .cmd——subprocess 需 shell=True 走 PATHEXT 解析
+        p = subprocess.run(' '.join(cmd), cwd=cwd, capture_output=True,
+                           timeout=timeout_s, shell=True)
         out = (p.stdout + p.stderr).decode('utf-8', errors='replace')
         r['exit'] = p.returncode
         r['output_tail'] = out[-3000:]

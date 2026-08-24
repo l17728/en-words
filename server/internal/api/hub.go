@@ -148,6 +148,9 @@ func (r *Room) snapshotLocked() Msg {
 	if it, ok := r.currentItemView(); ok {
 		m["quiz_word"] = it.Word
 		m["quiz_item"] = itemPayload(it)
+	} else if phase != classroom.PhaseLessonEnd {
+		// R5：全相位兜底可渲染词（前端 bigWord 依赖 quiz_word||word）
+		m["quiz_word"] = w.Word
 	}
 	return m
 }

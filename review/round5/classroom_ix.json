@@ -1,0 +1,54 @@
+{
+ "model": "qwen-plus",
+ "kb": 62,
+ "problems": [
+  {
+   "severity": "P0",
+   "where": "Classroom.tsx:handleFrame → 'play_tts' case",
+   "problem": "TTS 播放时未校验当前相位是否允许 TTS（如 phaseRef.current === 'repeating' 时仍可能因快照/帧乱序触发 speak），导致回声抑制失效（FE-02/R4-fe#2 违反）；且 zhMeaning 更新未同步到 snapshot.zhMeaning 字段，造成中英对照在 tts_seg 相位不显示。",
+   "fix": "在 'play_tts' 分支内增加 phaseRef.current !== 'repeating' && phaseRef.current !== 'judging' 的前置守卫；并确保 setSnapshot(..., zhMeaning: zh) 同时更新 snapshot.zhMeaning（当前仅在 show_word/tts_seg/repeating/reteach_show 四相位快照中携带，但 play_tts 帧可能在非教学相位到达，需强制补全）"
+  },
+  {
+   "severity": "P0",
+   "where": "Classroom.tsx:pumpTts → repeating 静默逻辑",
+   "problem": "REPEATING 阶段静默跳过 TTS 时，仅设置 ttsBusyRef.current = true + timer，但未调用 pumpTts() 后续出队，导致后续 TTS 段永久卡在队列中（竞态：phase 切换后 pumpTts 不再被触发）；且静默段 timer 40ms 过短，无法覆盖 onend 看门狗清理逻辑，引发 ttsQueueRef 泄漏。",
+   "fix": "将静默段的 setTimeout 回调改为：ttsBusyRef.current = false; pumpTts(); （保证链式消费）；同时将静默 timer 改为 segDur(text, lang) * 0.3（≈200–400ms），与真实播放段看门狗比例一致，避免误判超时"
+  },
+  {
+   "severity": "P1",
+   "where": "Classroom.tsx:useEffect cleanup → TTS 清队列",
+   "problem": "TTS useEffect cleanup 在组件卸载时清空队列，但未 cancel 当前正在播放的 SpeechSynthesisUtterance（window.speechSynthesis.cancel() 仅清 pending，不中断 active），导致旧词语音溢出到新课堂（如重进时上一课未播完的 tts_seg 继续发声）。",
+   "fix": "在 cleanup 中增加：try { window.speechSynthesis?.cancel() } catch {}；并在 pumpTts 的 onend/onerror 中显式清除 ttsTimerRef，避免残留 timer 触发已销毁闭包"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/classroom/classroom.go:applyJudge",
+   "problem": "RETEACH 第一次错后进入 PhaseReteachShow，但 reteachAdvance() 推进逻辑中 st.ReteachSeg 从 0 开始，case 1 对应 en 段，case 2 对应跟读；而前端 show_word 帧未携带 WithZh=true 标识，导致中英对照在 reteach_show 相位不显示（与 teachingZh 判断条件 mismatch）。",
+   "fix": "在 ActShowWord Action 中，当 WithZh == true 时，快照中必须携带 zhMeaning（复用 firstMeaning(w)）；同时 Classroom.tsx handleFrame 'show_word' 分支需识别 a.with_zh 并注入 snapshot.zhMeaning"
+  },
+  {
+   "severity": "P1",
+   "where": "Classroom.tsx:phase === 'wait_answer' 自动监听",
+   "problem": "startListening 被 phase effect 触发，但 stopListening 未在 phase 变更时立即执行（存在 ~300ms 延迟），导致用户快速切换相位（如 wait_answer → judging → wait_answer）时出现双麦竞争、语音重复提交（判分两次）。",
+   "fix": "将 stopListening 移入 phase effect 的 cleanup 返回函数，并移除 startListening 内部的 300ms timeout；改用 useLayoutEffect 或在 phase 变更瞬间同步 stop→start"
+  },
+  {
+   "severity": "P2",
+   "where": "Classroom.tsx:bigWord 计算",
+   "problem": "bigWord 在 repeating/tts_seg 时取 snapshot?.word，但在 reteach_show 相位时未 fallback 到 quiz_word，导致 RETEACH 单词显示为空（因 snapshot.word 是原教学词，而 quiz_word 才是错词）。",
+   "fix": "bigWord 表达式补充：phase === 'reteach_show' ? snapshot?.quiz_word || snapshot?.word : ..."
+  },
+  {
+   "severity": "P2",
+   "where": "server/internal/api/hub.go:snapshotLocked",
+   "problem": "快照中 quiz_word 仅在 currentItemView() 成功时注入，但 PhaseReteachShow 时 quiz_item 已存在（item.WordID != 0），却未在 snapshotLocked 中补全 quiz_word，导致重进 reteach_show 相位时前端无 quiz_word 可渲染。",
+   "fix": "在 snapshotLocked switch phase 分支中，为 classroom.PhaseReteachShow 显式添加 quiz_word = it.Word"
+  },
+  {
+   "severity": "P2",
+   "where": "Classroom.tsx:ui_action.say_hint",
+   "problem": "say_hint 帧中 reason === 'give_up_next' 时气泡文案硬编码，但未覆盖其他 reason（如 'timeout'），导致超时放弃时无安抚文案，用户困惑。",
+   "fix": "将 say_hint 的 bubble 设置逻辑改为：a.reason === 'give_up_next' ? '没关系...' : a.reason === 'timeout' ? '时间到了，我们继续下一个！' : a.text ?? ''"
+  }
+ ]
+}

@@ -1,0 +1,42 @@
+{
+ "model": "qwen-plus",
+ "kb": 32,
+ "problems": [
+  {
+   "severity": "P0",
+   "where": "web/src/pages/Placement.tsx:102",
+   "problem": "摸底页自动保存（goScreen）与手动提交（submit）存在竞态：用户快速连点‘下一屏’时，多次调用 submit(false) 可能并发触发多个 POST /placement 请求，导致后发先至覆盖前序已选状态（如：A屏选3个→B屏取消2个→A屏再选1个，但B屏请求晚发却先到，最终丢失A屏新增的1个）。当前无防抖/节流/请求锁，且服务端 PlacementSubmit 无幂等校验（仅覆盖写 draft），草稿状态可能被静默破坏。",
+   "fix": "在 submit 回调中增加 pending 状态锁 + 请求取消（AbortController）；或改用乐观并发控制：前端每次提交携带当前 knownWordIds 的 hash（如 xxhash32），服务端校验 draft 是否仍匹配该 hash，否则返回 409 Conflict 并附最新 draft，前端自动 merge 后重试。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/api/router.go:378",
+   "problem": "student.GET('/books/:bookId/placement') 返回全部词条（ListEntries(..., 1, 10000)），但未做分页保护：当词库超大（如 gaokao 5000+ 词）时，单次加载全量词导致前端内存暴涨、渲染卡顿、TTFB 延长；且与前端 PAGE=100 的分屏逻辑脱节，实际只用了第一页，浪费带宽与服务端资源。",
+   "fix": "改为按需分页：从 query 参数读取 page/size（默认 1/100），或直接返回总词数 + 首屏数据，并在响应中添加 X-Total-Count header，让前端按需拉取后续屏（避免预加载全量）。同时加服务端 size 上限（如 max=500）防滥用。"
+  },
+  {
+   "severity": "P1",
+   "where": "web/src/pages/Books.tsx:56",
+   "problem": "词库启用（enable）成功后弹出 Modal，点击‘开始摸底’跳转 /placement/{id}，但此时若用户快速切后台再切回，或网络延迟导致页面未完全加载，PlacementPage 的 useEffect 会因 bookId 变化重新 fetch，而服务端 /placement 接口返回的是草稿（draft），若用户此前已完成摸底，此处将错误显示空草稿而非已完成状态，造成‘摸底消失’错觉。",
+   "fix": "PlacementPage 在 fetch 后应校验服务端是否已存在 placement 记录（如响应中增加 finished: bool 字段），若 finished=true，则自动 redirect 到 /dashboard 并提示‘已摸底完成，去课程表上课吧’，避免用户误入空白摸底页。"
+  },
+  {
+   "severity": "P1",
+   "where": "web/src/pages/Dashboard.tsx:72",
+   "problem": "词库卡片点击 pick(b) 仅获取 lessons 列表，但未同步更新当前选中的词库上下文（如 URL 不变、无高亮标识），用户无法感知‘当前聚焦哪个词库’；且若用户连续点击不同词库，lessons 状态被覆盖，但上一个词库的 nextLesson 状态丢失，导致‘下一节课’卡片内容与用户预期词库不一致（状态失同步）。",
+   "fix": "引入局部状态管理：DashboardPage 使用 useState<{activeBookId: number | null}> 记录当前选中词库 ID；pick(b) 时更新该状态并高亮对应卡片；‘下一节课’卡片逻辑改为仅展示 activeBookId 对应的 lessons，避免跨词库污染。"
+  },
+  {
+   "severity": "P2",
+   "where": "web/src/pages/Login.tsx:38",
+   "problem": "登录成功后 message.success 显示 nickname，但若后端返回 nickname 为 null/空字符串（如新用户未设昵称），则显示‘欢迎回来，同学！’——看似合理，但与 Dashboard 页 title 中的 nickname || '同学' 不一致，且未提供设置入口，用户无法主动补全，长期影响个性化体验。",
+   "fix": "登录成功后，若 nickname 为空，自动跳转至 /profile/nickname 设置页（新增路由），或在 Dashboard 页 nickname 旁添加‘编辑’图标，点击弹出 Input Modal 调用 /me/nickname 接口更新。"
+  },
+  {
+   "severity": "P2",
+   "where": "server/internal/api/router.go:423",
+   "problem": "classroom.POST('/lessons/:id/event') 和 '/lessons/:id/voice' 均调用 room.HandleEvent/HandleVoiceText，但未对事件处理结果做统一错误分类：如 TTS 失败、词不存在、指令不支持等均返回 200+fail，前端无法区分是业务拒绝（如非法 event）还是系统故障（如 TTS 服务宕机），不利于错误归因与用户提示。",
+   "fix": "统一事件处理返回结构，增加 error_code 字段（如 tts_unavailable, word_not_found, invalid_command），前端根据 code 展示差异化提示（如‘叮当老师正在休息，请稍后再试’ vs ‘没听清这个词，再说一遍？’）。"
+  }
+ ]
+}

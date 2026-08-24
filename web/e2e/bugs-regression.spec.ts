@@ -187,7 +187,7 @@ test.describe('BUG 回归：本轮修复锁定', () => {
     await page.getByRole('button', { name: '开始学习' }).click()
     await expect(page.getByText('今天也想见叮当老师').first()).toBeVisible({ timeout: 20_000 })
 
-    // BUG-3：dashboard 词库卡片可点（role=button + click 生效加载课程）
+    // BUG-3：dashboard 词库卡片可点（语义化定位与修复对齐——R5：弃脆弱 CSS 类选择器）
     await page.goto(BASE + '/dashboard')
     await expect(page.getByText('我的词库').first()).toBeVisible({ timeout: 15_000 })
     const grid = page.locator('[role="button"][aria-label*="查看"]').filter({ hasText: 'BUG回归库' })
@@ -202,13 +202,12 @@ test.describe('BUG 回归：本轮修复锁定', () => {
     await enter.click()
     await expect(page.getByText('已连接')).toBeVisible({ timeout: 20_000 })
 
-    // BUG-4+7：等首个词渲染——show_word 即显中英对照（无独立第一屏；卡片有英文非 …）
-    await expect(page.locator('div').filter({ hasText: /^[a-zA-Z]+$/ }).first()).toBeVisible({ timeout: 15_000 })
-    await page.waitForTimeout(2000) // 0.8s 自动开读后 zhMeaning 应出现
-    const body = (await page.textContent('body')) || ''
-    expect(body).not.toMatch(/^\s*…\s*$/)
-    // 中英对照：中文释义（猫/狗/苹果/蜜蜂/鱼 之一）在页面上
-    expect(body).toMatch(/[猫狗苹果蜜蜂鱼]/)
+    // BUG-4+7 精确断言（R5：弃 body!==…弱断言，改可见词+中文释义元素级断言）
+    await expect(page.locator('div').filter({ hasText: /^(cat|dog|apple|bee|fish)$/ }).first())
+      .toBeVisible({ timeout: 15_000 })
+    await page.waitForTimeout(2200) // 0.8s 自动开读后 zhMeaning 渲染
+    await expect(page.locator('div').filter({ hasText: /[猫狗苹果蜜蜂鱼]/ }).first())
+      .toBeVisible({ timeout: 10_000 })
     // 退出课堂（不消费整课）
     await page.getByRole('button', { name: /退出/ }).click()
     await page.waitForTimeout(800)

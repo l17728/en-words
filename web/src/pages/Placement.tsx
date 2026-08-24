@@ -12,6 +12,7 @@ export default function PlacementPage() {
   const [words, setWords] = useState<PWord[]>([])
   const [known, setKnown] = useState<Set<number>>(new Set())
   const [screen, setScreen] = useState(0)
+  const [saving, setSaving] = useState(false) // R5-P0：提交锁（防连点并发覆盖草稿）
   const PAGE = 100
 
   useEffect(() => {
@@ -29,26 +30,30 @@ export default function PlacementPage() {
   const totalKnown = known.size
 
   const submit = useCallback(
-    (finish: boolean) => {
-      api
-        .post(`/student/books/${bookId}/placement`, {
+    async (finish: boolean) => {
+      if (saving) return // 请求锁：上一提交未完成时跳过（防后发先至覆盖）
+      setSaving(true)
+      try {
+        await api.post(`/student/books/${bookId}/placement`, {
           knownWordIds: Array.from(known),
           finish,
         })
-        .then(() => {
-          if (finish) {
-            Modal.success({
-              title: '摸底完成！',
-              content: '叮当老师已经排好你的第一节课，到时间去课程表开始学习吧。',
-              onOk: () => nav('/dashboard'),
-            })
-          } else {
-            message.success('进度已保存，随时回来继续')
-          }
-        })
-        .catch((e) => message.error((e as Error).message))
+        if (finish) {
+          Modal.success({
+            title: '摸底完成！',
+            content: '叮当老师已经排好你的第一节课，到时间去课程表开始学习吧。',
+            onOk: () => nav('/dashboard'),
+          })
+        } else {
+          message.success('进度已保存，随时回来继续')
+        }
+      } catch (e) {
+        message.error((e as Error).message)
+      } finally {
+        setSaving(false)
+      }
     },
-    [bookId, known, nav],
+    [bookId, known, nav, saving],
   )
 
   // 自动保存：换屏时提交中间进度（FR-C4）

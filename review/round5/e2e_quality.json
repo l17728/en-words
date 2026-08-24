@@ -1,0 +1,42 @@
+{
+ "model": "qwen-plus",
+ "kb": 30,
+ "problems": [
+  {
+   "severity": "P0",
+   "where": "bugs-regression.spec.ts:248-252",
+   "problem": "BUG-4（重进课堂只有'…'）验证逻辑缺陷：仅检查 body.textContent() !== '…'，但真实 BUG 是快照未补全教学相位字段（如 zhMeaning），导致前端渲染 fallback 为 '…'；当前断言无法捕获 '…' 来自空快照 vs 正常加载中（竞态下可能误绿）。",
+   "fix": "改用精确断言：await expect(page.locator('div').filter({ hasText: /^[a-zA-Z]+$/ }).first()).toBeVisible(); await expect(page.locator('div').filter({ hasText: /[猫狗苹果蜜蜂鱼]/ }).first()).toBeVisible({ timeout: 10_000 }); 确保中英对照词对同时存在。"
+  },
+  {
+   "severity": "P1",
+   "where": "bugs-regression.spec.ts:137-142",
+   "problem": "BUG-6（摸底草稿恢复）验证不完整：仅验证 cat+dog 芯片 pressed，但未校验草稿状态是否真正持久化到后端（即 GET /placement 返回值是否含已选 ID）；若前端缓存恢复但后端未存，断网重进将丢失。",
+   "fix": "在点击芯片后，显式调用 API GET /student/books/{bk.ID}/placement 并断言 response.data.knownWordIds 包含 catW.ID 和 dogW.ID，确保服务端草稿已写入。"
+  },
+  {
+   "severity": "P1",
+   "where": "fulljourney.spec.ts:294-302",
+   "problem": "全旅程测试中 'RETEACH纠错闭环' 场景缺失：当前流程仅覆盖首答正确路径，未触发 RETEACH（如故意答错 'cat' → '狗' 导致判分失败 → 进入 RETEACH 相位），无法验证 BUG-8（TTS 吞段/读五遍）修复是否在 RETEACH 中生效。",
+   "fix": "在小测环节插入强制错误路径：当单词为 'cat' 时，提交错误答案 '苹果'，等待出现 '再认识一遍' 文本后，验证 TTS 是否仅播放 1 次（非重复）且跟读按钮唯一出现。"
+  },
+  {
+   "severity": "P1",
+   "where": "bugs-regression.spec.ts:173-177",
+   "problem": "BUG-3（词库卡片不可点）验证脆弱：依赖 '.ant-card-grid' 选择器，但修复已改为原生 div+aria，该选择器在 prod 环境可能不存在（CSS 类名非语义化，易被构建工具 hash 或移除），导致用例假绿。",
+   "fix": "改用语义化定位：await page.locator('[role=\"button\"][aria-label*=\"查看\"]').filter({ hasText: 'BUG回归库' }).first()，与修复方案完全对齐。"
+  },
+  {
+   "severity": "P2",
+   "where": "fulljourney.spec.ts:197-202",
+   "problem": "多标签页交互盲区：全旅程测试全程单标签页，未覆盖用户在课堂中新开标签页（如查词典）→ 切回原课堂 → TTS/相位状态是否失同步（如 TTS 正在播却被新标签页操作中断）。",
+   "fix": "在课堂 '点一下这个单词' 相位，新开标签页访问 /dashboard，再切回原课堂标签页，验证页面仍显示正确单词且 TTS 可正常触发（无 '已连接' 消失或卡死）。"
+  },
+  {
+   "severity": "P2",
+   "where": "bugs-regression.spec.ts:72-75",
+   "problem": "断网中恢复场景缺失：BUG-1（token 失同步）修复依赖实时读 localStorage + 401 恢复，但回归用例全程网络正常，未模拟断网后重连时 token 过期 → 401 → 自动恢复的完整链路。",
+   "fix": "在 ensureStudent 后，使用 page.route() 拦截所有 API 请求并返回 401，然后触发任意 API 调用（如 GET /wordbooks），验证页面自动跳转登录且昵称仍显示 '虫虫'（token 恢复成功）。"
+  }
+ ]
+}

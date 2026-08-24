@@ -190,7 +190,7 @@ func (s *Service) Disable(username string) error {
 	return nil
 }
 
-// UpdateNickname 修改昵称（含同编码防御）。
+// UpdateNickname 修改昵称（含同编码防御——与 CreateUser 完全一致 R5-P2）。
 func (s *Service) UpdateNickname(username, nickname string) error {
 	if strings.ContainsAny(nickname, "\uFFFD") || strings.Contains(nickname, "??") {
 		return fmt.Errorf("auth: nickname contains invalid encoding")
