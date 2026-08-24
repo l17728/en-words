@@ -18,3 +18,9 @@ tmp/
 # 工具状态目录
 .omo/
 .codegraph/
+
+# E2E 产物
+e2e-dev.log
+web/e2e/results/
+web/e2e/report/
+web/e2e/playwright/.cache/
