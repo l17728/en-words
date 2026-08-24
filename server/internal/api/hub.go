@@ -423,10 +423,12 @@ func (r *Room) maybeFinishLocked() {
 			"lesson_id": r.lessonID, "error": err.Error()})
 		return
 	}
-	// 结课即排下一课（F2 只排一课；已排/无词则忽略）
-	if _, err := r.app.Sched.PlanNext(r.studentID, r.bookID); err != nil {
+	// 结课即排下一课（F2 只排一课；已排/无词则忽略）；testmode 拨至当前可立即进入
+	if nl, err := r.app.Sched.PlanNext(r.studentID, r.bookID); err != nil {
 		r.app.Log.Info("scheduler", "plan_after_lesson", map[string]any{
 			"lesson_id": r.lessonID, "result": err.Error()})
+	} else {
+		r.app.openNowIfTestMode(nl)
 	}
 	// D-13：系统 Agent 结课决策（S-01..S-04/S-15，Mock 确定性）
 	in := agent.SystemInput{Trigger: "lesson_finished",
