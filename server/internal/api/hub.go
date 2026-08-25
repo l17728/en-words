@@ -1,4 +1,4 @@
-// 课堂 Hub：每课一房间。职责（SDD §4.2/§5/§11/§12.4）：
+// 课堂 Hub：每课一房间。职责（SDD §4.2/§5/§11/§12.1）：
 // 持有 classroom.Machine（平台唯一事实源）、多连接广播（双标签页）、
 // 超时驱动（计时器归属平台）、判分接线（judge_request→judge→OnJudged）、
 // 语音指令（voicecmd）、结课结算（scheduler+SystemAgent+D-13 课报）、
@@ -11,6 +11,7 @@ import (
 
 	"enwords/internal/agent"
 	"enwords/internal/classroom"
+	"enwords/internal/judge"
 	"enwords/internal/scripts"
 	"enwords/internal/voicecmd"
 )
@@ -227,13 +228,8 @@ func (r *Room) emitTeacherUtterancesLocked() []Msg {
 	name := r.studentName()
 	for _, a := range r.lastActions {
 		switch a.Type {
-		case classroom.ActStartQuiz:
-			cat := "transition"
-			vars := map[string]any{"name": name, "group": "下一", "word": a.Word}
-			if a.Kind == "cumulative" || a.Kind == "final" {
-				vars["group"] = "全部"
-			}
-			say(cat, vars)
+		case classroom.ActStartQuiz: // final 唯一测试（D-21：教学中零测试，教完才测）
+			say("transition", map[string]any{"name": name, "word": a.Word})
 		case classroom.ActShowCross:
 			say("correct", map[string]any{"name": name, "word": a.Word,
 				"meaning": firstMeaning(r.words[a.WordID]), "n": r.reteachCount(a.WordID)})
@@ -360,7 +356,7 @@ func (r *Room) Tick() {
 	}
 }
 
-// HandleVoiceText 语音转写：指令优先→反馈捕获→作答（02 §12.4）。
+// HandleVoiceText 语音转写：指令优先→跟读判读→反馈捕获→作答（02 §12.1）。
 // 返回 (指令类型, 产生的帧)。
 func (r *Room) HandleVoiceText(text string) (string, []Msg) {
 	if _, payload, ok := r.voiceParser.MatchFeedback(text); ok {
@@ -373,9 +369,30 @@ func (r *Room) HandleVoiceText(text string) (string, []Msg) {
 	ph := r.machine.Phase()
 	quiz := ph == classroom.PhaseWaitAnswer || ph == classroom.PhaseJudging
 	if cmd, ok := r.voiceParser.Match(text); ok {
-		if !quiz || r.voiceParser.AllowedInQuiz(cmd) {
+		// 跟读相位不放行指令（除跳过）：转写交给下方"听读判读"——
+		// 用户定案 2026-08-25：老师听学生读完即下一词，不靠口令/按钮。
+		if ph != classroom.PhaseRepeating {
+			if !quiz || r.voiceParser.AllowedInQuiz(cmd) {
+				return cmd, r.applyCommand(cmd)
+			}
+		} else if cmd == voicecmd.CmdSkip {
 			return cmd, r.applyCommand(cmd)
 		}
+	}
+	// 跟读判读：转写匹配当前词（判分器 L1 归一化）→ 老师确认听到，进下一词
+	if ph == classroom.PhaseRepeating {
+		w := r.machine.CurrentWord()
+		if st := r.machine.Snapshot(); st.InReteach {
+			if it := r.machine.CurrentItem(); it.WordID != 0 {
+				w = r.words[it.WordID]
+			}
+		}
+		if j := r.app.Judge.Judge(w.Word, w.Meanings, text); j == judge.JudgmentCorrect || j == judge.JudgmentNear {
+			r.app.Log.Info("classroom", "repeat_verified", map[string]any{
+				"lesson_id": r.lessonID, "word": w.Word, "asr_text": text})
+			return "repeat_read", r.HandleEvent(classroom.Event{Type: classroom.EvRepeatDone})
+		}
+		return "", nil // 没读对：继续听（超时兜底推进）
 	}
 	return "", r.HandleEvent(classroom.Event{Type: classroom.EvAnswerSubmitted, Text: text})
 }
@@ -385,8 +402,6 @@ func (r *Room) applyCommand(cmd string) []Msg {
 	switch cmd {
 	case voicecmd.CmdNext:
 		ev = classroom.Event{Type: classroom.EvWordClicked}
-	case voicecmd.CmdRepeatDone:
-		ev = classroom.Event{Type: classroom.EvRepeatDone}
 	case voicecmd.CmdSkip:
 		if r.machine.Phase() == classroom.PhaseRepeating {
 			ev = classroom.Event{Type: classroom.EvRepeatSkipped}

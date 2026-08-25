@@ -233,7 +233,7 @@ func TestIT03_PlacementFirstLesson(t *testing.T) {
 	assert.Equal(t, errForbidden, resp.Code, "未开放不可进入")
 }
 
-// ---- IT-04 课堂全流程（enter→教学→小测→期末→下课→自动排课）----
+// ---- IT-04 课堂全流程（enter→教学→final 完整测试→下课→自动排课）----
 
 func TestIT04_ClassroomFullFlow(t *testing.T) {
 	app, clk := newTestApp(t)
@@ -268,16 +268,12 @@ func TestIT04_ClassroomFullFlow(t *testing.T) {
 	fc := &fakeClient{}
 	room.Join(fc)
 
-	// 教 5 词（单组库：教完直接组小测→期末→下课）
+	// 教 5 词（D-21 定案：教学中零测试，全部教完才 final）
 	cfg := ttsCfg{en: 3, rp: 3}
 	for i := 0; i < 5; i++ {
 		teachOneRoom(room, cfg)
 	}
-	// 组小测 5 题全对
-	for i := 0; i < 5; i++ {
-		answerCurrent(room)
-	}
-	// 期末 5 题全对
+	// final 完整测试 5 题全对 → 无错词不进回顾直接下课
 	for i := 0; i < 5; i++ {
 		answerCurrent(room)
 	}
@@ -330,15 +326,19 @@ func TestIT05_VoiceDualChannel(t *testing.T) {
 	assert.Equal(t, "next", cmd)
 	assert.Equal(t, classroom.PhaseTTSSeg, room.Machine().Phase())
 
-	// 语音"我读完了"在跟读阶段生效：先快进到跟读
+	// 跟读=老师听学生读词判读（用户定案 2026-08-25：不再口令"我读完了"/按钮）
 	for i := 0; i < 4; i++ {
 		room.HandleEvent(classroom.Event{Type: classroom.EvTTSFinished})
 	}
 	require.Equal(t, classroom.PhaseRepeating, room.Machine().Phase())
-	for i := 0; i < 3; i++ {
-		cmd, _ = room.HandleVoiceText("我读完了")
-		assert.Equal(t, "repeat_done", cmd)
-	}
+	// 无关文本≠读对 → 不推进（继续听，相位不变；旧口令也已被判读取代）
+	cmd, _ = room.HandleVoiceText("我读完了")
+	assert.Equal(t, "", cmd)
+	assert.Equal(t, classroom.PhaseRepeating, room.Machine().Phase(), "没读对不推进")
+	// 读对当前词（w1）→ 判读通过 → 下一词（repeatTimes 默认 1）
+	cmd, _ = room.HandleVoiceText("w1")
+	assert.Equal(t, "repeat_read", cmd)
+	assert.Equal(t, classroom.PhaseShowWord, room.Machine().Phase())
 
 	// 语音反馈捕获（FR-L2）
 	cmd, _ = room.HandleVoiceText("我想反馈每天词太多了")
@@ -350,12 +350,12 @@ func TestIT05_VoiceDualChannel(t *testing.T) {
 		t.Fatal("反馈未入队")
 	}
 
-	// 语音作答（测试阶段转写→判分）：教完剩余词到小测
+	// 语音作答（测试阶段转写→判分）：教完剩余词到完整测试（新流程：教完全部词才测）
 	cfg := ttsCfg{en: 3, rp: 3}
-	teachOneRoom(room, ttsCfg{en: 4, rp: 3}) // w2
-	teachOneRoom(room, cfg)                   // w3
-	teachOneRoom(room, cfg)                   // w4
-	teachOneRoom(room, cfg)                   // w5 → 组小测
+	teachOneRoom(room, cfg) // w2
+	teachOneRoom(room, cfg) // w3
+	teachOneRoom(room, cfg) // w4
+	teachOneRoom(room, cfg) // w5 → final 完整测试
 	require.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase())
 	fc := &fakeClient{}
 	room.Join(fc)
