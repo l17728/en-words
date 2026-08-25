@@ -633,6 +633,7 @@ GET  /wordbooks/:id/export          → csv
 
 ### 10.3 学生学习
 ```
+GET  /student/books                                 # 我的已启用词库（enablement=记忆卡存在；Dashboard"我的词库"）
 POST /student/books/:bookId/enable               # 选库 → 触发摸底
 GET  /student/books/:bookId/placement?screen=N   # 摸底：每屏100词
 POST /student/books/:bookId/placement            {knownWordIds} （可多次提交）
