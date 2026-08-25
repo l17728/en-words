@@ -201,8 +201,9 @@ ParseImport: 分批(50行/批) prompt 要求严格 JSON 数组输出 + 校验
 ```
 TTS: 同步合成接口 → mp3 bytes → 前端 <audio> 播放；音频缓存 (text+voice) LRU 500 条
      （单词朗读重复率高，缓存显著省配额）
-ASR: 前端 wav 上传 → REST POST /speech/asr → Provider.Recognize
-     → paraformer 文件转写；2MB 限制、20s 语音上限
+ASR: 【P2 预留，未实现】历史方案：前端 wav 上传 → REST POST /speech/asr →
+      Provider.Recognize(paraformer 文件转写；2MB/20s 上限)——D-17 降级为 P2 可选；
+      现行作答/跟读转写一律走 Web Speech / Omni InputTranscript 文本通道（02 §11.3、§12.3/§12.4）
 ```
 
 ---
@@ -240,8 +241,8 @@ type OmniSession interface {
 }
 // OmniEvent 归一化（屏蔽协议细节）:
 //   SpeechStarted{}                          → 触发打断/跟读起判
-//   SpeechStopped{}                          → 跟读一遍完成候选（repeat_done）
-//   InputTranscript{text}                    → 作答文本（进判分管线）
+//   SpeechStopped{}                          → 学生停止说话（仅相位等待窗参考，不作跟读判定）
+//   InputTranscript{text}                    → repeating 相位=跟读判读文本(Judge 当前词)；作答相位=作答文本
 //   AudioDelta{pcm24k} / AudioDone{}         → 老师语音流（转发给学生端 WS）
 //   Error{code,msg}                          → 降级触发
 ```
@@ -252,15 +253,17 @@ type OmniSession interface {
 学生浏览器 ──WS(课堂频道, 二进制音频帧)──▶ Go 后端 Omni 中继
                                           ├─ AppendAudio → DashScope
                                           ├─ ◀── OmniEvent 归一化后注入课堂事件总线:
-                                          │    SpeechStopped → 状态机 repeat_done(n)
-                                          │    InputTranscript → student_answered(text) → 判分管线(两级)
+                                          │    InputTranscript → HandleVoiceText 管线(指令解析:
+                                          │      repeating=Judge(当前词,text)通过→repeat_done /
+                                          │      作答=student_answered(text)→判分管线(两级))
                                           │    AudioDelta → 转发学生端(teacher_voice 帧)
                                           └─ 快路径话术槽: 话术层给文本 → Speak(text) 流式说出
 约束:
- - REPEATING 阶段**双保险防回声**（R2-TE-05）：① 后端硬拦——REPEATING 期间对 Omni
-   Session 的 Speak() 调用一律拒绝（服务端拦截，非仅靠 instructions 约束）；
-   ② 前端静默——vad.ts 检测到 REPEATING 阶段即 mute 全部老师音频输出通道（无论
-   Omni/独立 TTS 是否误发）。Omni 健康自检含"REPEATING 拦截验证"用例。
+  - REPEATING 阶段**双保险防回声**（R2-TE-05）：① 后端硬拦——REPEATING 期间对 Omni
+    Session 的 Speak() 调用一律拒绝（服务端拦截，非仅靠 instructions 约束）；
+    ② 前端静默——课堂 UI 检测到 REPEATING 阶段即 mute 全部老师音频输出通道（无论
+    Omni/独立 TTS 是否误发；原 vad.ts 能量门限方案已废弃，见 02-SDD §12.3）。
+    Omni 健康自检含"REPEATING 拦截验证"用例。
  - 非跟读阶段话术输出：优先 Omni Speak() 流式语音（phase-aware），失败降级独立 TTS，
    再降级文字气泡；REPEATING 期强制文字气泡（classroom.say）。
  - 测试作答阶段 SpeechStarted 触发 CancelSpeaking（学生抢答打断老师，拟真）
