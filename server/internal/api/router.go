@@ -173,6 +173,9 @@ func (a *App) Router() *gin.Engine {
 
 	// ---- 学生学习 ----
 	student := authed.Group("/student", a.roleMW(auth.RoleStudent))
+	student.GET("/books", func(c *gin.Context) {
+		c.JSON(http.StatusOK, ok(a.MyBooks(claimsOf(c).UID)))
+	})
 	student.POST("/books/:bookId/enable", func(c *gin.Context) {
 		bid, _ := strconv.ParseInt(c.Param("bookId"), 10, 64)
 		if err := a.EnableBook(claimsOf(c).UID, bid); err != nil {

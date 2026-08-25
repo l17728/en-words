@@ -209,6 +209,25 @@ func NewApp(clock Clock, db *gorm.DB) *App {
 
 // ---- 学生-词库桥接（FR-C）----
 
+// MyBooks 某生已启用词库列表（Dashboard"我的词库"；enablement=记忆卡存在）。
+func (a *App) MyBooks(studentID int64) []*wordbook.Book {
+	ids, err := a.Sched.StudentBooks(studentID)
+	if err != nil {
+		a.Log.Warn("api", "mybooks_query_failed", map[string]any{
+			"student_id": studentID, "err": err.Error()})
+		return []*wordbook.Book{}
+	}
+	out := make([]*wordbook.Book, 0, len(ids))
+	for _, id := range ids {
+		b, err := a.Books.GetBook(id)
+		if err != nil {
+			continue // 词库已被管理员下架/删除：跳过不炸整页
+		}
+		out = append(out, b)
+	}
+	return out
+}
+
 // EnableBook 选库：为该生该库建立记忆卡（未摸底）。
 func (a *App) EnableBook(studentID, bookID int64) error {
 	b, err := a.Books.GetBook(bookID)
