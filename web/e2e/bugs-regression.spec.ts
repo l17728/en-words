@@ -37,6 +37,11 @@ async function ensureStudent(page: Page): Promise<string> {
   return cr.data.token
 }
 
+async function getUserToken(page: import('@playwright/test').Page): Promise<string> {
+  const tok = await page.evaluate(() => localStorage.getItem('token'))
+  return tok || ''
+}
+
 test.describe('BUG 回归：本轮修复锁定', () => {
   test('BUG-1+2: 登录后选库无 unauthorized + 昵称正确显示（会话态单一事实源/编码）', async ({ page }) => {
     await ensureStudent(page)
@@ -85,20 +90,32 @@ test.describe('BUG 回归：本轮修复锁定', () => {
         headers: { Authorization: `Bearer ${adminTok}` },
         data: { name: 'BUG回归库', grade: 'g7', description: '回归' },
       })).json()
+      if (mk.code !== 0 && !(mk.msg || '').includes('重复') && !(mk.msg || '').includes('duplicate') && !(mk.msg || '').includes('UNIQUE')) {
+        throw new Error('建库失败: ' + mk.msg)
+      }
+      // 重查拿 ID（重跑时已存在的库 create 报 duplicate → 从列表找）
+      let newID = mk.data?.ID
+      if (!newID) {
+        const bl = (await (await page.request.get(API + '/wordbooks', {
+          headers: { Authorization: `Bearer ${adminTok}` },
+        })).json()).data
+        newID = bl.find((b: { Name: string }) => b.Name === 'BUG回归库')?.ID
+      }
+      if (!newID) throw new Error('拿不到 BUG回归库 ID')
       const entries = [
         { word: 'cat', meanings: ['n. 猫'] }, { word: 'dog', meanings: ['n. 狗'] },
         { word: 'apple', meanings: ['n. 苹果'] }, { word: 'bee', meanings: ['n. 蜜蜂'] },
         { word: 'fish', meanings: ['n. 鱼'] },
       ]
-      const imp = await (await page.request.post(`${API}/wordbooks/${mk.data.ID}/import/commit`, {
+      const imp = await (await page.request.post(`${API}/wordbooks/${newID}/import/commit`, {
         headers: { Authorization: `Bearer ${adminTok}` }, data: { entries },
       })).json()
       if (imp.code !== 0) throw new Error('导入失败: ' + imp.msg)
-      const pub = await (await page.request.post(`${API}/wordbooks/${mk.data.ID}/publish`, {
+      const pub = await (await page.request.post(`${API}/wordbooks/${newID}/publish`, {
         headers: { Authorization: `Bearer ${adminTok}` },
       })).json()
-      if (pub.code !== 0) throw new Error('发布失败: ' + pub.msg)
-      bk = { ID: mk.data.ID }
+      if (pub.code !== 0 && !(pub.msg || '').includes('invalid status')) throw new Error('发布失败: ' + pub.msg)
+      bk = { ID: newID }
     }
     // 学生 enable（幂等：已 enable 报错忽略——重复 enable 时卡片已存在）
     await page.request.post(`${API}/student/books/${bk.ID}/enable`, {
@@ -111,7 +128,19 @@ test.describe('BUG 回归：本轮修复锁定', () => {
     await page.getByRole('button', { name: '开始学习' }).click()
     await expect(page.getByText('今天也想见叮当老师').first()).toBeVisible({ timeout: 20_000 })
 
-    // 第一次摸底（API 快速路径，勾 cat）
+    // 第一次摸底（API 快速路径，勾 cat）——持久化模式下先清残留 scheduled 课（幂等重跑）
+    const preLS = (await (await page.request.get(`${API}/student/lessons?bookId=${bk.ID}`, {
+      headers: { Authorization: `Bearer ${tok}` },
+    })).json()).data ?? []
+    const stale = preLS.filter((l: { Status: string }) => l.Status === 'scheduled')
+    if (stale.length > 0) {
+      // 用重摸底语义清掉：空勾选 finish 触发 ResetForReplacement+重排
+      const p0 = await (await page.request.post(`${API}/student/books/${bk.ID}/placement`, {
+        headers: { Authorization: `Bearer ${tok}` },
+        data: { knownWordIds: [], finish: true },
+      })).json()
+      expect(p0.code).toBe(0)
+    }
     const catW = (await (await page.request.get(`${API}/wordbooks/${bk.ID}/words`, {
       headers: { Authorization: `Bearer ${tok}` },
     })).json()).data.entries.find((e: { Word: string }) => e.Word === 'cat')
@@ -157,10 +186,13 @@ test.describe('BUG 回归：本轮修复锁定', () => {
     if (await startBtn.isVisible({ timeout: 8_000 }).catch(() => false)) {
       await startBtn.click()
     } else {
-      await page.goto(BASE + '/placement/' + await (async () => {
-        const books = (await (await page.request.get(API + '/wordbooks')).json()).data
-        return books.find((b: { Name: string }) => b.Name === 'BUG回归库').ID
-      })())
+      // 幂等兜底：直查库 ID（带鉴权防 undefined）
+      const bl = (await (await page.request.get(API + '/wordbooks', {
+        headers: { Authorization: `Bearer ${await getUserToken(page)}` },
+      })).json()).data ?? []
+      const target = bl.find((b: { Name: string }) => b.Name === 'BUG回归库')
+      if (!target) throw new Error('BUG回归库不存在于列表')
+      await page.goto(BASE + '/placement/' + target.ID)
     }
     await expect(page.getByText('摸底：把已经认识的点亮')).toBeVisible({ timeout: 15_000 })
     // 草稿恢复：cat+dog 两芯片应为 pressed（不清空）
@@ -208,8 +240,11 @@ test.describe('BUG 回归：本轮修复锁定', () => {
     await page.waitForTimeout(2200) // 0.8s 自动开读后 zhMeaning 渲染
     await expect(page.locator('div').filter({ hasText: /[猫狗苹果蜜蜂鱼]/ }).first())
       .toBeVisible({ timeout: 10_000 })
-    // 退出课堂（不消费整课）
-    await page.getByRole('button', { name: /退出/ }).click()
+    // 退出课堂（不消费整课）——退出带二次确认 Modal（文本无关定位抗编码差异）
+    await page.locator('header button, .ant-layout-header button').first()
+      .or(page.locator('button').filter({ hasText: /退|Exit/ }).first()).click()
+    // Modal 确定键（.ant-modal .ant-btn-primary；若 Modal 未弹则此步 no-op）
+    await page.locator('.ant-modal .ant-btn-primary').click({ timeout: 5000 }).catch(() => {})
     await page.waitForTimeout(800)
 
     // BUG-4 续：重进课堂立即有词（快照补全所有教学相位）

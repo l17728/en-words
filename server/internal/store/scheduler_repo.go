@@ -93,7 +93,15 @@ func (r *SchedulerRepo) Boost(studentID, bookID, wordID int64) error {
 }
 
 func (r *SchedulerRepo) CreateLesson(l *scheduler.Lesson) error {
-	return r.db.Create(lessonFrom(l)).Error
+	rec := lessonFrom(l)
+	if rec.ID == 0 { // SQLite 自增
+		rec.ID = r.NextLessonID()
+	}
+	if err := r.db.Create(rec).Error; err != nil {
+		return err
+	}
+	l.ID = rec.ID // 回写（MemRepo 语义对齐——openNowIfTestMode 后续 SaveLesson 依赖）
+	return nil
 }
 
 func (r *SchedulerRepo) GetLesson(id int64) (*scheduler.Lesson, error) {
@@ -105,7 +113,12 @@ func (r *SchedulerRepo) GetLesson(id int64) (*scheduler.Lesson, error) {
 }
 
 func (r *SchedulerRepo) SaveLesson(l *scheduler.Lesson) error {
-	return r.db.Save(lessonFrom(l)).Error
+	rec := lessonFrom(l)
+	if rec.ID == 0 { // 防 GORM Save 零值主键插入新行（双课 BUG 真凶）
+		rec.ID = r.NextLessonID()
+		l.ID = rec.ID
+	}
+	return r.db.Save(rec).Error
 }
 
 func (r *SchedulerRepo) ListLessons(studentID, bookID int64) ([]*scheduler.Lesson, error) {

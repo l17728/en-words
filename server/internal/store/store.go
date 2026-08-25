@@ -44,9 +44,9 @@ type WordBook struct {
 
 type WordEntry struct {
 	ID       int64  `gorm:"primaryKey"`
-	BookID   int64  `gorm:"index:idx_book_word,unique"`
+	BookID   int64  `gorm:"index:idx_book_word,unique;index:idx_book_norm,unique"` // 双复合索引成员
 	Word     string `gorm:"index:idx_book_word,unique"`
-	NormKey  string `gorm:"index:idx_book_norm,unique"`
+	NormKey  string `gorm:"index:idx_book_norm,unique"` // 复合 (book_id,norm_key)：跨库同词不冲突
 	Phonetic string
 	Meanings string // JSON 数组
 	Unit     string
@@ -210,6 +210,11 @@ func Open(dbPath string) (*gorm.DB, error) {
 		&Feedback{}, &Notification{}, &AgentMemory{}, &AuditLog{}, &PlacementDraft{},
 	); err != nil {
 		return nil, fmt.Errorf("store: migrate: %w", err)
+	}
+	// R6 修复：旧库的 idx_book_norm 是单列唯一（跨库同词冲突真凶）——强制重建为复合 (book_id, norm_key)
+	d.Exec("DROP INDEX IF EXISTS idx_book_norm")
+	if err := d.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_book_norm ON word_entries(book_id, norm_key)").Error; err != nil {
+		return nil, fmt.Errorf("store: fix idx_book_norm: %w", err)
 	}
 	return d, nil
 }

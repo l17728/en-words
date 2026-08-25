@@ -1,4 +1,4 @@
 [go-test-all] exit=0
 [web-build] exit=0
-[e2e-bugs-regression] exit=0
-完成 53s → D:\en-words\review\regression-last.txt
+[e2e-bugs-regression] exit=1
+完成 45s → D:\en-words\review\regression-last.txt
