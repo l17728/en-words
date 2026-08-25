@@ -80,12 +80,12 @@ type Lesson struct {
 	FinishedAt    *time.Time
 	BatchWordIDs  string // JSON 数组
 	Phase         string
-	GroupIdx      int
+	GroupIdx      int    // 废弃（D-21 组架构移除），保留兼容旧库
 	WordIdx       int
 	RepeatCount   int
 	TtsSegIdx     int
 	QuizState     string
-	CumulativeIDs string // JSON
+	CumulativeIDs string // 废弃（D-21 综测池移除），保留兼容旧库
 	Result        string // JSON 课报
 	StateUpdAt    *time.Time
 }
