@@ -46,24 +46,24 @@
 
 | # | 事件 | 上下文条件 | 动作序列（工具调用 + 话术） |
 |---|---|---|---|
-| T-01 | lesson_started | 首课 | say(open+自我介绍+称呼昵称) → show_word(词1, 仅英文) |
+| T-01 | lesson_started | 首课 | say(open+自我介绍+称呼昵称) → show_word(词1, 中英对照) |
 | T-02 | lesson_started | 非首课 | say(open+上次成绩一句话) → show_word(词1) |
-| T-03 | word_shown（学生点击） | — | play_tts(en×3, 间隔1.5s) → play_tts(zh释义×1) → start_repeat(3遍) |
-| T-04 | repeat_done(3/3) | 本组还有词 | say(transition_word, 30%概率) → show_word(下一词) |
-| T-05 | repeat_done(3/3) | 本组最后一词 | say(transition_to_quiz) → start_quiz(本组小测) |
-| T-06 | repeat_timeout | 第1次 | say(nudge_repeat 轻提醒) → 重开 start_repeat 当遍 |
-| T-07 | repeat_timeout | 第2次 | say(nudge_repeat 更温和) → 计为完成，推进下一遍/词 |
+| T-03 | word_shown（学生点击或 0.8s 自动开读） | — | play_tts(en×repeatTimes, 间隔 ttsIntervalMs) → play_tts(zh释义×1) → start_repeat(1遍, 老师听读判读) |
+| T-04 | repeat_done（听读判读通过） | 本课还有词 | say(transition_word, 30%概率) → show_word(下一词) |
+| T-05 | repeat_done（听读判读通过） | 本课最后一词 | 触发 teaching_completed（2026-08-25 定案：教学中零测试，教完才测） |
+| T-06 | repeat_timeout | 第1次 | say(nudge_repeat 轻提醒) → 继续听读 |
+| T-07 | repeat_timeout | 第2次 | 计为完成，自动推进下一词（不阻塞课堂） |
 | T-08 | student_answered | 判分 correct | show_feedback_ui(check) → say(praise, 按密度配置) → 下一题 |
 | T-09 | student_answered | 判分 near（近似对） | show_feedback_ui(check) → say(gentle_correct 提示标准义) → 下一题 |
-| T-10 | student_answered | 判分 wrong | show_feedback_ui(cross) → **RETEACH 完整闭环**（R2-AI-04）：show_word(含中文) → play_tts(zh释义×1) → play_tts(en×1) → start_repeat(3遍) → say(reassure) → RETEST 同词 |
-| T-11 | quiz_completed（小测） | 本课还有组 | say(transition_group + 组小结一句) → show_word(下组词1) |
-| T-12 | quiz_completed（小测） | 本组序号 ≥2 | 综合测试 → start_quiz(此前所有组未毕业词, 打乱) |
-| T-13 | quiz_completed（综合） | 有打叉词 | say(transition_review) → start_review(打叉词) → 重测至对 |
-| T-14 | quiz_completed（综合） | 无打叉词 | say(strong_praise) → 下组词1 |
-| T-15 | final_test 完成 | 有打叉 | start_review(打叉) → 重测 → 全对后 T-16 |
+| T-10 | student_answered | 判分 wrong 且该词第1次错 | show_feedback_ui(cross) → **RETEACH 完整闭环**（R2-AI-04）：show_word(含中文) → play_tts(zh释义×1) → play_tts(en×1) → start_repeat(1遍) → say(reassure) → RETEST 同词（D-20：每词最多 2 次机会） |
+| T-11 | student_answered | 判分 wrong 且该词第2次错（或学生说"不会"） | show_feedback_ui(cross) → say(no_worries) → 记未掌握，跳下一题（不再重测） |
+| T-12 | teaching_completed（全部词教完） | — | say(transition_to_quiz) → start_quiz(kind=final, 池=本课全部词 Fisher-Yates 打乱, seed=lessonId×31+bookId) |
+| T-13 | quiz_completed（final） | 有打叉词 | say(transition_review) → start_review(轻量回顾: 中文大字+自动播英文, 无重测) |
+| T-14 | quiz_completed（final） | 无打叉词 | say(strong_praise) → T-16 |
+| T-15 | review 完成 | — | say(review_closing) → T-16 |
 | T-16 | 全部完成 | — | say(closing + 本课数据总结 + 预告下次) → advance_phase(LESSON_END) |
 | T-17 | phase_timeout(作答) | 第1次超时 | say(nudge_answer) → 等待再 20s |
-| T-18 | phase_timeout(作答) | 第2次超时 | 判 wrong → 走 T-10 |
+| T-18 | phase_timeout(作答) | 第2次超时 | 判 wrong → 按机会计数走 T-10/T-11 |
 | T-19 | state_restored（重连） | — | say(reconnect 安抚一句) → 恢复当前环节 |
 | T-20 | 学生连对 ≥5 | 节奏正常 | say(streak_praise)（每课最多2次） |
 
@@ -75,8 +75,8 @@
 
 ### 3.1 节奏原则（用户要求：稍快、不停顿过长）
 
-- **默认推进不等确认**：TTS 播完自动进跟读；跟读完成自动进下一词（0.8s 间隔）。
-- **等待只在需要学生动作处**：点击单词（8s）、跟读（每遍 10s）、作答（20s）。
+- **默认推进不等确认**：TTS 播完自动进跟读；跟读判读通过自动进下一词（0.8s 间隔）。
+- **等待只在需要学生动作处**：展示单词（0.8s 自动开读，点击可提前）、跟读（10s 听读判读窗口）、作答（20s）。
 - 超时第一处理永远是**温和话术**，第二处理才**跳过推进**，且跳过项记录为待复习（E-记录）。
 - 组间/环节转场停留 1.2s（转场话术+动画），不打断感。
 
@@ -131,18 +131,18 @@ encourageEveryN=8（默认，可配 [3,20]）
 | OP-5 | 今天状态怎么样？不管怎么样，五分钟热身后就进入状态了。 | 关怀 | 1 |
 | OP-6 | 上次你错了 {n} 个词，今天它们还会回来找你，这次干掉它们！ | 激将 | 1 |
 
-### 5.2 transition 转场（8）
+### 5.2 transition 转场（6）
 
 | id | 模板 | 场景 | w |
 |---|---|---|---|
 | TR-1 | 好，下一个： | 词间 | 4 |
 | TR-2 | 挺顺的嘛，继续。 | 词间 | 2 |
 | TR-3 | 这个词记住感觉了吗？来，下一个。 | 词间 | 2 |
-| TR-4 | 第 {group} 组学完了，小测时间，别紧张，就刚才那几个词。 | 进小测 | 3 |
-| TR-5 | 学了这么多，是骡子是马拉出来遛遛——综合测试开始！ | 进综合 | 2 |
-| TR-6 | 前面错的词我们再过一遍，这次你会记得更牢。 | 进回顾 | 3 |
-| TR-7 | 最后一个大关：完整测试。正常发挥就好。 | 进期末 | 3 |
+| TR-4 | 词都学完了！来做个小验收，就刚才学的那些，别紧张。 | 教完进 final（2026-08-25 定案：唯一测试） | 3 |
+| TR-6 | 前面错的词我们再过一遍，这次你会记得更牢。 | 进轻量回顾 | 3 |
 | TR-8 | 快到终点了，坚持一下，{name}。 | 疲劳期 | 2 |
+
+> TR-5（综合测试）/TR-7（期末）随组测/综测/期末三分架构废弃删除，final 话术由 TR-4 承担。
 
 ### 5.3 encourage 鼓励（8）
 
@@ -152,10 +152,10 @@ encourageEveryN=8（默认，可配 [3,20]）
 | EN-2 | 反应很快啊 {name}！ | 判对 | 2 |
 | EN-3 | 对！这个 {word} 你已经拿下了。 | 判对 | 2 |
 | EN-4 | 连着对 {n} 个了，今天状态在线！ | 连对 | 2 |
-| EN-5 | 这组全对，比上一组还稳，进步看得见。 | 组全对 | 2 |
+| EN-5 | 这波连着全对，比刚才还稳，进步看得见。 | 连对全对 | 2 |
 | EN-6 | 好样的，这个词第二次见到你就认识了。 | 毕业词 | 2 |
 | EN-7 | {name}，正确率越来越高了，给自己一点掌声。 | 阶段性 | 1 |
-| EN-8 | 这波综合测试零失误，太强了！ | 综合全对 | 1 |
+| EN-8 | 这波完整测试零失误，太强了！ | final 全对 | 1 |
 
 ### 5.4 correct 纠错/安抚（7）
 
@@ -177,7 +177,7 @@ encourageEveryN=8（默认，可配 [3,20]）
 | CL-2 | 下课！今天正确率 {p}%，比上次进步了，保持这个节奏！ | 2 |
 | CL-3 | 今天的词都过关了，明天老时间，我们复习加新词，不见不散。 | 2 |
 | CL-4 | 表现很稳，{name}。休息一下眼睛，明天见！ | 2 |
-| CL-5 | 错误都消灭了才算下课，你看，现在清零了，完美。 | 1 |
+| CL-5 | 错词刚才都在回顾里过了一遍，今天的账清了，完美。 | 1 |
 | CL-6 | 今天有点难熬，但你坚持完了，这本身就是本事。明天轻松点。 | 1 |
 
 ### 5.6 nudge 提醒（7）
