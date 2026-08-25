@@ -18,7 +18,7 @@
 9. [数据模型设计](#9-数据模型设计)
 10. [REST API 设计](#10-rest-api-设计)
 11. [WebSocket 协同协议设计](#11-websocket-协同协议设计)
-12. [语音能力设计（TTS/ASR/VAD）](#12-语音能力设计)
+12. [语音能力设计（TTS/ASR/听读判读）](#12-语音能力设计)
 13. [前端设计](#13-前端设计)
 14. [可观测性设计（定位日志）](#14-可观测性设计定位日志)
 15. [安全设计](#15-安全设计)
@@ -34,7 +34,7 @@
 ```
 ┌─────────────────────────────── 用户层 ────────────────────────────────┐
 │  学生浏览器 (React18+AntD5+Zustand)          管理员浏览器（管理后台）    │
-│   学习UI / 协同课堂UI / 反馈 / TTS播放/VAD/麦克风 │ 词库管理/配置/审计    │
+│   学习UI / 协同课堂UI / 反馈 / TTS播放/语音识别/麦克风 │ 词库管理/配置/审计    │
 └──────────────┬──────────────────────────────┬────────────────────────┘
                │ HTTPS(WSS)                   │ HTTPS
 ┌──────────────▼──────────────────────────────▼────────────────────────┐
@@ -114,7 +114,7 @@ en-words/
 │   │   ├── stores/              # Zustand
 │   │   ├── pages/               # 登录/词库广场/摸底/课程表/课堂/统计/管理后台
 │   │   ├── classroom/           # 协同课堂组件（渲染 action 指令）
-│   │   ├── audio/               # TTS播放/VAD/录音上传
+│   │   ├── audio/               # TTS播放/语音识别（原 VAD/录音上传已废弃）
 │   │   └── scripts/             # 话术口语化展示辅助
 │   └── tests/                   # 前端单测 + Playwright E2E
 └── scripts/                     # 构建/种子数据/覆盖率脚本
@@ -149,7 +149,7 @@ type Tool struct {
 |---|---|---|---|
 | `classroom.show_word` | lessonId, wordId, phase | low | UI 显示单词卡（仅英文或含中文） |
 | `classroom.play_tts` | lessonId, text, lang, repeat, intervalMs | low | 触发学生端 TTS 朗读 |
-| `classroom.start_repeat` | lessonId, wordId, times | low | 开始学生跟读环节（VAD 计次） |
+| `classroom.start_repeat` | lessonId, wordId, times | low | 开始学生跟读环节（老师听读判读，2026-08-25 定案） |
 | `classroom.start_quiz` | lessonId, quizId, items[] | low | 出测试题（仅英文） |
 | `classroom.judge_answer` | lessonId, itemId, rawText, judgment | mid | 提交判分结果（对/错/近似） |
 | `classroom.show_feedback_ui` | lessonId, kind(check/cross) , wordId | low | 打勾/打叉动画 |
@@ -267,11 +267,11 @@ Agent(LLM function call)
 |---|---|
 | `lesson_started` | 学生进入 |
 | `word_shown` / `tts_finished` | 展示/朗读完成回执 |
-| `repeat_done(n)` | 学生完成第 n 遍跟读（VAD） |
-| `repeat_timeout` | 跟读超时 |
+| `repeat_done` | 学生跟读完成（老师听读判读通过：ASR 转写匹配当前词，或超时兜底计为完成——2026-08-25 定案，单遍制） |
+| `repeat_timeout` | 跟读超时（nudge 提醒后自动推进） |
 | `student_answered` | 测试作答（文本或 ASR 转写结果） |
-| `group_completed` | 一组 5 词教完 |
-| `quiz_completed` | 小测/综合测试判分完成 |
+| `teaching_completed` | 本课全部词教完 → 触发 final 完整测试 |
+| `quiz_completed` | final 测试判分完成 |
 | `phase_timeout` | 任意等待超时（**平台计时器触发**） |
 
 **上下文预算（话术层）**：仅含 当前槽位 + 当前词 + 最近 5 条事件 + 本课统计摘要（连对/错题/疲劳度）——token 有界，不随课程长度增长（评审发现 AI-05）。
@@ -296,32 +296,28 @@ Agent(LLM function call)
 
 ### 5.1 顶层阶段（Phase）
 
+> **用户定案（2026-08-25）教学测试分离**：教学中不测试——全部词顺序教完才开始一次性完整测试（final）。
+> 组内小测（GROUP_QUIZ）与综合测试（CUMULATIVE_TEST）已随之移除；组测/综测期间的全部错题重测语义并入 final 测试。
+
 ```
 LESSON（可跨多个 SESSION 续课，见 §5.5）
-  ├─ TEACHING_GROUP (g=1..G)          # 教学阶段，逐组
-  │   ├─ TEACH_WORD (w=1..5)          #   逐词
-  │   │   ├─ SHOW_WORD                #   仅英文展示
-  │   │   ├─ TTS_SEG (i=1..N+1)       #   朗读段：en×ttsEnRepeat 后 zh×1（R2-FE-02 拆分）
-  │   │   ├─ REPEATING (n=1..repeatN) #   学生跟读，VAD 计次
-  │   │   └─ WORD_DONE → 下一个词
-  │   └─ GROUP_QUIZ                   #   组内小测（本组+旧词）；**串行逐题**是设计意图
-  │       ├─ QUIZ_ITEM (仅英文题面)   #   （教学式问答=老师逐题问，非整卷并发考试）
-  │       │   ├─ WAIT_ANSWER          #   学生语音/文本作答
-  │       │   ├─ JUDGING              #   ASR→LLM 判分
-  │       │   └─ WRONG → RETEACH      #   RETEST=同词新 round 的 quiz_item（唯一约束含 round）
-  │       │       ├─ SHOW_MEANING     #   RETEACH 完整闭环（=T-10，术语统一：show_word(phase=with_zh)）
-  │       │       ├─ TTS_SEG(zh×1,en×1) + REPEATING(3遍)  # R2-AI-01
-  │       │       └─ RETEST           #     → 重测同词，直至答对
-  │       └─ QUIZ_DONE
-  ├─ CUMULATIVE_TEST (从第2组起)      # 综合测试（此前所有组未毕业词，Fisher-Yates 打乱）
-  │   └─ 同 QUIZ_ITEM 循环；答对毕业出池
-  │   └─ REVIEW_WRONG                 # 打✗词回顾=轻量（显中文+TTS 朗读，无跟读）；
-  │       └─ 重测仍错 → 升级 RETEACH 完整闭环（含跟读）   # R3-AI 边界明确
-  │       # 实现注记：REVIEW_WRONG 复用 tts_seg 相位 + InReview 上下文标志（非独立相位常量），
-  │       # 与 show_word(phase=with_zh) 同理——语义相位≠物理相位，快照含 InReview/ReviewIdx/ReviewList
-  ├─ FINAL_TEST                       # 全批次完整测试（G 组全部完成后）
-  │   └─ 同上 + REVIEW_WRONG + RETEST
-  └─ LESSON_END                       # 总结话术 → 持久化 → 触发系统Agent
+  ├─ TEACHING (w=1..W, W=wordsPerLesson)  # 教学阶段，逐词顺序推进（无分组、无插入测试）
+  │   ├─ SHOW_WORD                        #   中英对照展示（点击或 0.8s 自动开读）
+  │   ├─ TTS_SEG (i=1..N+1)               #   朗读段：en×ttsEnRepeat 后 zh×1（R2-FE-02 拆分）
+  │   ├─ REPEATING                        #   学生跟读一遍；老师听读判读（ASR 转写匹配当前词，
+  │   │                                   #   correct/near → 判定读完；超时 nudge 后计为完成兜底）
+  │   └─ WORD_DONE → 下一个词（直至全部教完）
+  ├─ FINAL_TEST (教完全部词后一次性开始)     # 完整测试（全部词 Fisher-Yates 打乱，seed=lessonId*31+bookId）
+  │   └─ QUIZ_ITEM (仅英文题面)            #   串行逐题（教学式问答=老师逐题问，非整卷并发考试）
+  │       ├─ WAIT_ANSWER                  #   学生语音/文本作答
+  │       ├─ JUDGING                      #   ASR→LLM 判分
+  │       └─ 第1次错 → RETEACH 完整闭环（show_word(phase=with_zh) → zh→en→跟读 → 重测 round+1）
+  │           第2次仍错/说"不会" → 记未掌握（ReteachN+FinalWrong）跳下一题（用户定案：每词最多 2 次机会）
+  │   └─ QUIZ_DONE
+  ├─ REVIEW_WRONG                         # final 错词轻量回顾（显中文+TTS 朗读，无跟读）
+  │       # 实现注记：复用 tts_seg 相位 + InReview 上下文标志（非独立相位常量），
+  │       # 快照含 InReview/ReviewIdx/ReviewList
+  └─ LESSON_END                           # 总结话术 → 持久化 → 触发系统Agent
 ```
 
 ### 5.2 状态持久化（N2 可靠性，R2-BE-02 改列存）
@@ -339,7 +335,7 @@ lessons 表状态字段独立成列（非单一 JSON）：
 
 | 阶段 | 默认超时 | 超时动作 |
 |---|---|---|
-| SHOW_WORD 等点击 | 8s | Agent 话术引导 → 自动开始朗读 |
+| SHOW_WORD 等点击 | 0.8s | 自动开始朗读（用户定案二合一节奏：展示即开读，不等长思考；点击仍可立即开始） |
 | **TTS_SEG 单段**（en 或 zh 各一段） | 词长+2s | 跳过本段记 `tts_skipped` 事件 → 下一段；段全完/全跳过 → 进跟读（R2 拆段粒度） |
 | 单遍跟读 | 10s | 温和提醒 → 计为完成（不阻塞） |
 | 测试作答 | 20s | Agent 提示 → 再 20s → 判为"不会"（错） |
@@ -350,15 +346,17 @@ lessons 表状态字段独立成列（非单一 JSON）：
 
 ### 5.4 毕业/测试池规则（D9/F4）
 
-- 每词维护 `consecutiveCorrect`（**课内计数**，结课清零）；小测/综合/期末任一答对 +1，答错清 0。
-- `consecutiveCorrect ≥ graduateThreshold(默认2)` → **课内掌握**：从本课后续综合/期末测试池移除（打✓）。记忆卡 status 不变（长期毕业见 §6.2）。
-- 期末测试单独统计本课数据（打✓=课内掌握，打✗=进复习重测循环）。
-- **打乱算法**（R2-TE-03）：综合/期末测试池 Fisher-Yates 洗牌，`seed = lessonId*31 + bookId`，确定性可复现（E2E 断言稳定）。
+> 2026-08-25 教学测试分离定案后，测试只剩 final 一种；小测/综合测试的连对计数场景随之消失，consec 仅在 final（含 RETEACH 重测）中累积。
+
+- 每词维护 `consecutiveCorrect`（**课内计数**，结课清零）；final 测试（含重测）答对 +1，答错清 0。
+- `consecutiveCorrect ≥ graduateThreshold(默认2)` → **课内掌握**：从本课期末重测池移除（打✓）。记忆卡 status 不变（长期毕业见 §6.2）。
+- final 测试单独统计本课数据（打✓=课内掌握，打✗=进轻量回顾 REVIEW_WRONG，不再重测）。
+- **打乱算法**（R2-TE-03）：final 测试池 Fisher-Yates 洗牌，`seed = lessonId*31 + bookId`，确定性可复现（E2E 断言稳定）。
 
 ### 5.5 长课与续课（R2-TE-01）
 
-- wordsPerLesson 最大 100 = 20 组，单次 session 可能超长 → 引入 `sessionTimeoutMin`(默认 60)。
-- 超时/学生主动退出：进度落库，lesson.status=`in_progress_paused`，下次进入**从断点续课**（batch 不变，已完成组/词不重学；已判分题不重判）。
+- wordsPerLesson 最大 100 词，单次 session 可能超长 → 引入 `sessionTimeoutMin`(默认 60)。
+- 超时/学生主动退出：进度落库，lesson.status=`in_progress_paused`，下次进入**从断点续课**（batch 不变，已完成词不重学；已判分题不重判）。
 - 续课超过 open_at+48h 未完成 → cron 判定课程过期，按 §6.4 逾期重排（已学部分记忆卡正常推进，未学部分 LadderStep 不变）。
 
 ### 5.6 课后学习报告（D-13/D16）
@@ -516,14 +514,12 @@ submitted → processing → applied
 
 | key | 类型 | 默认 | 边界 | 说明 |
 |---|---|---|---|---|
-| wordsPerLesson | int | 60 | [40,100] | 每课词数 |
-| groupSize | int | 5 | [5,5]（v1 锁定） | 每组词数 |
-| ttsEnRepeat | int | 3 | [1,5] | 英文朗读遍数 |
+| wordsPerLesson | int | 60 | [50,100] | 每课词数（用户定案 2026-08-25：一次课 50~100 词） |
+| ttsEnRepeat | int | 3 | [1,5] | 英文朗读遍数（3 遍英文+1 遍中文） |
 | ttsIntervalMs | int | 1500 | [500,4000] | 朗读间隔 |
-| repeatTimes | int | 3 | [1,5] | 跟读遍数 |
-| quizOldWords | int | 3 | [0,10] | 小测混入旧词数 |
-| timeoutShowWordS | int | 8 | [3,30] | 展示等点击 |
-| timeoutRepeatS | int | 10 | [5,60] | 单遍跟读 |
+| repeatTimes | int | 1 | [1,5] | 跟读遍数（用户定案 2026-08-25：跟读一遍，老师听读判读通过即下一词） |
+| timeoutShowWordS | int | 8 | [3,30] | 展示等点击（实际生效 0.8s 自动开读，见 §5.3 定案注记） |
+| timeoutRepeatS | int | 10 | [5,60] | 单遍跟读（超时 nudge 后计为完成兜底） |
 | timeoutAnswerS | int | 20 | [10,120] | 测试作答 |
 | ladder | []int | [1,1,2,2,4,7,14,30] | 每项[1,60]，长度[3,10] | 间隔阶梯 |
 | goalMode | enum | longterm | longterm\|exam_sprint | 目标模式 |
@@ -531,6 +527,8 @@ submitted → processing → applied
 | overdueHours | int | 24 | [6,72] | 逾期判定 |
 | graduateThreshold | int | 2 | [2,4] | 连对毕业 |
 | encourageEveryN | int | 8 | [3,20] | 每 N 词鼓励一次 |
+
+> 已废弃键（保留 schema 兼容、无行为语义）：`groupSize`（分组随 2026-08-25 教学测试分离定案移除——教学不再分组）、`quizOldWords`（小测混入旧词随组测移除）。
 
 ### 8.2 读取合并
 
@@ -614,61 +612,66 @@ admin_todos(id, source: feedback|audit, ref_id, note, status, handled_by, create
 
 > 统一前缀 `/api/v1`；JWT（用户）/ API-Key（Agent）；响应包 `{code, msg, data}`；全链路 trace_id（§14）。
 
-### 10.1 认证
+### 10.1 认证与引导
 ```
 POST /auth/login                  {username,password} → {token, role}
 POST /auth/change_password
 GET  /me                          → 个人信息+昵称
+POST /me/nickname                 {nickname} 改昵称
+GET  /bootstrap/status            → {needed} 首启引导探测
+POST /bootstrap                   无 admin 时创建首个管理员（随后封死）；可选导入种子词库
 ```
 
 ### 10.2 词库（admin；students 只读已发布）
 ```
 GET/POST/PUT/DELETE /wordbooks[/:id]
-GET  /wordbooks/:id/words?page&size
-POST/PUT/DELETE /wordbooks/:id/words[/:wordId]
 POST /wordbooks/:id/import/parse    {rawText} → {entries[], llmMeta}     # LLM解析
 POST /wordbooks/:id/import/commit   {entries[]} → {inserted, skipped}
+POST /wordbooks/:id/publish         # 发布（draft→published）
+POST/PUT/DELETE /wordbooks/:id/entries[/:entryId]   # 词条增改删
+GET  /wordbooks/:id/words?page&size                                     # 词条列表（复述，含摸底用）
 GET  /wordbooks/:id/export          → csv
 ```
 
 ### 10.3 学生学习
 ```
-GET  /student/books                                 # 我的已启用词库（enablement=记忆卡存在；Dashboard"我的词库"）
-POST /student/books/:bookId/enable               # 选库 → 触发摸底
-GET  /student/books/:bookId/placement?screen=N   # 摸底：每屏100词
-POST /student/books/:bookId/placement            {knownWordIds} （可多次提交）
-POST /student/books/:bookId/placement/finish
-GET  /student/lessons?bookId                     # 计划视图（含虚线预测）
-GET  /student/lessons/:id                        # 详情
-GET  /student/progress?bookId                    # 统计
+GET  /student/books                                 # 我的已启用词库（Dashboard"我的词库"）
+POST /student/books/:bookId/enable                  # 选库 → 触发摸底
+GET  /student/books/:bookId/placement               # 摸底词条（含草稿恢复）
+POST /student/books/:bookId/placement               {knownWordIds, finish?}（可多次提交；finish=true 完成→排课）
+GET  /student/lessons?bookId                        # 计划视图（含虚线预测）
+GET  /student/lessons/:id/report                    # 课报详情
+GET  /student/notifications                        # 通知列表
+POST /student/notifications/read                    # 全部标记已读
 ```
 
 ### 10.4 课堂（学生）
 ```
-GET  /classroom/lessons/:id/enter     # 校验开放时间 → 课堂快照 + WS ticket
-POST /classroom/lessons/:id/answer    # 文本作答兜底 {quizItemId, text}
-POST /classroom/lessons/:id/skip      # 跳过跟读/单词
+POST /classroom/lessons/:id/enter     # 校验开放时间 → 课堂快照 + WS ticket
+POST /classroom/lessons/:id/event     {event, text}   # 学生事件（白名单校验；REST 兜底通道）
+POST /classroom/lessons/:id/voice     {text}          # 语音转写文本（指令解析→跟读判读→反馈→作答）
+POST /classroom/lessons/:id/resume    # 断点续课
+# 注：作答无独立 /answer、跳过无独立 /skip——统一走 /event(answer_submitted|repeat_skipped) 或 /voice（"跳过"指令）
 ```
 
 ### 10.5 反馈与通知
 ```
 POST /feedbacks                        {text, channel}
 GET  /feedbacks/mine                   # 历史+处理结果
-GET/POST /notifications
 ```
 
-### 10.6 配置（admin / system_agent）
+### 10.6 配置与管理（admin / system_agent）
 ```
-GET  /config?scope=global|student&studentId&keys
-POST /config/set                      {scope, studentId?, key, value, reason}
-DELETE /config/override               {studentId, key}   # 删除学生覆盖→回落全局
-GET  /admin/audit?actor&tool&from&to  # 审计查询（admin）
+GET  /config?keys=…                    # 配置读取（全局+学生覆盖）
+POST /config/set                       {scope, studentId?, key, value, reason}
+DELETE /config/override                {studentId, key}   # 删除学生覆盖→回落全局
+GET  /admin/audit?actor&tool&from&to   # 审计查询（admin）
 
-GET/POST/PUT  /admin/users            # 学生账号管理（FR-A1/A4）
-POST /admin/users/:id/reset_password  # 重置密码
-POST /admin/users/:id/disable         # 停用（踢下线）
-POST /admin/users/:id/enable
-GET  /admin/todos                     # 人工待办（投诉/越权告警）
+GET/POST  /admin/users                             # 学生账号管理（FR-A1/A4）
+POST /admin/users/:username/reset_password         # 重置密码（按用户名）
+POST /admin/users/:username/disable                # 停用（踢下线）
+POST /admin/users/:username/enable
+GET  /admin/todos                                  # 人工待办（投诉/越权告警）
 ```
 
 ### 10.7 Agent 专用
@@ -696,22 +699,24 @@ GET  /agent/tools                      # 该 Agent 可见工具清单（给 LLM 
 
 ### 11.2 消息类型
 
-**平台→学生（多数由 Agent 工具触发）**
+**平台→学生（状态机动作驱动）**
 
 | type | payload | 说明 |
 |---|---|---|
-| `state_snapshot` | 课堂全量状态 | 连接/重连首帧 |
-| `ui_action` | {action: show_word/play_tts/start_repeat/start_quiz/show_check/show_cross/start_review/say, params} | UI 指令（=模拟点击） |
-| `phase_changed` | {phase} | 阶段切换 |
-| `judge_result` | {quizItemId, judgment} | 判分反馈 |
-| `lesson_summary` | {stats} | 下课总结 |
+| `state_snapshot` | 课堂全量状态（phase/word/quiz_word/zhMeaning/paused） | 连接/重连首帧 |
+| `ui_action` | {action, …params} | UI 指令（=模拟点击）。action ∈ show_word / play_tts / tts_skipped / start_repeat / nudge_repeat / nudge_answer / start_quiz / show_quiz_item / show_check / show_cross / say_hint / start_review / say / lesson_summary / lesson_paused |
+| `phase_changed` | {from, phase} | 阶段切换 |
+| `judge_result` | {quiz_item, judgment, asr_text} | 判分反馈 |
+| `lesson_summary` | {report} | 下课总结（D-13 课报） |
 
-**学生→平台（平台转发给 Agent Runtime 作为事件）**
+**学生→平台（经 Room 管线进状态机）**
 
 | type | payload | 说明 |
 |---|---|---|
-| `student_event` | {event: word_clicked/repeat_done/repeat_skipped/answer_submitted/audio_url, data} | 学生活动 |
-| `heartbeat` | — | 30s 心跳 |
+| `student_event` | {event, text?} | 学生活动；event 白名单（R4-sec#6）：word_clicked / tts_finished / repeat_done / repeat_skipped / answer_submitted |
+| `voice_text` | {text} | 语音转写文本（浏览器 Web Speech / Omni 中继）：指令解析→**跟读判读**→反馈捕获→作答 |
+| `heartbeat` | — | 30s 心跳（回 heartbeat_ack） |
+| `resume` | — | 断点续课 |
 
 ### 11.3 可靠性
 
@@ -720,63 +725,67 @@ GET  /agent/tools                      # 该 Agent 可见工具清单（给 LLM 
 - **重连鉴权**（R2-AR-03/FE-03 细化）：enter 签发 **签名 JWT ticket**，payload `{lesson_id, student_id, iat, exp}`，`exp = open_at + overdueHours + 1h`（覆盖续课窗口）；WS 连接校验签名+exp+绑定关系。ticket **持久化** `ws_tickets` 表（服务重启不失效）。防重放：连接数上限=2（双标签页），超出拒最旧连接；lesson finished/expired 后 ticket 立即失效。
 - **多连接策略**（AR-02）：同一学生允许多标签页连接，全部收广播；学生事件按 `(connId, seq)` 去重；**作答按 quizItemId 幂等**（R2-BE-06：quiz_items 有 `(lesson_id, word_id, kind, round)` 唯一约束，判分前 `INSERT OR IGNORE` 抢占——并发重复提交只有一行胜出，败者读既有判分返回，无双判分）。
 - **判分/超时竞态**（BE-05）：作答窗口超时与 ASR 结果同时到达时**先到事件生效**，后到者丢弃并记 warn 日志。
-- 音频作答：录音 → `POST /api/v1/speech/asr` 上传转写 → 回传文本走 `answer_submitted`（音频不过 WS，避免大帧）。
+- 语音作答（实现定案）：浏览器 Web Speech / Omni 中继产出转写文本 → WS `voice_text` 帧或 REST `POST /classroom/lessons/:id/voice`（同一 HandleVoiceText 管线：指令解析→跟读判读→反馈捕获→作答判分）——音频不过 WS，避免大帧。
 
 ---
 
 ## 12. 语音能力设计
 
-### 12.4 语音指令解析（D-14，全语音操作）
+### 12.1 语音指令解析（D-14，全语音操作）
 
 ```
 输入源: 课堂内 = Omni InputTranscript 流（每个转写文本先过指令解析器再进判分/反馈）
-       课堂外 = 浏览器 Web Speech 识别结果(REST 上报)
+       课堂外 = 浏览器 Web Speech 识别结果(WS voice_text / REST /voice 上报)
 解析器: internal/voicecmd —— 确定性词表匹配, 不经 LLM
-  指令集: 下一个/继续 | 跳过 | 我读完了 | 重听一遍 | 暂停 | 退出课堂 |
+  指令集: 下一个/继续 | 跳过 | 重听一遍 | 暂停 | 退出课堂 |
           我想反馈*(捕获至句尾→feedbacks 表, 走 §7 G2 管线) |
           首页/课程表/统计/开始学习(L3 导航)
+          （"我读完了"口令已随 2026-08-25"老师听学生读完"定案移除——
+            跟读推进只认听读判读，不认口令/按钮）
   匹配: 归一化(去标点/全半角) + 编辑距离≤1 容错("下一下"→下一个) + 前缀触发(反馈类)
-  优先级: 教学指令 > 反馈触发 > 测试作答(quiz 阶段转写只进判分, 指令仅"跳过"生效)
+  优先级: 反馈触发 > 教学指令 > 跟读判读 > 测试作答
+          (quiz 阶段指令仅"跳过"生效; repeating 阶段指令仅"跳过"生效, 其余转写交听读判读)
 产出: VoiceCommand{Type, Payload} → 注入课堂事件总线(等价对应 UI 按钮点击) → UI 按钮高亮回执(L4)
 ```
 
-### 12.5 TTS（SpeechService）
+### 12.2 TTS（SpeechService）
 
 ```
 接口: TTSProvider.Synthesize(ctx, text, lang, voice) → audio bytes/URL
 实现: MockTTS(返回标记文本，前端转 Web Speech API 本地朗读)
-      DashScopeTTS(cosyvoice, 预留，见05)
+      DashScopeTTS(Omni 非实时 qwen3.5-omni-plus 单段合成+播放队列编排, D-17 定案; cosyvoice 已砍, 见05)
 播放: 前端 audio/ 模块统一排队播放（en×n 间隔 ttsIntervalMs + zh×1）
 兜底: Web Speech API 的 voices 异步加载/onend 不可靠 → 前端按字数估时+1s 看门狗
       强制视为完成；Web Speech 完全不可用 → 静音计时+视觉动画，tts_finished 照常
       上报，流程不阻塞（评审发现 FE-03，P0）
 ```
 
-### 12.5 VAD 跟读判定（前端 audio/vad.ts）
+### 12.3 跟读判定：老师听读判读（2026-08-25 定案，替代前端 VAD）
 
 ```
 0. 回声抑制（评审发现 FE-02，P0）：REPEATING 阶段老师通道只用文字气泡、
-   不发 TTS（nudge 提醒同样仅文字）——杜绝老师语音被学生麦克风拾音造成
-   VAD 误判"学生在读"
-1. 进入跟读前 1s 采集环境噪音基线 RMS → noiseFloor
-2. 动态门限 = max(noiseFloor×3, 绝对下限)
-3. 状态机: SILENT→SPEAKING(过门限≥200ms) → TRAILING(低于门限)
-4. TRAILING 持续 800ms → 判定"读完一遍" → 计数 → 下一遍
-5. 总超时（timeoutRepeatS）兜底；每遍亦可点"我读完了"按钮
-输出: repeat_done(n) 事件（不录音、不上传——只上传判定结果）
+   不发 TTS（nudge 提醒同样仅文字）——杜绝老师语音被学生麦克风拾音
+1. 学生跟读开口 → 浏览器 Web Speech（en-US）/ Omni InputTranscript 持续识别
+2. 转写文本 → HandleVoiceText 跟读判读分支：
+   Judge(当前词, meanings, 转写) ∈ {correct, near} → 老师确认"听到了" → repeat_done → 下一词
+   不匹配 → 继续听（不推进、不报错）
+3. 总超时（timeoutRepeatS）兜底：nudge_repeat 温和提醒（"再试一次，大声读出来～"）
+   → 仍超时 → 计为完成自动推进（不阻塞课堂）
+4. 学生也可说"跳过"（跟读相位唯一放行指令）
+输出: repeat_done 事件（不录音、不上传——只上传判定结果）
+注: 前端 VAD 能量门限方案（RMS 基线+动态门限+TRAILING 判定）已废弃——
+    能量只能证明"发了声"不能证明"读的是这个词"；判读走 ASR 转写+判分器 L1。
 ```
 
-### 12.6 ASR + LLM 判分（测试作答）
+### 12.4 ASR + LLM 判分（测试作答）
 
 ```
-学生点击麦克风说话（≤20s）→ MediaRecorder 采集 → Web Audio API 解码转
-   WAV(16kHz mono PCM) 上传 /speech/asr（统一 WAV：paraformer 对 webm/opus
-   支持不保证，浏览器端转码免服务端依赖；评审发现 FE-04，P1）
-  → ASRProvider（MockASR: 测试模式返回预置答案文本；DashScope paraformer 预留）
-  → 文本经 student_event(answer_submitted) 给 Agent
-  → Agent 调 classroom.judge_answer 前可调 LLMProvider.Judge(word, meanings, asrText)
-     （MockJudge: 归一化关键词匹配：中文同义/英文不区分大小写与冠词）
-文本兜底: 测试界面常驻输入框（K3 双通道）
+学生语音作答（wait_answer 相位浏览器自动开麦，zh-CN）→ Web Speech / Omni 转写文本
+  → WS voice_text 帧 / REST /voice（同一 HandleVoiceText 管线）
+  → 非指令文本 → answer_submitted 进判分管线
+  → Judge 两级判分: L1 归一化关键词匹配（中文同义/英文不区分大小写与冠词）
+                   L2 智谱 GLM 语义判分（近似/同义表述）
+文本兜底: 测试界面常驻输入框（K3 双通道；E2E/无麦克风环境走 REST 提交）
 ```
 
 ---
@@ -800,10 +809,11 @@ GET  /agent/tools                      # 该 Agent 可见工具清单（给 LLM 
 ```
 状态源: ws/client ← state_snapshot + ui_action 流 → zustand classroomStore
 渲染器: ActionRenderer —— ui_action.action → 对应组件：
-  show_word   → WordCard（仅英文大字 / 翻面显中文）
-  play_tts    → 播放队列（12.1）+ 喇叭动画
-  start_repeat→ RepeatPanel（"请跟读 第n/3遍" + 实时 VAD 波形 + 进度点）
-  start_quiz  → QuizPanel（仅英文题面 + 麦克风 + 文本输入兜底 + 倒计时环）
+  show_word   → WordCard（中英对照大字，点击开读）
+  play_tts    → 播放队列（§12.2）+ 喇叭动画
+  start_repeat→ RepeatPanel（"轮到你读了" + 🎙 监听指示——自动开麦 en-US，
+                老师听读判读通过自动下一词；无"我读完了"按钮，2026-08-25 定案）
+  start_quiz  → QuizPanel（仅英文题面 + 自动开麦 zh-CN + 文本输入兜底 + 倒计时环）
   show_check/cross → 判定动画（✓ 绿 / ✗ 红 抖动）
   start_review→ ReviewPanel（中文大字 + 自动播放英文）
   say         → TeacherBubble（老师头像气泡 + 可选 TTS 旁白）
