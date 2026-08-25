@@ -904,6 +904,11 @@ feedbackStore / adminStore —— classroomStore 只由 WS 与本地回执写入
 ```
 构建: make build → dist/enwords-server.exe(内嵌 web/dist 静态资源) + enwords.db
 运行: 双击/命令行启动 → 监听 :8080 → 家庭局域网访问 http://<host>:8080
+      开发: go run ./cmd/server [-persist] [-testmode] [-providers real]
+      参数: -persist 启用 SQLite 持久化（默认 data/enwords.db；-db <路径> 自定义）
+            -providers mock|real（real=智谱 GLM 判分L2+反馈解析，密钥读 secrets）
+            -testmode 跳过课程开放时间校验（E2E 专用，产品禁用）
+      持久化范围: 用户/词库/词条/记忆卡/课程/摸底草稿（store 包 14 表 GORM 自动迁移）
 首次: 引导创建管理员 → 导入词库 → 建学生账号
 备份: SQLite 单文件，内置每日自动 backup 到 ./backups（保留 14 份）
 升级: 替换单文件，migrations 自动执行

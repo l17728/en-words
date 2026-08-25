@@ -1,48 +1,42 @@
 {
  "model": "qwen-plus",
- "kb": 109,
+ "kb": 117,
  "problems": [
   {
    "severity": "P0",
    "where": "server/internal/api/hub.go:maybeFinishLocked",
-   "problem": "结课时调用 r.app.Sched.SettleLessonFinished 后，未校验返回错误即继续执行 PlanNext；若 SettleLessonFinished 失败（如 DB 写入失败），后续 PlanNext 可能基于脏状态计算，导致排课逻辑错乱或 panic。",
-   "fix": "在 r.app.Sched.SettleLessonFinished 调用后添加 error 检查，若 err != nil 则记录 warn 日志并 return，不执行后续 PlanNext 和 SystemAgent 决策。"
+   "problem": "结课时调用 app.Sched.SettleLessonFinished 后未校验错误即继续执行 PlanNext 和 SystemAgent 决策，若结算失败（如 DB 锁/约束冲突），后续排课和配置调整将基于错误状态进行，导致记忆卡状态不一致、课报数据错乱或越权配置变更。",
+   "fix": "在 maybeFinishLocked 中，若 SettleLessonFinished 返回 error，应立即 return 并记录 error 日志；后续 PlanNext 和 SystemAgent.Decide 必须在结算成功前提下执行。添加 guard：if err != nil { return }"
   },
   {
    "severity": "P0",
-   "where": "server/internal/classroom/classroom.go:OnJudged",
-   "problem": "判分幂等逻辑存在竞态：OnJudged 先读 st.Judged[item] 判断是否已处理，但 applyJudge 中再次检查并写入；若两个并发事件（如 WS + REST）同时触发 OnJudged，可能因 map 并发读写 panic（Go map 不安全）。",
-   "fix": "将 st.Judged 改为 sync.Map 或加 mutex 保护；或在 OnJudged 开头加锁，确保 st.Judged[item] 读取与 applyJudge 中的写入原子性。"
+   "where": "server/internal/classroom/classroom.go:applyJudge",
+   "problem": "RETEACH 完整闭环中，当 item.Round >= 1 时跳过重测直接 quizNext()，但未清除当前题在 QuizQueue 中的索引位置（st.QuizIdx 不变），导致后续 quizNext() 跳过下一题，造成漏题或索引越界 panic（QuizQueue[st.QuizIdx] 访问越界）。",
+   "fix": "在 applyJudge 的 '第 2 次机会用尽' 分支末尾，显式调用 st.QuizIdx++，确保 quizNext() 正确推进到下一题；或统一在 quizNext() 前保证 st.QuizIdx 已递增。"
   },
   {
    "severity": "P1",
    "where": "server/internal/api/app.go:IssueTicket",
-   "problem": "ticket 生成未做防重放/防预测：newToken() 未说明实现，若为简单时间戳+随机数且无签名，攻击者可预测或重放 ticket 绕过鉴权。",
-   "fix": "ticket 必须为 JWT 签名令牌（如 SDD §11.3 要求），payload 包含 lesson_id/student_id/exp，并由服务端密钥签名；当前内存 map 存储应替换为 JWT 解析验证，而非纯字符串匹配。"
+   "problem": "ticket 过期判定逻辑（expired）依赖 lesson.OpenAt，但 OpenAt 可能为 nil（如 lesson.status != scheduled/open），导致 panic 或 ticket 永不过期，引发安全风险（旧 ticket 复用）。",
+   "fix": "在 expired 方法中，先检查 lesson.OpenAt != nil，若为 nil 则返回 true（视为失效）；或在 IssueTicket 前强制校验 lesson.OpenAt 非空，否则拒绝签发。"
   },
   {
    "severity": "P1",
    "where": "server/internal/api/hub.go:HandleVoiceText",
-   "problem": "语音指令解析结果直接进入 feedbackCh 通道，但未对 feedbackCh 容量做背压控制；当大量语音反馈涌入时，select default 丢弃会导致反馈丢失，违反 FR-G 的‘必达’要求。",
-   "fix": "将 feedbackCh 改为带缓冲的 channel（如 make(chan string, 64) 已存在），并在 select 中移除 default 分支，改用阻塞发送；或增加 fallback 日志记录丢弃事件。"
+   "problem": "语音指令解析后，若 cmd == 'feedback'，通过 select { case r.FeedbackCh <- payload: } 发送，但 channel 容量仅 8 且无 default 分支，满载时阻塞并丢弃反馈，违反 FR-G（学生反馈必须可靠入队）。",
+   "fix": "将 FeedbackCh 改为带缓冲的 channel（如 32），并在发送时使用 select + default 确保不阻塞：select { case r.FeedbackCh <- payload: default: a.Log.Warn('voice', 'feedback_dropped', map[string]any{'lesson_id': r.lessonID}) }"
   },
   {
    "severity": "P1",
-   "where": "server/internal/classroom/classroom.go:applyJudge",
-   "problem": "RETEACH 完整闭环中，st.InReteach = true 设置后，未重置 st.QuizIdx 和 st.QuizQueue，导致 retestAfterReteach 替换 quiz item 时索引越界或操作错误队列。",
-   "fix": "在 applyJudge 进入 RETEACH 前，应清空当前 quiz 队列并重建单题重测队列；或确保 retestAfterReteach 中 st.QuizIdx 在合法范围内（如 st.QuizIdx < len(st.QuizQueue)）。"
+   "where": "server/internal/classroom/classroom.go:TimeoutFor",
+   "problem": "PhaseTTSSeg 超时计算中，当 m.state.InReteach || m.state.InReview 为 true 时，base 被重置为 zh 段估算值，但未重置 TtsSegIdx 导致 ttsAdvance() 逻辑错乱（如 RETEACH 时 TtsSegIdx=0 却按 zh 段超时），可能跳过关键段或无限循环。",
+   "fix": "在 TimeoutFor 的 PhaseTTSSeg 分支中，明确区分普通 tts_seg 和 reteach_show/review 场景：若 InReteach，则 base 基于 w.Meanings 计算且 seg_idx 应为 1（zh）；若 InReview，则 base 同样基于 zh 且 seg_idx 固定为 1。确保超时与实际播放段匹配。"
   },
   {
    "severity": "P2",
    "where": "server/internal/api/hub.go:emitTeacherUtterancesLocked",
-   "problem": "话术层鼓励逻辑硬编码 encourageEveryN=8，未读取配置中心 effective 值（SDD §8.2），违反‘一切参数可配置’核心理念。",
-   "fix": "将 r.encourageCounter >= 8 改为 r.encourageCounter >= r.app.Cfg.Int(r.studentID, \"encourageEveryN\")。"
-  },
-  {
-   "severity": "P2",
-   "where": "server/internal/classroom/classroom.go:TimeoutFor",
-   "problem": "PhaseTTSSeg 超时计算使用 len(m.CurrentWord().Word)+2 秒，但未考虑中文字符长度（中文 TTS 实际耗时更长），导致 zh 段超时过短，频繁跳过。",
-   "fix": "区分语言：英文段用 len(word)+2，中文段用 max(3, len(meaning)/2)+2（meanings[0] 字符数估算）或统一按 config.TimeoutTtsSegMs 配置。"
+   "problem": "话术渲染时，ActShowCross 分支调用 reteachCount(a.WordID) 获取重测次数，但 reteachCount 读取的是 machine.Snapshot().ReteachN[wordID]，而 ReteachN 在 OnJudged 中更新，但 emitTeacherUtterancesLocked 在 broadcastLocked() 中调用，此时 machine.Snapshot() 尚未包含本次判分结果（因 DrainActions 在 OnJudged 后才触发），导致话术显示 '第0次' 而非实际重测次数。",
+   "fix": "将 reteachCount 逻辑内联到 emitTeacherUtterancesLocked 中，直接从 r.machine.state.ReteachN[a.WordID] 读取（而非 Snapshot），确保获取最新值；或确保 OnJudged 更新 state 后再触发 utterance 渲染。"
   }
  ]
 }

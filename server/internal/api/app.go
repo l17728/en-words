@@ -237,7 +237,23 @@ func (a *App) EnableBook(studentID, bookID int64) error {
 // PlacementSubmit 摸底提交（known=已会词 entryID；finish=true 触发首课）。
 // 用户定案（2026-08-23）：重新摸底完成 = 覆盖旧摸底结果并重排学习计划——
 // 未开始的课作废+批次卡重置（ResetForReplacement），再以新摸底结果排新课。
+// R6-sec：knownWordIds 逐个校验归属该词库（防跨库 ID 注入打乱记忆卡）。
 func (a *App) PlacementSubmit(studentID, bookID int64, known []int64, finish bool) error {
+	if len(known) > 0 {
+		valid := map[int64]bool{}
+		entries, _, err := a.Books.ListEntries(bookID, 1, 1<<30)
+		if err != nil {
+			return err
+		}
+		for _, e := range entries {
+			valid[e.ID] = true
+		}
+		for _, id := range known {
+			if !valid[id] {
+				return fmt.Errorf("api: word entry %d not in book %d", id, bookID)
+			}
+		}
+	}
 	if err := a.Sched.MarkPlacement(studentID, bookID, known); err != nil {
 		return err
 	}

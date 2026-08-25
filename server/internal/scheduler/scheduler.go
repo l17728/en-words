@@ -571,18 +571,27 @@ func (s *Service) SettleLessonFinished(studentID, bookID int64, correct map[int6
 // HandleOverdue 逾期巡检（SDD §6.4）：expired + 次日同时段重排 + step/LastReviewAt 不变。
 func (s *Service) HandleOverdue() ([]int64, error) {
 	now := s.clock.Now()
-	overdueH := time.Duration(s.cfg.Int(0, "overdueHours")) * time.Hour
+	// R6-be：逾期阈值按学生级配置（学生覆盖优先于全局；overdueFor 内联缓存）
+	studentOverdue := map[int64]time.Duration{}
 	var replanned []int64
 	lessons, err := s.repo.ListLessons(0, 0)
 	if err != nil {
 		return nil, err
 	}
-	// 全量扫描（cron 视角）
+	// 全量扫描（cron 视角）——R6-be：每生阈值实时取（缓存去重）
 	type sb struct{ s, b int64 }
 	seen := map[sb]bool{}
 	var pairs []sb
+	overdueFor := func(studentID int64) time.Duration {
+		if d, ok := studentOverdue[studentID]; ok {
+			return d
+		}
+		d := time.Duration(s.cfg.Int(studentID, "overdueHours")) * time.Hour
+		studentOverdue[studentID] = d
+		return d
+	}
 	for _, l := range s.repoLessonsAll() {
-		if l.Status == LessonScheduledStr && now.After(l.OpenAt.Add(overdueH)) {
+		if l.Status == LessonScheduledStr && now.After(l.OpenAt.Add(overdueFor(l.StudentID))) {
 			p := sb{l.StudentID, l.BookID}
 			if !seen[p] {
 				seen[p] = true
@@ -593,10 +602,11 @@ func (s *Service) HandleOverdue() ([]int64, error) {
 	_ = lessons
 	for _, p := range pairs {
 		// 该生该库当前 scheduled 且过期的课 → expired
+		oh := overdueFor(p.s)
 		ls, _ := s.repo.ListLessons(p.s, p.b)
 		var latest *Lesson
 		for _, l := range ls {
-			if l.Status == LessonScheduledStr && now.After(l.OpenAt.Add(overdueH)) {
+			if l.Status == LessonScheduledStr && now.After(l.OpenAt.Add(oh)) {
 				l.Status = LessonExpiredStr
 				_ = s.repo.SaveLesson(l)
 				latest = l

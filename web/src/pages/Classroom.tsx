@@ -115,6 +115,8 @@ export default function ClassroomPage() {
   // speak = 入队（保持外部签名；word 参数已内聚在 text）
   const speak = useCallback(
     (text: string, lang: 'en-US' | 'zh-CN') => {
+      // R6-fe#1：REPEATING 相位不入队（回声抑制入口守卫——防相位切换竞态时旧段发声）
+      if (phaseRef.current === 'repeating') return
       ttsQueueRef.current.push({ text, lang })
       pumpTts()
     },
@@ -358,7 +360,14 @@ export default function ClassroomPage() {
     <div style={{ minHeight: '100vh', background: '#F7F9FA', display: 'flex', flexDirection: 'column' }}>
       {/* 顶栏 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px', background: '#fff' }}>
-        <Button onClick={() => nav('/dashboard')}>退出（进度已保存）</Button>
+        <Button onClick={() => {
+          Modal.confirm({
+            title: '确定退出课堂吗？',
+            content: '进度已经存好啦，随时可以回来继续。',
+            okText: '退出', cancelText: '继续学习',
+            onOk: () => nav('/dashboard'),
+          })
+        }}>退出</Button>
         <span style={{ color: '#5C6B73' }}>{PHASE_TIP[phase] || phase}</span>
         <Tag color={wsOk ? 'success' : 'warning'}>{wsOk ? '已连接' : '重连中…'}</Tag>
       </div>
@@ -371,8 +380,12 @@ export default function ClassroomPage() {
           <>
             <div
               role="button"
+              tabIndex={0}
               aria-label={phase === 'show_word' ? `${bigWord}，点击开始学习` : bigWord}
               onClick={() => phase === 'show_word' && sendEvent('word_clicked')}
+              onKeyDown={(e) => {
+                if (phase === 'show_word' && (e.key === 'Enter' || e.key === ' ')) sendEvent('word_clicked')
+              }}
               style={{
                 fontSize: 84,
                 fontWeight: 700,

@@ -3,34 +3,40 @@
  "kb": 65,
  "problems": [
   {
-   "severity": "P1",
+   "severity": "P0",
    "where": "server/internal/agent/agent.go:Decide:case \"word_done\"",
-   "problem": "T-04 决策要求 '本组还有词' 时才触发 transition_word，但代码未检查上下文条件（如当前组剩余词数），无条件返回 transition 话术或 nil，导致组末尾错误触发转场话术。",
-   "fix": "在 case \"word_done\" 分支中增加对 classroom.Word 的上下文判断（需传入 GroupRemaining 或 LessonState），仅当组内非最后一词时才返回 transition；否则返回 nil 或走 T-05 逻辑。"
+   "problem": "T-04 决策要求 '本组还有词' 才触发 transition_word，但代码未检查上下文条件（如当前组是否还有剩余词），直接按 lessonId%3==0 概率触发，导致无条件渲染转场话术，违反决策表语义；且 T-04 明确要求 30% 概率，而当前逻辑是 1/3≈33%，虽接近但非确定性可测（mock 要求 seed 确定性）。",
+   "fix": "在 case \"word_done\" 分支中，增加对 classroom.Word 的上下文判断（需传入 GroupRemaining 字段或 ClassroomSnap），仅当 GroupRemaining > 0 时才执行概率判断；概率应使用 rng.Float64() < 0.3 实现，与文档一致，并确保 rng 来自 lessonId 种子。"
   },
   {
-   "severity": "P1",
+   "severity": "P0",
    "where": "server/internal/agent/agent.go:Decide:case \"judged_wrong\"",
-   "problem": "T-10 要求 RETEACH 完整闭环（show_word+play_tts×2+start_repeat×3+say(reassure)+RETEST），但 Decide 仅返回 correct 类话术，未触发任何工具调用序列，完全缺失 RETEACH 流程控制，违反决策表语义。",
-   "fix": "TeacherAgent.Decide 不应承担流程控制，而应只输出话术槽；RETEACH 流程必须由平台状态机根据事件 + 决策表自动注入 tool_calls 序列。当前实现将流程逻辑错误下移到 Decide，导致 T-10 无法执行。应删除该 case 的话术返回，改为由平台层在 student_answered+wrong 事件后主动触发 RETEACH 工具链。"
+   "problem": "T-10 要求 RETEACH 完整闭环：show_word(含中文) → play_tts(zh×1) → play_tts(en×1) → start_repeat(3遍) → say(reassure) → RETEST；但当前 Decide 仅返回 say(correct)，未触发任何工具调用序列，完全缺失 RETEACH 流程，导致答错后无重教、无重测，教学逻辑断裂。",
+   "fix": "Decide 方法不应承担工具调用生成职责（违反 Agent 总则 §1.2：LLM 输出 = {say, tool_calls}）；此处必须返回 tool_calls 数组（如 []ToolCall{{Name:\"show_word\",Args:{\"withZh\":true}},...}），但当前 TeacherAgent.Decide 返回的是 Utterance（仅话术）。说明快路径决策与工具调用解耦失败——Utterance 应扩展为包含 tool_calls 字段，或 Decision 结果结构需重构为 {Say, ToolCalls}，与 LLMProvider 接口对齐。"
   },
   {
    "severity": "P1",
    "where": "server/internal/scripts/scripts.go:colloquialize",
-   "problem": "口语化规则 b. 称呼变体（25%）逻辑错误：代码中 `if name, ok := vars[\"name\"].(string); ok && name != \"\" && rng.Float64() < 0.25` 后直接 `strings.Replace(text, name, name+\"同学\", 1)`，但 text 中 {name} 占位符已在 replaceVars 阶段被替换为具体昵称，此处 name 是原始变量值而非文本中实际出现的字符串；若模板含多个 {name} 或昵称含空格/标点，替换会失败或错位。",
-   "fix": "应在 colloquialize 中改为正则匹配整个昵称字符串（如 `regexp.MustCompile(\"(^|[^\\w])\" + regexp.QuoteMeta(name) + \"([^\\w]|$)\")`），并确保只替换首次完整匹配且不破坏周边字符；或更安全地，在 replaceVars 前预留占位符标记，由 colloquialize 统一处理。"
+   "problem": "口语化规则引擎 §6 步骤 3 明确要求 '每次随机启用 0~2 条'，但当前 colloquialize 函数最多只应用 1 条（a/b/c/d 四个 if 独立判断，无计数限制），且未实现 'e. 数字口语化（15%）'（如 \"3 个\"→\"三个\"），导致口语化覆盖率与多样性不达标。",
+   "fix": "重写 colloquialize：初始化 count=0；每个规则分支前加 if count<2 && rng.Float64()<prob { ...; count++ }；新增 e 规则：匹配正则 `\\d+\\s*[个|次|%]` 并替换为中文数字+单位（用 map 或函数转换）；所有规则需共用同一 rng 实例保证确定性。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/agent/agent.go:decideLessonFinished",
+   "problem": "S-13 记忆曲线审视要求三项独立检查（到期复习完成率<80%、逾期词>10、LadderHealth<0.6），但代码中仅处理了 CorrectRate 和 AvgAnswerMs，完全缺失 S-13 的三项指标读取与动作注入（如 no action for overdue words / ladder health），导致记忆曲线优化策略失效。",
+   "fix": "在 decideLessonFinished 中，从 in 参数或通过 a.Memory.Recall 加载课报记忆字段（如 memory.recall(kind=\"review_due\", query=\"completed_rate\"), memory.recall(kind=\"ladder_health\")），根据 S-13 三条规则分别追加 SystemAction（如 {Kind:\"adjust_new_ratio\", Params:{\"ratio\":0.4}}）。"
   },
   {
    "severity": "P1",
    "where": "server/internal/memory/memory.go:Recall:score",
-   "problem": "记忆 Recall 加权排序中近因衰减公式 `days/7` 导致整数除法截断，例如 6 天衰减为 0 分（5 - 0 = 5），13 天才衰减为 1 分（5 - 1 = 4），衰减粒度粗、不符合 '每 7 天衰减 1 分' 的文档承诺（§9.2.3），且未处理负分下限边界（`recency < 0` 检查在计算后，但 `days/7` 可能为 0 导致 recency=5 不衰减）。",
-   "fix": "将 `days/7` 改为 `(days + 6) / 7` 实现向上取整衰减，或使用浮点运算 `int(math.Floor(float64(days)/7.0))`；同时将 `recency := 5 - days/7` 改为 `recency := 5 - ((days + 6) / 7)`，并在赋值后立即 `if recency < 0 { recency = 0 }`。"
+   "problem": "近因衰减公式 `recency := 5 - (days+6)/7` 存在整数除法错误：当 days=0 时 (0+6)/7=0，recency=5；days=1 时 (1+6)/7=1，recency=4；但文档 R4-ai#4 要求'向上取整衰减'，即每满 7 天衰减 1 分，应为 `recency := 5 - (days+6)/7` 是向下取整；正确应为 `recency := 5 - int(math.Ceil(float64(days)/7.0))`，否则衰减节奏错误。",
+   "fix": "引入 math 包，将 score 函数中的 recency 计算改为 `recency := 5 - int(math.Ceil(float64(days)/7.0))`，并确保 days>=0；同时添加边界 clamp：if recency < 0 { recency = 0 }。"
   },
   {
    "severity": "P2",
    "where": "server/internal/voicecmd/voicecmd.go:Match",
-   "problem": "指令匹配优先级逻辑缺陷：前缀匹配（'跳过这个词'）与精确匹配（'跳过'）共存时，因遍历 cmds 字典序且未按触发词长度倒序，可能导致短触发词（'跳过'）先命中，覆盖长触发词（'跳过这个词'）的更高优先级匹配，违反 '长词优先' 文档要求（D-14 §2）。",
-   "fix": "在 Match 方法中，对每个 cmd 的触发词列表按 normalized 长度降序排序后再遍历，确保长触发词优先匹配；或预构建 trie 树实现最长前缀匹配。"
+   "problem": "指令匹配未处理大小写归一化（如 'NEXT'/'Next'），且 normalize 函数未移除英文标点（如 'next!'），导致英文语音识别结果可能匹配失败；同时 feedbackPrefixes 未归一化，存在中英文混合前缀漏匹配风险。",
+   "fix": "在 normalize 中增加 toLower() 和英文标点移除（'!', '.', ',' 等）；feedbackPrefixes 数组预处理为 normalized 形式；MatchFeedback 中对 pre 使用 normalize。"
   }
  ]
 }

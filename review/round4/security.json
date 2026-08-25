@@ -1,48 +1,54 @@
 {
  "model": "qwen-plus",
- "kb": 89,
+ "kb": 94,
  "problems": [
   {
    "severity": "P0",
-   "where": "server/internal/auth/auth.go:142",
-   "problem": "Verify 方法中 HMAC 签名验证使用了不安全的字符串比较（hmac.Equal），但后续未对 base64 解码后的 payload 做完整性校验，且签名体 body = header + '.' + payload 未做规范化（如空格、换行），攻击者可构造 header/payload 的等价编码绕过签名验证（例如 header 中添加空格或 payload 中字段重排序）；同时 Verify 未校验 header.alg 是否为 HS256，存在 alg=none 漏洞风险。",
-   "fix": "1) 在 sign/Verify 中强制 header 为固定 JSON 字符串（无空格）；2) Verify 前解析 header 并显式校验 alg==HS256；3) 使用 hmac.Equal 对完整 body（header+'.'+payload）校验，且确保 header 和 payload 均经 base64.RawURLEncoding 严格编码；4) 移除对 alg=none 的容忍，拒绝非 HS256 header。"
+   "where": "server/internal/auth/auth.go:214",
+   "problem": "Verify() 方法中 header 校验使用硬编码字符串 `'{\"alg\":\"HS256\",\"typ\":\"JWT\"}'`，但 sign() 方法生成的 header 是 `'{\"alg\":\"HS256\",\"typ\":\"JWT\"}'`（无空格），看似一致；然而 base64.RawURLEncoding.EncodeString() 对相同字节输出确定，但若未来 header 结构微调（如加空格、字段重排）或签名逻辑变更，校验将永久失败且无法调试——实际已构成单点故障。更严重的是：该校验未防御 `alg=none` 攻击的**根本手段**（应校验 alg 字段值而非整个 header 字符串），当前实现等价于‘header 必须和我生成的一模一样’，违反 JWT 规范中 header 可扩展性原则，且一旦签名密钥泄露，攻击者可构造任意合法 header（只要内容匹配）。",
+   "fix": "移除 header 全字符串比对，改为解析 header JSON 并显式校验 alg == 'HS256'；同时在 sign() 中确保 header 为最小化标准格式（如 `{'alg':'HS256','typ':'JWT'}` 不含空格），并在 Verify 中用 json.Unmarshal 解析后取 alg 字段校验。"
   },
   {
    "severity": "P0",
-   "where": "server/internal/tools/registry.go:178",
-   "problem": "高风险工具调用时仅检查 args 中是否存在 'reason' 字段且非空，但未校验该字段是否为字符串类型（JSON schema 校验在之后执行），攻击者可传入 {\"reason\": null} 或 {\"reason\": 123} 绕过非空检查，导致 RiskHigh 工具无 reason 执行。",
-   "fix": "将 high-risk reason 校验移至 validateSchema 之后，或在 unmarshal 后显式检查 payload.Reason 是否为非空字符串（strings.TrimSpace(payload.Reason) != \"\"），并返回结构化错误。"
+   "where": "server/internal/tools/registry.go:238",
+   "problem": "高风险工具（RiskHigh）reason 校验存在严重绕过漏洞：仅检查 payload.Reason[0] == '\"' 且非空白，但未校验 JSON 字符串是否完整闭合（如 `\"reason\":\"abc` 缺少结尾引号）、未校验字符串内是否含控制字符（如换行、NUL）或恶意序列（如 `\\u0000`），且 `json.Unmarshal(payload.Reason, &reason)` 成功后未验证 `reason` 是否与原始 JSON 字符串语义一致（如 `\"reason\":\"   \"` 经 Unmarshal 后 strings.TrimSpace 为空，但原始 JSON 非空）。导致攻击者可提交 `{'reason': '\\\"'} 或 {'reason': 'a\\nb'}` 绕过非空白检查。",
+   "fix": "将 reason 校验改为：1) 使用 json.Unmarshal 完整解析 args 到结构体；2) 对解析出的 reason 字段执行严格白名单校验（仅允许 ASCII 字母、数字、空格、常见标点，长度≤200）；3) 禁止任何 Unicode 转义、控制字符、换行符；4) 显式拒绝包含 `\\u`、`\\n`、`\\r`、`\\t` 的原始字符串。"
   },
   {
    "severity": "P0",
-   "where": "server/internal/api/router.go:395",
-   "problem": "POST /classroom/lessons/:id/voice 处理语音转写文本时，直接将 in.Text 传入 room.HandleVoiceText，未做任何内容过滤或长度限制；该文本最终进入指令解析器（§12.4）及反馈管线（§7.1），若含恶意 payload（如 SQL 注入片段、XSS 脚本、路径穿越 ../）可能污染下游处理（如 feedbacks 表存储、前端渲染、日志输出）。",
-   "fix": "在 HandleVoiceText 前对 in.Text 执行严格白名单清洗：1) 限制长度 ≤ 200 字符；2) 移除控制字符、URL 编码字符、HTML 标签；3) 对反馈类指令（'我想反馈*'）截断后仅保留纯文本（正则 ^我想反馈(.*)$ → 取 group1 并 trim）；4) 记录清洗前后差异用于审计。"
+   "where": "server/internal/api/router.go:379",
+   "problem": "REST /classroom/lessons/:id/event 端点的 validClassroomEvent() 白名单校验缺失实现（函数未定义），导致任意 event 字符串均可通过校验，可能触发未定义行为或状态机非法迁移（如传入 'lesson_finished' 强制结束课堂）。",
+   "fix": "在 router.go 中补充 validClassroomEvent 函数，严格限定为 SDD §11.2 表中学生→平台事件类型：`word_clicked`, `repeat_done`, `repeat_skipped`, `answer_submitted`, `audio_url`；其余一律返回 false。"
+  },
+  {
+   "severity": "P0",
+   "where": "server/internal/api/router.go:391",
+   "problem": "sanitizeText() 函数未提供实现，且其调用位置（/classroom/lessons/:id/voice）是语音文本注入点，若未过滤 `<script>`、`javascript:`、路径遍历（`../`）等，可能导致 XSS（前端渲染未转义）或服务端路径穿越（若后续拼接文件路径）。",
+   "fix": "实现 sanitizeText()：1) 移除所有 HTML 标签（使用 text/template 机制或正则 `<[^>]*>` 替换为空）；2) URL 编码特殊字符；3) 移除控制字符（U+0000-U+001F）；4) 限制长度 ≤ 500 字符；5) 禁止以 `javascript:`、`data:` 开头。"
   },
   {
    "severity": "P1",
-   "where": "server/internal/auth/auth.go:102",
-   "problem": "Login 方法中密码校验使用 hashPassword(password, u.salt)，但 salt 是明文存储于内存 User 结构体中（u.salt），且 CreateUser 时未清除原始 password/salt；若服务内存被 dump，攻击者可直接获取 salt 并离线爆破所有用户密码（当前 sha256(salt+password) 强度远低于 bcrypt）。",
-   "fix": "1) 将 salt 字段设为 unexported（小写 s）并禁止序列化；2) Login 时从持久化存储（如 GORM User 表）读取 salt+hash，而非内存 map；3) 立即在 SDD §15 中明确要求生产环境必须启用 bcrypt（cost=10），并在 NewService 中注入 bcrypt 实现，当前 sha256 仅限测试。"
+   "where": "server/internal/auth/auth.go:104",
+   "problem": "Disable() 方法仅置 status='disabled'，但未使已有 token 失效（JWT 无吊销机制），导致停用用户仍可用旧 token 访问系统，违反 FR-A4 停用即踢下线要求。",
+   "fix": "在 Disable/Enable 中同步更新 User 结构体新增字段 `RevokedAt *time.Time`，并在 Verify() 中增加校验：若 `u.RevokedAt != nil && c.Exp > u.RevokedAt.Unix()` 则拒绝；或引入内存 token 黑名单（需考虑分布式场景，当前单体可接受）。"
   },
   {
    "severity": "P1",
-   "where": "server/internal/tools/registry.go:228",
-   "problem": "validateSchema 对 'integer' 类型校验仅检查 json.Number 是否为整数字符串（isInt），但未处理科学计数法（如 1e3）、负零（-0）、或超大整数溢出（json.Number.String() 截断），导致整数范围校验失效，可能引发下游 Handler 整数溢出或逻辑错误。",
-   "fix": "在 isInt 中增加科学计数法检测（strings.ContainsAny(s, \"eE\") → false）和数值解析校验：尝试用 strconv.ParseInt(s, 10, 64)，捕获 ErrRange 或 ParseInt 返回值是否等于原始数字。"
+   "where": "server/internal/tools/registry.go:132",
+   "problem": "validateSchema() 对 integer 类型校验仅用 isInt() 检查是否为整数字符串，但未校验数值范围（如 int64 上限），且未处理负数（isInt 允许 '-'，但未校验 `-9223372036854775809` 溢出），导致恶意大整数可能引发后端整数溢出或数据库约束失败。",
+   "fix": "在 isInt() 中增加范围校验：`n < -9223372036854775808 || n > 9223372036854775807` 时返回 false；并在 validateType('integer') 中捕获 strconv.ParseInt 的 err 并返回错误。"
   },
   {
    "severity": "P1",
-   "where": "server/internal/api/router.go:297",
-   "problem": "POST /classroom/lessons/:id/event 接口未校验 event 字段合法性，攻击者可传入任意字符串（如 'delete_account'、'exec_shell'）触发 classroom.Event.Type 未定义行为，若 Room.HandleEvent 未做 switch default panic，可能导致状态机崩溃或静默忽略。",
-   "fix": "在 HandleEvent 前增加白名单校验：event 必须属于预定义集合（'word_clicked','repeat_done','repeat_skipped','answer_submitted','audio_url'），否则返回 errBadRequest 并审计。"
+   "where": "server/internal/api/router.go:227",
+   "problem": "POST /student/books/:bookId/placement 提交 knownWordIds 时，未校验 ID 是否属于该词库（仅查了 book 存在），攻击者可提交其他词库的 wordId 导致数据错乱或越权。",
+   "fix": "在 PlacementSubmit 前增加校验：查询每个 knownWordIds[i] 是否存在于指定 bookId 的 word_entries 表中，任一不存在则返回错误。"
   },
   {
    "severity": "P2",
-   "where": "server/internal/auth/auth.go:215",
-   "problem": "ChangePassword 和 ResetPassword 均未对新密码执行强度策略（如大小写字母+数字+特殊字符），仅检查长度 ≥6，不符合 SDD §15 密码安全要求。",
-   "fix": "增加密码强度校验函数（如 regexp.MustCompile(`^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)`).MatchString），并在 ChangePassword/ResetPassword 中调用，失败时返回明确提示。"
+   "where": "server/internal/auth/auth.go:173",
+   "problem": "ChangePassword 和 ResetPassword 均使用 newSalt() 生成新盐，但未在密码哈希前加入用户名（username + salt + password），导致相同密码在不同用户间产生相同哈希，降低彩虹表攻击成本。",
+   "fix": "修改 hashPassword 为 `hashPassword(password, salt, username string)`，计算 `sha256.Sum256([]byte(salt + \":\" + username + \":\" + password))`，并同步更新所有调用处。"
   }
  ]
 }
