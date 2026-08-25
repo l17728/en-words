@@ -12,12 +12,13 @@ export default function DashboardPage() {
   const { nickname, logout } = useAuthStore()
   const [books, setBooks] = useState<Book[]>([])
   const [lessons, setLessons] = useState<Lesson[]>([])
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null)
   const [notifs, setNotifs] = useState<Notification[]>([])
   const [fbOpen, setFbOpen] = useState(false)
   const [fbText, setFbText] = useState('')
 
   const refresh = () => {
-    api.get<Book[]>('/wordbooks').then((bs) => setBooks(bs || [])).catch(() => {})
+    api.get<Book[]>('/student/books').then((bs) => setBooks(bs || [])).catch(() => {})
     api.get<Notification[]>('/student/notifications').then((ns) => setNotifs(ns || [])).catch(() => {})
   }
   useEffect(refresh, [])
@@ -26,6 +27,7 @@ export default function DashboardPage() {
   const pick = (b: Book) => {
     if (picking) return
     setPicking(true)
+    setSelectedBook(b)
     setLessons([]) // 清空旧数据（防上一词库残留与新课混合）
     api.get<Lesson[]>(`/student/lessons?bookId=${b.ID}`)
       .then(setLessons)
@@ -97,9 +99,22 @@ export default function DashboardPage() {
         )}
       </Card>
 
-      {lessons.length > 0 && (
-        <Card title="下一节课" style={{ marginTop: 16 }}>
-          {nextLesson ? (
+      {selectedBook && (
+        <Card
+          title={`下一节课 · ${selectedBook.Name}`}
+          style={{ marginTop: 16 }}
+          extra={selectedBook ? (
+            <Button size="small" type="link" onClick={() => nav(`/placement/${selectedBook.ID}`)}>重新摸底</Button>
+          ) : null}
+        >
+          {lessons.length === 0 ? (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography.Text type="secondary">
+                这个词库还没有课程——先完成摸底，叮当老师才能为你排课表
+              </Typography.Text>
+              <Button type="primary" onClick={() => nav(`/placement/${selectedBook.ID}`)}>去摸底</Button>
+            </div>
+          ) : nextLesson ? (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <Typography.Title level={4} style={{ margin: 0 }}>{fmt(nextLesson.OpenAt)}</Typography.Title>
@@ -120,7 +135,7 @@ export default function DashboardPage() {
             <Typography.Text type="secondary">本词库课程已全部完成 🎉</Typography.Text>
           )}
           <Progress
-            percent={Math.round((lessons.filter((l) => l.Status === 'finished').length / lessons.length) * 100)}
+            percent={lessons.length ? Math.round((lessons.filter((l) => l.Status === 'finished').length / lessons.length) * 100) : 0}
             style={{ marginTop: 12 }}
             format={(p) => `计划进度 ${p}%`}
           />

@@ -260,4 +260,78 @@ test.describe('BUG 回归：本轮修复锁定', () => {
       expect(body2).not.toBe('…', '重进不得只显示 …（快照补全锁定）')
     }
   })
+
+  test('BUG-9: 我的词库仅显示已启用 + 零课词库点击有引导反馈', async ({ page }) => {
+    const tok = await ensureStudent(page)
+    // admin 准备"零课引导库"（enable 但不摸底 → 有卡无课，dingdangcat 场景复现）
+    const lr = await (await page.request.post(API + '/auth/login', {
+      data: { username: 'dad', password: 'family123' },
+    })).json()
+    const adminTok = lr.data.token
+    let zb = ((await (await page.request.get(API + '/wordbooks', {
+      headers: { Authorization: `Bearer ${adminTok}` } })).json()).data ?? [])
+      .find((b: { Name: string }) => b.Name === '零课引导库')
+    if (!zb) {
+      const mk = await (await page.request.post(API + '/wordbooks', {
+        headers: { Authorization: `Bearer ${adminTok}` },
+        data: { name: '零课引导库', grade: 'g7', description: 'r' },
+      })).json()
+      if (mk.code !== 0 && !(mk.msg || '').includes('重复') && !(mk.msg || '').includes('duplicate') && !(mk.msg || '').includes('UNIQUE')) {
+        throw new Error('建库失败: ' + mk.msg)
+      }
+      let zid = mk.data?.ID
+      if (!zid) {
+        zid = ((await (await page.request.get(API + '/wordbooks', {
+          headers: { Authorization: `Bearer ${adminTok}` } })).json()).data ?? [])
+          .find((b: { Name: string }) => b.Name === '零课引导库')?.ID
+      }
+      if (!zid) throw new Error('拿不到 零课引导库 ID')
+      const imp = await (await page.request.post(`${API}/wordbooks/${zid}/import/commit`, {
+        headers: { Authorization: `Bearer ${adminTok}` },
+        data: { entries: [{ word: 'zero', meanings: ['n. 零'] }, { word: 'one', meanings: ['n. 一'] }] },
+      })).json()
+      if (imp.code !== 0) throw new Error('导入失败: ' + imp.msg)
+      const pub = await (await page.request.post(`${API}/wordbooks/${zid}/publish`, {
+        headers: { Authorization: `Bearer ${adminTok}` },
+      })).json()
+      if (pub.code !== 0 && !(pub.msg || '').includes('invalid status')) throw new Error('发布失败: ' + pub.msg)
+      zb = { ID: zid }
+    }
+    // 学生 enable（幂等）；该库从未 finish 摸底 → 必然零课
+    await page.request.post(`${API}/student/books/${zb.ID}/enable`, {
+      headers: { Authorization: `Bearer ${tok}` },
+    }).catch(() => {})
+    const ls = (await (await page.request.get(`${API}/student/lessons?bookId=${zb.ID}`, {
+      headers: { Authorization: `Bearer ${tok}` },
+    })).json()).data ?? []
+    expect(ls.filter((l: { Status: string }) => l.Status === 'scheduled')).toHaveLength(0)
+
+    // UI：登录 → dashboard
+    await page.goto(BASE + '/login')
+    await page.fill('input[placeholder*="学生或管理员"]', STU.username)
+    await page.fill('input[type="password"]', STU.password)
+    await page.getByRole('button', { name: '开始学习' }).click()
+    await expect(page.getByText('今天也想见叮当老师').first()).toBeVisible({ timeout: 20_000 })
+    await page.goto(BASE + '/dashboard')
+
+    // 我的词库 = 仅已启用：UI 卡片数 === GET /student/books 长度；未启用种子库（高考）不得出现
+    const myGrid = page.locator('.ant-card', { hasText: '我的词库' })
+    await expect(myGrid).toBeVisible({ timeout: 15_000 })
+    const apiBooks = ((await (await page.request.get(API + '/student/books', {
+      headers: { Authorization: `Bearer ${tok}` },
+    })).json()).data ?? [])
+    const zeroCard = myGrid.locator('[role="button"]', { hasText: '零课引导库' })
+    await expect(zeroCard).toBeVisible({ timeout: 10_000 })
+    await expect(myGrid.locator('[role="button"][aria-label*="查看"]')).toHaveCount(apiBooks.length)
+    await expect(myGrid.locator('[role="button"]', { hasText: '高考' })).toHaveCount(0, '未启用词库不得出现在我的词库（BUG 锁定）')
+
+    // 点击零课词库 → 引导反馈（BUG 锁定：不再零反馈"点击不生效"）
+    await zeroCard.click()
+    await expect(page.getByText(/先完成摸底/)).toBeVisible({ timeout: 10_000 })
+    const goBtn = page.getByRole('button', { name: '去摸底' })
+    await expect(goBtn).toBeVisible()
+    // 去摸底可达
+    await goBtn.click()
+    await expect(page.getByText('摸底：把已经认识的点亮')).toBeVisible({ timeout: 15_000 })
+  })
 })
