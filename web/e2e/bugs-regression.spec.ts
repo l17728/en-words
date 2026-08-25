@@ -334,4 +334,136 @@ test.describe('BUG 回归：本轮修复锁定', () => {
     await goBtn.click()
     await expect(page.getByText('摸底：把已经认识的点亮')).toBeVisible({ timeout: 15_000 })
   })
+
+  // ---- 2026-08-25 课堂流程定案锁定（用户三项问题：①学中测试②3+1 朗读③无判读）----
+  test('定案锁定: 教学零测试+教完全部词才final+跟读判读推进（无我读完了按钮）', async ({ page }) => {
+    const tok = await ensureStudent(page)
+    const MEANINGS: Record<string, string> = { cat: '猫', dog: '狗', apple: '苹果', bee: '蜜蜂', fish: '鱼' }
+
+    // 专用 5 词库（幂等：存在且词条≥5 视为就绪）
+    const lr = await (await page.request.post(API + '/auth/login', {
+      data: { username: 'dad', password: 'family123' },
+    })).json()
+    const adminTok = lr.data.token
+    let bk = ((await (await page.request.get(API + '/wordbooks', {
+      headers: { Authorization: `Bearer ${adminTok}` },
+    })).json()).data ?? []).find((b: { Name: string }) => b.Name === '课堂定案库')
+    if (bk) {
+      const w = (await (await page.request.get(`${API}/wordbooks/${bk.ID}/words`, {
+        headers: { Authorization: `Bearer ${adminTok}` },
+      })).json()).data
+      if ((w.total ?? w.entries?.length ?? 0) < 5) bk = undefined
+    }
+    if (!bk) {
+      const mk = await (await page.request.post(API + '/wordbooks', {
+        headers: { Authorization: `Bearer ${adminTok}` },
+        data: { name: '课堂定案库', grade: 'g7', description: '课堂流程定案锁定' },
+      })).json()
+      if (mk.code !== 0 && !(mk.msg || '').includes('重复') && !(mk.msg || '').includes('duplicate') && !(mk.msg || '').includes('UNIQUE')) {
+        throw new Error('建库失败: ' + mk.msg)
+      }
+      let nid = mk.data?.ID
+      if (!nid) {
+        nid = ((await (await page.request.get(API + '/wordbooks', {
+          headers: { Authorization: `Bearer ${adminTok}` },
+        })).json()).data ?? []).find((b: { Name: string }) => b.Name === '课堂定案库')?.ID
+      }
+      if (!nid) throw new Error('拿不到 课堂定案库 ID')
+      const entries = ['cat', 'dog', 'apple', 'bee', 'fish'].map((w) => ({ word: w, meanings: ['n. ' + MEANINGS[w]] }))
+      const imp = await (await page.request.post(`${API}/wordbooks/${nid}/import/commit`, {
+        headers: { Authorization: `Bearer ${adminTok}` }, data: { entries },
+      })).json()
+      if (imp.code !== 0) throw new Error('导入失败: ' + imp.msg)
+      const pub = await (await page.request.post(`${API}/wordbooks/${nid}/publish`, {
+        headers: { Authorization: `Bearer ${adminTok}` },
+      })).json()
+      if (pub.code !== 0 && !(pub.msg || '').includes('invalid status')) throw new Error('发布失败: ' + pub.msg)
+      bk = { ID: nid }
+    }
+    // enable + 重摸底（空勾选 finish）→ 幂等重跑：作废旧课、保证全新 5 词批次课
+    await page.request.post(`${API}/student/books/${bk.ID}/enable`, {
+      headers: { Authorization: `Bearer ${tok}` },
+    }).catch(() => {})
+    const p0 = await (await page.request.post(`${API}/student/books/${bk.ID}/placement`, {
+      headers: { Authorization: `Bearer ${tok}` },
+      data: { knownWordIds: [], finish: true },
+    })).json()
+    expect(p0.code, '重摸底排新课').toBe(0)
+    const ls = (await (await page.request.get(`${API}/student/lessons?bookId=${bk.ID}`, {
+      headers: { Authorization: `Bearer ${tok}` },
+    })).json()).data
+    const active = ls.filter((l: { Status: string }) => l.Status === 'scheduled')
+    expect(active).toHaveLength(1)
+    expect(active[0].BatchWordIDs).toHaveLength(5)
+    const lessonId = active[0].ID
+    // wordID→word 映射（final 池已打乱，按题帧 word_id 查词作答）
+    const entries = (await (await page.request.get(`${API}/wordbooks/${bk.ID}/words`, {
+      headers: { Authorization: `Bearer ${tok}` },
+    })).json()).data.entries as Array<{ ID: number; Word: string }>
+    const id2word: Record<number, string> = {}
+    for (const e of entries) id2word[e.ID] = e.Word
+
+    // UI 进课堂（e2e=1 禁自动拾音；驱动走 REST 判读/作答管线）
+    await page.goto(BASE + '/login')
+    await page.fill('input[placeholder*="学生或管理员"]', STU.username)
+    await page.fill('input[type="password"]', STU.password)
+    await page.getByRole('button', { name: '开始学习' }).click()
+    await expect(page.getByText('今天也想见叮当老师').first()).toBeVisible({ timeout: 20_000 })
+    await page.goto(`${BASE}/classroom/${lessonId}?e2e=1`)
+    await expect(page.getByText('已连接')).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByText(/点一下这个单词/)).toBeVisible({ timeout: 20_000 })
+
+    // REST 驱动助手（页内 fetch 走代理，带 token）
+    const post = async (path: string, body: unknown) => await page.evaluate(async ([p, b]) => {
+      const tok2 = localStorage.getItem('token') || ''
+      const r = await fetch(`/api/v1${p}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tok2}` },
+        body: JSON.stringify(b),
+      })
+      return await r.json()
+    }, [path, body] as const)
+    const framesOf = (r: { data?: { frames?: unknown[] } }) => (r.data?.frames ?? []) as Array<{
+      type: string; action?: { type: string; kind?: string; total?: number; word_id?: number }; phase?: string
+    }>
+    const hasStartQuiz = (fs: ReturnType<typeof framesOf>) =>
+      fs.some((f) => f.type === 'ui_action' && f.action?.type === 'start_quiz')
+
+    // ===== 定案①：教学期零测试——教前 4 词，任何一步都不得出现 start_quiz =====
+    const WORDS = ['cat', 'dog', 'apple', 'bee', 'fish']
+    for (let i = 0; i < 4; i++) {
+      await post(`/classroom/lessons/${lessonId}/event`, { event: 'word_clicked' })
+      for (let s = 0; s < 4; s++) await post(`/classroom/lessons/${lessonId}/event`, { event: 'tts_finished' }) // 3en+1zh
+      // ===== 定案③：跟读无"我读完了"按钮（首词时 UI 锁定断言）=====
+      if (i === 0) {
+        await expect(page.getByText(/轮到你读了/)).toBeVisible({ timeout: 10_000 })
+        await expect(page.getByRole('button', { name: /我读完了/ })).toHaveCount(0, '跟读不得有"我读完了"按钮（定案锁定）')
+      }
+      // ===== 定案②：读对当前词 → 判读通过 → 下一词 =====
+      const r = await post(`/classroom/lessons/${lessonId}/voice`, { text: WORDS[i] })
+      expect(r.data?.command ?? '').not.toBe('repeat_done', '口令已废：不得再走 repeat_done 指令')
+      expect(hasStartQuiz(framesOf(r)), `第 ${i + 1} 词教学期间不得触发测试`).toBe(false)
+    }
+    // ===== 定案①：教完第 5 词 → 唯一一次 final 完整测试（5 词全量）=====
+    await post(`/classroom/lessons/${lessonId}/event`, { event: 'word_clicked' })
+    for (let s = 0; s < 4; s++) await post(`/classroom/lessons/${lessonId}/event`, { event: 'tts_finished' })
+    const rFin = await post(`/classroom/lessons/${lessonId}/voice`, { text: 'fish' })
+    const finFrame = framesOf(rFin).find((f) => f.action?.type === 'start_quiz')
+    expect(finFrame, '全部词教完触发完整测试').toBeTruthy()
+    expect(finFrame?.action?.kind).toBe('final')
+    expect(finFrame?.action?.total).toBe(5)
+
+    // ===== final 逐题作答（按题帧 word_id 对应释义语音作答）→ 下课 =====
+    let lastFrames = framesOf(rFin)
+    for (let q = 0; q < 6; q++) {
+      const item = lastFrames.filter((f) => f.action?.type === 'show_quiz_item').slice(-1)[0]
+      const word = id2word[item?.action?.word_id ?? -1]
+      if (!word) break
+      const rAns = await post(`/classroom/lessons/${lessonId}/voice`, { text: MEANINGS[word] })
+      lastFrames = framesOf(rAns)
+      if (lastFrames.some((f) => f.type === 'lesson_summary' || f.action?.type === 'lesson_summary')) break
+    }
+    await expect(page.getByText('下课啦！叮当老师的小结')).toBeVisible({ timeout: 30_000 })
+    await expect(page.getByText(/首答率/)).toBeVisible({ timeout: 15_000 })
+  })
 })
