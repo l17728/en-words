@@ -134,6 +134,17 @@ func (r *SchedulerRepo) ListLessons(studentID, bookID int64) ([]*scheduler.Lesso
 	return out, nil
 }
 
+// StudentBooks 某生已启用词库 ID 列表（enablement=记忆卡存在，升序去重）。
+func (r *SchedulerRepo) StudentBooks(studentID int64) ([]int64, error) {
+	var ids []int64
+	if err := r.db.Model(&MemoryCard{}).
+		Where("student_id=?", studentID).
+		Distinct().Order("book_id").Pluck("book_id", &ids).Error; err != nil {
+		return nil, err
+	}
+	return ids, nil
+}
+
 // ListLessonsAll 跨学生全量（api CronOverdue 巡检用；替代内存版 repoLessonsAll）。
 func (r *SchedulerRepo) ListLessonsAll() ([]*scheduler.Lesson, error) {
 	var ls []Lesson

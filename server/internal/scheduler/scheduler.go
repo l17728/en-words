@@ -73,6 +73,8 @@ type Repo interface {
 	GetLesson(id int64) (*Lesson, error)
 	SaveLesson(l *Lesson) error
 	ListLessons(studentID, bookID int64) ([]*Lesson, error)
+	// StudentBooks 某生已启用词库 ID 列表（enablement=记忆卡存在，升序去重）。
+	StudentBooks(studentID int64) ([]int64, error)
 }
 
 type MemRepo struct {
@@ -173,6 +175,19 @@ func (m *MemRepo) ListLessons(s, b int64) ([]*Lesson, error) {
 	return out, nil
 }
 
+func (m *MemRepo) StudentBooks(s int64) ([]int64, error) {
+	seen := map[int64]bool{}
+	var out []int64
+	for _, c := range m.cards {
+		if c.StudentID == s && !seen[c.BookID] {
+			seen[c.BookID] = true
+			out = append(out, c.BookID)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
+	return out, nil
+}
+
 // ---- 时钟 ----
 
 type Clock interface{ Now() time.Time }
@@ -231,6 +246,11 @@ func (s *Service) Lessons(studentID, bookID int64) ([]*Lesson, error) {
 
 // SaveLesson 更新课程行（api 层改状态用）。
 func (s *Service) SaveLesson(l *Lesson) error { return s.repo.SaveLesson(l) }
+
+// StudentBooks 某生已启用词库 ID（Dashboard"我的词库"）。
+func (s *Service) StudentBooks(studentID int64) ([]int64, error) {
+	return s.repo.StudentBooks(studentID)
+}
 
 // StudentLessons 某生全部课程（跨词库；反馈 D 定位下一课用）。
 func (s *Service) StudentLessons(studentID int64) ([]*Lesson, error) {
