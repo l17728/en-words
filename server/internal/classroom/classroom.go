@@ -1,6 +1,6 @@
 // Package classroom 实现课堂状态机（SDD §5）：平台侧唯一事实源。
 // 段级 TTS、RETEACH 完整闭环、判分幂等、超时兜底矩阵、课内掌握出池、
-// 综合测试确定性打乱、session 暂停恢复、结课量化+定性课报（D-13）。
+// final 测试确定性打乱、session 暂停恢复、结课量化+定性课报（D-13）。
 package classroom
 
 import (
@@ -57,7 +57,7 @@ const (
 
 type QuizItemID struct {
 	WordID int64  `json:"word_id"`
-	Kind   string `json:"kind"` // group_quiz | cumulative | final
+	Kind   string `json:"kind"` // final（历史值 group_quiz/cumulative 已随 2026-08-25 定案废弃）
 	Round  int    `json:"round"`
 	Seq    int    `json:"seq"` // 测验实例序号（每轮 quiz 递增；同词跨 quiz 不碰撞）
 }
@@ -132,7 +132,7 @@ type Action struct {
 type State struct {
 	LessonID, BookID, StudentID int64
 	Phase                       string
-	GroupIdx, WordIdx           int
+	GroupIdx, WordIdx           int // GroupIdx 废弃（D-21），保留持久化兼容
 	TtsSegIdx                   int // 1..N(en)+1(zh)
 	RepeatCount                 int
 	RepeatNudged                bool
@@ -493,14 +493,13 @@ func (m *Machine) repeatAdvance() error {
 	return m.wordDone()
 }
 
-// wordDone 单词教学完成 → 下一词 / 组小测。
+// wordDone 单词教学完成 → 下一词。
+// 用户定案（2026-08-25）：教学中不测试——全部词顺序教完才开始完整测试（startFinal）。
 func (m *Machine) wordDone() error {
 	st := m.state
-	gs := m.cfg.GroupSize
 	st.WordIdx++
-	groupEnd := st.WordIdx%gs == 0 || st.WordIdx >= len(m.words)
-	if groupEnd {
-		return m.startGroupQuiz()
+	if st.WordIdx >= len(m.words) {
+		return m.startFinal() // 教学完成 → 完整测试
 	}
 	st.Phase = PhaseShowWord
 	m.acts = append(m.acts, m.showWordAction())
@@ -508,53 +507,7 @@ func (m *Machine) wordDone() error {
 }
 
 // ---- quiz 构建 ----
-
-func (m *Machine) groupRange(g int) (int, int) {
-	gs := m.cfg.GroupSize
-	lo := g * gs
-	hi := lo + gs
-	if hi > len(m.words) {
-		hi = len(m.words)
-	}
-	return lo, hi
-}
-
-// startGroupQuiz 组内小测：本组词 + 旧词混入（FR-D6）。
-func (m *Machine) startGroupQuiz() error {
-	st := m.state
-	lo, hi := m.groupRange(st.GroupIdx)
-	var queue []QuizItemID
-	for i := lo; i < hi; i++ {
-		queue = append(queue, QuizItemID{WordID: m.words[i].ID, Kind: "group_quiz"})
-	}
-	old := m.unmasteredUpTo(st.GroupIdx) // 仅此前各组（不含当前组，防重复题）
-	if len(old) > m.cfg.QuizOldWords {
-		old = old[:m.cfg.QuizOldWords]
-	}
-	for _, id := range old {
-		queue = append(queue, QuizItemID{WordID: id, Kind: "group_quiz"})
-	}
-	m.setQuiz(queue)
-	m.acts = append(m.acts, m.quizStartAction("group_quiz", len(queue)))
-	return nil
-}
-
-// unmasteredUpTo 前 groupIdx 组（不含该组）中未课内掌握的词（按 WordID 序）。
-// groupIdx 为组数上界（exclusive）：旧词混入传 GroupIdx，综合测试传 GroupIdx+1。
-func (m *Machine) unmasteredUpTo(groupIdx int) []int64 {
-	hi := groupIdx * m.cfg.GroupSize
-	if hi > len(m.words) {
-		hi = len(m.words)
-	}
-	var out []int64
-	for i := 0; i < hi; i++ {
-		if !m.state.Mastered[m.words[i].ID] {
-			out = append(out, m.words[i].ID)
-		}
-	}
-	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
-	return out
-}
+// （组测/综测已随 2026-08-25"教学测试分离"定案移除：测试=教完全部词后一次完整 final）
 
 func (m *Machine) quizStartAction(kind string, total int) Action {
 	it := m.currentQuizItem()
@@ -576,22 +529,6 @@ func (m *Machine) setQuiz(queue []QuizItemID) {
 	m.acts = append(m.acts, Action{Type: ActShowQuizItem, WordID: m.currentQuizItem().WordID})
 }
 
-// startCumulative 综合测试（第2组起）：所有已教组未掌握词，确定性打乱。
-func (m *Machine) startCumulative() error {
-	pool := m.unmasteredUpTo(m.state.GroupIdx + 1) // 含当前组（已教完并小测过）
-	m.shuffleIDs(&pool)
-	queue := make([]QuizItemID, 0, len(pool))
-	for _, id := range pool {
-		queue = append(queue, QuizItemID{WordID: id, Kind: "cumulative"})
-	}
-	if len(queue) == 0 {
-		return m.afterCumulative()
-	}
-	m.setQuiz(queue)
-	m.acts = append(m.acts, m.quizStartAction("cumulative", len(queue)))
-	return nil
-}
-
 // shuffleIDs Fisher-Yates，seed=lessonID*31+bookID（R2-10 确定性可复现）。
 func (m *Machine) shuffleIDs(pool *[]int64) {
 	r := rand.New(rand.NewSource(m.lessonID*31 + m.bookID))
@@ -599,6 +536,8 @@ func (m *Machine) shuffleIDs(pool *[]int64) {
 	r.Shuffle(len(p), func(i, j int) { p[i], p[j] = p[j], p[i] })
 }
 
+// startFinal 完整测试（用户定案 2026-08-25：教完全部词后一次测试；
+// 教学期无判分 → 全部词入题；确定性打乱）。
 func (m *Machine) startFinal() error {
 	var pool []int64
 	for _, w := range m.words {
@@ -616,35 +555,6 @@ func (m *Machine) startFinal() error {
 	}
 	m.setQuiz(queue)
 	m.acts = append(m.acts, m.quizStartAction("final", len(queue)))
-	return nil
-}
-
-func (m *Machine) afterGroupQuiz() error {
-	st := m.state
-	if st.GroupIdx == 0 {
-		// 首组：还有组 → 下一组教学；单组词库 → 直接期末
-		if (st.GroupIdx+1)*m.cfg.GroupSize < len(m.words) {
-			return m.nextGroup()
-		}
-		return m.startFinal()
-	}
-	// 第2组起（含最后一组）：综合测试
-	return m.startCumulative()
-}
-
-func (m *Machine) afterCumulative() error {
-	if (m.state.GroupIdx+1)*m.cfg.GroupSize < len(m.words) {
-		return m.nextGroup()
-	}
-	return m.startFinal()
-}
-
-func (m *Machine) nextGroup() error {
-	st := m.state
-	st.GroupIdx++
-	st.WordIdx = st.GroupIdx * m.cfg.GroupSize
-	st.Phase = PhaseShowWord
-	m.acts = append(m.acts, m.showWordAction())
 	return nil
 }
 
@@ -711,23 +621,9 @@ func appendUnique(xs []int64, v int64) []int64 {
 	return append(xs, v)
 }
 
-// consecUpdate 课内连对（SDD §5.4）：仅自身组小测/cumulative/final 计数；
-// 后续组小测的旧词混答（remix）不改 consec。
+// consecUpdate 课内连对（SDD §5.4）：final 测试答对计数。
 func (m *Machine) consecUpdate(item QuizItemID, correct bool) {
 	st := m.state
-	if item.Kind == "group_quiz" {
-		lo, hi := m.groupRange(st.GroupIdx)
-		own := false
-		for i := lo; i < hi; i++ {
-			if m.words[i].ID == item.WordID {
-				own = true
-				break
-			}
-		}
-		if !own {
-			return
-		}
-	}
 	if correct {
 		st.Consec[item.WordID]++
 		st.Streak++
@@ -744,7 +640,7 @@ func (m *Machine) consecUpdate(item QuizItemID, correct bool) {
 	}
 }
 
-// quizNext 答对后推进。
+// quizNext 答对后推进（测试只剩 final 一种——组测/综测已随"教学测试分离"定案移除）。
 func (m *Machine) quizNext() error {
 	st := m.state
 	st.QuizIdx++
@@ -754,25 +650,7 @@ func (m *Machine) quizNext() error {
 		m.acts = append(m.acts, Action{Type: ActShowQuizItem, WordID: m.currentQuizItem().WordID})
 		return nil
 	}
-	switch m.lastKind() {
-	case "group_quiz":
-		return m.afterGroupQuiz()
-	case "cumulative":
-		return m.afterCumulative()
-	default:
-		return m.afterFinal()
-	}
-}
-
-func (m *Machine) lastKind() string {
-	st := m.state
-	if st.QuizIdx-1 >= 0 && st.QuizIdx-1 < len(st.QuizQueue) {
-		return st.QuizQueue[st.QuizIdx-1].Kind
-	}
-	if len(st.QuizQueue) > 0 {
-		return st.QuizQueue[len(st.QuizQueue)-1].Kind
-	}
-	return ""
+	return m.afterFinal()
 }
 
 // reteachAdvance RETEACH 段推进：zh → en → 跟读。

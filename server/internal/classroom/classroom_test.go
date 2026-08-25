@@ -1,6 +1,7 @@
 package classroom
 
 import (
+	"sort"
 	"testing"
 	"time"
 
@@ -54,8 +55,9 @@ func teachWord(m *Machine, cfg config.EffectiveSnapshot) {
 	}
 }
 
-func teachGroup(m *Machine, cfg config.EffectiveSnapshot) {
-	for i := 0; i < cfg.GroupSize; i++ {
+// teachAllWords 教完全部词（2026-08-25 定案：教学测试分离——教完才测试）。
+func teachAllWords(m *Machine, cfg config.EffectiveSnapshot) {
+	for i := 0; i < len(m.words); i++ {
 		teachWord(m, cfg)
 	}
 }
@@ -171,7 +173,7 @@ func TestHappyPathTeachOneWord(t *testing.T) {
 
 func TestTwoChancesThenSkip(t *testing.T) {
 	m, cfg := newMachine(t, batchN(5))
-	teachGroup(m, cfg)
+	teachAllWords(m, cfg)
 	m.DrainActions()
 
 	// 第 1 题连错 2 次（Round 0 错 → RETEACH → 重测 Round 1 再错 → 跳过）
@@ -197,14 +199,14 @@ func TestTwoChancesThenSkip(t *testing.T) {
 	require.NotNil(t, findAction(as, ActSayHint), "两次用尽发提示帧")
 	assert.Equal(t, PhaseWaitAnswer, m.Phase(), "直接进入下一题")
 	next := m.CurrentItem()
-	assert.Equal(t, int64(2), next.WordID, "跳到下一词")
+	assert.NotEqual(t, it1.WordID, next.WordID, "跳到下一题（final 打乱序，不依赖具体词）")
 	assert.Equal(t, 2, m.state.ReteachN[it1.WordID], "未掌握已记录（两轮各+1）")
 }
 
 // 说"不会"（判 wrong）同理：重测轮放弃 → 跳过
 func TestGiveUpSkipsOnRetest(t *testing.T) {
 	m, cfg := newMachine(t, batchN(5))
-	teachGroup(m, cfg)
+	teachAllWords(m, cfg)
 	m.DrainActions()
 	it := m.CurrentItem().ID()
 	require.Equal(t, JudgmentWrong, m.OnJudged(it, JudgmentWrong))
@@ -220,7 +222,7 @@ func TestGiveUpSkipsOnRetest(t *testing.T) {
 	as := m.DrainActions()
 	require.NotNil(t, findAction(as, ActSayHint))
 	assert.Equal(t, PhaseWaitAnswer, m.Phase())
-	assert.Equal(t, int64(2), m.CurrentItem().WordID)
+	assert.NotEqual(t, it.WordID, m.CurrentItem().WordID, "跳到下一题")
 }
 
 // ---- R4-arch#7：zh 段超时按释义长度（区分 en/zh）----
@@ -247,7 +249,7 @@ func TestTTSSegTimeoutZhLonger(t *testing.T) {
 	assert.Equal(t, 14*time.Second, dZh, "25 字符释义 → 25/2+2=14s")
 
 	// RETEACH 上下文同样适用（视同 zh 段）
-	teachGroup(m, cfg)
+	teachAllWords(m, cfg)
 	m.DrainActions()
 	require.NoError(t, m.OnEvent(Event{Type: EvAnswerSubmitted, Text: "不知道"}))
 	m.DrainActions()
@@ -320,32 +322,47 @@ func TestRepeatSkipped(t *testing.T) {
 	assert.Equal(t, PhaseShowWord, m.Phase())
 }
 
-// ---- SM-06 组完成 → 小测（含旧词混入）----
+// ---- 用户定案（2026-08-25）：教学测试分离——全部词教完才测试，教学中零 quiz ----
 
-func TestGroupQuizStart(t *testing.T) {
+func TestTeachAllWordsThenFinalQuiz(t *testing.T) {
 	m, cfg := newMachine(t, batchN(10))
-	teachGroup(m, cfg)
+	// 教前 9 词：全程不得出现任何 quiz（BUG 锁定：学习中直接出测试=旧组测行为）
+	for i := 0; i < 9; i++ {
+		teachWord(m, cfg)
+		as := m.DrainActions()
+		assert.Nil(t, findAction(as, ActStartQuiz), "第 %d 词教学期间不得出现测试", i+1)
+		assert.Equal(t, PhaseShowWord, m.Phase(), "仍在教学推进")
+	}
+	// 教完第 10 词 → 唯一一次完整测试（final，全 10 词）
+	teachWord(m, cfg)
 	as := m.DrainActions()
 	q := findAction(as, ActStartQuiz)
-	require.NotNil(t, q)
-	assert.Equal(t, "group_quiz", q.Kind)
-	assert.Equal(t, 5, q.Total, "第一组无旧词 5 题")
+	require.NotNil(t, q, "全部词教完触发完整测试")
+	assert.Equal(t, "final", q.Kind)
+	assert.Equal(t, 10, q.Total, "完整测试覆盖全部词")
 	assert.Equal(t, PhaseWaitAnswer, m.Phase())
 	assert.Empty(t, q.Meanings, "题面仅英文")
-	// 答完组1小测 → 教组2 → 组2小测=5+3旧词
-	answerN(m, cfg, 5, nil)
-	teachGroup(m, cfg)
-	as2 := m.DrainActions()
-	q2 := findAction(as2, ActStartQuiz)
-	require.NotNil(t, q2)
-	assert.Equal(t, 8, q2.Total, "组2小测=5本组+quizOldWords(3)旧词(FR-D6)")
+}
+
+// 教学中途（未教完）快照恢复后依然不触发测试
+func TestTeachNoQuizMidwayAfterRestore(t *testing.T) {
+	m, cfg := newMachine(t, batchN(7))
+	for i := 0; i < 3; i++ {
+		teachWord(m, cfg)
+	}
+	m.DrainActions()
+	snap := m.Snapshot()
+	m2 := NewMachine(12, 3, 7, batchN(7), cfg, &fakeClock{t: time.Date(2026, 8, 23, 19, 0, 0, 0, time.UTC)})
+	require.NoError(t, m2.Restore(snap))
+	assert.Equal(t, PhaseShowWord, m2.Phase(), "恢复后继续教学（非测试）")
+	assert.Equal(t, int64(4), m2.CurrentWord().ID)
 }
 
 // ---- SM-05/R2-06 答错 → RETEACH 完整闭环 ----
 
 func TestWrongAnswerReteachLoop(t *testing.T) {
 	m, cfg := newMachine(t, batchN(5))
-	teachGroup(m, cfg)
+	teachAllWords(m, cfg)
 	m.DrainActions()
 
 	require.NoError(t, m.OnEvent(Event{Type: EvAnswerSubmitted, Text: "不知道"}))
@@ -377,7 +394,7 @@ func TestWrongAnswerReteachLoop(t *testing.T) {
 	as = m.DrainActions()
 	q := findAction(as, ActStartQuiz)
 	require.NotNil(t, q, "RETEACH 后重测同词")
-	assert.Equal(t, int64(1), q.WordID)
+	assert.Equal(t, item.WordID, q.WordID, "重测同词（final 池已打乱，不假设词序）")
 	assert.Equal(t, PhaseWaitAnswer, m.Phase())
 
 	require.NoError(t, m.OnEvent(Event{Type: EvAnswerSubmitted, Text: "测试"}))
@@ -393,7 +410,7 @@ func TestWrongAnswerReteachLoop(t *testing.T) {
 
 func TestJudgedIdempotent(t *testing.T) {
 	m, cfg := newMachine(t, batchN(5))
-	teachGroup(m, cfg)
+	teachAllWords(m, cfg)
 	m.DrainActions()
 	item := m.CurrentItem().ID()
 	require.NoError(t, m.OnEvent(Event{Type: EvAnswerSubmitted, Text: "x"}))
@@ -408,25 +425,28 @@ func TestJudgedIdempotent(t *testing.T) {
 	assert.Equal(t, PhaseWaitAnswer, m.Phase(), "已判题重复提交忽略")
 }
 
-// ---- SM-07/R2-10 综合测试确定性打乱 ----
+// ---- R2-10 完整测试确定性打乱（final 池，seed=lessonID*31+bookID）----
 
-func TestCumulativePoolDeterministic(t *testing.T) {
+func TestFinalPoolDeterministic(t *testing.T) {
+	teachAll := func(m *Machine, cfg config.EffectiveSnapshot, n int) {
+		for i := 0; i < n; i++ {
+			teachWord(m, cfg)
+		}
+		m.DrainActions()
+	}
 	run := func(lessonID, bookID int64) []int64 { // R4-test#3：显式 bookID 参与 seed
 		m := NewMachine(lessonID, bookID, 7, batchN(15), newCfg(),
 			&fakeClock{t: time.Date(2026, 8, 23, 19, 0, 0, 0, time.UTC)})
 		require.NoError(t, m.Start())
 		m.DrainActions()
 		cfg := newCfg()
-		teachGroup(m, cfg)
-		answerN(m, cfg, 5, nil)
-		teachGroup(m, cfg)
-		answerN(m, cfg, 8, nil) // 组2小测(5+3旧)
-		cum := findAction(m.lastActions, ActStartQuiz)
-		require.NotNil(t, cum, "组2小测完成后触发综合测试")
-		require.Equal(t, "cumulative", cum.Kind)
-		require.Equal(t, 10, cum.Total, "threshold=2: 组1/2 各对1次仍在池")
+		teachAll(m, cfg, 15)
+		fin := findAction(m.lastActions, ActStartQuiz)
+		require.NotNil(t, fin, "15 词教完触发完整测试")
+		require.Equal(t, "final", fin.Kind)
+		require.Equal(t, 15, fin.Total, "全部词入题")
 		var order []int64
-		for i := 0; i < cum.Total; i++ {
+		for i := 0; i < fin.Total; i++ {
 			for m.Phase() != PhaseWaitAnswer {
 				driveOneStep(m, cfg)
 			}
@@ -443,50 +463,57 @@ func TestCumulativePoolDeterministic(t *testing.T) {
 	o2 := run(12, 3)
 	o3 := run(12, 9)
 	assert.Equal(t, o1, o2, "同 seed 重放一致")
-	require.Len(t, o1, 10)
+	sorted := append([]int64(nil), o1...)
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i] < sorted[j] })
+	for i, id := range sorted {
+		require.EqualValues(t, i+1, id, "final 池应包含全部 15 词且不重复")
+	}
 	assert.NotEqual(t, o1, o3, "不同 bookID 打乱序列应不同（seed=lessonID*31+bookID 的证据）")
 }
 
-// ---- SM-08 课内掌握出池 ----
+// ---- 课内掌握出池（startFinal 排除已掌握词；新流程教学期无判分，掌握来自快照恢复/历史场景）----
 
-func TestLessonScopedMastery(t *testing.T) {
-	m, cfg := newMachine(t, batchN(15))
-	teachGroup(m, cfg)          // 组1
-	answerN(m, cfg, 5, nil)     // 小测 consec=1
-	teachGroup(m, cfg)          // 组2
-	answerN(m, cfg, 8, nil)     // 组2小测(含旧词3→组1部分词 consec=2)
-	answerN(m, cfg, 10, nil)    // 综合1 全对 → 全部 consec=2 课内掌握
-	teachGroup(m, cfg)          // 组3
-	answerN(m, cfg, 5, nil)     // 组3小测(无旧词可混? 有——组1/2已掌握全部…quizOldWords 取未掌握旧词,无则少题)
-	cum2 := findAction(m.lastActions, ActStartQuiz)
-	require.NotNil(t, cum2)
-	assert.Equal(t, "cumulative", cum2.Kind)
-	assert.Equal(t, 5, cum2.Total, "组1/2 全部课内掌握出池, 综合2 仅组3")
+func TestFinalExcludesMastered(t *testing.T) {
+	m, cfg := newMachine(t, batchN(6))
+	m.state.Mastered[1] = true // 模拟恢复场景：词1 已课内掌握
+	for i := 0; i < 6; i++ {
+		teachWord(m, cfg)
+	}
+	as := m.DrainActions()
+	fin := findAction(as, ActStartQuiz)
+	require.NotNil(t, fin)
+	assert.Equal(t, "final", fin.Kind)
+	assert.Equal(t, 5, fin.Total, "已掌握词出池，其余 5 词入题")
+	for _, it := range m.state.QuizQueue {
+		assert.NotEqual(t, int64(1), it.WordID, "已掌握词不在题队列")
+	}
 }
 
-// ---- SM-09 期末 → 轻量回顾 → 下课 ----
+// ---- SM-09 教完全部词 → final 完整测试 → 轻量回顾 → 下课 ----
 
 func TestFinalTestAndLessonEnd(t *testing.T) {
 	m, cfg := newMachine(t, batchN(5))
-	teachGroup(m, cfg)
-	answerN(m, cfg, 5, nil) // 小测 consec=1 未掌握 → 期末池=5
-	fin := findAction(m.lastActions, ActStartQuiz)
-	require.NotNil(t, fin)
+	teachAllWords(m, cfg)
+	as := m.DrainActions()
+	fin := findAction(as, ActStartQuiz)
+	require.NotNil(t, fin, "教完触发完整测试")
 	assert.Equal(t, "final", fin.Kind)
-	// 期末: 词2 先错(闭环)后对 → 5 题 + 1 次重测 = 6 次作答
-	answerN(m, cfg, 6, map[int64]int{2: 1})
+	// final: 首题词先错(闭环)后对 → 5 题 + 1 次重测 = 6 次作答（池已打乱，用首题词）
+	first := m.CurrentItem().WordID
+	answerN(m, cfg, 6, map[int64]int{first: 1})
 	for m.Phase() != PhaseLessonEnd {
 		driveOneStep(m, cfg)
 	}
 	assert.NotNil(t, findAction(m.lastActions, ActLessonSummary))
 }
 
-// 期末错词轻量回顾：显中文+朗读（无跟读）
+// final 错词轻量回顾：显中文+朗读（无跟读）
 func TestFinalWrongLightReview(t *testing.T) {
 	m, cfg := newMachine(t, batchN(5))
-	teachGroup(m, cfg)
-	answerN(m, cfg, 5, nil)                 // 小测全对
-	answerN(m, cfg, 6, map[int64]int{2: 1}) // 期末词2错→闭环→对 (5题+1重测)
+	teachAllWords(m, cfg)
+	m.DrainActions()
+	first := m.CurrentItem().WordID
+	answerN(m, cfg, 6, map[int64]int{first: 1}) // 首题词错→闭环→对 (5题+1重测)
 	found := false
 	scan := func(as []Action) {
 		for _, a := range as {
@@ -500,8 +527,8 @@ func TestFinalWrongLightReview(t *testing.T) {
 		scan(m.DrainActions())
 		driveOneStep(m, cfg)
 	}
-	// 词2曾在期末错 → 轻量回顾段(即使经闭环已答对, 仍进回顾列表逐词过)
-	assert.True(t, found, "期末错词进入轻量回顾 start_review")
+	// 首题词曾在 final 错 → 轻量回顾段(即使经闭环已答对, 仍进回顾列表逐词过)
+	assert.True(t, found, "final 错词进入轻量回顾 start_review")
 }
 
 // ---- SM-10 快照恢复 ----
@@ -536,7 +563,7 @@ func TestTimeoutMatrix(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, 10*time.Second, d)
 
-	teachGroup(m, cfg)
+	teachAllWords(m, cfg)
 	m.DrainActions()
 	d, ok = m.TimeoutFor()
 	require.True(t, ok)
@@ -553,7 +580,7 @@ func TestTimeoutMatrix(t *testing.T) {
 
 func TestAnswerTimeoutTwoStage(t *testing.T) {
 	m, cfg := newMachine(t, batchN(5))
-	teachGroup(m, cfg)
+	teachAllWords(m, cfg)
 	m.DrainActions()
 	require.NoError(t, m.OnTimeout(PhaseWaitAnswer))
 	assert.NotNil(t, findAction(m.DrainActions(), ActNudgeAnswer))
@@ -568,7 +595,7 @@ func TestAnswerTimeoutTwoStage(t *testing.T) {
 
 func TestJudgingTimeoutFallback(t *testing.T) {
 	m, cfg := newMachine(t, batchN(5))
-	teachGroup(m, cfg)
+	teachAllWords(m, cfg)
 	require.NoError(t, m.OnEvent(Event{Type: EvAnswerSubmitted, Text: "听不清"}))
 	m.DrainActions()
 	require.NoError(t, m.OnTimeout(PhaseJudging))
@@ -602,10 +629,11 @@ func TestSessionTimeoutPauseResume(t *testing.T) {
 
 func TestResultAndReport(t *testing.T) {
 	m, cfg := newMachine(t, batchN(5))
-	teachGroup(m, cfg)
-	answerN(m, cfg, 6, map[int64]int{2: 1}) // 小测: 词2 先错后对(5题+1重测)
-	answerN(m, cfg, 5, nil)                 // 期末全对
-	for m.Phase() != PhaseLessonEnd {
+	teachAllWords(m, cfg)
+	m.DrainActions()
+	first := m.CurrentItem().WordID // final 池已打乱，用首题词
+	answerN(m, cfg, 6, map[int64]int{first: 1}) // final: 首题词 先错后对(5题+1重测)
+	for m.Phase() != PhaseLessonEnd {           // 错词回顾 → 下课
 		driveOneStep(m, cfg)
 	}
 	res := m.Result()
@@ -618,7 +646,7 @@ func TestResultAndReport(t *testing.T) {
 	assert.Equal(t, 5, rep.CorrectCount)
 	assert.Equal(t, 1, rep.WrongFirstTry)
 	assert.Equal(t, 1, rep.ReteachCount)
-	assert.Equal(t, []int64{2}, rep.WrongWords)
+	assert.Equal(t, []int64{first}, rep.WrongWords)
 	// 定性标签(默认快照下全部即时作答→节奏快; 首答率80%→波动)
 	assert.NotEmpty(t, rep.QualPace)
 	assert.NotEmpty(t, rep.QualSolid)
@@ -643,9 +671,9 @@ func TestEdgeBranches(t *testing.T) {
 	assert.Equal(t, PhaseShowWord, m.Phase())
 
 	// 非当前题 OnJudged：不落状态、返回原值
-	teachGroup(m, cfg)
+	teachAllWords(m, cfg)
 	m.DrainActions()
-	other := QuizItemID{WordID: 999, Kind: "group_quiz", Round: 0, Seq: 99}
+	other := QuizItemID{WordID: 999, Kind: "final", Round: 0, Seq: 99}
 	got := m.OnJudged(other, JudgmentCorrect)
 	assert.Equal(t, JudgmentCorrect, got, "非当前题返回原值")
 	assert.Equal(t, PhaseWaitAnswer, m.Phase(), "状态不变")
@@ -664,7 +692,7 @@ func TestResumeVariants(t *testing.T) {
 
 	// wait_answer 相位
 	m, cfg := newMachine(t, batchN(5))
-	teachGroup(m, cfg)
+	teachAllWords(m, cfg)
 	m.DrainActions()
 	m.state.Paused = true
 	m.state.Phase = PhaseWaitAnswer
@@ -673,7 +701,7 @@ func TestResumeVariants(t *testing.T) {
 
 	// reteach_show 相位
 	m2, _ := newMachine(t, batchN(5))
-	teachGroup(m2, cfg)
+	teachAllWords(m2, cfg)
 	m2.DrainActions()
 	m2.state.Phase = PhaseReteachShow
 	m2.state.Paused = true
@@ -689,15 +717,16 @@ func TestResumeVariants(t *testing.T) {
 
 	// repeating(reteach)相位 → 用当前 quiz 词
 	m4, _ := newMachine(t, batchN(5))
-	teachGroup(m4, cfg)
+	teachAllWords(m4, cfg)
 	m4.DrainActions()
 	m4.state.Phase = PhaseRepeating
 	m4.state.InReteach = true
 	m4.state.Paused = true
+	cur := m4.CurrentItem().WordID // final 池已打乱，不假设词序
 	m4.Resume()
 	a := findAction(m4.DrainActions(), ActStartRepeat)
 	require.NotNil(t, a)
-	assert.Equal(t, int64(1), a.WordID, "reteach 跟读恢复用 quiz 词")
+	assert.Equal(t, cur, a.WordID, "reteach 跟读恢复用 quiz 词")
 
 	// review 相位
 	m5, _ := newMachine(t, batchN(5))
