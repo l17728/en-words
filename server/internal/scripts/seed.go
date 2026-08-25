@@ -13,14 +13,12 @@ func (b *Bank) SeedAll() {
 		{ID: "OP-6", Category: "open", Tone: "激将", Weight: 1, Template: "上次你错了 {n} 个词，今天它们还会回来找你，这次干掉它们！"},
 	}...)
 	b.Add([]Template{
-		// 5.2 transition 转场（8）
+		// 5.2 transition 转场（6；2026-08-25 课堂流程定案：组测/综测/期末三分废弃→唯一 final）
 		{ID: "TR-1", Category: "transition", Tone: "中性", Weight: 4, Template: "好，下一个："},
 		{ID: "TR-2", Category: "transition", Tone: "轻快", Weight: 2, Template: "挺顺的嘛，继续。"},
 		{ID: "TR-3", Category: "transition", Tone: "中性", Weight: 2, Template: "这个词记住感觉了吗？来，下一个。"},
-		{ID: "TR-4", Category: "transition", Tone: "提示", Weight: 3, Template: "第 {group} 组学完了，小测时间，别紧张，就刚才那几个词。"},
-		{ID: "TR-5", Category: "transition", Tone: "激将", Weight: 2, Template: "学了这么多，是骡子是马拉出来遛遛——综合测试开始！"},
+		{ID: "TR-4", Category: "transition", Tone: "提示", Weight: 3, Template: "词都学完了！来做个小验收，就刚才学的那些，别紧张。"},
 		{ID: "TR-6", Category: "transition", Tone: "温和", Weight: 3, Template: "前面错的词我们再过一遍，这次你会记得更牢。"},
-		{ID: "TR-7", Category: "transition", Tone: "提示", Weight: 3, Template: "最后一个大关：完整测试。正常发挥就好。"},
 		{ID: "TR-8", Category: "transition", Tone: "关怀", Weight: 2, Template: "快到终点了，坚持一下，{name}。"},
 	}...)
 	b.Add([]Template{
@@ -29,10 +27,10 @@ func (b *Bank) SeedAll() {
 		{ID: "EN-2", Category: "encourage", Tone: "热情", Weight: 2, Template: "反应很快啊 {name}！"},
 		{ID: "EN-3", Category: "encourage", Tone: "肯定", Weight: 2, Template: "对！这个 {word} 你已经拿下了。"},
 		{ID: "EN-4", Category: "encourage", Tone: "数据", Weight: 2, Template: "连着对 {n} 个了，今天状态在线！"},
-		{ID: "EN-5", Category: "encourage", Tone: "对比", Weight: 2, Template: "这组全对，比上一组还稳，进步看得见。"},
+		{ID: "EN-5", Category: "encourage", Tone: "对比", Weight: 2, Template: "这波连着全对，比刚才还稳，进步看得见。"},
 		{ID: "EN-6", Category: "encourage", Tone: "肯定", Weight: 2, Template: "好样的，这个词第二次见到你就认识了。"},
 		{ID: "EN-7", Category: "encourage", Tone: "庆祝", Weight: 1, Template: "{name}，正确率越来越高了，给自己一点掌声。"},
-		{ID: "EN-8", Category: "encourage", Tone: "庆祝", Weight: 1, Template: "这波综合测试零失误，太强了！"},
+		{ID: "EN-8", Category: "encourage", Tone: "庆祝", Weight: 1, Template: "这波完整测试零失误，太强了！"},
 	}...)
 	b.Add([]Template{
 		// 5.4 correct 纠错/安抚（7）
@@ -50,7 +48,7 @@ func (b *Bank) SeedAll() {
 		{ID: "CL-2", Category: "closing", Tone: "数据", Weight: 2, Template: "下课！今天正确率 {p}%，比上次进步了，保持这个节奏！"},
 		{ID: "CL-3", Category: "closing", Tone: "预告", Weight: 2, Template: "今天的词都过关了，明天老时间，我们复习加新词，不见不散。"},
 		{ID: "CL-4", Category: "closing", Tone: "关怀", Weight: 2, Template: "表现很稳，{name}。休息一下眼睛，明天见！"},
-		{ID: "CL-5", Category: "closing", Tone: "庆祝", Weight: 1, Template: "错误都消灭了才算下课，你看，现在清零了，完美。"},
+		{ID: "CL-5", Category: "closing", Tone: "庆祝", Weight: 1, Template: "错词刚才都在回顾里过了一遍，今天的账清了，完美。"},
 		{ID: "CL-6", Category: "closing", Tone: "安抚", Weight: 1, Template: "今天有点难熬，但你坚持完了，这本身就是本事。明天轻松点。"},
 	}...)
 	b.Add([]Template{
