@@ -42,7 +42,6 @@ export default function ClassroomPage() {
   const [ended, setEnded] = useState(false)
   const [summary, setSummary] = useState<Record<string, any> | null>(null)
   const [ttsSeg, setTtsSeg] = useState(0)
-  const [repeatN, setRepeatN] = useState(0)
   const [wsOk, setWsOk] = useState(false)
   const inputRef = useRef<InputRef | null>(null)
   const wsRef = useRef<ClassroomWS | null>(null)
@@ -181,7 +180,6 @@ export default function ClassroomPage() {
             case 'start_repeat':
               setSnapshot((s) => ({ ...(s ?? { phase: 'repeating' }), phase: 'repeating' }))
               phaseRef.current = 'repeating' // 禁后续 TTS（回声抑制）
-              setRepeatN(0)
               break
             case 'show_quiz_item':
               setSnapshot((s) => ({ ...(s ?? { phase: 'wait_answer' }), phase: 'wait_answer', quiz_word: a.word }))
@@ -205,11 +203,13 @@ export default function ClassroomPage() {
               setBubble(a.text ?? '')
               break
             case 'nudge_repeat':
-            case 'nudge_answer':
-              setBubble(a.text ?? '再想想～')
+              setBubble(a.text ?? '再试一次，大声读出来～')
               break
-            case 'start_quiz':
-              setBubble(a.kind === 'final' ? '最后一个大关：完整测试！' : a.kind === 'cumulative' ? '综合测试开始！' : '小测时间，别紧张～')
+            case 'nudge_answer':
+              setBubble(a.text ?? '想起来了吗？说出来试试，说错也没事～')
+              break
+            case 'start_quiz': // final 唯一测试（D-21：教学中零测试，教完才测）
+              setBubble('词都学完了！来做个完整测试，正常发挥就好～')
               break
             case 'lesson_summary':
               setEnded(true)
@@ -284,16 +284,18 @@ export default function ClassroomPage() {
     setListening(true)
     const recog = new SR()
     recogRef.current = recog
-    recog.lang = 'zh-CN'
+    // 跟读判读听英文（学生读单词）；答题听中文（说释义）——按当前相位选语言
+    recog.lang = phaseRef.current === 'repeating' ? 'en-US' : 'zh-CN'
     recog.interimResults = false
     recog.continuous = false
     recog.onresult = (ev: any) => {
       const text = ev.results?.[0]?.[0]?.transcript || ''
-      if (text) sendVoiceRef.current?.(text.trim()) // 语音作答/指令统一管线
+      if (text) sendVoiceRef.current?.(text.trim()) // 语音作答/判读/指令统一管线
     }
     recog.onend = () => {
-      // 相位仍在答题且未停止 → 持续监听（用户可以说多次）
-      if (listenActiveRef.current && phaseRef.current === 'wait_answer') {
+      // 相位仍在跟读/答题且未停止 → 持续监听（用户可以说多次）
+      if (listenActiveRef.current &&
+          (phaseRef.current === 'wait_answer' || phaseRef.current === 'repeating')) {
         try {
           recog.start()
         } catch {
@@ -338,9 +340,9 @@ export default function ClassroomPage() {
 
   const phase = snapshot?.phase || 'show_word'
 
-  // 相位驱动：进答题自动开麦；离场停麦（phase 声明之后）
+  // 相位驱动：进跟读/答题自动开麦；离场停麦（phase 声明之后）
   useEffect(() => {
-    if (phase === 'wait_answer') {
+    if (phase === 'wait_answer' || phase === 'repeating') {
       const t = setTimeout(() => startListening(), 300) // 等 UI 稳定
       return () => clearTimeout(t)
     }
@@ -458,17 +460,10 @@ export default function ClassroomPage() {
         }}
       >
         {phase === 'repeating' && (
-          <Button
-            type="primary"
-            size="large"
-            aria-label={`我读完了，第 ${Math.min(repeatN % 3 + 1, 3)} 遍`}
-            onClick={() => {
-              setRepeatN((n) => n + 1)
-              sendEvent('repeat_done')
-            }}
-          >
-            我读完了 ({Math.min(repeatN % 3 + 1, 3)}/3)
-          </Button>
+          // 用户定案：不设"我读完了"按钮——老师（语音判读）听学生读完自动进下一词
+          <Tag color={listening ? 'processing' : 'default'} aria-live="polite">
+            {listening ? '🎙 跟读：大声读出这个词～' : '准备跟读…'}
+          </Tag>
         )}
         {phase === 'wait_answer' && (
           <>
