@@ -86,11 +86,11 @@ type keySpec struct {
 }
 
 var specs = map[string]keySpec{
-	"wordsPerLesson":    {typ: "int", min: 40, max: 100, def: 60},
+	"wordsPerLesson":    {typ: "int", min: 50, max: 100, def: 60},
 	"groupSize":         {typ: "int", min: 5, max: 5, def: 5},
 	"ttsEnRepeat":       {typ: "int", min: 1, max: 5, def: 3},
 	"ttsIntervalMs":     {typ: "int", min: 500, max: 4000, def: 1500},
-	"repeatTimes":       {typ: "int", min: 1, max: 5, def: 3},
+	"repeatTimes":       {typ: "int", min: 1, max: 5, def: 1},
 	"quizOldWords":      {typ: "int", min: 0, max: 10, def: 3},
 	"timeoutShowWordS":  {typ: "int", min: 3, max: 30, def: 8},
 	"timeoutRepeatS":    {typ: "int", min: 5, max: 60, def: 10},

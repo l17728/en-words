@@ -150,7 +150,7 @@ func TestSetOutOfBounds(t *testing.T) { // CF-02
 	s, _, _ := newTestStore(t)
 	err := s.SetGlobal("admin", "wordsPerLesson", 120, "x")
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "40")
+	assert.Contains(t, err.Error(), "50")  // 用户定案：每课词数 50~100
 	assert.Contains(t, err.Error(), "100")
 	assert.Equal(t, 60, s.Int(1, "wordsPerLesson")) // 未变更
 }
@@ -184,10 +184,10 @@ func TestOverridePersistsAcrossReload(t *testing.T) {
 	a := &memAuditor{}
 	s1, err := NewStore(p, a)
 	require.NoError(t, err)
-	require.NoError(t, s1.SetStudent("admin", 7, "wordsPerLesson", 45, "r"))
+	require.NoError(t, s1.SetStudent("admin", 7, "wordsPerLesson", 55, "r"))
 	s2, err := NewStore(p, a) // 模拟重启重载
 	require.NoError(t, err)
-	assert.Equal(t, 45, s2.Int(7, "wordsPerLesson"))
+	assert.Equal(t, 55, s2.Int(7, "wordsPerLesson"))
 }
 
 func TestLadderValidation(t *testing.T) { // CF-05
