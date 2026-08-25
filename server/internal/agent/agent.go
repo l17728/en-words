@@ -62,8 +62,8 @@ func (a *TeacherAgent) Decide(in TeacherInput) *Utterance {
 			return &Utterance{Category: "transition", Vars: base}
 		}
 		return nil
-	case "group_quiz_start":
-		return &Utterance{Category: "transition", Vars: merge(base, map[string]any{"group": "下一"})}
+	case "start_quiz": // final 唯一测试开始（D-21：教学中零测试，教完才测）
+		return &Utterance{Category: "transition", Vars: base}
 	case "judged_correct":
 		// 鼓励密度：EncourageEveryN 由调用方传入计数（快路径在每次判对后调）
 		if in.EncourageN >= 8 { // 默认配置；真实链路读 config
@@ -77,8 +77,6 @@ func (a *TeacherAgent) Decide(in TeacherInput) *Utterance {
 		return &Utterance{Category: "nudge", Vars: base}
 	case "answer_timeout":
 		return &Utterance{Category: "nudge", Vars: base}
-	case "cumulative_start":
-		return &Utterance{Category: "transition", Vars: base}
 	case "lesson_end":
 		return &Utterance{Category: "closing", Vars: base}
 	case "state_restored":

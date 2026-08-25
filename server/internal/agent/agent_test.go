@@ -198,8 +198,8 @@ func TestTeacherDecideBranches(t *testing.T) {
 	u = ta.Decide(TeacherInput{LessonID: 10, Event: "word_done"})
 	assert.Nil(t, u)
 
-	// group_quiz_start / cumulative_start / answer_timeout / state_restored
-	for _, ev := range []string{"group_quiz_start", "cumulative_start", "answer_timeout", "state_restored"} {
+	// start_quiz(final 唯一测试, D-21) / answer_timeout / state_restored
+	for _, ev := range []string{"start_quiz", "answer_timeout", "state_restored"} {
 		u := ta.Decide(TeacherInput{LessonID: 1, Event: ev})
 		require.NotNil(t, u, "%s 应有话术槽", ev)
 	}
