@@ -19,8 +19,6 @@ func TestClassroomCommands(t *testing.T) {
 		{"继续", CmdNext},        // 同义词
 		{"跳过这个词", CmdSkip},
 		{"跳过", CmdSkip},
-		{"我读完了", CmdRepeatDone},
-		{"读完了", CmdRepeatDone},
 		{"重听一遍", CmdReplay},
 		{"暂停一下", CmdPause},
 		{"暂停", CmdPause},
@@ -83,9 +81,15 @@ func TestNoMatch(t *testing.T) {
 	assert.False(t, ok)
 	_, ok = p.Match("")
 	assert.False(t, ok)
+	// 2026-08-25 定案锁定：跟读不再认口令——"我读完了/读好了"不再是指令
+	// （推进只认语音判读，见 api.Room.HandleVoiceText 听读分支）
+	for _, dead := range []string{"我读完了", "读完了", "读好了"} {
+		_, ok = p.Match(dead)
+		assert.False(t, ok, "%q 已随定案移除，不得再命中指令", dead)
+	}
 }
 
-func TestQuizModeRestriction(t *testing.T) { // 02 §12.4: 测试作答阶段仅"跳过"生效
+func TestQuizModeRestriction(t *testing.T) { // 02 §12.1: 测试作答阶段仅"跳过"生效
 	p := New(DefaultTable())
 	assert.True(t, p.AllowedInQuiz(CmdSkip))
 	assert.False(t, p.AllowedInQuiz(CmdNext))

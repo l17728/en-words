@@ -1,4 +1,4 @@
-// Package voicecmd 实现全程语音操作的确定性指令解析（D-14 / 01 FR-L / 02 §12.4）：
+// Package voicecmd 实现全程语音操作的确定性指令解析（D-14 / 01 FR-L / 02 §12.1）：
 // 词表匹配 + 归一化 + 编辑距离容错 + 反馈前缀捕获；不经 LLM，误识别率低、可单测。
 package voicecmd
 
@@ -8,14 +8,15 @@ import (
 )
 
 // 指令集（01 FR-L1/L3）。
+// 注：repeat_done 口令已随 2026-08-25"老师听学生读完"定案移除——
+// 跟读推进只认语音判读（HandleVoiceText 听读匹配当前词），不认口令。
 const (
-	CmdNext       = "next"        // 下一个/继续
-	CmdSkip       = "skip"        // 跳过（测试作答期唯一生效的教学指令）
-	CmdRepeatDone = "repeat_done" // 我读完了
-	CmdReplay     = "replay"      // 重听一遍
-	CmdPause      = "pause"       // 暂停
-	CmdExit       = "exit"        // 退出课堂
-	CmdFeedback   = "feedback"    // 我想反馈…（前缀捕获）
+	CmdNext       = "next"     // 下一个/继续
+	CmdSkip       = "skip"     // 跳过（测试作答期唯一生效的教学指令）
+	CmdReplay     = "replay"   // 重听一遍
+	CmdPause      = "pause"    // 暂停
+	CmdExit       = "exit"     // 退出课堂
+	CmdFeedback   = "feedback" // 我想反馈…（前缀捕获）
 	CmdNavHome    = "nav_home"
 	CmdNavSchedule = "nav_schedule"
 	CmdNavStats   = "nav_stats"
@@ -30,7 +31,6 @@ func DefaultTable() Table {
 	return Table{
 		CmdNext:       {"下一个", "继续", "下一题", "下一词"},
 		CmdSkip:       {"跳过", "跳过这个词", "不会", "过"},
-		CmdRepeatDone: {"我读完了", "读完了", "读好了", "好了"},
 		CmdReplay:     {"重听", "再读一遍", "重听一遍"},
 		CmdPause:      {"暂停", "暂停一下", "歇会"},
 		CmdExit:       {"退出", "退出课堂", "下课"},
@@ -141,7 +141,7 @@ func (p *Parser) MatchFeedback(text string) (string, string, bool) {
 	return "", "", false
 }
 
-// AllowedInQuiz 测试作答阶段指令白名单（02 §12.4：仅跳过与反馈生效）。
+// AllowedInQuiz 测试作答阶段指令白名单（02 §12.1：仅跳过与反馈生效）。
 func (p *Parser) AllowedInQuiz(cmd string) bool {
 	return cmd == CmdSkip || cmd == CmdFeedback
 }
