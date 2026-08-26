@@ -13,6 +13,11 @@ export default defineConfig({
     viewport: { width: 1280, height: 800 },
     locale: 'zh-CN',
     permissions: ['microphone'],
+    // 无头 Chromium 默认拦音频自动播 → speechSynthesis onstart 永不触发，TTS 断言不可用。
+    // 与 headed 配置对齐放行（BUG-10 锁定的前提）。
+    launchOptions: {
+      args: ['--autoplay-policy=no-user-gesture-required'],
+    },
     video: { mode: 'retain-on-failure', size: { width: 1280, height: 800 } },
     trace: 'retain-on-failure',
     actionTimeout: 20_000,

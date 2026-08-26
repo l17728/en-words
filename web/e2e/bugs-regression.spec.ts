@@ -1,7 +1,7 @@
 // BUG 回归 E2E（铁律 0.5/0.6）：本轮手工测试发现的每个 BUG 一条用例。
 // 覆盖：①选库 unauthorized（会话态单一事实源）②昵称 ??? （编码防御）
 // ③词库卡片不可点 ④重进课堂只有…（快照补全）⑤重新摸底覆盖重排 ⑥摸底草稿恢复+取消
-// ⑦课堂直接中英对照（无第一屏）⑧返回词库广场按钮
+// ⑦课堂直接中英对照（无第一屏）⑧返回词库广场按钮 ⑨老师朗读无声（TTS 显式本地选声+发声探针）
 // 运行：npx playwright test bugs-regression.spec.ts --config=playwright.headless.config.ts
 import { test, expect, type Page } from '@playwright/test'
 
@@ -465,5 +465,108 @@ test.describe('BUG 回归：本轮修复锁定', () => {
     }
     await expect(page.getByText('下课啦！叮当老师的小结')).toBeVisible({ timeout: 30_000 })
     await expect(page.getByText(/首答率/)).toBeVisible({ timeout: 15_000 })
+  })
+
+  // ---- 2026-08-26 老师朗读无声 BUG（真实 Chrome 默认选 Google 在线语音→国内不可达静默挂起）----
+  test('BUG-10: 老师朗读真实发声（本地 voice 显式选择+流程不阻塞）', async ({ page }) => {
+    const tok = await ensureStudent(page)
+    // 专用 3 词库（幂等：存在且词条≥3 视为就绪）
+    const lr = await (await page.request.post(API + '/auth/login', {
+      data: { username: 'dad', password: 'family123' },
+    })).json()
+    const adminTok = lr.data.token
+    let bk = ((await (await page.request.get(API + '/wordbooks', {
+      headers: { Authorization: `Bearer ${adminTok}` },
+    })).json()).data ?? []).find((b: { Name: string }) => b.Name === 'TTS回归库')
+    if (bk) {
+      const w = (await (await page.request.get(`${API}/wordbooks/${bk.ID}/words`, {
+        headers: { Authorization: `Bearer ${adminTok}` },
+      })).json()).data
+      if ((w.total ?? w.entries?.length ?? 0) < 3) bk = undefined
+    }
+    if (!bk) {
+      const mk = await (await page.request.post(API + '/wordbooks', {
+        headers: { Authorization: `Bearer ${adminTok}` },
+        data: { name: 'TTS回归库', grade: 'g7', description: '朗读无声BUG锁定' },
+      })).json()
+      if (mk.code !== 0 && !(mk.msg || '').includes('重复') && !(mk.msg || '').includes('duplicate') && !(mk.msg || '').includes('UNIQUE')) {
+        throw new Error('建库失败: ' + mk.msg)
+      }
+      let nid = mk.data?.ID
+      if (!nid) {
+        nid = ((await (await page.request.get(API + '/wordbooks', {
+          headers: { Authorization: `Bearer ${adminTok}` },
+        })).json()).data ?? []).find((b: { Name: string }) => b.Name === 'TTS回归库')?.ID
+      }
+      if (!nid) throw new Error('拿不到 TTS回归库 ID')
+      const entries = [
+        { word: 'cat', meanings: ['n. 猫'] }, { word: 'dog', meanings: ['n. 狗'] },
+        { word: 'apple', meanings: ['n. 苹果'] },
+      ]
+      const imp = await (await page.request.post(`${API}/wordbooks/${nid}/import/commit`, {
+        headers: { Authorization: `Bearer ${adminTok}` }, data: { entries },
+      })).json()
+      if (imp.code !== 0) throw new Error('导入失败: ' + imp.msg)
+      const pub = await (await page.request.post(`${API}/wordbooks/${nid}/publish`, {
+        headers: { Authorization: `Bearer ${adminTok}` },
+      })).json()
+      if (pub.code !== 0 && !(pub.msg || '').includes('invalid status')) throw new Error('发布失败: ' + pub.msg)
+      bk = { ID: nid }
+    }
+    // enable + 空勾选重摸底 → 幂等重跑：作废旧课、保证全新 3 词批次课
+    await page.request.post(`${API}/student/books/${bk.ID}/enable`, {
+      headers: { Authorization: `Bearer ${tok}` },
+    }).catch(() => {})
+    const p0 = await (await page.request.post(`${API}/student/books/${bk.ID}/placement`, {
+      headers: { Authorization: `Bearer ${tok}` },
+      data: { knownWordIds: [], finish: true },
+    })).json()
+    expect(p0.code, '重摸底排新课').toBe(0)
+    const ls = (await (await page.request.get(`${API}/student/lessons?bookId=${bk.ID}`, {
+      headers: { Authorization: `Bearer ${tok}` },
+    })).json()).data
+    const active = ls.filter((l: { Status: string }) => l.Status === 'scheduled')
+    expect(active).toHaveLength(1)
+    const lessonId = active[0].ID
+
+    // UI 进课堂（e2e=1 禁自动拾音，TTS 走真实 play_tts→speak 链路）
+    await page.goto(BASE + '/login')
+    await page.fill('input[placeholder*="学生或管理员"]', STU.username)
+    await page.fill('input[type="password"]', STU.password)
+    await page.getByRole('button', { name: '开始学习' }).click()
+    await expect(page.getByText('今天也想见叮当老师').first()).toBeVisible({ timeout: 20_000 })
+    await page.goto(`${BASE}/classroom/${lessonId}?e2e=1`)
+    await expect(page.getByText('已连接')).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByText(/点一下这个单词/)).toBeVisible({ timeout: 20_000 })
+
+    // 点击首词 → 完整真实链路：play_tts → speak()（显式本地 voice）→ onstart → onend
+    // → WS 自动 tts_finished ×4 → REPEATING（无声 BUG 场景：看门狗推进也能到这，靠探针区分）
+    await page.evaluate(async () => {
+      const tok2 = localStorage.getItem('token') || ''
+      await fetch(`/api/v1/classroom/lessons/${location.pathname.split('/').pop()?.split('?')[0]}/event`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tok2}` },
+        body: JSON.stringify({ event: 'word_clicked' }),
+      })
+    })
+    await expect(page.getByText(/轮到你读了/)).toBeVisible({ timeout: 40_000 })
+
+    // 探针断言（window.__ttsDebug）：
+    const dbg = (await page.evaluate(() => (window as unknown as { __ttsDebug?: Array<{ text: string; voice: string | null; local: boolean | null; startMs: number | null }> }).__ttsDebug ?? []))
+    // ① 4 段全部入播（3en+1zh）
+    expect(dbg.length, `play_tts 应驱动 4 段 speak（实际 ${JSON.stringify(dbg)}）`).toBeGreaterThanOrEqual(4)
+    // ② 每段 onstart 真实触发=音频实际播出（无声 BUG 锁定：startMs=null 即看门狗推进=无声）
+    const silent = dbg.filter((d) => d.startMs === null)
+    expect(silent, `全部段必须真实发声，无声段: ${JSON.stringify(silent)}`).toHaveLength(0)
+    // ③ 选中的 voice 一律显式本地（null=浏览器默认=旧 BUG 路径；false=网络语音=根因）
+    for (const d of dbg) {
+      expect(d.local, `必须显式绑定本地 voice（实际选中 ${d.voice ?? '无（浏览器默认）'}）`).toBe(true)
+    }
+
+    // 退出课堂（不消费整课；退出带二次确认 Modal）
+    await page.locator('header button, .ant-layout-header button').first()
+      .or(page.locator('button').filter({ hasText: /退|Exit/ }).first()).click()
+    await page.locator('.ant-modal .ant-btn-primary').click({ timeout: 5000 }).catch(() => {})
+    await page.waitForTimeout(800)
   })
 })

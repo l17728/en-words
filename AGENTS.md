@@ -72,6 +72,7 @@ React18+AntD5+Vite+TS+Zustand / Go(Gin)+GORM+SQLite / Gorilla WS / 阿里 DashSc
 14. **测试模式与产品模式隔离**：?e2e=1 禁自动语音监听（防拾音与显式提交叠加=用户听到"回答两次"）；-testmode 拨课程时间到当前——测试便利绝不渗入产品行为。
 15. **会话态单一事实源原则**（2026-08-23 unauthorized BUG 沉淀）：前端 token 等会话态严禁模块级变量缓存（`let token = localStorage.getItem()` 模块加载读一次）——登录走 zustand、请求走 client 模块缓存，双源必失同步（登录后请求仍无 Authorization→401）。正解：唯一事实源=localStorage，每次请求实时读取；401 统一恢复路径（清态+跳登录，login 页豁免防死循环）。同类扫描：登出不清 client 缓存、多标签页失同步，一次修复全部消灭。
 16. **功能删除五连清**（2026-08-25 课堂定案沉淀）：删一个功能必须同步清五处——①常量/词表 ②switch case/死分支 ③测试断言（含负向锁定：旧口令不得再命中）④文档表格+决策表+话术 seed ⑤前端死分支文案（会真实显示/说出来）。收尾 grep 旧术语全库终扫，严格区分"移除注记"（允许保留）与"活代码残留"（必清）。
+17. **TTS 显式选声+可听性探针**（2026-08-26 无声 BUG 沉淀）：speechSynthesis 禁止裸奔默认选声——真实 Chrome 默认可命中 Google 在线语音（国内不可达→speak 静默挂起）；必须显式绑定 voice 且严格本地优先（精确 lang 本地→同语言族本地（zh voice 兜底读 en）→任意本地），u.lang 与选中 voice 对齐；看门狗触发时 cancel() 清挂起段（一段挂死会阻塞后续全部段）；`window.__ttsDebug` 探针（每段 voice/local/onstart 时刻）把"不可听的副作用"变成 E2E 可断言证据（BUG-10 锁定）。深层教训：**兜底降级会掩盖根因**（看门狗推进=流程正常但无声，E2E 全绿测不出）；**E2E 环境≠用户环境**（Playwright Chromium 无 Google 在线语音，真实 Chrome 有）——凡"失败被兜底吞掉"的链路必须埋可观测探针再断言。
 
 ## 产品路线图（用户已确认方向，后续实现）
 - **D-18 观察员 Agent**：AI 英语教学公司督导角色——只读旁观课堂事件流，评估师生表现，改进建议分发系统/老师 Agent+管理员。平台=学生/老师Agent/系统Agent/观察员Agent 四角色 AI 教学公司远程教学。

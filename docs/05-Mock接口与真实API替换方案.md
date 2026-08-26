@@ -92,7 +92,10 @@ type ASRProvider interface {
 ```
 Synthesize(text, lang) → {Audio: nil, Mime: "text/mock-tts", Meta: {text, lang}}
 前端 speech/ 模块约定: Mime=text/mock-tts → 使用浏览器 Web Speech API
-  (speechSynthesis) 本地朗读（en 用 en-US 声音，zh 用 zh-CN），
+  (speechSynthesis) 本地朗读，voice 显式选择·严格本地优先
+  （精确 lang 本地 → 同语言族本地（zh voice 兜底读 en）→ 任意本地；
+  2026-08-26 无声 BUG：默认选声可能命中 Google 在线语音，国内不可达
+  → speak 静默挂起），u.lang 与选中 voice 对齐，
   DurationMs=按字数估算，朗读完成回执 tts_finished。
 效果: 开发期零外部依赖即可全流程走通，且真实语音效果可提前体验。
 ```

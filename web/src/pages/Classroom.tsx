@@ -32,6 +32,16 @@ const PHASE_TIP: Record<string, string> = {
   lesson_end: '下课啦！',
 }
 
+// TTS 可观测探针（铁律 3 定位日志）：window.__ttsDebug 暴露每段 voice 选择与 onstart 实况。
+// E2E 据此断言"真的发声"（onstart=音频实际播出的唯一可靠信号）且选中本地 voice（无声 BUG 回归锁定）。
+interface TtsDebugEntry {
+  text: string
+  lang: string
+  voice: string | null
+  local: boolean | null
+  startMs: number | null // null=onstart 从未触发（看门狗/静默路径）
+}
+
 export default function ClassroomPage() {
   const { lessonId } = useParams()
   const nav = useNavigate()
@@ -47,14 +57,29 @@ export default function ClassroomPage() {
   const wsRef = useRef<ClassroomWS | null>(null)
   const phaseRef = useRef<string>('show_word')
   const ttsAvail = useRef<boolean>(typeof window !== 'undefined' && 'speechSynthesis' in window)
-  // voices 预热：Chrome 的语音列表异步加载，未就绪时 speak() 静默失败（曾致"头几个词哑火"）。
+  // voices 预热+缓存：Chrome 的语音列表异步加载，未就绪时 speak() 静默失败（曾致"头几个词哑火"）。
   // 页面加载即触发 getVoices + voiceschanged 监听重取，确保第一词就有声。
+  // voice 显式选择（2026-08-26 无声 BUG 实证修复）：真实 Chrome 默认会选中 Google 在线语音
+  // （国内网络不可达→speak 静默挂起，看门狗推进=课堂正常但无声）。严格本地优先，绝不主动选网络语音：
+  // 精确 lang 本地 → 同语言族本地（中文 voice 也能读英文单词）→ 任意本地 → null（浏览器默认兜底）。
+  const voicesRef = useRef<SpeechSynthesisVoice[]>([])
   useEffect(() => {
     if (!('speechSynthesis' in window)) return
-    const warm = () => { void window.speechSynthesis.getVoices() }
-    warm()
-    window.speechSynthesis.onvoiceschanged = warm
+    const grab = () => { voicesRef.current = window.speechSynthesis.getVoices() }
+    grab()
+    window.speechSynthesis.onvoiceschanged = grab
     return () => { window.speechSynthesis.onvoiceschanged = null }
+  }, [])
+  const pickVoice = useCallback((lang: string): SpeechSynthesisVoice | null => {
+    const vs = voicesRef.current
+    if (!vs.length) return null
+    const base = lang.split('-')[0]
+    return (
+      vs.find((v) => v.localService && v.lang === lang) ||
+      vs.find((v) => v.localService && v.lang.startsWith(base)) ||
+      vs.find((v) => v.localService) ||
+      null
+    )
   }, [])
   // TTS 完成回执通过 WS 上报（声明在前供 speak 闭包引用）
   const sendEventRef = useRef<((ev: string, text?: string) => void) | null>(null)
@@ -100,16 +125,36 @@ export default function ClassroomPage() {
     }
     try {
       const u = new SpeechSynthesisUtterance(next.text)
-      u.lang = next.lang
+      // 显式选 voice：防"浏览器默认选中不可用 voice→静默挂起"（2026-08-26 无声 BUG 根因）
+      const v = pickVoice(next.lang)
+      if (v) {
+        u.voice = v
+        u.lang = v.lang // 与选中 voice 对齐（中文 voice 兜底读英文时以 voice 引擎为准）
+      } else {
+        u.lang = next.lang
+      }
       u.rate = next.lang === 'en-US' ? 0.8 : 0.95
+      // 可观测探针：记录本段 voice 决策（onstart 后补记实际发声时刻）
+      const dbg: TtsDebugEntry = { text: next.text, lang: next.lang, voice: v?.name ?? null, local: v?.localService ?? null, startMs: null }
+      const t0 = performance.now()
+      if (typeof window !== 'undefined') {
+        const w = window as typeof window & { __ttsDebug?: TtsDebugEntry[] }
+        ;(w.__ttsDebug ??= []).push(dbg)
+      }
+      const markStart = () => { dbg.startMs = Math.round(performance.now() - t0) }
+      u.onstart = markStart
       u.onend = once
       u.onerror = once
       window.speechSynthesis.speak(u)
-      ttsTimerRef.current = setTimeout(once, segDur(next.text, next.lang) * 2.5) // 看门狗
+      // 看门狗：onend 失联=引擎挂起（如 Google 网络语音不可达）→ cancel 清挂起段，防阻塞后续所有段
+      ttsTimerRef.current = setTimeout(() => {
+        try { window.speechSynthesis.cancel() } catch { /* noop */ }
+        once()
+      }, segDur(next.text, next.lang) * 2.5)
     } catch {
       once()
     }
-  }, [segDur])
+  }, [segDur, pickVoice])
 
   // speak = 入队（保持外部签名；word 参数已内聚在 text）
   const speak = useCallback(

@@ -758,6 +758,11 @@ GET  /agent/tools                      # 该 Agent 可见工具清单（给 LLM 
 兜底: Web Speech API 的 voices 异步加载/onend 不可靠 → 前端按字数估时+1s 看门狗
       强制视为完成；Web Speech 完全不可用 → 静音计时+视觉动画，tts_finished 照常
       上报，流程不阻塞（评审发现 FE-03，P0）
+选声: voice 显式选择·严格本地优先（精确 lang 本地→同语言族本地→任意本地→
+      浏览器默认兜底），u.lang 与选中 voice 对齐——2026-08-26 无声 BUG：默认
+      选声可命中 Google 在线语音（国内不可达→speak 静默挂起，看门狗推进=
+      课堂正常但无声）；看门狗触发时 cancel() 清挂起段，防一段挂死阻塞后续
+      全部段；window.__ttsDebug 探针记录每段 voice/onstart 供 E2E 断言真实发声
 ```
 
 ### 12.3 跟读判定：老师听读判读（2026-08-25 定案，替代前端 VAD）
