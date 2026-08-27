@@ -100,8 +100,10 @@ export default function ClassroomPage() {
     if (ttsBusyRef.current) return
     const next = ttsQueueRef.current.shift()
     if (!next) return
+    console.log(`[TTS-pump] text="${next.text}" lang=${next.lang} phase=${phaseRef.current} queueLen=${ttsQueueRef.current.length}`)
     // 回声抑制：跟读阶段不发声——静默段仍链式出队+回执（R5-P0：防队列卡死）
     if (phaseRef.current === 'repeating' || !ttsAvail.current) {
+      console.log(`[TTS-pump] SILENT-SKIP phase=${phaseRef.current} ttsAvail=${ttsAvail.current}`)
       ttsBusyRef.current = true
       ttsTimerRef.current = setTimeout(() => {
         if (ttsTimerRef.current) clearTimeout(ttsTimerRef.current)
@@ -120,6 +122,7 @@ export default function ClassroomPage() {
       if (ttsTimerRef.current) clearTimeout(ttsTimerRef.current)
       ttsTimerRef.current = null
       ttsBusyRef.current = false
+      console.log(`[TTS-pump] DONE text="${next.text}" lang=${next.lang}`)
       sendEventRef.current?.('tts_finished')
       pumpTts() // 链式出队（间隔由后端 ttsIntervalMs 配置，此处紧接）
     }
@@ -134,6 +137,7 @@ export default function ClassroomPage() {
         u.lang = next.lang
       }
       u.rate = next.lang === 'en-US' ? 0.8 : 0.95
+      console.log(`[TTS-pump] SPEAK voice=${v?.name ?? 'null'} local=${v?.localService ?? 'null'} u.lang=${u.lang} u.rate=${u.rate}`)
       // 可观测探针：记录本段 voice 决策（onstart 后补记实际发声时刻）
       const dbg: TtsDebugEntry = { text: next.text, lang: next.lang, voice: v?.name ?? null, local: v?.localService ?? null, startMs: null }
       const t0 = performance.now()
@@ -148,6 +152,7 @@ export default function ClassroomPage() {
       window.speechSynthesis.speak(u)
       // 看门狗：onend 失联=引擎挂起（如 Google 网络语音不可达）→ cancel 清挂起段，防阻塞后续所有段
       ttsTimerRef.current = setTimeout(() => {
+        console.log(`[TTS-pump] WATCHDOG-FIRE text="${next.text}" lang=${next.lang}`)
         try { window.speechSynthesis.cancel() } catch { /* noop */ }
         once()
       }, segDur(next.text, next.lang) * 2.5)
@@ -159,8 +164,9 @@ export default function ClassroomPage() {
   // speak = 入队（保持外部签名；word 参数已内聚在 text）
   const speak = useCallback(
     (text: string, lang: 'en-US' | 'zh-CN') => {
+      console.log(`[TTS-speak] IN text="${text}" lang=${lang} phase=${phaseRef.current}`)
       // R6-fe#1：REPEATING 相位不入队（回声抑制入口守卫——防相位切换竞态时旧段发声）
-      if (phaseRef.current === 'repeating') return
+      if (phaseRef.current === 'repeating') { console.log('[TTS-speak] BLOCKED by repeating phase'); return }
       ttsQueueRef.current.push({ text, lang })
       pumpTts()
     },
@@ -191,6 +197,7 @@ export default function ClassroomPage() {
     (f: Frame) => {
       switch (f.type) {
         case 'state_snapshot':
+          console.log(`[TTS-recv] state_snapshot phase=${f.phase} word="${f.word}"`)
           setSnapshot({ phase: f.phase, word: f.word, quiz_word: f.quiz_word,
             zhMeaning: f.zhMeaning, paused: f.paused })
           phaseRef.current = f.phase
@@ -204,12 +211,14 @@ export default function ClassroomPage() {
           const a = f.action ?? {}
           switch (a.type) {
             case 'show_word':
+              console.log(`[TTS-recv] show_word word="${a.word}" meanings=${JSON.stringify(a.meanings)} phase=${phaseRef.current}`)
               setSnapshot((s) => ({ ...(s ?? { phase: 'show_word' }), phase: 'show_word',
                 word: a.word, zhMeaning: Array.isArray(a.meanings) && a.meanings.length > 0 ? a.meanings[0] : s?.zhMeaning })) // R5：meanings 防空保旧
               setJudge(null)
               phaseRef.current = 'show_word'
               break
             case 'play_tts':
+              console.log(`[TTS-recv] seg=${a.seg_idx} lang=${a.lang} word="${a.word}" meanings=${JSON.stringify(a.meanings)} phase=${phaseRef.current}`)
               setTtsSeg(a.seg_idx || 1)
               // Meanings：en 首段即携带中文释义（点击即显示中英对照——原始需求）
               {
@@ -220,9 +229,13 @@ export default function ClassroomPage() {
                     word: s?.word, zhMeaning: zh }))
                 }
               }
-              if (a.word) speak(a.word, a.lang === 'zh' ? 'zh-CN' : 'en-US')
+              if (a.word) {
+                console.log(`[TTS-recv] seg=${a.seg_idx} lang=${a.lang} word="${a.word}" phase=${phaseRef.current}`)
+                speak(a.word, a.lang === 'zh' ? 'zh-CN' : 'en-US')
+              }
               break
             case 'start_repeat':
+              console.log(`[TTS-recv] start_repeat phase=${phaseRef.current} ttsQueueLen=${ttsQueueRef.current.length}`)
               setSnapshot((s) => ({ ...(s ?? { phase: 'repeating' }), phase: 'repeating' }))
               phaseRef.current = 'repeating' // 禁后续 TTS（回声抑制）
               break
@@ -280,9 +293,11 @@ export default function ClassroomPage() {
     api
       .post<EnterResult>(`/classroom/lessons/${lessonId}/enter`)
       .then((r) => {
+        console.log(`[TTS-enter] phase=${r.snapshot.phase} word="${r.snapshot.word}"`)
         setSnapshot(r.snapshot)
         phaseRef.current = r.snapshot.phase
-        if (r.snapshot.word && r.snapshot.phase === 'show_word') speak(r.snapshot.word, 'en-US')
+        // enter 朗读已移除：服务端 show_word 800ms 超时自动触发 enterTTS → play_tts en seg1，
+        // 前端冗余 speak 导致第一词多读一遍（铁律 M4 最小改动）
         // R4-fe#1：真 WebSocket 连接（事件/指令全部走 WS）
         ws = new ClassroomWS(Number(lessonId), r.ticket, {
           onFrame: handleFrame,
@@ -454,11 +469,7 @@ export default function ClassroomPage() {
               {judge === 'bad' && <CloseCircleFilled style={{ fontSize: 48, color: '#F87171' }} aria-label="回答错误" />}
               {bigWord || '…'}
             </div>
-            {phase === 'tts_seg' && (
-              <div style={{ color: '#5C6B73' }} aria-live="polite">
-                🔊 第 {ttsSeg} 遍
-              </div>
-            )}
+            {/* 第几遍显示已移除：无实际用途且首次不显示/后续显示不统一 */}
             {/* 教学阶段中英对照（原始需求：学习时显示中英文对照） */}
             {teachingZh && snapshot?.zhMeaning && (
               <Typography.Text strong style={{ fontSize: 40, color: '#0D9488' }}>

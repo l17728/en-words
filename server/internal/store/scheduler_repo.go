@@ -145,6 +145,16 @@ func (r *SchedulerRepo) StudentBooks(studentID int64) ([]int64, error) {
 	return ids, nil
 }
 
+// DeleteStudentBook 移除某生某词库的全部记忆卡和课程（取消选库）。
+func (r *SchedulerRepo) DeleteStudentBook(studentID, bookID int64) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("student_id=? AND book_id=?", studentID, bookID).Delete(&MemoryCard{}).Error; err != nil {
+			return err
+		}
+		return tx.Where("student_id=? AND book_id=?", studentID, bookID).Delete(&Lesson{}).Error
+	})
+}
+
 // ListLessonsAll 跨学生全量（api CronOverdue 巡检用；替代内存版 repoLessonsAll）。
 func (r *SchedulerRepo) ListLessonsAll() ([]*scheduler.Lesson, error) {
 	var ls []Lesson

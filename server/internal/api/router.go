@@ -184,6 +184,16 @@ func (a *App) Router() *gin.Engine {
 		}
 		c.JSON(http.StatusOK, ok("enabled"))
 	})
+	student.DELETE("/books/:bookId", func(c *gin.Context) {
+		bid, _ := strconv.ParseInt(c.Param("bookId"), 10, 64)
+		if err := a.Sched.RemoveBook(claimsOf(c).UID, bid); err != nil {
+			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
+			return
+		}
+		a.Log.Info("student", "book_removed", map[string]any{
+			"student_id": claimsOf(c).UID, "book_id": bid})
+		c.JSON(http.StatusOK, ok("removed"))
+	})
 	student.GET("/books/:bookId/placement", func(c *gin.Context) {
 		bid, _ := strconv.ParseInt(c.Param("bookId"), 10, 64)
 		es, _, err := a.Books.ListEntries(bid, 1, 10000)

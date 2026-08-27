@@ -68,6 +68,7 @@ type Repo interface {
 	SaveCard(c *Card) error
 	ListCards(studentID, bookID int64) ([]*Card, error)
 	Boost(studentID, bookID, wordID int64) error
+	DeleteStudentBook(studentID, bookID int64) error
 
 	CreateLesson(l *Lesson) error
 	GetLesson(id int64) (*Lesson, error)
@@ -188,6 +189,24 @@ func (m *MemRepo) StudentBooks(s int64) ([]int64, error) {
 	return out, nil
 }
 
+// DeleteStudentBook 移除某生某词库的全部记忆卡和课程（取消选库）。
+func (m *MemRepo) DeleteStudentBook(studentID, bookID int64) error {
+	for k := range m.cards {
+		if k[0] == studentID && k[1] == bookID {
+			delete(m.cards, k)
+		}
+	}
+	var kept []*Lesson
+	for _, l := range m.lessons {
+		if l.StudentID == studentID && l.BookID == bookID {
+			continue // 删除该生该库的课程
+		}
+		kept = append(kept, l)
+	}
+	m.lessons = kept
+	return nil
+}
+
 // ---- 时钟 ----
 
 type Clock interface{ Now() time.Time }
@@ -250,6 +269,11 @@ func (s *Service) SaveLesson(l *Lesson) error { return s.repo.SaveLesson(l) }
 // StudentBooks 某生已启用词库 ID（Dashboard"我的词库"）。
 func (s *Service) StudentBooks(studentID int64) ([]int64, error) {
 	return s.repo.StudentBooks(studentID)
+}
+
+// RemoveBook 移除某生某词库（取消选库：删记忆卡+课程）。
+func (s *Service) RemoveBook(studentID, bookID int64) error {
+	return s.repo.DeleteStudentBook(studentID, bookID)
 }
 
 // StudentLessons 某生全部课程（跨词库；反馈 D 定位下一课用）。

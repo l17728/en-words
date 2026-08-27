@@ -6,6 +6,7 @@
 package api
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -299,6 +300,10 @@ func (r *Room) broadcastActionsOnly() []Msg {
 	r.lastActions = r.machine.DrainActions()
 	for _, a := range r.lastActions {
 		m := Msg{"type": "ui_action", "seq": r.nextSeqLocked(), "action": a}
+		if a.Type == "play_tts" {
+			fmt.Printf("[hub] emit play_tts lesson=%d seg=%d lang=%q word=%q\n",
+				r.lessonID, a.SegIdx, a.Lang, a.Word)
+		}
 		r.emitLocked(m)
 		out = append(out, m)
 	}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Card, Typography, Button, List, Badge, Progress, Input, Modal, message } from 'antd'
-import { BellOutlined, BookOutlined, SoundOutlined } from '@ant-design/icons'
+import { BellOutlined, BookOutlined, SoundOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import type { Book, Lesson, Notification } from '../api/client'
@@ -33,6 +33,21 @@ export default function DashboardPage() {
       .then(setLessons)
       .catch((e) => message.error((e as Error).message))
       .finally(() => setPicking(false))
+  }
+
+  const removeBook = (b: Book) => {
+    Modal.confirm({
+      title: '移除词库',
+      content: `确定要从「我的词库」中移除「${b.Name}」吗？课程进度将被清除。`,
+      okText: '移除',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: () => api.del(`/student/books/${b.ID}`).then(() => {
+        message.success('已移除')
+        if (selectedBook?.ID === b.ID) setSelectedBook(null)
+        refresh()
+      }).catch((e) => message.error((e as Error).message)),
+    })
   }
 
   const nextLesson = lessons.find((l) => l.Status === 'scheduled')
@@ -87,12 +102,21 @@ export default function DashboardPage() {
                   cursor: 'pointer',
                   minHeight: 44,
                   transition: 'all .15s',
+                  position: 'relative',
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#14B8A6')}
                 onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#E5EAEC')}
               >
                 <b>{b.Name}</b>
                 <div style={{ color: '#5C6B73', marginTop: 4 }}>{b.WordCount} 个词</div>
+                <Button
+                  type="text"
+                  danger
+                  size="small"
+                  icon={<DeleteOutlined />}
+                  onClick={(e) => { e.stopPropagation(); removeBook(b) }}
+                  style={{ position: 'absolute', top: 8, right: 8 }}
+                />
               </div>
             ))}
           </div>

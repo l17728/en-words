@@ -448,6 +448,7 @@ func (m *Machine) enterTTS() error {
 	// Meanings：点击即显示中英对照（原始需求：点击后发音并显示汉语意思——不等到 zh 段）
 	m.acts = append(m.acts, Action{Type: ActPlayTTS, Lang: "en", SegIdx: 1,
 		WordID: w.ID, Word: w.Word, Meanings: w.Meanings})
+	fmt.Printf("[classroom] enterTTS word=%q seg=1 lang=en meanings=%v\n", w.Word, w.Meanings)
 	return nil
 }
 
@@ -467,16 +468,19 @@ func (m *Machine) ttsAdvance() error {
 		st.TtsSegIdx++
 		m.acts = append(m.acts, Action{Type: ActPlayTTS, Lang: "en", SegIdx: st.TtsSegIdx,
 			WordID: w.ID, Word: w.Word}) // Word=朗读文本（前端直接发声，无需查表）
+		fmt.Printf("[classroom] ttsAdvance word=%q seg=%d/%d lang=en\n", w.Word, st.TtsSegIdx, m.cfg.TtsEnRepeat)
 	case st.TtsSegIdx == m.cfg.TtsEnRepeat:
 		st.TtsSegIdx = m.cfg.TtsEnRepeat + 1
 		zh := firstMeaning(w) // zh 段朗读文本=中文释义（非英文单词——防 zh 嗓音硬读英文）
 		m.acts = append(m.acts, Action{Type: ActPlayTTS, Lang: "zh", SegIdx: st.TtsSegIdx,
 			WordID: w.ID, Word: zh})
+		fmt.Printf("[classroom] ttsAdvance word=%q seg=%d lang=zh text=%q\n", w.Word, st.TtsSegIdx, zh)
 	default:
 		st.Phase = PhaseRepeating
 		st.RepeatCount = 0
 		st.RepeatNudged = false
 		m.acts = append(m.acts, Action{Type: ActStartRepeat, WordID: w.ID})
+		fmt.Printf("[classroom] ttsAdvance word=%q → start_repeat\n", w.Word)
 	}
 	return nil
 }
