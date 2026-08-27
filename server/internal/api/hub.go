@@ -38,6 +38,7 @@ type Room struct {
 	machine      *classroom.Machine
 	words        map[int64]classroom.Word
 	clients      map[Client]bool
+	currentCli   Client // 当前活跃学生连接（StrictMode 重复 Join 时踢旧）
 	seq          int
 	lastAnswer   string
 	finished     bool
@@ -120,6 +121,12 @@ func (h *Hub) Enter(lessonID, studentID int64) (*Room, Msg, error) {
 func (r *Room) Join(c Client) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	// StrictMode/重连保护：同一学生重复 Join 时踢掉旧连接，防帧双投递
+	if r.currentCli != nil && r.currentCli != c {
+		delete(r.clients, r.currentCli)
+		_ = r.currentCli.Send(Msg{"type": "kick", "reason": "new_connection"})
+	}
+	r.currentCli = c
 	r.clients[c] = true
 	_ = c.Send(r.snapshotLocked())
 }

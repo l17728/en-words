@@ -77,7 +77,8 @@ export default function ClassroomPage() {
     return (
       vs.find((v) => v.localService && v.lang === lang) ||
       vs.find((v) => v.localService && v.lang.startsWith(base)) ||
-      vs.find((v) => v.localService) ||
+      // 不再 fallback 到任意本地 voice（zh-CN voice 读英文=用户听到中文腔→根因）
+      // 返回 null 让浏览器选默认 voice（Windows=Microsoft David en-US）
       null
     )
   }, [])

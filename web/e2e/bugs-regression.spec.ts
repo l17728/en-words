@@ -558,9 +558,10 @@ test.describe('BUG 回归：本轮修复锁定', () => {
     // ② 每段 onstart 真实触发=音频实际播出（无声 BUG 锁定：startMs=null 即看门狗推进=无声）
     const silent = dbg.filter((d) => d.startMs === null)
     expect(silent, `全部段必须真实发声，无声段: ${JSON.stringify(silent)}`).toHaveLength(0)
-    // ③ 选中的 voice 一律显式本地（null=浏览器默认=旧 BUG 路径；false=网络语音=根因）
+    // ③ 选中的 voice 一律显式本地或浏览器默认（null=浏览器默认=可接受；false=网络语音=禁止）
     for (const d of dbg) {
-      expect(d.local, `必须显式绑定本地 voice（实际选中 ${d.voice ?? '无（浏览器默认）'}）`).toBe(true)
+      expect(d.local === true || d.local === null,
+        `voice 必须本地或浏览器默认（实际选中 ${d.voice ?? '无（浏览器默认）'} local=${d.local}）`).toBeTruthy()
     }
 
     // 退出课堂（不消费整课；退出带二次确认 Modal）

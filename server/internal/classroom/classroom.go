@@ -455,9 +455,20 @@ func (m *Machine) enterTTS() error {
 // firstMeaning 首条释义（zh 段朗读文本）。
 func firstMeaning(w Word) string {
 	if len(w.Meanings) > 0 {
-		return w.Meanings[0]
+		return stripPOS(w.Meanings[0])
 	}
 	return w.Word
+}
+
+// stripPOS 去掉词性前缀（如 "n. 猫" → "猫"），纯中文送给语音引擎。
+func stripPOS(s string) string {
+	// 常见词性前缀：n./v./adj./adv./prep./conj./pron./art./num./int.
+	for _, pre := range []string{"n.", "v.", "adj.", "adv.", "prep.", "conj.", "pron.", "art.", "num.", "int.", "vt.", "vi.", "abbr.", "aux."} {
+		if len(s) > len(pre)+1 && s[:len(pre)] == pre && s[len(pre)] == ' ' {
+			return s[len(pre)+1:]
+		}
+	}
+	return s
 }
 
 func (m *Machine) ttsAdvance() error {
