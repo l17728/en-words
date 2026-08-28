@@ -1,0 +1,17 @@
+[     726ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/client-DQRxePWn.js?v=75fcd74d:14335
+[    1240ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/login:0
+[   93970ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/client-DQRxePWn.js?v=75fcd74d:14335
+[   94297ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/login:0
+[   95218ms] [ERROR] Warning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead. @ http://localhost:5173/node_modules/.vite/deps/antd.js?v=75fcd74d:1264
+[  148081ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/client-DQRxePWn.js?v=75fcd74d:14335
+[  197819ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/client-DQRxePWn.js?v=75fcd74d:14335
+[  219267ms] [ERROR] Warning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead. @ http://localhost:5173/node_modules/.vite/deps/antd.js?v=75fcd74d:1264
+[  260621ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/v1/wordbooks/select:0
+[  260627ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/v1/schedule/lessons:0
+[  308115ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/v1/wordbooks/select:0
+[  308120ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/v1/schedule/lessons:0
+[  325292ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/v1/wordbooks/select:0
+[  325297ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/v1/schedule/lessons:0
+[  341275ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/v1/auth/me:0
+[  357096ms] [ERROR] Access to fetch at 'http://127.0.0.1:8080/api/v1/auth/me' from origin 'http://localhost:5173' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:5173/books:0
+[  357096ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://127.0.0.1:8080/api/v1/auth/me:0

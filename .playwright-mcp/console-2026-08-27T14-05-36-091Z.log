@@ -1,0 +1,145 @@
+[     414ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/client-DQRxePWn.js?v=75fcd74d:14335
+[     849ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/login:0
+[  237388ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/client-DQRxePWn.js?v=75fcd74d:14335
+[  237635ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/login:0
+[  238652ms] [ERROR] Warning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead. @ http://localhost:5173/node_modules/.vite/deps/antd.js?v=75fcd74d:1264
+[  274518ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/client-DQRxePWn.js?v=75fcd74d:14335
+[  274610ms] [LOG] [TTS-enter] phase=show_word word="cat" @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:300
+[  274611ms] [LOG] [TTS-enter] phase=show_word word="cat" @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:300
+[  274644ms] [LOG] [TTS-recv] state_snapshot phase=show_word word="cat" @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:183
+[  274658ms] [LOG] [TTS-recv] state_snapshot phase=show_word word="cat" @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:183
+[  276145ms] [LOG] [TTS-recv] show_word word="cat" meanings=undefined phase=show_word @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:205
+[  276151ms] [LOG] [TTS-recv] seg=1 lang=en word="cat" meanings=["n. 猫"] phase=show_word @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  276151ms] [LOG] [TTS-recv] seg=1 lang=en word="cat" phase=show_word @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  276151ms] [LOG] [TTS-speak] IN text="cat" lang=en-US phase=show_word @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  276152ms] [LOG] [TTS-pump] text="cat" lang=en-US phase=show_word queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  276152ms] [LOG] [TTS-pump] SPEAK voice=null local=null u.lang=en-US u.rate=0.800000011920929 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  277855ms] [LOG] [TTS-pump] DONE text="cat" lang=en-US @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  277856ms] [LOG] [TTS-recv] seg=2 lang=en word="cat" meanings=undefined phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  277857ms] [LOG] [TTS-recv] seg=2 lang=en word="cat" phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  277857ms] [LOG] [TTS-speak] IN text="cat" lang=en-US phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  277857ms] [LOG] [TTS-pump] text="cat" lang=en-US phase=tts_seg queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  277857ms] [LOG] [TTS-pump] SPEAK voice=null local=null u.lang=en-US u.rate=0.800000011920929 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  279260ms] [LOG] [TTS-pump] DONE text="cat" lang=en-US @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  279262ms] [LOG] [TTS-recv] seg=3 lang=en word="cat" meanings=undefined phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  279262ms] [LOG] [TTS-recv] seg=3 lang=en word="cat" phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  279262ms] [LOG] [TTS-speak] IN text="cat" lang=en-US phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  279262ms] [LOG] [TTS-pump] text="cat" lang=en-US phase=tts_seg queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  279262ms] [LOG] [TTS-pump] SPEAK voice=null local=null u.lang=en-US u.rate=0.800000011920929 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  280650ms] [LOG] [TTS-pump] DONE text="cat" lang=en-US @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  280651ms] [LOG] [TTS-recv] seg=4 lang=zh word="n. 猫" meanings=undefined phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  280651ms] [LOG] [TTS-recv] seg=4 lang=zh word="n. 猫" phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  280651ms] [LOG] [TTS-speak] IN text="n. 猫" lang=zh-CN phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  280651ms] [LOG] [TTS-pump] text="n. 猫" lang=zh-CN phase=tts_seg queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  280651ms] [LOG] [TTS-pump] SPEAK voice=Microsoft Huihui - Chinese (Simplified, PRC) local=true u.lang=zh-CN u.rate=0.949999988079071 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  281145ms] [LOG] [TTS-recv] start_repeat phase=tts_seg ttsQueueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:236
+[  282101ms] [LOG] [TTS-pump] DONE text="n. 猫" lang=zh-CN @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  292151ms] [LOG] [TTS-recv] show_word word="dog" meanings=undefined phase=repeating @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:205
+[  293145ms] [LOG] [TTS-recv] seg=1 lang=en word="dog" meanings=["n. 狗"] phase=show_word @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  293145ms] [LOG] [TTS-recv] seg=1 lang=en word="dog" phase=show_word @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  293145ms] [LOG] [TTS-speak] IN text="dog" lang=en-US phase=show_word @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  293145ms] [LOG] [TTS-pump] text="dog" lang=en-US phase=show_word queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  293145ms] [LOG] [TTS-pump] SPEAK voice=null local=null u.lang=en-US u.rate=0.800000011920929 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  294552ms] [LOG] [TTS-pump] DONE text="dog" lang=en-US @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  294553ms] [LOG] [TTS-recv] seg=2 lang=en word="dog" meanings=undefined phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  294554ms] [LOG] [TTS-recv] seg=2 lang=en word="dog" phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  294554ms] [LOG] [TTS-speak] IN text="dog" lang=en-US phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  294554ms] [LOG] [TTS-pump] text="dog" lang=en-US phase=tts_seg queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  294554ms] [LOG] [TTS-pump] SPEAK voice=null local=null u.lang=en-US u.rate=0.800000011920929 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  295924ms] [LOG] [TTS-pump] DONE text="dog" lang=en-US @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  295926ms] [LOG] [TTS-recv] seg=3 lang=en word="dog" meanings=undefined phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  295926ms] [LOG] [TTS-recv] seg=3 lang=en word="dog" phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  295926ms] [LOG] [TTS-speak] IN text="dog" lang=en-US phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  295926ms] [LOG] [TTS-pump] text="dog" lang=en-US phase=tts_seg queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  295926ms] [LOG] [TTS-pump] SPEAK voice=null local=null u.lang=en-US u.rate=0.800000011920929 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  297310ms] [LOG] [TTS-pump] DONE text="dog" lang=en-US @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  297311ms] [LOG] [TTS-recv] seg=4 lang=zh word="n. 狗" meanings=undefined phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  297312ms] [LOG] [TTS-recv] seg=4 lang=zh word="n. 狗" phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  297312ms] [LOG] [TTS-speak] IN text="n. 狗" lang=zh-CN phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  297312ms] [LOG] [TTS-pump] text="n. 狗" lang=zh-CN phase=tts_seg queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  297312ms] [LOG] [TTS-pump] SPEAK voice=Microsoft Huihui - Chinese (Simplified, PRC) local=true u.lang=zh-CN u.rate=0.949999988079071 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  298145ms] [LOG] [TTS-recv] start_repeat phase=tts_seg ttsQueueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:236
+[  298806ms] [LOG] [TTS-pump] DONE text="n. 狗" lang=zh-CN @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  309153ms] [LOG] [TTS-recv] show_word word="apple" meanings=undefined phase=repeating @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:205
+[  310145ms] [LOG] [TTS-recv] seg=1 lang=en word="apple" meanings=["n. 苹果"] phase=show_word @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  310146ms] [LOG] [TTS-recv] seg=1 lang=en word="apple" phase=show_word @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  310146ms] [LOG] [TTS-speak] IN text="apple" lang=en-US phase=show_word @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  310146ms] [LOG] [TTS-pump] text="apple" lang=en-US phase=show_word queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  310146ms] [LOG] [TTS-pump] SPEAK voice=null local=null u.lang=en-US u.rate=0.800000011920929 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  311657ms] [LOG] [TTS-pump] DONE text="apple" lang=en-US @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  311659ms] [LOG] [TTS-recv] seg=2 lang=en word="apple" meanings=undefined phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  311659ms] [LOG] [TTS-recv] seg=2 lang=en word="apple" phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  311659ms] [LOG] [TTS-speak] IN text="apple" lang=en-US phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  311659ms] [LOG] [TTS-pump] text="apple" lang=en-US phase=tts_seg queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  311659ms] [LOG] [TTS-pump] SPEAK voice=null local=null u.lang=en-US u.rate=0.800000011920929 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  313168ms] [LOG] [TTS-pump] DONE text="apple" lang=en-US @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  313169ms] [LOG] [TTS-recv] seg=3 lang=en word="apple" meanings=undefined phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  313170ms] [LOG] [TTS-recv] seg=3 lang=en word="apple" phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  313170ms] [LOG] [TTS-speak] IN text="apple" lang=en-US phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  313170ms] [LOG] [TTS-pump] text="apple" lang=en-US phase=tts_seg queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  313170ms] [LOG] [TTS-pump] SPEAK voice=null local=null u.lang=en-US u.rate=0.800000011920929 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  314689ms] [LOG] [TTS-pump] DONE text="apple" lang=en-US @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  314691ms] [LOG] [TTS-recv] seg=4 lang=zh word="n. 苹果" meanings=undefined phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  314692ms] [LOG] [TTS-recv] seg=4 lang=zh word="n. 苹果" phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  314692ms] [LOG] [TTS-speak] IN text="n. 苹果" lang=zh-CN phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  314692ms] [LOG] [TTS-pump] text="n. 苹果" lang=zh-CN phase=tts_seg queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  314692ms] [LOG] [TTS-pump] SPEAK voice=Microsoft Huihui - Chinese (Simplified, PRC) local=true u.lang=zh-CN u.rate=0.949999988079071 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  316422ms] [LOG] [TTS-pump] DONE text="n. 苹果" lang=zh-CN @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  316424ms] [LOG] [TTS-recv] start_repeat phase=tts_seg ttsQueueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:236
+[  327156ms] [LOG] [TTS-recv] show_word word="bee" meanings=undefined phase=repeating @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:205
+[  328146ms] [LOG] [TTS-recv] seg=1 lang=en word="bee" meanings=["n. 蜜蜂"] phase=show_word @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  328146ms] [LOG] [TTS-recv] seg=1 lang=en word="bee" phase=show_word @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  328146ms] [LOG] [TTS-speak] IN text="bee" lang=en-US phase=show_word @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  328146ms] [LOG] [TTS-pump] text="bee" lang=en-US phase=show_word queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  328146ms] [LOG] [TTS-pump] SPEAK voice=null local=null u.lang=en-US u.rate=0.800000011920929 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  329503ms] [LOG] [TTS-pump] DONE text="bee" lang=en-US @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  329528ms] [LOG] [TTS-recv] seg=2 lang=en word="bee" meanings=undefined phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  329528ms] [LOG] [TTS-recv] seg=2 lang=en word="bee" phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  329528ms] [LOG] [TTS-speak] IN text="bee" lang=en-US phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  329529ms] [LOG] [TTS-pump] text="bee" lang=en-US phase=tts_seg queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  329529ms] [LOG] [TTS-pump] SPEAK voice=null local=null u.lang=en-US u.rate=0.800000011920929 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  330943ms] [LOG] [TTS-pump] DONE text="bee" lang=en-US @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  330944ms] [LOG] [TTS-recv] seg=3 lang=en word="bee" meanings=undefined phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  330944ms] [LOG] [TTS-recv] seg=3 lang=en word="bee" phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  330944ms] [LOG] [TTS-speak] IN text="bee" lang=en-US phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  330945ms] [LOG] [TTS-pump] text="bee" lang=en-US phase=tts_seg queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  330945ms] [LOG] [TTS-pump] SPEAK voice=null local=null u.lang=en-US u.rate=0.800000011920929 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  332254ms] [LOG] [TTS-pump] DONE text="bee" lang=en-US @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  332259ms] [LOG] [TTS-recv] seg=4 lang=zh word="n. 蜜蜂" meanings=undefined phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  332259ms] [LOG] [TTS-recv] seg=4 lang=zh word="n. 蜜蜂" phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  332259ms] [LOG] [TTS-speak] IN text="n. 蜜蜂" lang=zh-CN phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  332259ms] [LOG] [TTS-pump] text="n. 蜜蜂" lang=zh-CN phase=tts_seg queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  332259ms] [LOG] [TTS-pump] SPEAK voice=Microsoft Huihui - Chinese (Simplified, PRC) local=true u.lang=zh-CN u.rate=0.949999988079071 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  333147ms] [LOG] [TTS-recv] start_repeat phase=tts_seg ttsQueueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:236
+[  334008ms] [LOG] [TTS-pump] DONE text="n. 蜜蜂" lang=zh-CN @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  343168ms] [LOG] [TTS-recv] show_word word="fish" meanings=undefined phase=repeating @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:205
+[  344148ms] [LOG] [TTS-recv] seg=1 lang=en word="fish" meanings=["n. 鱼"] phase=show_word @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  344148ms] [LOG] [TTS-recv] seg=1 lang=en word="fish" phase=show_word @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  344148ms] [LOG] [TTS-speak] IN text="fish" lang=en-US phase=show_word @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  344148ms] [LOG] [TTS-pump] text="fish" lang=en-US phase=show_word queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  344148ms] [LOG] [TTS-pump] SPEAK voice=null local=null u.lang=en-US u.rate=0.800000011920929 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  345660ms] [LOG] [TTS-pump] DONE text="fish" lang=en-US @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  345662ms] [LOG] [TTS-recv] seg=2 lang=en word="fish" meanings=undefined phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  345663ms] [LOG] [TTS-recv] seg=2 lang=en word="fish" phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  345663ms] [LOG] [TTS-speak] IN text="fish" lang=en-US phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  345663ms] [LOG] [TTS-pump] text="fish" lang=en-US phase=tts_seg queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  345663ms] [LOG] [TTS-pump] SPEAK voice=null local=null u.lang=en-US u.rate=0.800000011920929 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  347148ms] [LOG] [TTS-pump] DONE text="fish" lang=en-US @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  347149ms] [LOG] [TTS-recv] seg=3 lang=en word="fish" meanings=undefined phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  347149ms] [LOG] [TTS-recv] seg=3 lang=en word="fish" phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  347150ms] [LOG] [TTS-speak] IN text="fish" lang=en-US phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  347150ms] [LOG] [TTS-pump] text="fish" lang=en-US phase=tts_seg queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  347150ms] [LOG] [TTS-pump] SPEAK voice=null local=null u.lang=en-US u.rate=0.800000011920929 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  348610ms] [LOG] [TTS-pump] DONE text="fish" lang=en-US @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  348611ms] [LOG] [TTS-recv] seg=4 lang=zh word="n. 鱼" meanings=undefined phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  348611ms] [LOG] [TTS-recv] seg=4 lang=zh word="n. 鱼" phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:231
+[  348611ms] [LOG] [TTS-speak] IN text="n. 鱼" lang=zh-CN phase=tts_seg @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:146
+[  348611ms] [LOG] [TTS-pump] text="n. 鱼" lang=zh-CN phase=tts_seg queueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:74
+[  348611ms] [LOG] [TTS-pump] SPEAK voice=Microsoft Huihui - Chinese (Simplified, PRC) local=true u.lang=zh-CN u.rate=0.949999988079071 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:111
+[  350212ms] [LOG] [TTS-pump] DONE text="n. 鱼" lang=zh-CN @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:96
+[  350213ms] [LOG] [TTS-recv] start_repeat phase=tts_seg ttsQueueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:236
+[  365647ms] [LOG] [TTS-recv] state_snapshot phase=wait_answer word="undefined" @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:183
+[  382180ms] [LOG] [TTS-recv] show_word word="fish" meanings=undefined phase=wait_answer @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:205
+[  382201ms] [LOG] [TTS-recv] seg=1 lang=zh word="undefined" meanings=undefined phase=show_word @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  388157ms] [LOG] [TTS-recv] seg=2 lang=en word="undefined" meanings=undefined phase=reteach_show @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:216
+[  389147ms] [LOG] [TTS-recv] start_repeat phase=reteach_show ttsQueueLen=0 @ http://localhost:5173/src/pages/Classroom.tsx?t=1787839567795:236

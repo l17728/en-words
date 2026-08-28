@@ -1,0 +1,9 @@
+[     393ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/client-DQRxePWn.js?v=75fcd74d:14335
+[     805ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5173/login:0
+[    1748ms] [ERROR] Warning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead. @ http://localhost:5173/node_modules/.vite/deps/antd.js?v=75fcd74d:1264
+[   57893ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/client-DQRxePWn.js?v=75fcd74d:14335
+[   83673ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/client-DQRxePWn.js?v=75fcd74d:14335
+[  123315ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:8080/favicon.ico:0
+[  139634ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/client-DQRxePWn.js?v=75fcd74d:14335
+[  140670ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/v1/auth/me:0
+[  265580ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/client-DQRxePWn.js?v=75fcd74d:14335

@@ -1,0 +1,19 @@
+- generic [ref=e5]:
+  - img "叮当words" [ref=e7]
+  - heading "叮当words" [level=3] [ref=e8]
+  - generic [ref=e9]:
+    - text: 叮当老师陪你一起背单词
+    - img "sound" [ref=e10]
+  - generic [ref=e13]:
+    - generic [ref=e15]:
+      - generic "用户名" [ref=e17]: "* 用户名"
+      - textbox "* 用户名" [ref=e21]:
+        - /placeholder: 学生或管理员账号
+    - generic [ref=e23]:
+      - generic "密码" [ref=e25]: "* 密码"
+      - generic [ref=e29]:
+        - textbox "* 密码" [ref=e30]:
+          - /placeholder: 密码
+        - button "显示" [ref=e32] [cursor=pointer]:
+          - img "eye-invisible" [ref=e33]
+    - button "开始学习" [ref=e37] [cursor=pointer]
