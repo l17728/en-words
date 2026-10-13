@@ -1,0 +1,47 @@
+{
+ "model": "qwen-plus",
+ "problems": [
+  {
+   "severity": "P0",
+   "doc": "02-SDD.md",
+   "section": "5.3 超时兜底矩阵",
+   "problem": "超时动作中 'TTS 播放' 超时逻辑与 '单遍跟读' 超时逻辑矛盾：TTS 超时动作是 '自动进入跟读'，而跟读超时动作是 '温和提醒 → 计为完成'；但 TTS 播放本身包含英文×3+中文×1共4次朗读，若某次朗读超时即跳过，则后续朗读缺失导致教学完整性破坏；且 '自动进入跟读' 未定义是否等待全部朗读完成，违反 D12 节奏控制要求。",
+   "fix": "将 TTS 播放超时动作改为 '强制结束当前遍朗读，立即开始下一遍或进入跟读'，并明确 TTS 总体超时阈值（如总耗时 > (ttsEnRepeat × (词长+2s) + ttsIntervalMs × (ttsEnRepeat-1) + 1s)）后直接进入跟读；所有 TTS 遍次必须保证至少一次完整播放（mock 期用 Web Speech API 的 onend 事件兜底），否则降级静音计时+视觉动画并上报。"
+  },
+  {
+   "severity": "P0",
+   "doc": "02-SDD.md",
+   "section": "9. 数据模型设计",
+   "problem": "memory_cards 表中 ladder_step 字段类型为 int，但间隔阶梯 ladder 是可配置的 []int 数组，当 ladder 长度动态变化（如用户配置 [1,1,2,2,4] vs 默认 [1,1,2,2,4,7,14,30]）时，ladder_step 可能越界访问（如 ladder_step=7 但 ladder 长度仅 5），导致排课算法 plan_next_lesson 中 NextDueAt 计算 panic 或错误；且 ladder_step 未建外键或约束校验，无法保证其始终在 ladder 有效索引范围内。",
+   "fix": "memory_cards.ladder_step 改为 SMALLINT CHECK (ladder_step >= 0 AND ladder_step < (SELECT COUNT(*) FROM config_globals WHERE key = 'ladder'))；或更优：在 scheduler.plan_next_lesson 中增加 ladder_step 边界截断逻辑（min(ladder_step, len(ladder)-1)），并在排课事务中同步更新 ladder_step 为合法值；同时在 config.set 对 ladder 的变更做原子性校验——若新 ladder 长度 < 当前最大 ladder_step，则自动将所有 memory_cards.ladder_step 截断至新长度-1。"
+  },
+  {
+   "severity": "P0",
+   "doc": "02-SDD.md",
+   "section": "11.3 可靠性",
+   "problem": "WS 重连鉴权机制（AR-01）声明 'ticket 有效期=课堂生命周期（非一次性）'，但 02-SDD §11.1 帧结构未定义 ticket 传递方式；且 10.4 课堂 API 中 /classroom/lessons/:id/enter 返回 '课堂快照 + WS ticket'，但未说明 ticket 是否含签名、是否绑定 student_id+lesson_id+expiry，导致重放攻击风险（攻击者截获 ticket 可无限次重连）；同时 '课堂生命周期' 未定义终止条件（lesson_end？expired？），ticket 过期策略缺失。",
+   "fix": "在 /classroom/lessons/:id/enter 响应中返回 signed JWT ticket（含 payload: {lesson_id, student_id, iat, exp}，exp = lesson.open_at + 24h），服务端 WS handler 必须验证 JWT 签名、exp、lesson_id/student_id 绑定；ticket 一次性使用（首次 enter 签发，重连复用同一 JWT，但 lesson 结束后该 JWT 自动失效）；审计日志记录每次 ticket 验证结果。"
+  },
+  {
+   "severity": "P1",
+   "doc": "01-需求分析.md",
+   "section": "4.4 系统 Agent：排课与调度流程",
+   "problem": "调度原则中 '逾期未上课 → 顺延至下一天同时段，间隔阶梯不前进' 与 02-SDD §6.2 '逾期缺课：该词 LadderStep 不前进' 表述不一致：前者针对 '课程'（lesson），后者针对 '词'（memory_card）；但 FR-F5 明确 '逾期处理：开放后 N 小时未上课 → 系统 Agent 重排（次日同时段，阶梯不前进）'，此处 '阶梯不前进' 指课程排期阶梯还是词记忆阶梯？语义模糊导致实现歧义。",
+   "fix": "统一术语：'间隔阶梯' 专指 per-word memory_cards.ladder_step；FR-F5 和 02-SDD §6.2 应明确 '课程重排时，涉及的所有词的 ladder_step 保持不变'；并在 01-需求分析 §4.4 补充说明 '课程排期时间由该生最新未到期词的平均 ladder_step 决定，而非课程自身阶梯'，消除 '课程阶梯' 的误导性表述。"
+  },
+  {
+   "severity": "P1",
+   "doc": "04-Agent与话术库设计.md",
+   "section": "2. 老师 Agent：决策表",
+   "problem": "决策表 T-03 规定 'word_shown → play_tts(en×3, 间隔1.5s) → play_tts(zh释义×1)'，但 01-需求分析 FR-K5 要求 '每词朗读内容：英文 3 遍（间隔 1.5s，可配）+ 中文释义 1 遍'，而 02-SDD §12.1 TTS 接口定义中 Synthesize 方法无 'repeat' 参数，仅支持单次合成；导致无法实现 '英文 3 遍' 的精确间隔控制（需前端排队播放），违反 D4 '点击单词 → TTS 英文读 3 遍 + 中文释义读 1 遍' 的功能需求。",
+   "fix": "修改 TTSProvider.Synthesize 接口，增加 repeat 和 intervalMs 参数；或更优：在 SpeechService 层封装 repeat 播放逻辑（调用单次 Synthesize 后前端按 intervalMs 排队），确保间隔精度；同时在 02-SDD §12.1 明确 'play_tts 工具调用触发前端 TTS 播放队列，按 repeat/intervalMs 参数执行多遍合成与播放'，并与 FR-K5 完全对齐。"
+  },
+  {
+   "severity": "P1",
+   "doc": "02-SDD.md",
+   "section": "6.3 排课算法（plan_next_lesson）",
+   "problem": "算法步骤 4 '批次 = due ∪ boosted ∪ new 截断至 W；新词占比 ≤ 60%' 中 'new' 来源未定义：是词库中 status=new 的全部词，还是仅摸底未标记的词？且 '截断至 W' 未说明优先级顺序（due/boosted/new 的权重），导致批次内容不可预测；与 FR-F3 '批次内容策略：新词数量 + 到期复习词，总量=wordsPerLesson；到期词优先' 冲突。",
+   "fix": "明确 'new' 仅指该词库中 status=new 且未被 BoostFlag 标记的词；批次构建顺序为：1. 所有 dueWords（按 NextDueAt 升序），2. 所有 boosted（按 BoostFlag 时间倒序），3. newWords（按词频排序）；截断时严格保证 dueWords 全部保留，boosted 次之，newWords 补足至 W，且 newWords 数量 ≤ 0.6*W；在 02-SDD §6.3 补充伪代码和边界示例。"
+  }
+ ]
+}

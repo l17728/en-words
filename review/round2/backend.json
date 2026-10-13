@@ -1,0 +1,47 @@
+{
+ "model": "qwen-plus",
+ "problems": [
+  {
+   "severity": "P0",
+   "doc": "02-SDD.md",
+   "section": "6.2 间隔阶梯（可配置，等间隔思想）",
+   "problem": "MemoryCard.LadderStep 语义与排课算法矛盾：文档定义 LadderStep 是 '当前在间隔阶梯的位置（0-based）'，但 §6.3 排课算法中 'lessonTime = lastLessonTime + ladder[该生当前主线step]' 要求 LadderStep 指向的是'下一次复习应使用的间隔值索引'；而毕业逻辑 '词走完阶梯（step 到顶且最近一次到期测试答对）→ graduated' 要求 LadderStep 是已走过的步数。三者无法统一：若 LadderStep=0 表示刚学完待首次复习，则排课应取 ladder[0]，但毕业判定需 LadderStep >= len(ladder)-1；若 LadderStep 表示已成功复习次数，则排课应取 ladder[LadderStep]（首次复习用 ladder[0]），但毕业判定需 LadderStep >= len(ladder)。当前设计未明确定义 LadderStep 的状态含义，导致排课、逾期重排、毕业三个核心逻辑的计算基准不一致，必然引发调度错误。",
+   "fix": "明确定义 MemoryCard.LadderStep 为 '已成功完成的复习次数（即下次复习应使用的间隔值索引）'，初始值为 0（表示尚未复习，下次用 ladder[0]）。排课算法改为 lessonTime = lastLessonTime + ladder[min(LadderStep, len(ladder)-1)]；逾期重排时 LadderStep 不变（保持原索引）；毕业条件改为 'LadderStep >= len(ladder) && 最近一次到期测试答对'，并增加 'ladder_step 重置为 5' 的维护期逻辑需同步修正为 min(5, len(ladder)-1)。"
+  },
+  {
+   "severity": "P0",
+   "doc": "02-SDD.md",
+   "section": "5.2 状态持久化",
+   "problem": "lessons.lesson_state JSON 字段设计违反原子性与事务边界：将整个课堂状态（含 phase, groupIdx, wordIdx, repeatCount, quiz, cumulative, ts）序列化为单个 JSON 字段存储，导致任何状态迁移（如 repeat_done）都必须反序列化-修改-序列化整个 JSON，且该操作与 classroom_events 日志写入不在同一数据库事务中。当进程在序列化后、写库前崩溃，或并发写入（如学生事件与超时事件同时触发）时，lesson_state 与 classroom_events 严重不一致，无法恢复正确状态，违背 N2 可靠性需求。",
+   "fix": "废除 lessons.lesson_state JSON 字段，将所有状态字段拆分为独立列（phase TEXT, group_idx INTEGER, word_idx INTEGER, repeat_count INTEGER, quiz_items JSON, cumulative_excluded_ids JSON, updated_at DATETIME），所有状态变更必须与 classroom_events 插入在同一 GORM 事务内完成。状态恢复时通过查询最新 classroom_events 流重建状态，而非依赖 lessons 表的 JSON 快照。"
+  },
+  {
+   "severity": "P0",
+   "doc": "02-SDD.md",
+   "section": "11.3 可靠性",
+   "problem": "WS ticket 复用机制与课堂生命周期管理冲突：文档规定 'WS ticket 绑定 (lessonId, studentId)、有效期=课堂生命周期（非一次性）'，但未定义 '课堂生命周期' 的终止条件。若学生课中刷新页面，新连接复用旧 ticket，此时旧连接可能仍存活（浏览器未完全销毁 WebSocket），导致两个连接同时接收广播指令，而学生事件（如 answer_submitted）按 quizItemId 幂等，但 UI 指令（如 play_tts）无幂等处理，造成重复朗读、重复动画等 UI 错乱；更严重的是，lesson_end 事件仅由一个连接触发，另一个连接可能永远滞留，阻塞资源回收。",
+   "fix": "WS ticket 必须为一次性，且绑定到具体 WS 连接 ID（connId）。enter 接口签发新 ticket 并记录 (lessonId, studentId, connId, expires_at)，重连时必须使用新 ticket；旧连接断开时自动失效。课堂结束逻辑改为：当最后一个有效 connId 断开或 lesson_status=finished 时，才执行 lesson_end 清理。"
+  },
+  {
+   "severity": "P1",
+   "doc": "01-需求分析.md",
+   "section": "4.4 系统 Agent：排课与调度流程",
+   "problem": "逾期重排逻辑与 '省力再学' 原则矛盾：文档描述 '逾期未上课 → 顺延至下一天同时段，间隔阶梯不前进（复习窗口错过则本阶重走）'，但 §6.3 排课算法中 'lessonTime = lastLessonTime + ladder[该生当前主线step]' 依赖 lastLessonTime，而逾期课程的 lastLessonTime 是过期时间而非实际学习时间，导致重排后的课程时间基线错误，后续所有排课漂移。例如：第1课 1日10:00，第2课应为 2日10:00（ladder[0]=1），但第2课逾期至 3日10:00 才上，则第3课按 '3日10:00 + ladder[1]=1' 排为 4日10:00，而非正确的 4日10:00（因第2课实际发生在3日，应从3日算起），破坏等间隔本质。",
+   "fix": "逾期重排时，新 lesson 的 lastLessonTime 应设为实际完成时间（即重排后的新 openAt），而非原 scheduled 时间。排课算法中 'lastLessonTime' 必须取自最近一次 status=finished 的 lesson.finished_at，而非 scheduled 状态的 openAt。"
+  },
+  {
+   "severity": "P1",
+   "doc": "02-SDD.md",
+   "section": "9. 数据模型设计",
+   "problem": "memory_cards 表缺少复合索引支持高效到期词查询：排课算法 §6.3 需要高效查询 'status∈{learning} AND next_due_at ≤ now+24h'，当前仅建议索引 memory_cards(student_id, status, next_due_at)，但该索引无法高效支持 status 范围查询（status 是离散值，非范围），且 next_due_at 条件是范围扫描，导致全表扫描。在 5568 词条 × 5 学生规模下，每次排课性能将严重劣化，违反 N1 性能需求。",
+   "fix": "为 memory_cards 表添加复合索引：CREATE INDEX idx_memory_cards_due ON memory_cards(status, next_due_at, student_id) WHERE status IN ('new', 'learning'); 同时在排课查询中显式指定 status IN ('new', 'learning') 以利用索引。"
+  },
+  {
+   "severity": "P1",
+   "doc": "02-SDD.md",
+   "section": "11.3 可靠性",
+   "problem": "作答幂等性设计存在竞态漏洞：文档声明 '作答按 quizItemId 幂等（重复提交返回既有判分）'，但未说明判分结果的持久化时机。若两个请求并发到达，均未查到已有判分，均会触发 ASR/LLM 判分，导致双重判分、双重计分、quiz_items 表重复插入，破坏 E1 学习记录完整性。",
+   "fix": "在 quiz_items 表上为 (lesson_id, quiz_item_id) 添加唯一约束，并在判分前执行 INSERT OR IGNORE；或在判分管线中使用 SELECT FOR UPDATE 加锁，确保同一 quizItemId 的判分操作串行化。"
+  }
+ ]
+}

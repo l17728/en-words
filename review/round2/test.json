@@ -1,0 +1,47 @@
+{
+ "model": "qwen-plus",
+ "problems": [
+  {
+   "severity": "P0",
+   "doc": "01-需求分析.md",
+   "section": "FR-D 课堂教学（老师 Agent + 学生协同）",
+   "problem": "D3 批次切分要求 '本课 50~100 词（可配置）分为 5 词/组'，但 D2 明确课堂会话由学生与老师 Agent 共用同一 WS 频道，而 02-SDD §5.1 状态机顶层阶段定义中，TEACHING_GROUP 的组数 G = ceil(wordsPerLesson / groupSize)，当 wordsPerLesson=100 且 groupSize=5 时 G=20。状态机未定义任何机制处理 G>10 的长课——无超时兜底、无疲劳度感知、无中断恢复点，导致课堂可能因单次会话过长（如 20 组 × 每组 4 分钟 ≈ 80 分钟）而违反 N1 性能要求（端到端延迟 ≤300ms）及 N2 可靠性（进程重启后可恢复续课），且与 FR-D12 '节奏控制：不停顿过长' 直接矛盾。",
+   "fix": "在 02-SDD §5.1 状态机中为 TEACHING_GROUP 增加 'maxGroupsPerSession' 配置项（默认 10），当 wordsPerLesson > maxGroupsPerSession × groupSize 时，自动将课程拆分为多个连续 lesson（逻辑批次），并在每 session 结束时触发系统 Agent 生成下一 session 计划；同时在 §5.3 超时矩阵中为 GROUP_QUIZ 和 CUMULATIVE_TEST 增加 'session_timeout'（如 60 分钟），超时即自动保存进度并结束当前 session。"
+  },
+  {
+   "severity": "P0",
+   "doc": "02-SDD.md",
+   "section": "§5.3 超时兜底矩阵",
+   "problem": "超时动作表中 'TTS 播放' 超时动作定义为 '自动进入跟读'，但 01-FR-K5 明确要求 '每词朗读内容：英文 3 遍（间隔 1.5s，可配）+ 中文释义 1 遍'，即 TTS 播放包含 4 个独立音频段（en×3 + zh×1）。当前设计无法区分 '第1遍英文播放超时' 与 '全部4段播放完成超时'，导致 '自动进入跟读' 可能发生在仅播放1遍英文后，严重破坏教学流程完整性（D4/D5 要求完整朗读序列），且与 04-T-03 决策 'play_tts(en×3, 间隔1.5s) → play_tts(zh释义×1)' 强耦合。",
+   "fix": "将 'TTS 播放' 超时粒度细化为 'per-tts-segment'：为每个 TTS 段（en1/en2/en3/zh）单独设置超时（默认值同全局 timeoutTtsSegmentS），超时后跳过该段并记录 'tts_skipped' 事件；仅当所有4段均完成或被跳过，才触发 'tts_finished' 事件并进入跟读阶段。在 02-SDD §5.3 表中新增 'TTS_SEGMENT' 行，并在 §12.1 TTS 设计中明确 segment 粒度控制。"
+  },
+  {
+   "severity": "P1",
+   "doc": "03-测试用例.md",
+   "section": "§2.1 课堂状态机",
+   "problem": "SM-07 用例 '综合测试池' 断言 '池内容与顺序≠原序'，但 01-FR-D9 明确要求 '打乱测试'，而 02-SDD §5.1 状态机定义中 CUMULATIVE_TEST 阶段仅描述 '此前所有组的词打乱测试'，未定义 '打乱' 的具体算法（如 Fisher-Yates）及种子确定性要求；03-§6 测试数据与 Mock 规格中虽提及 RNG 种子化，但仅限话术 weight，未覆盖测试池打乱逻辑，导致 SM-07 无法稳定断言，违反 'E2E拟真度' 要求中的确定性。",
+   "fix": "在 02-SDD §5.4 毕业/测试池规则中补充 '综合测试池打乱使用 Fisher-Yates 算法，种子 = lessonId XOR wordbookId'；在 03-§2.1 SM-07 断言点中增加 '池内容经固定种子打乱，输出序列可复现'；在 03-§6 测试数据与 Mock 规格中将 'RNG 种子化' 范围扩展至 '测试池打乱、话术 weight、口语化微调'，并声明所有 RNG 使用 crypto/rand 或 seed=lessonId 的 math/rand。"
+  },
+  {
+   "severity": "P1",
+   "doc": "01-需求分析.md",
+   "section": "FR-G 反馈系统",
+   "problem": "G2 要求 '支持多意图拆分（一条反馈含多诉求时逐项处理、合并回复）'，但 02-SDD §7.1 数据流中仅描述 'intent∈{A,B,C} → ...' 的单意图分派，未定义多意图解析后的合并回复逻辑；04-§4 系统 Agent 决策表 S-11 仅处理单意图，缺失 '多意图反馈→逐项执行→合并话术' 的决策路径，导致反馈闭环无法满足 FR-G2 功能需求。",
+   "fix": "在 02-SDD §7.1 数据流末尾补充 '多意图反馈：按 S-01..S-11 逐项执行各意图对应动作；所有应用结果汇总后，调用 scripts.pick(category=feedback_reply, context={intents: [...], results: [...]}) 生成合并回复话术；若任一意图需 confirm，则整体进入 need_confirm 状态'；在 04-§4 决策表中新增 S-12 'multi_intent_merge' 条目，定义合并话术模板与变量注入规则。"
+  },
+  {
+   "severity": "P1",
+   "doc": "05-Mock接口与真实API替换方案.md",
+   "section": "§4.3 课堂接线",
+   "problem": "约束 'REPEATING 阶段 instructions 限定\"仅听不说\"（output_modalities=[text]，Speak 不调用）' 与 02-SDD §12.2 VAD 规则 0 'REPEATING 阶段老师通道只用文字气泡、不发 TTS' 存在逻辑冲突：Omni 通道的 '仅听不说' 是通过 API 参数控制，而前端 VAD 依赖的是 '老师不发语音' 这一事实；若 Omni 实现缺陷或配置错误导致老师语音意外发出，前端 VAD 将因回声误判而失效，直接破坏 FR-K2 跟读判定可靠性，且此风险未在 05 文档的降级链中覆盖。",
+   "fix": "在 05-§4.3 约束中增加 '强制双保险：REPEATING 阶段，后端禁止向 Omni Session 调用 Speak()，且前端 audio/vad.ts 在检测到 REPEATING 阶段时主动 mute 所有老师音频输出通道（无论 Omni 是否发送）'；在 05-§4.5 安全与配额中补充 'Omni 通道健康检查必须包含 REPEATING 阶段 Speak() 调用拦截验证'。"
+  },
+  {
+   "severity": "P2",
+   "doc": "01-需求分析.md",
+   "section": "FR-H 配置中心",
+   "problem": "H1 列出 'wordsPerLesson(40~100)'，但 03-§2.5 CF-07 用例要求 '100 上界用例用初一库(120词、摸底勾选≤20)'，而 01-C2 摸底模式定义 '每屏 100 词'，当词库总词数 <100 时（如高三库仅 60 词），摸底无法填满单屏，违反 '每屏 100 词' 的 UI 约束，且未定义词库词数 <100 时的摸底行为（如补空位/滚动不足）。",
+   "fix": "在 01-§3.3 术语表 '摸底（Placement）' 条目下补充 '若词库总词数 <100，则单屏显示全部词，剩余位置留空；摸底提交后，未显示词视为未接触，标记为 new 状态'；在 02-SDD §9 数据模型中 placements 表的 known_word_ids JSON 字段增加注释 '仅包含实际展示过的词 ID'。"
+  }
+ ]
+}

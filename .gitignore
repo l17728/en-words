@@ -1,0 +1,36 @@
+# 密钥与本地配置 —— 严禁入库
+secrets/
+*.local.yaml
+config.local.yaml
+
+# 运行时产物
+*.db
+*.db-wal
+*.db-shm
+backups/
+dist/
+node_modules/
+coverage/
+*.out
+*.test
+tmp/
+
+# 工具状态目录
+.omo/
+.codegraph/
+
+# E2E 产物
+e2e-dev.log
+web/e2e/results/
+web/e2e/report/
+web/e2e/playwright/.cache/
+web/e2e/results-bugs/
+.test-tools/
+web/.test-artifacts/
+server/.test-artifacts/
+
+/.playwright-mcp/
+/.test-artifacts/
+/review/local-tts-zh.wav
+/review/regression-last.txt
+/review/regression-*.log

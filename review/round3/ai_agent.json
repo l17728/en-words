@@ -1,0 +1,40 @@
+{
+ "model": "qwen-plus",
+ "problems": [
+  {
+   "severity": "P0",
+   "doc": "01-需求分析.md",
+   "section": "4.3 学生+老师Agent：课堂学习流程（核心）",
+   "problem": "R2-AI-01 明确要求'完整教学闭环 = 重显中文释义 + 朗读英文 + 中文释义朗读 + 跟读 3 遍'，但该闭环仅在'答错处理'（D8）中定义；而'综合测试'（D9）和'课程完整测试'（D11）中的答错处理仅描述为'打叉 → 回顾环节：逐词过一遍（看中文+听英文朗读）→ 重测'，缺失'中文释义朗读 + 跟读 3 遍'关键环节，导致三类测试场景的纠错闭环不一致，违反'完整闭环'设计原则。",
+   "fix": "统一所有测试场景（组内小测/综合测试/课程完整测试）的答错处理逻辑：D8/D9/D11 均需严格执行 R2-AI-01 定义的四步闭环（show_meaning → play_tts(en) → play_tts(zh) → start_repeat(3) → retest），并在 02-SDD §5.1 状态机、§5.4 毕业规则、04-Agent 决策表 T-10/T-13/T-15 中同步修正。"
+  },
+  {
+   "severity": "P0",
+   "doc": "02-SDD.md",
+   "section": "5.1 顶层阶段（Phase）",
+   "problem": "状态机图中 'RETEACH' 分支下 'RETEST' 动作未定义触发条件与目标：T-10 规定 RETEST 同词，但状态机未明确其是否复用原 QUIZ_ITEM 还是新建；且 'RETEST' 后若再错，循环路径缺失（应返回 RETEACH 而非直接进入下一题），导致状态迁移不闭合，存在无限循环或状态卡死风险。",
+   "fix": "在 §5.1 状态机图中为 'RETEST' 明确定义：① 复用原 QUIZ_ITEM（id 不变）；② 若再次判错，则循环回 'RETEACH' 分支（而非跳转至下一题），形成 RETEACH → RETEST → (wrong) → RETEACH 的闭合环；③ 在 §5.2 状态持久化中补充说明 quiz_state 对 RETEST 的幂等处理（同一 quizItemId 只存一次判分结果）。"
+  },
+  {
+   "severity": "P0",
+   "doc": "02-SDD.md",
+   "section": "6.2 间隔阶梯（可配置，等间隔思想）",
+   "problem": "LadderStep 推进规则与逾期缺课语义矛盾：文档称'全错 → step 不变（省力再学）'，但同时规定'LastReviewAt 仍更新（间隔从本课重起）'；若学生未上课（lesson.status=expired），则 LastReviewAt 更新将导致下次排课基线前移，违背'错过不清零、也不前进，重走本级间隔'的设计初衷，造成复习窗口漂移。",
+   "fix": "修正 §6.2 '逾期缺课'规则：当 lesson.status=expired 时，禁止更新任何 memory_card 的 LastReviewAt 和 LadderStep；仅当 lesson.status=finished（实际完成学习）时才执行 step 推进与 LastReviewAt 更新。在 §6.4 逾期重排逻辑中删除 'LastReviewAt 保持最近实际学习时间不变' 的错误描述，改为 'LastReviewAt 不更新'。"
+  },
+  {
+   "severity": "P1",
+   "doc": "04-Agent与话术库设计.md",
+   "section": "2. 老师 Agent：决策表",
+   "problem": "T-10 定义 RETEACH 完整闭环，但未指定 'show_word(含中文)' 的具体 phase 或 UI 行为：当前 show_word 工具（§3.2）入参仅支持 phase 参数，而 '含中文' 属于 UI 渲染逻辑，未在工具 schema 或状态机中定义对应 phase（如 SHOW_WORD_WITH_MEANING），导致平台无法校验该动作合法性，LLM 幻觉参数（如非法 phase）将绕过 advance_phase 的迁移校验。",
+   "fix": "在 §3.2 classroom.show_word 工具 schema 中增加 phase 枚举值 'show_with_meaning'；在 §5.1 状态机图中为 RETEACH 分支添加 'SHOW_WORD_WITH_MEANING' 子阶段，并在 §5.2 状态持久化中为其分配独立字段（如 word_show_mode TEXT）；T-10 动作序列中明确调用 show_word(..., phase='show_with_meaning')。"
+  },
+  {
+   "severity": "P1",
+   "doc": "05-Mock接口与真实API替换方案.md",
+   "section": "4. Omni-Realtime 双向语音会话通道（D-11）",
+   "problem": "Omni 通道设计中 'REPEATING 阶段双保险防回声' 的后端硬拦机制（① 后端硬拦 Speak()）与前端静默策略（② 前端 mute）存在时序漏洞：若 Omni Session 在 REPEATING 阶段已开始 Speak() 流式输出，后端拦截仅能拒绝新 Speak() 请求，无法终止已发出的音频流，导致学生麦克风仍可能拾取残留语音造成 VAD 误判。",
+   "fix": "增强 OmniSession 接口：增加 CancelSpeaking() 的强制同步语义（阻塞至音频流完全停止），并在 REPEATING 阶段状态机迁移时（即进入 REPEATING 前）主动调用 CancelSpeaking()；同时在 §12.2 VAD 设计中补充 'REPEATING 阶段收到 AudioDelta 事件时立即丢弃并重置 VAD 状态'，形成服务端+客户端双重实时拦截。"
+  }
+ ]
+}

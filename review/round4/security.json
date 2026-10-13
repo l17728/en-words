@@ -1,0 +1,54 @@
+{
+ "model": "qwen-plus",
+ "kb": 94,
+ "problems": [
+  {
+   "severity": "P0",
+   "where": "server/internal/auth/auth.go:214",
+   "problem": "Verify() 方法中 header 校验使用硬编码字符串 `'{\"alg\":\"HS256\",\"typ\":\"JWT\"}'`，但 sign() 方法生成的 header 是 `'{\"alg\":\"HS256\",\"typ\":\"JWT\"}'`（无空格），看似一致；然而 base64.RawURLEncoding.EncodeString() 对相同字节输出确定，但若未来 header 结构微调（如加空格、字段重排）或签名逻辑变更，校验将永久失败且无法调试——实际已构成单点故障。更严重的是：该校验未防御 `alg=none` 攻击的**根本手段**（应校验 alg 字段值而非整个 header 字符串），当前实现等价于‘header 必须和我生成的一模一样’，违反 JWT 规范中 header 可扩展性原则，且一旦签名密钥泄露，攻击者可构造任意合法 header（只要内容匹配）。",
+   "fix": "移除 header 全字符串比对，改为解析 header JSON 并显式校验 alg == 'HS256'；同时在 sign() 中确保 header 为最小化标准格式（如 `{'alg':'HS256','typ':'JWT'}` 不含空格），并在 Verify 中用 json.Unmarshal 解析后取 alg 字段校验。"
+  },
+  {
+   "severity": "P0",
+   "where": "server/internal/tools/registry.go:238",
+   "problem": "高风险工具（RiskHigh）reason 校验存在严重绕过漏洞：仅检查 payload.Reason[0] == '\"' 且非空白，但未校验 JSON 字符串是否完整闭合（如 `\"reason\":\"abc` 缺少结尾引号）、未校验字符串内是否含控制字符（如换行、NUL）或恶意序列（如 `\\u0000`），且 `json.Unmarshal(payload.Reason, &reason)` 成功后未验证 `reason` 是否与原始 JSON 字符串语义一致（如 `\"reason\":\"   \"` 经 Unmarshal 后 strings.TrimSpace 为空，但原始 JSON 非空）。导致攻击者可提交 `{'reason': '\\\"'} 或 {'reason': 'a\\nb'}` 绕过非空白检查。",
+   "fix": "将 reason 校验改为：1) 使用 json.Unmarshal 完整解析 args 到结构体；2) 对解析出的 reason 字段执行严格白名单校验（仅允许 ASCII 字母、数字、空格、常见标点，长度≤200）；3) 禁止任何 Unicode 转义、控制字符、换行符；4) 显式拒绝包含 `\\u`、`\\n`、`\\r`、`\\t` 的原始字符串。"
+  },
+  {
+   "severity": "P0",
+   "where": "server/internal/api/router.go:379",
+   "problem": "REST /classroom/lessons/:id/event 端点的 validClassroomEvent() 白名单校验缺失实现（函数未定义），导致任意 event 字符串均可通过校验，可能触发未定义行为或状态机非法迁移（如传入 'lesson_finished' 强制结束课堂）。",
+   "fix": "在 router.go 中补充 validClassroomEvent 函数，严格限定为 SDD §11.2 表中学生→平台事件类型：`word_clicked`, `repeat_done`, `repeat_skipped`, `answer_submitted`, `audio_url`；其余一律返回 false。"
+  },
+  {
+   "severity": "P0",
+   "where": "server/internal/api/router.go:391",
+   "problem": "sanitizeText() 函数未提供实现，且其调用位置（/classroom/lessons/:id/voice）是语音文本注入点，若未过滤 `<script>`、`javascript:`、路径遍历（`../`）等，可能导致 XSS（前端渲染未转义）或服务端路径穿越（若后续拼接文件路径）。",
+   "fix": "实现 sanitizeText()：1) 移除所有 HTML 标签（使用 text/template 机制或正则 `<[^>]*>` 替换为空）；2) URL 编码特殊字符；3) 移除控制字符（U+0000-U+001F）；4) 限制长度 ≤ 500 字符；5) 禁止以 `javascript:`、`data:` 开头。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/auth/auth.go:104",
+   "problem": "Disable() 方法仅置 status='disabled'，但未使已有 token 失效（JWT 无吊销机制），导致停用用户仍可用旧 token 访问系统，违反 FR-A4 停用即踢下线要求。",
+   "fix": "在 Disable/Enable 中同步更新 User 结构体新增字段 `RevokedAt *time.Time`，并在 Verify() 中增加校验：若 `u.RevokedAt != nil && c.Exp > u.RevokedAt.Unix()` 则拒绝；或引入内存 token 黑名单（需考虑分布式场景，当前单体可接受）。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/tools/registry.go:132",
+   "problem": "validateSchema() 对 integer 类型校验仅用 isInt() 检查是否为整数字符串，但未校验数值范围（如 int64 上限），且未处理负数（isInt 允许 '-'，但未校验 `-9223372036854775809` 溢出），导致恶意大整数可能引发后端整数溢出或数据库约束失败。",
+   "fix": "在 isInt() 中增加范围校验：`n < -9223372036854775808 || n > 9223372036854775807` 时返回 false；并在 validateType('integer') 中捕获 strconv.ParseInt 的 err 并返回错误。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/api/router.go:227",
+   "problem": "POST /student/books/:bookId/placement 提交 knownWordIds 时，未校验 ID 是否属于该词库（仅查了 book 存在），攻击者可提交其他词库的 wordId 导致数据错乱或越权。",
+   "fix": "在 PlacementSubmit 前增加校验：查询每个 knownWordIds[i] 是否存在于指定 bookId 的 word_entries 表中，任一不存在则返回错误。"
+  },
+  {
+   "severity": "P2",
+   "where": "server/internal/auth/auth.go:173",
+   "problem": "ChangePassword 和 ResetPassword 均使用 newSalt() 生成新盐，但未在密码哈希前加入用户名（username + salt + password），导致相同密码在不同用户间产生相同哈希，降低彩虹表攻击成本。",
+   "fix": "修改 hashPassword 为 `hashPassword(password, salt, username string)`，计算 `sha256.Sum256([]byte(salt + \":\" + username + \":\" + password))`，并同步更新所有调用处。"
+  }
+ ]
+}

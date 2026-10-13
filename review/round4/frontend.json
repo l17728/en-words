@@ -1,0 +1,42 @@
+{
+ "model": "qwen-plus",
+ "kb": 105,
+ "problems": [
+  {
+   "severity": "P0",
+   "where": "web/src/pages/Classroom.tsx:124",
+   "problem": "TTS 播放逻辑存在竞态：`speak()` 调用未与 `phaseRef.current` 实时同步，当 `phaseRef.current === 'repeating'` 但 `speak()` 在 phase 切换前已入队，仍会触发语音播放，违反 FE-02 回声抑制要求（REPEATING 阶段老师通道只用文字气泡、不发 TTS）。",
+   "fix": "在 `speak()` 入队前增加 `if (phaseRef.current === 'repeating') return;` 检查，确保静默逻辑在队列入口即生效，而非仅在 `pumpTts()` 中处理。"
+  },
+  {
+   "severity": "P0",
+   "where": "web/src/pages/Classroom.tsx:358",
+   "problem": "判分结果渲染逻辑缺陷：`judge_result` 帧处理中 `setJudge()` 仅依赖 `f.judgment`，但文档 §11.2 明确 `judge_result` payload 结构为 `{quizItemId, judgment}`，而代码中 `f.judgment` 访问路径错误（`f` 是 `Frame` 类型，无 `judgment` 字段），实际应为 `f.payload.judgment`；当前代码将始终设为 `null` 或抛错，导致判分动画不触发。",
+   "fix": "将 `case 'judge_result': setJudge(f.judgment === 'correct' || f.judgment === 'near' ? 'ok' : 'bad')` 改为 `case 'judge_result': setJudge((f.payload as any).judgment === 'correct' || (f.payload as any).judgment === 'near' ? 'ok' : 'bad')`，并补充类型断言或修正 Frame 接口定义。"
+  },
+  {
+   "severity": "P1",
+   "where": "web/src/pages/Classroom.tsx:279",
+   "problem": "RETEACH 阶段单词显示逻辑错误：`reteach_show` 相位下 `bigWord` 取值为 `(snapshot?.quiz_word || snapshot?.word)`，但文档 §5.1 明确 RETEACH 是对‘打✗词’的完整闭环（SHOW_MEANING → TTS_SEG(zh×1,en×1) → REPEATING(3遍) → RETEST），此时 `quiz_word` 应为错词 ID 对应的英文单词，而 `snapshot?.word` 可能是上一词残留；若 `quiz_word` 为空则 fallback 到旧词，导致显示错误单词。",
+   "fix": "在 `reteach_show` 分支强制使用 `snapshot?.quiz_word`，并添加空值校验：`snapshot?.quiz_word || (snapshot?.word && phase !== 'reteach_show') ? snapshot?.word : '…'`，或更稳妥地从 `ui_action` 的 `show_quiz_item` 帧中提取错词并持久化到 snapshot。"
+  },
+  {
+   "severity": "P1",
+   "where": "web/src/pages/Classroom.tsx:463",
+   "problem": "课堂页顶栏退出按钮文案与文档 §7.7 不一致：文档要求二次确认 Modal 注明'进度已保存，随时可以回来'，但当前按钮文案仅为'退出（进度已保存）'，且未触发 Modal，违反防误触规范。",
+   "fix": "将顶栏 `<Button onClick={() => nav('/dashboard')}>退出（进度已保存）</Button>` 替换为 `onClick={() => { Modal.confirm({ title: '确定要退出课堂吗？', content: '进度已经存好啦，明天 19:00 我们继续？', onOk: () => nav('/dashboard') }); }}`，严格遵循 §7.7 退出挽留文案和交互。"
+  },
+  {
+   "severity": "P1",
+   "where": "web/src/pages/Classroom.tsx:428",
+   "problem": "可访问性基线违规：`<div role=\"button\">` 单词卡缺少 `tabIndex={0}`，无法通过键盘 Tab 导航聚焦，违反 docs/07 §10 '全部可交互元素焦点态可见' 和 '支持 Tab 完整走查' 要求。",
+   "fix": "在单词卡 `<div role=\"button\" ...>` 中添加 `tabIndex={0}` 属性，并确保 `onClick` 和 `onKeyDown`（处理 Enter/Space）行为一致。"
+  },
+  {
+   "severity": "P2",
+   "where": "web/src/pages/Classroom.tsx:325",
+   "problem": "老师气泡 `aria-live=\"polite\"` 位置错误：当前置于气泡容器内，但文档 §10 要求所有动态内容需有明确的 `aria-live` 区域，且气泡内容由 `ui_action.say` 帧驱动，应确保该区域在 DOM 中稳定存在（而非条件渲染时被销毁），否则屏幕阅读器可能丢失更新。",
+   "fix": "将 `aria-live=\"polite\"` 移至气泡父容器（如 `<div style={{...}} aria-live=\"polite\">`），或在组件顶层创建固定 `aria-live` 区域并由 `setBubble` 同步更新其文本内容。"
+  }
+ ]
+}

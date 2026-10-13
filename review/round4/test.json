@@ -1,0 +1,42 @@
+{
+ "model": "qwen-plus",
+ "kb": 79,
+ "problems": [
+  {
+   "severity": "P0",
+   "where": "server/internal/classroom/classroom_test.go:TestTTSSegTimeoutSkipsSegment",
+   "problem": "TTS段级超时跳段逻辑存在严重状态不一致：OnTimeout(PhaseTTSSeg) 后未推进到下一TTS段，而是停留在 PhaseTTSSeg 并错误地触发 ActPlayTTS(SegIdx=2)，但此时机器并未完成当前段（SegIdx=1）的播放或标记其为 skipped；测试断言 ActTTSSkipped 存在，但实际代码中未验证该 Action 是否被正确生成并消费，且未校验 SegIdx=2 的 TTS 播放是否符合预期（如是否应为 zh 段）。这导致 R2-05 要求的‘第2段 en 超时 → 跳过记 tts_skipped → 继续第3段’语义未被完整验证，存在漏判/错播风险。",
+   "fix": "在 TestTTSSegTimeoutSkipsSegment 中，增加对 m.Phase() 的断言，确保超时后 phase 仍为 PhaseTTSSeg；显式检查 m.DrainActions() 返回的 Action 列表中同时存在 ActTTSSkipped 和 ActPlayTTS(SegIdx=2)；补充验证 ActPlayTTS(SegIdx=2) 的 Lang 字段（应为 'en' 或 'zh'，取决于当前上下文），并确保后续事件能正确驱动该段。修复底层 OnTimeout 实现，确保跳段时原子性更新 segIdx 和 phase 状态。"
+  },
+  {
+   "severity": "P0",
+   "where": "server/internal/classroom/classroom_test.go:TestWrongAnswerReteachLoop",
+   "problem": "RETEACH 完整闭环测试缺失关键竞态与幂等保护：测试中连续调用 OnEvent(EvTTSFinished) 两次后断言 PhaseRepeating，但未验证在 EvTTSFinished 事件处理过程中，若并发发生 EvAnswerSubmitted（如学生抢答），是否会导致状态机进入非法相位（如 PhaseJudging 与 PhaseRepeating 混杂）；且未覆盖 R2-06 要求的‘动作序列=show_word(含中)+tts(zh)+tts(en)+repeat×3+retest’中各环节的审计日志落库，存在安全审计盲区。",
+   "fix": "在 TestWrongAnswerReteachLoop 中注入并发事件：在第一次 EvTTSFinished 后、第二次 EvTTSFinished 前，模拟并发提交 EvAnswerSubmitted，并断言状态机拒绝该非法事件（phase 不变，返回 ErrIllegalTransition）；增加对 classroom_events 表的断言，验证 RETEACH 流程中每个 ActShowWord/ActPlayTTS/ActStartRepeat/ActStartQuiz 均有对应审计记录，且 trace_id 一致。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/scheduler/scheduler_test.go:TestEqualIntervalLadderAndStepAdvance",
+   "problem": "阶梯步进逻辑与文档 R2-01 冲突：测试中课2排课时间 = fin1 + ladder[0]，但 R2-01 明确要求‘NextDueAt = LastReviewAt + ladder[min(step,len-1)]’，而此处未验证 LastReviewAt 是否等于 fin1（正确），也未验证 ladder[min(step,len-1)] 的索引计算（step=0 时 min(0, len-1)=0，正确）；更严重的是，测试未覆盖 step 超出 ladder 长度时的截断行为（R2-02），导致 ladder 缩短场景下可能 panic。",
+   "fix": "在 TestEqualIntervalLadderAndStepAdvance 结尾处，显式断言 c1.LastReviewAt == fin1；增加对 c1.NextDueAt 的断言，使用 ladder[min(c1.LadderStep, len(ladder)-1)] 计算期望值；补充一个子测试 TestLadderStepOverflow，模拟 ladder=[1,1,2] 且 step=5 的场景，验证 TruncateLadderSteps 被正确调用且 c1.LadderStep 被截断为 2。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/api/integration_test.go:TestIT04_ClassroomFullFlow",
+   "problem": "课堂全流程测试未覆盖 WS 消息幂等与越权：测试中未验证双标签页并发提交同一 quizItemId 的作答（TX-06/R2-08），也未测试 teacher token 尝试调用 /api/v1/classroom/lessons/{id}/enter（IT-10 已覆盖工具层越权，但 REST 进入课堂接口未覆盖）；此外，TestIT04 依赖 fakeClient 收帧，但未断言帧序列的确定性（如 snapshot 内容、ui_action 顺序），违反 R2-10 确定性要求。",
+   "fix": "在 TestIT04_ClassroomFullFlow 末尾添加双客户端并发测试：创建 room2 复用同一 lessonID，模拟两个 fakeClient 同时 submit answer，断言仅一个 judge_result 帧发出且 res.Correct[id] 为 true；新增 TestIT10_RESTEnterScopeDenied，用 teacher token 调用 /api/v1/classroom/lessons/{id}/enter，断言 403；对 fc.frames 序列添加排序后比对断言，确保 ui_action/judge_result/lesson_summary 顺序与设计稿一致。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/classroom/classroom_test.go:TestCumulativePoolDeterministic",
+   "problem": "综合测试打乱确定性实现与文档 R2-10 冲突：测试中 seed=lessonID*31+bookID，但代码 NewMachine 构造时传入的是 lessonID, bookID, 7（第三个参数疑似 groupSize），而 run 函数中 newCfg() 创建的 cfg 未绑定 lessonID/bookID，导致 Fisher-Yates 种子实际未生效；测试断言 o1==o2 仅证明伪随机数复用，未验证 seed 计算公式本身是否被代码执行。",
+   "fix": "修改 run 函数，将 newCfg() 替换为 newCfgForLesson(lessonID, bookID)（需实现该函数，使 config.EffectiveSnapshot 包含 lessonID/bookID 并参与 seed 计算）；在 NewMachine 初始化时，确保其内部 RNG 使用 lessonID*31+bookID 作为 seed；在断言前打印实际使用的 seed 值，确保与公式一致。"
+  },
+  {
+   "severity": "P2",
+   "where": "server/internal/classroom/classroom_test.go:TestSessionTimeoutPauseResume",
+   "problem": "session 暂停/恢复测试未覆盖 R2-09 要求的‘已完成词不重教、已判题不重判’：测试中仅验证了 Resume 后从第2词继续，但未验证第1词的教学状态（如 tts_played/repeat_done 标志）是否被保留，也未验证第1词的判分结果是否在 resume 后依然有效。",
+   "fix": "在 TestSessionTimeoutPauseResume 中，teachWord(m, cfg) 后，手动检查 m.state.WordStates[1].TTSPlayed 和 m.state.WordStates[1].RepeatDone 是否为 true；resume 后，断言 m.CurrentWord().ID == 2 且 m.state.WordStates[1].Judgment == JudgmentCorrect（若之前已判）。"
+  }
+ ]
+}

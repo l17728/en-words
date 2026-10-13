@@ -1,0 +1,5851 @@
+{
+ "id": "g7",
+ "name": "人教版初一（七年级）",
+ "grade": "g7",
+ "source": "qlsyy.cc 人教版7-9年级(2026-08-23抓取)",
+ "entries": [
+  {
+   "word": "name",
+   "phonetic": "/neim/",
+   "meanings": [
+    "n. 名字",
+    "n. 名称"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "nice",
+   "phonetic": "/nais/",
+   "meanings": [
+    "adj. 令人愉快的",
+    "adj. 宜人的"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "to",
+   "phonetic": "/tu:/",
+   "meanings": [
+    "常用于原形动词之前，该动词为不定式"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "meet",
+   "phonetic": "/mi:t/",
+   "meanings": [
+    "v. 遇见",
+    "v. 相逢"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "too",
+   "phonetic": "/tu:/",
+   "meanings": [
+    "adv. 也",
+    "adv. 又"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "your",
+   "phonetic": "/jɔ:/",
+   "meanings": [
+    "pron. 你的",
+    "pron. 你们的"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "Ms.",
+   "phonetic": "/miz/",
+   "meanings": [
+    "(于女子的姓名前，不指明婚否)女士"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "his",
+   "phonetic": "/hiz/",
+   "meanings": [
+    "pron. 他的"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "and",
+   "phonetic": "/ænd/",
+   "meanings": [
+    "conj. 和",
+    "conj. 又"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "her",
+   "phonetic": "/hə:/",
+   "meanings": [
+    "pron,  她的"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "yes",
+   "phonetic": "/jes/",
+   "meanings": [
+    "interj. 是的",
+    "interj. 可以"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "she",
+   "phonetic": "/ʃi:/",
+   "meanings": [
+    "pron. 她"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "he",
+   "phonetic": "/hi:/",
+   "meanings": [
+    "pron. 他"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "no",
+   "phonetic": "/nəu/",
+   "meanings": [
+    "interj. 不",
+    "interj. 没有"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "not",
+   "phonetic": "/nɔt/",
+   "meanings": [
+    "adv. 不",
+    "adv. 没有"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "zero",
+   "phonetic": "/'ziərəu/",
+   "meanings": [
+    "num. 零"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "one",
+   "phonetic": "/wʌn/",
+   "meanings": [
+    "num. 一"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "two",
+   "phonetic": "/tu:/",
+   "meanings": [
+    "num. 二"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "three",
+   "phonetic": "/θri:/",
+   "meanings": [
+    "num. 三"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "four",
+   "phonetic": "/fɔ:/",
+   "meanings": [
+    "num. 四"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "five",
+   "phonetic": "/faiv/",
+   "meanings": [
+    "num. 五"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "six",
+   "phonetic": "/siks/",
+   "meanings": [
+    "num. 六"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "seven",
+   "phonetic": "/'sevn/",
+   "meanings": [
+    "num. 七"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "eight",
+   "phonetic": "/eit/",
+   "meanings": [
+    "num. 八"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "nine",
+   "phonetic": "/nain/",
+   "meanings": [
+    "num. 九"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "ten",
+   "phonetic": "/ten/",
+   "meanings": [
+    "num. 十"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "telephone",
+   "phonetic": "/'telifəun/",
+   "meanings": [
+    "n. 电话",
+    "n. 电话机"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "number",
+   "phonetic": "/'nʌmbə/",
+   "meanings": [
+    "n. 号码",
+    "n. 数字"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "phone",
+   "phonetic": "/fəun/",
+   "meanings": [
+    "n. 电话",
+    "n. 电话机"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "first",
+   "phonetic": "/fə:st/",
+   "meanings": [
+    "adj. 第一  adv.首先"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "last",
+   "phonetic": "/la:st/",
+   "meanings": [
+    "adj. 最后的",
+    "adj. 末尾的"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "friend",
+   "phonetic": "/frend/",
+   "meanings": [
+    "n. 朋友"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "China",
+   "phonetic": "/'tʃainə/",
+   "meanings": [
+    "中国"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "middle",
+   "phonetic": "/'midl/",
+   "meanings": [
+    "adj. 中间的",
+    "adj. 中间"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "school",
+   "phonetic": "/sku:l/",
+   "meanings": [
+    "n. 学校"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "sister",
+   "phonetic": "/'sistə/",
+   "meanings": [
+    "n. 姐",
+    "n. 妹"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "mother",
+   "phonetic": "/'mʌðə/",
+   "meanings": [
+    "n. 母亲",
+    "n. 妈妈"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "father",
+   "phonetic": "/'fa:ðə/",
+   "meanings": [
+    "n. 父亲",
+    "n. 爸爸"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "parent",
+   "phonetic": "/'peərənt/",
+   "meanings": [
+    "n. 父（母）亲"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "brother",
+   "phonetic": "/'brʌðə/",
+   "meanings": [
+    "n. 兄",
+    "n. 弟"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "grandmother",
+   "phonetic": "/'grænmʌðə/",
+   "meanings": [
+    "n. （外）祖母",
+    "n. 奶奶"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "grandfather",
+   "phonetic": "/'grænfa:ðə/",
+   "meanings": [
+    "n. (外)祖父",
+    "n. 爷爷"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "grandparent",
+   "phonetic": "/'grænpeərənt/",
+   "meanings": [
+    "n. 祖父（母）"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "family",
+   "phonetic": "/'fæməli/",
+   "meanings": [
+    "n. 家",
+    "n. 家庭"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "those",
+   "phonetic": "/ðəuz/",
+   "meanings": [
+    "pron. 那 些"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "who",
+   "phonetic": "/hu:/",
+   "meanings": [
+    "pron. （既是主格又是宾格）谁",
+    "pron. 什么人"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "oh",
+   "phonetic": "/əu/",
+   "meanings": [
+    "interj. 哦",
+    "interj. 啊"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "these",
+   "phonetic": "/ði:z/",
+   "meanings": [
+    "pron. 这些"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "they",
+   "phonetic": "/ðei/",
+   "meanings": [
+    "pron. （主格）他（她、它）们"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "well",
+   "phonetic": "/wel/",
+   "meanings": [
+    "interj. 嗯",
+    "interj. 好吧"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "have",
+   "phonetic": "/hæv/",
+   "meanings": [
+    "v. 经受",
+    "v. 经历"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "bye",
+   "phonetic": "/bai/",
+   "meanings": [
+    "interj. (=goodbye)再见"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "son",
+   "phonetic": "/sʌn/",
+   "meanings": [
+    "n. 儿子"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "cousin",
+   "phonetic": "/'kʌzn/",
+   "meanings": [
+    "n. 堂兄（弟、姐、妹）",
+    "n. 表兄"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "grandpa",
+   "phonetic": "/'grænpa:/",
+   "meanings": [
+    "n. （外）祖父",
+    "n. 爷爷"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "mom",
+   "phonetic": "/mɔm/",
+   "meanings": [
+    "n. (=mum)妈妈"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "aunt",
+   "phonetic": "/a:nt/",
+   "meanings": [
+    "n. 姑母",
+    "n. 姨母"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "grandma",
+   "phonetic": "/'grænma:/",
+   "meanings": [
+    "n. （外）祖母",
+    "n. 奶奶"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "dad",
+   "phonetic": "/dæd/",
+   "meanings": [
+    "n. 爸爸"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "uncle",
+   "phonetic": "/'ʌŋkl/",
+   "meanings": [
+    "n. 舅父",
+    "n. 叔父"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "daughter",
+   "phonetic": "/'dɔ:tə/",
+   "meanings": [
+    "n. 女儿"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "here",
+   "phonetic": "/hiə/",
+   "meanings": [
+    "adv. (用以介绍人或物)这就是",
+    "adv. 在这里"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "photo",
+   "phonetic": "/'fəutəu/",
+   "meanings": [
+    "n. 照片"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "of",
+   "phonetic": "/ɔv, əv/",
+   "meanings": [
+    "prep. 属于(人或物)",
+    "prep. 关于(人或物)"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "next",
+   "phonetic": "/nekst/",
+   "meanings": [
+    "adj.&n. 下一个（的）",
+    "adj.&n. 接下来（的）"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "picture",
+   "phonetic": "/'piktʃə/",
+   "meanings": [
+    "n. 照片",
+    "n. 图画"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "girl",
+   "phonetic": "/gə:l/",
+   "meanings": [
+    "n. 女孩"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "dog",
+   "phonetic": "/dɔg/",
+   "meanings": [
+    "n. 狗"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "pencil",
+   "phonetic": "/'pensl/",
+   "meanings": [
+    "n. 铅笔"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "book",
+   "phonetic": "/buk/",
+   "meanings": [
+    "n. 书"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "eraser",
+   "phonetic": "/i'reizə/",
+   "meanings": [
+    "n. 橡皮"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "box",
+   "phonetic": "/bɒks/",
+   "meanings": [
+    "n. 箱",
+    "n. 盒"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "schoolbag",
+   "phonetic": "/'sku:lbæg/",
+   "meanings": [
+    "n. 书包"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "dictionary",
+   "phonetic": "/'dikʃənəri/",
+   "meanings": [
+    "n. 词典",
+    "n. 字典"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "mine",
+   "phonetic": "/main/",
+   "meanings": [
+    "pron. 我的（名词性物主代词）"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "hers",
+   "phonetic": "/hə:z/",
+   "meanings": [
+    "pron. 她的（名词性物主代词）"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "excuse",
+   "phonetic": "/ik'skju:z/",
+   "meanings": [
+    "v. 原谅",
+    "v. 宽恕"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "me",
+   "phonetic": "/mi:/",
+   "meanings": [
+    "pron. (I 的宾格)我"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "thank",
+   "phonetic": "/θæŋk/",
+   "meanings": [
+    "v. 感谢",
+    "v. 谢谢"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "teacher",
+   "phonetic": "/'ti:tʃə/",
+   "meanings": [
+    "n. 老师",
+    "n. 教师"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "about",
+   "phonetic": "",
+   "meanings": [
+    "prep. 关于"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "yours",
+   "phonetic": "/jɔ:z/",
+   "meanings": [
+    "pron. 你的",
+    "pron. 你们的"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "for",
+   "phonetic": "/fɔ:/",
+   "meanings": [
+    "prep. 为了",
+    "prep. 给"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "help",
+   "phonetic": "/help/",
+   "meanings": [
+    "v.&n. 帮助",
+    "v.&n. 援助"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "welcome",
+   "phonetic": "/'welkəm/",
+   "meanings": [
+    "adj. 受欢迎的"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "baseball",
+   "phonetic": "/'beisbɔ:l/",
+   "meanings": [
+    "n. 棒球"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "watch",
+   "phonetic": "/wɒtʃ/",
+   "meanings": [
+    "n. 表",
+    "n. 手表"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "computer",
+   "phonetic": "/kəm'pju:tə/",
+   "meanings": [
+    "n. 计算机",
+    "n. 电脑"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "game",
+   "phonetic": "/geim/",
+   "meanings": [
+    "n. 游戏",
+    "n. 运动"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "card",
+   "phonetic": "/kɑ:d/",
+   "meanings": [
+    "n. 卡片"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "notebook",
+   "phonetic": "/'nəutbuk/",
+   "meanings": [
+    "n. 笔记本"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "ring",
+   "phonetic": "/riŋ/",
+   "meanings": [
+    "n. 戒指"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "bag",
+   "phonetic": "/bæg/",
+   "meanings": [
+    "n. 袋",
+    "n. 包"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "in",
+   "phonetic": "/in/",
+   "meanings": [
+    "prep. 在里"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "library",
+   "phonetic": "/'laibrəri/",
+   "meanings": [
+    "n. 图书馆"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "ask",
+   "phonetic": "/ɑ:sk/",
+   "meanings": [
+    "v. 请求",
+    "v. 要求"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "find",
+   "phonetic": "/faind/",
+   "meanings": [
+    "v. (过去式及过去分词 found)找到",
+    "v. 发现"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "some",
+   "phonetic": "/sʌm/",
+   "meanings": [
+    "adj. 一些",
+    "adj. 某些"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "classroom",
+   "phonetic": "/'klɑ:sru:m/",
+   "meanings": [
+    "n. 教室"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "e-mail",
+   "phonetic": "/'emeil/",
+   "meanings": [
+    "n. (=email)电子邮件"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "at",
+   "phonetic": "/æt/",
+   "meanings": [
+    "prep. 按照",
+    "prep. 根据"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "call",
+   "phonetic": "/kɔ:l/",
+   "meanings": [
+    "v. (给)打电话"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "lost",
+   "phonetic": "/lɒst/",
+   "meanings": [
+    "v. (动词 lose 的过去式及过去分词)遗失",
+    "v. 丢失"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "must",
+   "phonetic": "/mʌst/",
+   "meanings": [
+    "modal v. 必须"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "set",
+   "phonetic": "/set/",
+   "meanings": [
+    "n. 一套",
+    "n. 一副"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "where",
+   "phonetic": "/weə/",
+   "meanings": [
+    "adv. 在哪里",
+    "adv. 到哪里"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "table",
+   "phonetic": "/'teibl/",
+   "meanings": [
+    "n. 桌子"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "bed",
+   "phonetic": "/bed/",
+   "meanings": [
+    "n. 床"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "bookcase",
+   "phonetic": "/'bukkeis/",
+   "meanings": [
+    "n. 书架",
+    "n. 书柜"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "sofa",
+   "phonetic": "/'səufə/",
+   "meanings": [
+    "n. 沙发"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "chair",
+   "phonetic": "/tʃeə/",
+   "meanings": [
+    "n. 椅子"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "on",
+   "phonetic": "/ɔn/",
+   "meanings": [
+    "prep. 在上"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "under",
+   "phonetic": "/'ʌndə/",
+   "meanings": [
+    "prep. 在下"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "come",
+   "phonetic": "/kʌm/",
+   "meanings": [
+    "v. 来",
+    "v. 来到"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "desk",
+   "phonetic": "/desk/",
+   "meanings": [
+    "n. 书桌"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "think",
+   "phonetic": "/θiŋk/",
+   "meanings": [
+    "n. 认为",
+    "n. 想"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "room",
+   "phonetic": "/ru:m/",
+   "meanings": [
+    "n. 房间"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "their",
+   "phonetic": "/ðeə/",
+   "meanings": [
+    "pron. 他（她、它）们的"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "hat",
+   "phonetic": "/hæt/",
+   "meanings": [
+    "n. 帽子"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "head",
+   "phonetic": "/hed/",
+   "meanings": [
+    "n. 头"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "yeah",
+   "phonetic": "/jeə/",
+   "meanings": [
+    "interj. 是的",
+    "interj. 对"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "know",
+   "phonetic": "/nəu/",
+   "meanings": [
+    "v. 知道",
+    "v. 了解"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "radio",
+   "phonetic": "/'reidiəu/",
+   "meanings": [
+    "n. 收音机",
+    "n. 无线电广播"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "clock",
+   "phonetic": "/klɔk/",
+   "meanings": [
+    "n. 时钟"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "tape",
+   "phonetic": "/teip/",
+   "meanings": [
+    "n. 磁带",
+    "n. 录音带"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "player",
+   "phonetic": "/pleiə/",
+   "meanings": [
+    "n. 播放机"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "model",
+   "phonetic": "/'mɔdl/",
+   "meanings": [
+    "n. 模型"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "plane",
+   "phonetic": "/plein/",
+   "meanings": [
+    "n. 飞机"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "tidy",
+   "phonetic": "/'taidi/",
+   "meanings": [
+    "adj. 整洁的",
+    "adj. 井井有条的"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "but",
+   "phonetic": "/bʌt/",
+   "meanings": [
+    "conj. 但是"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "our",
+   "phonetic": "/'auə/",
+   "meanings": [
+    "pron. 我们的"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "everywhere",
+   "phonetic": "/'evriweə/",
+   "meanings": [
+    "adv. 处处",
+    "adv. 到处"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "always",
+   "phonetic": "/'ɔ:lweiz/",
+   "meanings": [
+    "adv. 总是"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "do",
+   "phonetic": "/du:/",
+   "meanings": [
+    "aux v. &v. 用于否定句疑问句",
+    "aux v. &v. 做"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "tennis",
+   "phonetic": "/'tenis/",
+   "meanings": [
+    "n. 网球"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "ball",
+   "phonetic": "/bɔ:l/",
+   "meanings": [
+    "n. 球"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "ping-pong",
+   "phonetic": "/'piŋpɔŋ/",
+   "meanings": [
+    "n. 乒乓球"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "bat",
+   "phonetic": "/bæt/",
+   "meanings": [
+    "n. 球棒",
+    "n. 球拍"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "soccer",
+   "phonetic": "/'sɔkə/",
+   "meanings": [
+    "n. （英式）足球运动"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "volleyball",
+   "phonetic": "/'vɔlibɔ:l/",
+   "meanings": [
+    "n. 排球"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "basketball",
+   "phonetic": "/'ba:skitbɔ:l/",
+   "meanings": [
+    "n. 篮球"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "hey",
+   "phonetic": "/hei/",
+   "meanings": [
+    "interj. 嘿",
+    "interj. 喂"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "let",
+   "phonetic": "/let/",
+   "meanings": [
+    "v. 允许",
+    "v. 让"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "us",
+   "phonetic": "/ʌs/",
+   "meanings": [
+    "pron. (we 的宾格)我们"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "go",
+   "phonetic": "/gəu/",
+   "meanings": [
+    "v. 去",
+    "v. 走"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "we",
+   "phonetic": "/wi:/",
+   "meanings": [
+    "pron. 我们"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "late",
+   "phonetic": "/leit/",
+   "meanings": [
+    "adj. 迟到"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "has",
+   "phonetic": "/hæz/",
+   "meanings": [
+    "v. (have 的第三人称单数形式)有"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "get",
+   "phonetic": "/get/",
+   "meanings": [
+    "v. 去取（或带来）",
+    "v. 得到"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "great",
+   "phonetic": "/greit/",
+   "meanings": [
+    "adj. 美妙的",
+    "adj. 伟大的"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "play",
+   "phonetic": "/plei/",
+   "meanings": [
+    "v. 参加（比赛或运动）",
+    "v. 玩耍"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "sound",
+   "phonetic": "/saund/",
+   "meanings": [
+    "v. 听起来好像"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "interesting",
+   "phonetic": "/'intrəstiŋ/",
+   "meanings": [
+    "adj. 有趣的"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "boring",
+   "phonetic": "/'bɔ:riŋ/",
+   "meanings": [
+    "adj. 没趣的",
+    "adj. 令人厌倦的"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "fun",
+   "phonetic": "/fʌn/",
+   "meanings": [
+    "adj. 有趣的",
+    "adj. 使人快乐的 n.乐趣"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "difficult",
+   "phonetic": "/'difikəlt/",
+   "meanings": [
+    "adj. 困难的"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "relaxing",
+   "phonetic": "/ri'læksiŋ/",
+   "meanings": [
+    "adj. 轻松的",
+    "adj. 令人放松的"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "TV",
+   "phonetic": "/ti:'vi:/",
+   "meanings": [
+    "n. (=television) 电视",
+    "n. 电视机"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "same",
+   "phonetic": "/seim/",
+   "meanings": [
+    "adj. 相同的"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "love",
+   "phonetic": "/lʌv/",
+   "meanings": [
+    "v.&n. 爱",
+    "v.&n. 喜爱"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "with",
+   "phonetic": "/wið/",
+   "meanings": [
+    "prep. 和在一起",
+    "prep. 带有"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "sport",
+   "phonetic": "/spɔ:t/",
+   "meanings": [
+    "n. 体育运动"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "them",
+   "phonetic": "/ðem/",
+   "meanings": [
+    "pron. (they 的宾格)他(她、它)们"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "only",
+   "phonetic": "/'əunli/",
+   "meanings": [
+    "adv. 只",
+    "adv. 仅"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "like",
+   "phonetic": "/laik/",
+   "meanings": [
+    "v. 喜欢",
+    "v. 喜爱"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "easy",
+   "phonetic": "/'i:zi/",
+   "meanings": [
+    "adj. 容易的",
+    "adj. 不费力的"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "after",
+   "phonetic": "/'a:ftə/",
+   "meanings": [
+    "prep. 在....以后"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "class",
+   "phonetic": "/kla:s/",
+   "meanings": [
+    "n. 班 级",
+    "n. 课"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "classmate",
+   "phonetic": "/'kla:smeit/",
+   "meanings": [
+    "n. 同班同学"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "banana",
+   "phonetic": "/bə'na:nə/",
+   "meanings": [
+    "n. 香蕉"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "hamburger",
+   "phonetic": "/'hæmbə:gə/",
+   "meanings": [
+    "n. 汉堡包"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "tomato",
+   "phonetic": "/tə'ma:təu/",
+   "meanings": [
+    "n. 西红柿"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "ice-cream",
+   "phonetic": "/ais'kri:m/",
+   "meanings": [
+    "n. 冰激凌"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "salad",
+   "phonetic": "/'sæləd/",
+   "meanings": [
+    "n. 沙拉"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "strawberry",
+   "phonetic": "/'strɔ:bəri/",
+   "meanings": [
+    "n. 草莓"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "pear",
+   "phonetic": "/peə/",
+   "meanings": [
+    "n. 梨"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "milk",
+   "phonetic": "/milk/",
+   "meanings": [
+    "n. 牛奶"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "bread",
+   "phonetic": "/bred/",
+   "meanings": [
+    "n. 面包"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "birthday",
+   "phonetic": "/'bə:θdai/",
+   "meanings": [
+    "n. 生日"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "dinner",
+   "phonetic": "/'dinə/",
+   "meanings": [
+    "n. (中午或晚上吃的)正餐"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "week",
+   "phonetic": "/wi:k/",
+   "meanings": [
+    "n. 周",
+    "n. 星期"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "food",
+   "phonetic": "/fu:d/",
+   "meanings": [
+    "n. 食物"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "sure",
+   "phonetic": "/ʃuə/",
+   "meanings": [
+    "adv. 当然",
+    "adv. 肯定"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "burger",
+   "phonetic": "/'bə:gə/",
+   "meanings": [
+    "n. (=hamburger)汉堡包"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "vegetable",
+   "phonetic": "/'vedʒtəbl/",
+   "meanings": [
+    "n. 蔬菜"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "fruit",
+   "phonetic": "/fru:t/",
+   "meanings": [
+    "n. 水果"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "right",
+   "phonetic": "/rait/",
+   "meanings": [
+    "adj. 正确的",
+    "adj. 适当的"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "apple",
+   "phonetic": "/'æpl/",
+   "meanings": [
+    "n. 苹果"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "then",
+   "phonetic": "/ðen/",
+   "meanings": [
+    "adv. 那么"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "egg",
+   "phonetic": "/eg/",
+   "meanings": [
+    "n. 蛋",
+    "n. 鸡蛋"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "carrot",
+   "phonetic": "/'kærət/",
+   "meanings": [
+    "n. 胡萝卜"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "rice",
+   "phonetic": "/rais/",
+   "meanings": [
+    "n. 大米",
+    "n. 米饭"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "chicken",
+   "phonetic": "/'tʃikin/",
+   "meanings": [
+    "n. 鸡肉"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "so",
+   "phonetic": "/səu/",
+   "meanings": [
+    "conj. (引出评论或问题)那么"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "breakfast",
+   "phonetic": "/'brekfəst/",
+   "meanings": [
+    "n. 早餐",
+    "n. 早饭"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "lunch",
+   "phonetic": "/lʌntʃ/",
+   "meanings": [
+    "n. 午餐"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "star",
+   "phonetic": "/sta:/",
+   "meanings": [
+    "n. 明星",
+    "n. 星星"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "eat",
+   "phonetic": "/i:t/",
+   "meanings": [
+    "v. 吃"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "habit",
+   "phonetic": "/'hæbit/",
+   "meanings": [
+    "n. 习惯"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "healthy",
+   "phonetic": "/'helθi/",
+   "meanings": [
+    "adj. 健康的"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "really",
+   "phonetic": "/'ri:əli/",
+   "meanings": [
+    "adv. 真正地"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "question",
+   "phonetic": "/'kwestʃən/",
+   "meanings": [
+    "n. 问题"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "want",
+   "phonetic": "/wɔnt/",
+   "meanings": [
+    "v. 需要",
+    "v. 想要"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "be",
+   "phonetic": "/bi:/",
+   "meanings": [
+    "v. 变成"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "fat",
+   "phonetic": "/fæt/",
+   "meanings": [
+    "adj. 肥的",
+    "adj. 肥胖的"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "much",
+   "phonetic": "/mʌtʃ/",
+   "meanings": [
+    "pron.&adj. 许多",
+    "pron.&adj. 大量"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "sock",
+   "phonetic": "/sɔk/",
+   "meanings": [
+    "n. 短袜"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "T-shirt",
+   "phonetic": "/'ti:ʃə:t/",
+   "meanings": [
+    "n. T 恤衫"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "shorts",
+   "phonetic": "/ʃɔ:ts/",
+   "meanings": [
+    "n. (pl.) 短裤"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "sweater",
+   "phonetic": "/'swetə/",
+   "meanings": [
+    "n. 毛衣"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "trousers",
+   "phonetic": "/'trauzəz/",
+   "meanings": [
+    "n. (pl.) 裤子"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "shoe",
+   "phonetic": "/ʃu:/",
+   "meanings": [
+    "n. 鞋"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "skirt",
+   "phonetic": "/skə:t/",
+   "meanings": [
+    "n. 裙子"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "dollar",
+   "phonetic": "/'dɔlə/",
+   "meanings": [
+    "n. 元(美国、等国的货币符号为$)"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "big",
+   "phonetic": "/big/",
+   "meanings": [
+    "adj. 大的",
+    "adj. 大号的"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "small",
+   "phonetic": "/smɔ:l/",
+   "meanings": [
+    "adj. 小的",
+    "adj. 小号的"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "short",
+   "phonetic": "/ʃɔ:t/",
+   "meanings": [
+    "adj. 短的",
+    "adj. 矮的"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "long",
+   "phonetic": "/lɔ:ŋ/",
+   "meanings": [
+    "adj. 长的"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "woman",
+   "phonetic": "/'wumən/",
+   "meanings": [
+    "）女子，女人，妇女"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "need",
+   "phonetic": "/ni:d/",
+   "meanings": [
+    "v. 需要"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "look",
+   "phonetic": "/luk/",
+   "meanings": [
+    "v. 看",
+    "v. 看上去"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "pair",
+   "phonetic": "/peə/",
+   "meanings": [
+    "n. 一双",
+    "n. 一对"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "take",
+   "phonetic": "/teik/",
+   "meanings": [
+    "v. 买下",
+    "v. 拿"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "eleven",
+   "phonetic": "/i'levən/",
+   "meanings": [
+    "num. 十一"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "twelve",
+   "phonetic": "/twelv/",
+   "meanings": [
+    "num. 十二"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "thirteen",
+   "phonetic": "/θə:'ti:n/",
+   "meanings": [
+    "num. 十三"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "fifteen",
+   "phonetic": "/fif'ti:n/",
+   "meanings": [
+    "num. 十五"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "eighteen",
+   "phonetic": "/ei'ti:n/",
+   "meanings": [
+    "num. 十八"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "twenty",
+   "phonetic": "/'twenti/",
+   "meanings": [
+    "num. 二十"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "thirty",
+   "phonetic": "/'θə:ti/",
+   "meanings": [
+    "num. 三 十"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "Mr.",
+   "phonetic": "/'mistə/",
+   "meanings": [
+    "\\=mister 先生"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "clothes",
+   "phonetic": "/kləuðz/",
+   "meanings": [
+    "n. (pl.) 衣服",
+    "n. 服装"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "store",
+   "phonetic": "/stɔ:/",
+   "meanings": [
+    "n. 商店"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "buy",
+   "phonetic": "/bai/",
+   "meanings": [
+    "v. 购买",
+    "v. 买"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "sale",
+   "phonetic": "/seil/",
+   "meanings": [
+    "n. 特价销售",
+    "n. 出售"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "sell",
+   "phonetic": "/sel/",
+   "meanings": [
+    "v. 出售",
+    "v. 销售"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "all",
+   "phonetic": "/ɔ:l/",
+   "meanings": [
+    "adj. 所有的",
+    "adj. 全部的"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "very",
+   "phonetic": "/'veri/",
+   "meanings": [
+    "adv. 很",
+    "adv. 非常"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "price",
+   "phonetic": "/prais/",
+   "meanings": [
+    "n. 价格"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "boy",
+   "phonetic": "/bɔi/",
+   "meanings": [
+    "n. 男孩"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "when",
+   "phonetic": "/wen/",
+   "meanings": [
+    "adv. (疑问副词)什么时候"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "month",
+   "phonetic": "/mʌnθ/",
+   "meanings": [
+    "n. 月",
+    "n. 月份"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "January",
+   "phonetic": "/'dʒænjuəri/",
+   "meanings": [
+    "n. 一月"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "February",
+   "phonetic": "/'februəri/",
+   "meanings": [
+    "n. 二月"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "March",
+   "phonetic": "/ma:tʃ/",
+   "meanings": [
+    "n. 三月"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "April",
+   "phonetic": "/'eiprəl/",
+   "meanings": [
+    "n. 四月"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "May",
+   "phonetic": "/mei/",
+   "meanings": [
+    "n. 五月"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "June",
+   "phonetic": "/dʒu:n/",
+   "meanings": [
+    "n. 六月"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "July",
+   "phonetic": "/dʒu'lai/",
+   "meanings": [
+    "n. 七月"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "August",
+   "phonetic": "/'ɔ:gəst/",
+   "meanings": [
+    "n. 八月"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "September",
+   "phonetic": "/sep'tembə/",
+   "meanings": [
+    "n. 九月"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "October",
+   "phonetic": "/ɔk'təubə/",
+   "meanings": [
+    "n. 十月"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "November",
+   "phonetic": "/nəu'vembə/",
+   "meanings": [
+    "n. 十一月"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "December",
+   "phonetic": "/di'sembə/",
+   "meanings": [
+    "n. 十二月"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "happy",
+   "phonetic": "/'hæpi/",
+   "meanings": [
+    "adj. 愉快的",
+    "adj. 高兴的"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "old",
+   "phonetic": "/əuld/",
+   "meanings": [
+    "adj. 年老的",
+    "adj. 旧的"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "party",
+   "phonetic": "/'pa:ti/",
+   "meanings": [
+    "n. 聚会",
+    "n. 晚会"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "second",
+   "phonetic": "/'sekənd/",
+   "meanings": [
+    "num. （序数词）第二"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "third",
+   "phonetic": "/θə:d/",
+   "meanings": [
+    "num. （序数词）第三"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "fifth",
+   "phonetic": "/fifθ/",
+   "meanings": [
+    "num. （序数词）第五"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "eighth",
+   "phonetic": "/eitθ/",
+   "meanings": [
+    "num. （序数词）第八"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "ninth",
+   "phonetic": "/nainθ/",
+   "meanings": [
+    "num. （序数词）第九"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "twelfth",
+   "phonetic": "/twelfθ/",
+   "meanings": [
+    "num. （序数词）第十二"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "twentieth",
+   "phonetic": "/'twentiəθ/",
+   "meanings": [
+    "num. （序数词）第二十"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "test",
+   "phonetic": "/test/",
+   "meanings": [
+    "n. 测验",
+    "n. 检查"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "trip",
+   "phonetic": "/trip/",
+   "meanings": [
+    "n. 旅游",
+    "n. 旅行"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "art",
+   "phonetic": "/a:t/",
+   "meanings": [
+    "n. 艺术",
+    "n. 美术"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "festival",
+   "phonetic": "/'festivl/",
+   "meanings": [
+    "n. (音乐、戏剧等的)节",
+    "n. 节日"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "dear",
+   "phonetic": "/diə/",
+   "meanings": [
+    "adj. 亲爱的",
+    "adj. 贵的，昂贵的"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "student",
+   "phonetic": "/'stju:dnt/",
+   "meanings": [
+    "n. 学生"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "thing",
+   "phonetic": "/θiŋ/",
+   "meanings": [
+    "n. 东西",
+    "n. 事情"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "term",
+   "phonetic": "/tə:m/",
+   "meanings": [
+    "n. 学期"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "busy",
+   "phonetic": "/'bizi/",
+   "meanings": [
+    "adj. 忙碌的",
+    "adj. 无暇的"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "time",
+   "phonetic": "/taim/",
+   "meanings": [
+    "n. 时间"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "there",
+   "phonetic": "/ðeə/",
+   "meanings": [
+    "adv. (在)那里， (在)那儿"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "favorite",
+   "phonetic": "/'feivərit/",
+   "meanings": [
+    "adj.&n. 特别喜爱的(人或事物)"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "subject",
+   "phonetic": "/'sʌbdʒekt/",
+   "meanings": [
+    "n. 学科",
+    "n. 科目"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "science",
+   "phonetic": "/'saiəns/",
+   "meanings": [
+    "n. 科学"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "P.E.",
+   "phonetic": "/pi: 'i:/",
+   "meanings": [
+    "n. (=physical education)体育"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "music",
+   "phonetic": "/'mju:zik/",
+   "meanings": [
+    "n. 音乐",
+    "n. 乐曲"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "math",
+   "phonetic": "/mæθ/",
+   "meanings": [
+    "n. 数学"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "Chinese",
+   "phonetic": "/tʃai'ni:z/",
+   "meanings": [
+    "n. 语文",
+    "n. 汉语中国的"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "geography",
+   "phonetic": "/dʒi'ɔgrəfi/",
+   "meanings": [
+    "n. 地 理 ( 学 )"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "history",
+   "phonetic": "/'histri/",
+   "meanings": [
+    "n. 历史"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "why",
+   "phonetic": "/wai/",
+   "meanings": [
+    "adv. 为什么"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "because",
+   "phonetic": "/bi'kɔz/",
+   "meanings": [
+    "conj. 因为"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "Monday",
+   "phonetic": "/'mʌndei/",
+   "meanings": [
+    "n. 星期一"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "Friday",
+   "phonetic": "/'fraidei/",
+   "meanings": [
+    "n. 星期五"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "Saturday",
+   "phonetic": "/'sætədei/",
+   "meanings": [
+    "n. 星期六"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "free",
+   "phonetic": "/fri:/",
+   "meanings": [
+    "adj. 空闲的"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "cool",
+   "phonetic": "/ku:l/",
+   "meanings": [
+    "adj. 妙极的",
+    "adj. 酷的"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "Tuesday",
+   "phonetic": "/'tju:zdei/",
+   "meanings": [
+    "n. 星期二"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "Wednesday",
+   "phonetic": "/'wenzdei/",
+   "meanings": [
+    "n. 星期三"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "Thursday",
+   "phonetic": "/'θəzdei/",
+   "meanings": [
+    "n. 星期四"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "Sunday",
+   "phonetic": "/'sʌndei/",
+   "meanings": [
+    "n. 星期日"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "A.M.",
+   "phonetic": "/ei 'em/",
+   "meanings": [
+    "(=a.m.)上午（用在钟点之后）"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "P.M.",
+   "phonetic": "/pi: 'em/",
+   "meanings": [
+    "(=p.m.) 下午，午后（用在钟点之后）"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "useful",
+   "phonetic": "/'ju:sfl/",
+   "meanings": [
+    "adj. 有用的",
+    "adj. 有益的"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "from",
+   "phonetic": "/frɔm/",
+   "meanings": [
+    "prep (表示开始的时间)从开始"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "Mrs.",
+   "phonetic": "/'misiz/",
+   "meanings": [
+    "(已婚女子的姓氏或姓名前)太太",
+    "夫人"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "finish",
+   "phonetic": "/'finiʃ/",
+   "meanings": [
+    "v. 完成",
+    "v. 做好"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "lesson",
+   "phonetic": "/'lesn/",
+   "meanings": [
+    "n. 课",
+    "n. 一节课"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "hour",
+   "phonetic": "/'auə/",
+   "meanings": [
+    "n. 小时"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "guitar",
+   "phonetic": "/ɡɪ'tɑ:(r)/",
+   "meanings": [
+    "n. 吉他"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "sing",
+   "phonetic": "/sɪŋ/",
+   "meanings": [
+    "v. 唱",
+    "v. 唱歌"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "swim",
+   "phonetic": "/swɪm/",
+   "meanings": [
+    "v. ＆n.游泳"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "dance",
+   "phonetic": "/dɑ:ns/",
+   "meanings": [
+    "v. 跳舞",
+    "v. n.舞蹈"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "draw",
+   "phonetic": "/drɔ:/",
+   "meanings": [
+    "v. 画"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "chess",
+   "phonetic": "/tʃes/",
+   "meanings": [
+    "n. 国际象棋"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "speak",
+   "phonetic": "/spi:k/",
+   "meanings": [
+    "v. 说(某种语言)",
+    "v. 说话"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "join",
+   "phonetic": "/dʒɔɪn/",
+   "meanings": [
+    "v. 参加",
+    "v. 加入"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "club",
+   "phonetic": "/klʌb/",
+   "meanings": [
+    "n. 俱乐部",
+    "n. 社团"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "tell",
+   "phonetic": "/tel/",
+   "meanings": [
+    "v. 讲述",
+    "v. 告诉"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "story",
+   "phonetic": "/'stɔ:ri/",
+   "meanings": [
+    "n. 故事",
+    "n. 小说"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "write",
+   "phonetic": "/raɪt/",
+   "meanings": [
+    "v. 写作",
+    "v. 写字"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "show",
+   "phonetic": "/ʃəʊ/",
+   "meanings": [
+    "n. 演出",
+    "n. 节目"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "or",
+   "phonetic": "/ɔ:(r)/",
+   "meanings": [
+    "conj. 或者",
+    "conj. 也不(用于否定句)"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "talk",
+   "phonetic": "/tɔ:k/",
+   "meanings": [
+    "v. ＆n.说话",
+    "v. 交谈"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "kung fu",
+   "phonetic": "/kʌŋ'fu:/",
+   "meanings": [
+    "n. (中国)功夫"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "drum",
+   "phonetic": "/drʌm/",
+   "meanings": [
+    "n. 鼓"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "piano",
+   "phonetic": "/pi'ænəʊ/",
+   "meanings": [
+    "n. 钢琴"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "violin",
+   "phonetic": "/vaɪə'lɪn/",
+   "meanings": [
+    "n. 小 提 琴"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "also",
+   "phonetic": "/'ɔ:lsəʊ/",
+   "meanings": [
+    "adv. 也",
+    "adv. 而且"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "people",
+   "phonetic": "/'pi:pl/",
+   "meanings": [
+    "n. （集体名词）人",
+    "n. 人们"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "home",
+   "phonetic": "/həʊm/",
+   "meanings": [
+    "n. 家",
+    "n. 活动本部"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "make",
+   "phonetic": "/meɪk/",
+   "meanings": [
+    "v. 使成为",
+    "v. 制造"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "today",
+   "phonetic": "/tə'deɪ/",
+   "meanings": [
+    "adv. 在今天"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "weekend",
+   "phonetic": "/wi:k'end/",
+   "meanings": [
+    "n. 周末"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "teach",
+   "phonetic": "/ti:tʃ/",
+   "meanings": [
+    "v. 教",
+    "v. 讲授"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "musician",
+   "phonetic": "/mju:'zɪʃn/",
+   "meanings": [
+    "n. 音乐家"
+   ],
+   "unit": "Unit 1"
+  },
+  {
+   "word": "up",
+   "phonetic": "/ʌp/",
+   "meanings": [
+    "adv. 向上"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "dress",
+   "phonetic": "/dres/",
+   "meanings": [
+    "v.&n. 穿衣服",
+    "v.&n. 连衣裙"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "brush",
+   "phonetic": "/brʌʃ/",
+   "meanings": [
+    "v.&n. 刷",
+    "v.&n. 刷净"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "tooth",
+   "phonetic": "/tu:θ/",
+   "meanings": [
+    ")牙齿"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "shower",
+   "phonetic": "/'ʃaʊə(r)/",
+   "meanings": [
+    "n.&v. 淋浴",
+    "n.&v. 淋浴器(间)"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "usually",
+   "phonetic": "/'ju:ʒuəli/",
+   "meanings": [
+    "adv. 通常地",
+    "adv. 一般地"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "forty",
+   "phonetic": "/'fɔ:(r)ti/",
+   "meanings": [
+    "num. 四十"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "wow",
+   "phonetic": "/waʊ/",
+   "meanings": [
+    "int. (表示惊奇或敬佩)哇",
+    "int. 呀"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "never",
+   "phonetic": "/'nevə(r)/",
+   "meanings": [
+    "adv. 从不",
+    "adv. 绝不"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "early",
+   "phonetic": "/'ɜ:(r)li/",
+   "meanings": [
+    "adv.&adj. 早(的)"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "fifty",
+   "phonetic": "/'fɪfti/",
+   "meanings": [
+    "num. 五十"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "job",
+   "phonetic": "/dʒɒb/",
+   "meanings": [
+    "n. 工作",
+    "n. 职业"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "work",
+   "phonetic": "/wɜ:(r)k/",
+   "meanings": [
+    "v.&n. 工作"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "station",
+   "phonetic": "/'steɪʃn/",
+   "meanings": [
+    "n. 电(视)台",
+    "n. 车站"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "night",
+   "phonetic": "/naɪt/",
+   "meanings": [
+    "n. 晚上",
+    "n. 夜晚"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "funny",
+   "phonetic": "/'fʌni/",
+   "meanings": [
+    "adj. 奇怪的",
+    "adj. 滑稽好笑的"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "exercise",
+   "phonetic": "/'eksəsaɪz/",
+   "meanings": [
+    "v.&n. 锻炼",
+    "v.&n. 练习"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "best",
+   "phonetic": "/best/",
+   "meanings": [
+    "adj.&adv. 最好的",
+    "adj.&adv. 最好地"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "group",
+   "phonetic": "/ɡru:p/",
+   "meanings": [
+    "n. 组",
+    "n. 群"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "half",
+   "phonetic": "/hɑ:f/",
+   "meanings": [
+    "n.&pron. 一半",
+    "n.&pron. 半数"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "past",
+   "phonetic": "/pɑ:st/",
+   "meanings": [
+    "prep. 晚于",
+    "prep. 过(时间)"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "quarter",
+   "phonetic": "/'kwɔ:(r)tə(r)/",
+   "meanings": [
+    "n. 一刻钟",
+    "n. 四分之一"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "homework",
+   "phonetic": "/'həʊmwɜ:(r)k/",
+   "meanings": [
+    "n. 家庭作业"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "run",
+   "phonetic": "/rʌn/",
+   "meanings": [
+    "v. 跑",
+    "v. 奔"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "clean",
+   "phonetic": "/kli:n/",
+   "meanings": [
+    "v. 打扫",
+    "v. 弄干净"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "walk",
+   "phonetic": "/wɔ:k/",
+   "meanings": [
+    "n.&v. 行走",
+    "n.&v. 步行"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "quickly",
+   "phonetic": "/'kwɪkli/",
+   "meanings": [
+    "adv. 很快地"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "lot",
+   "phonetic": "/lɒt/",
+   "meanings": [
+    "pron. 大量",
+    "pron. 许多"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "sometimes",
+   "phonetic": "/'sʌmtaɪmz/",
+   "meanings": [
+    "adv. 有时"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "taste",
+   "phonetic": "/teɪst/",
+   "meanings": [
+    "v. 有…的味道",
+    "v. 品尝"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "life",
+   "phonetic": "/laɪf/",
+   "meanings": [
+    ")生活",
+    "生命"
+   ],
+   "unit": "Unit 2"
+  },
+  {
+   "word": "train",
+   "phonetic": "/treɪn/",
+   "meanings": [
+    "n. 火 车"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "bus",
+   "phonetic": "/bʌs/",
+   "meanings": [
+    "n. 公共汽车"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "subway",
+   "phonetic": "/'sʌbweɪ/",
+   "meanings": [
+    "n. 地铁"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "ride",
+   "phonetic": "/raɪd/",
+   "meanings": [
+    "v.&n. 骑",
+    "v.&n. 旅程"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "bike",
+   "phonetic": "/baɪk/",
+   "meanings": [
+    "n. 自行车"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "sixty",
+   "phonetic": "/'sɪksti/",
+   "meanings": [
+    "num. 六十"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "seventy",
+   "phonetic": "/'sevnti/",
+   "meanings": [
+    "num. 七十"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "eighty",
+   "phonetic": "/'eɪti/",
+   "meanings": [
+    "num. 八十"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "ninety",
+   "phonetic": "/'naɪnti/",
+   "meanings": [
+    "num. 九十"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "hundred",
+   "phonetic": "/'hʌndrəd/",
+   "meanings": [
+    "num. 一百"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "minute",
+   "phonetic": "/'mɪnɪt/",
+   "meanings": [
+    "n. 分钟"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "far",
+   "phonetic": "/fɑ:(r)/",
+   "meanings": [
+    "adv.&adj. 远",
+    "adv.&adj. 远的"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "new",
+   "phonetic": "/nju:/",
+   "meanings": [
+    "adj. 新的",
+    "adj. 刚出现的"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "every",
+   "phonetic": "/'evri/",
+   "meanings": [
+    "adj. 每一",
+    "adj. 每个"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "by",
+   "phonetic": "/baɪ/",
+   "meanings": [
+    "prep. (表示方式)乘(交通工具)"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "drive",
+   "phonetic": "/draɪv/",
+   "meanings": [
+    "v. 开 车"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "car",
+   "phonetic": "/kɑ:(r)/",
+   "meanings": [
+    "n. 小汽车",
+    "n. 轿车"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "live",
+   "phonetic": "/lɪv/",
+   "meanings": [
+    "v. 居住",
+    "v. 生活"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "stop",
+   "phonetic": "/stɒp/",
+   "meanings": [
+    "n. 车站",
+    "n. 停止"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "cross",
+   "phonetic": "/krɒs/",
+   "meanings": [
+    "v. 横过",
+    "v. 越过"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "river",
+   "phonetic": "/'rɪvə(r)/",
+   "meanings": [
+    "n. 河",
+    "n. 江"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "many",
+   "phonetic": "/'meni/",
+   "meanings": [
+    "adj.&pron. 许多（加可数名词的复数形式）"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "village",
+   "phonetic": "/'vɪlɪdʒ/",
+   "meanings": [
+    "n. 村庄",
+    "n. 村镇"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "between",
+   "phonetic": "/bɪ'twi:n/",
+   "meanings": [
+    "prep. 介于……之间"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "bridge",
+   "phonetic": "/brɪdʒ/",
+   "meanings": [
+    "n. 桥"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "boat",
+   "phonetic": "/bəʊt/",
+   "meanings": [
+    "n. 小船"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "ropeway",
+   "phonetic": "/'rəʊp,weɪ/",
+   "meanings": [
+    "n. 索道"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "year",
+   "phonetic": "/jɪə/",
+   "meanings": [
+    "n. 年",
+    "n. 岁"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "afraid",
+   "phonetic": "/ə'freɪd/",
+   "meanings": [
+    "adj. 害怕",
+    "adj. 畏惧"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "villager",
+   "phonetic": "/'vɪlɪdʒə(r)/",
+   "meanings": [
+    "n. 村民"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "leave",
+   "phonetic": "/li:v/",
+   "meanings": [
+    "v. 离开"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "dream",
+   "phonetic": "/dri:m/",
+   "meanings": [
+    "n. 梦想",
+    "n. 睡梦"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "true",
+   "phonetic": "/tru:/",
+   "meanings": [
+    "adj. 真的",
+    "adj. 符合事实的"
+   ],
+   "unit": "Unit 3"
+  },
+  {
+   "word": "rule",
+   "phonetic": "/ru:l/",
+   "meanings": [
+    "n. 规则",
+    "n. 规章"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "arrive",
+   "phonetic": "/ə'raɪv/",
+   "meanings": [
+    "v. 到达"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "hallway",
+   "phonetic": "/'hɔ:lweɪ/",
+   "meanings": [
+    "n. 走廊",
+    "n. 过道"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "hall",
+   "phonetic": "/hɔ:l/",
+   "meanings": [
+    "n. 大厅",
+    "n. 礼堂"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "dining hall",
+   "phonetic": "/'daɪnɪŋ/",
+   "meanings": [
+    "餐厅"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "listen",
+   "phonetic": "/'lɪsn/",
+   "meanings": [
+    "v. 听",
+    "v. 倾听"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "fight",
+   "phonetic": "/faɪt/",
+   "meanings": [
+    "v.&n. 打架",
+    "v.&n. 战斗"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "sorry",
+   "phonetic": "/'sɒri/",
+   "meanings": [
+    "adj. 抱歉的",
+    "adj. 难过的"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "outside",
+   "phonetic": "/aʊt'saɪd/",
+   "meanings": [
+    "adv. 在外面",
+    "adv. adj.外面的"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "wear",
+   "phonetic": "/weə/",
+   "meanings": [
+    "v. 穿",
+    "v. 戴"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "important",
+   "phonetic": "/ɪm'pɔ:(r)tnt/",
+   "meanings": [
+    "adj. 重要的"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "bring",
+   "phonetic": "/brɪŋ/",
+   "meanings": [
+    "v. 带来",
+    "v. 取来"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "uniform",
+   "phonetic": "/'ju:nɪfɔ:(r)m/",
+   "meanings": [
+    "n. 校服",
+    "n. 制服"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "quiet",
+   "phonetic": "/'kwaɪət/",
+   "meanings": [
+    "adj. 安静的"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "out",
+   "phonetic": "/aʊt/",
+   "meanings": [
+    "adv. 外出"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "practice",
+   "phonetic": "/'præktɪs/",
+   "meanings": [
+    "v.&n. 练习"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "dish",
+   "phonetic": "/dɪʃ/",
+   "meanings": [
+    "n. 碟",
+    "n. 盘"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "before",
+   "phonetic": "/bɪ'fɔ:(r)/",
+   "meanings": [
+    "prep.&conj. 在……以前",
+    "prep.&conj. adv.以前"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "dirty",
+   "phonetic": "/'dɜ:(r)ti/",
+   "meanings": [
+    "adj. 脏的"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "kitchen",
+   "phonetic": "/'kɪtʃɪn/",
+   "meanings": [
+    "n. 厨房"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "more",
+   "phonetic": "/mɔ:(r)/",
+   "meanings": [
+    "adj.&pron. 更多(的) （many与much的比较级）"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "noisy",
+   "phonetic": "/'nɔɪzi/",
+   "meanings": [
+    "adj. 吵闹的"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "relax",
+   "phonetic": "/rɪ'læks/",
+   "meanings": [
+    "v. 放松",
+    "v. 休息"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "read",
+   "phonetic": "/ri:d/",
+   "meanings": [
+    "v. 读",
+    "v. 阅读"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "terrible",
+   "phonetic": "/'terəbl/",
+   "meanings": [
+    "adj. 非常讨厌的",
+    "adj. 可怕的"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "feel",
+   "phonetic": "/fi:l/",
+   "meanings": [
+    "v. 感受",
+    "v. 觉得"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "strict",
+   "phonetic": "/strɪkt/",
+   "meanings": [
+    "adj. 严格的",
+    "adj. 严厉的"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "remember",
+   "phonetic": "/rɪ'membə(r)/",
+   "meanings": [
+    "v. 记住",
+    "v. 记起"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "luck",
+   "phonetic": "/lʌk/",
+   "meanings": [
+    "n. 幸运",
+    "n. 运气"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "keep",
+   "phonetic": "/ki:p/",
+   "meanings": [
+    "v. 保持",
+    "v. 保留"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "hair",
+   "phonetic": "/heə/",
+   "meanings": [
+    "n. 头发",
+    "n. 毛发"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "learn",
+   "phonetic": "/lɜ:(r)n/",
+   "meanings": [
+    "v. 学习",
+    "v. 学会"
+   ],
+   "unit": "Unit 4"
+  },
+  {
+   "word": "panda",
+   "phonetic": "/'pændə/",
+   "meanings": [
+    "n. 熊猫"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "zoo",
+   "phonetic": "/zu:/",
+   "meanings": [
+    "n. 动物园"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "tiger",
+   "phonetic": "/'taɪgə(r)/",
+   "meanings": [
+    "n. 老虎"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "elephant",
+   "phonetic": "/'elɪfənt/",
+   "meanings": [
+    "n. 大象"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "koala",
+   "phonetic": "/kəʊ'ɑ:lə/",
+   "meanings": [
+    "n. 树袋熊",
+    "n. 考拉"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "lion",
+   "phonetic": "/'laɪən/",
+   "meanings": [
+    "n. 狮子"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "giraffe",
+   "phonetic": "/dʒə'rɑ:f/",
+   "meanings": [
+    "n. 长颈鹿"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "animal",
+   "phonetic": "/'ænɪml/",
+   "meanings": [
+    "n. 动物"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "cute",
+   "phonetic": "/kju:t/",
+   "meanings": [
+    "adj. 可爱的",
+    "adj. 机灵的"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "lazy",
+   "phonetic": "/'leɪzi/",
+   "meanings": [
+    "adj. 懒散的",
+    "adj. 懒惰的"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "smart",
+   "phonetic": "/smɑ:(r)t/",
+   "meanings": [
+    "adj. 聪明的"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "beautiful",
+   "phonetic": "/'bju:tɪfl/",
+   "meanings": [
+    "adj. 美丽的",
+    "adj. 美好的"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "scary",
+   "phonetic": "/'skeəri/",
+   "meanings": [
+    "adj. 吓人的",
+    "adj. 恐怖的"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "kind",
+   "phonetic": "/kaɪnd/",
+   "meanings": [
+    "n. 种类"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "Australia",
+   "phonetic": "/ɒ'streɪlɪə/",
+   "meanings": [
+    "n. 澳大利亚"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "south",
+   "phonetic": "/saʊθ/",
+   "meanings": [
+    "adj. 南方的",
+    "adj. n.南"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "Africa",
+   "phonetic": "/'æfrɪkə/",
+   "meanings": [
+    "n. 非洲"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "pet",
+   "phonetic": "/pet/",
+   "meanings": [
+    "n. 宠物"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "leg",
+   "phonetic": "/leg/",
+   "meanings": [
+    "n. 腿"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "cat",
+   "phonetic": "/kæt/",
+   "meanings": [
+    "n. 猫"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "sleep",
+   "phonetic": "/sli:p/",
+   "meanings": [
+    "v.&n. 睡觉"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "friendly",
+   "phonetic": "/'frendli/",
+   "meanings": [
+    "adj. 友好的"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "shy",
+   "phonetic": "/ʃaɪ/",
+   "meanings": [
+    "adj. 羞怯的",
+    "adj. 腼腆的"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "save",
+   "phonetic": "/seɪv/",
+   "meanings": [
+    "v. 救",
+    "v. 救助"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "symbol",
+   "phonetic": "/'sɪmbl/",
+   "meanings": [
+    "n. 象征"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "flag",
+   "phonetic": "/flæg/",
+   "meanings": [
+    "n. 旗",
+    "n. 旗帜"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "forget",
+   "phonetic": "/fə(r)'get/",
+   "meanings": [
+    "v. 忘记",
+    "v. 遗忘"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "place",
+   "phonetic": "/pleɪs/",
+   "meanings": [
+    "n. 地点",
+    "n. 位置"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "danger",
+   "phonetic": "/'deɪndʒə(r)/",
+   "meanings": [
+    "n. 危险"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "cut",
+   "phonetic": "/kʌt/",
+   "meanings": [
+    "v. 砍",
+    "v. 切"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "down",
+   "phonetic": "/daʊn/",
+   "meanings": [
+    "adv. (坐、躺、倒)下",
+    "adv. prep.向下"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "tree",
+   "phonetic": "/tri:/",
+   "meanings": [
+    "n. 树"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "kill",
+   "phonetic": "/kɪl/",
+   "meanings": [
+    "v. 杀死",
+    "v. 弄死"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "ivory",
+   "phonetic": "/'aɪvəri/",
+   "meanings": [
+    "n. 象牙（材质）（不可数名词）"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "over",
+   "phonetic": "/'əʊvə(r)/",
+   "meanings": [
+    "prep. 超过，多于",
+    "prep. 在……上方"
+   ],
+   "unit": "Unit 5"
+  },
+  {
+   "word": "newspaper",
+   "phonetic": "/'nju:zpeɪpə/",
+   "meanings": [
+    "n. 报纸"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "use",
+   "phonetic": "/ju:z/",
+   "meanings": [
+    "v. 使用",
+    "v. 运用"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "soup",
+   "phonetic": "/su:p/",
+   "meanings": [
+    "n. 汤"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "wash",
+   "phonetic": "/wɒʃ/",
+   "meanings": [
+    "v. 洗"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "movie",
+   "phonetic": "/'mu:vi/",
+   "meanings": [
+    "n. 电影"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "just",
+   "phonetic": "/dʒʌst/",
+   "meanings": [
+    "adv. 只是",
+    "adv. 恰好"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "house",
+   "phonetic": "/haʊs/",
+   "meanings": [
+    "n. 房子"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "drink",
+   "phonetic": "/drɪŋk/",
+   "meanings": [
+    "v. .喝",
+    "v. n 饮料"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "tea",
+   "phonetic": "/ti:/",
+   "meanings": [
+    "n. 茶",
+    "n. 茶叶"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "tomorrow",
+   "phonetic": "/tə'mɒrəʊ/",
+   "meanings": [
+    "adv. 在明天",
+    "adv. n.明天"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "pool",
+   "phonetic": "/pu:l/",
+   "meanings": [
+    "n. 游泳池",
+    "n. 水池"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "shop",
+   "phonetic": "/ʃɒp/",
+   "meanings": [
+    "v. 购物",
+    "v. n.商店"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "supermarket",
+   "phonetic": "/'su:pə(r),mɑ:(r)kət/",
+   "meanings": [
+    "n. 超市"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "man",
+   "phonetic": "/mæn/",
+   "meanings": [
+    "n. 男人",
+    "n. 人（pl. men）"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "race",
+   "phonetic": "/reɪs/",
+   "meanings": [
+    "n. 竞赛"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "host",
+   "phonetic": "/həʊst/",
+   "meanings": [
+    "n. 主人",
+    "n. 东道主"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "study",
+   "phonetic": "/'stʌdi/",
+   "meanings": [
+    "v.&n. 学习",
+    "v.&n. 研究"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "state",
+   "phonetic": "/steɪt/",
+   "meanings": [
+    "n. 州"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "the United States",
+   "phonetic": "/ju'naɪtɪd 'steɪts/",
+   "meanings": [
+    "(of America)美国"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "American",
+   "phonetic": "/ə'merɪkən/",
+   "meanings": [
+    "adj. 美国的",
+    "adj. 美洲的"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "dragon",
+   "phonetic": "/'drægən/",
+   "meanings": [
+    "n. 龙"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "any",
+   "phonetic": "/'eni/",
+   "meanings": [
+    "adj. 任何的",
+    "adj. 任一的"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "other",
+   "phonetic": "/'ʌðə(r)/",
+   "meanings": [
+    "adj. 另外的",
+    "adj. 其他的"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "young",
+   "phonetic": "/jʌŋ/",
+   "meanings": [
+    "adj. 幼小的",
+    "adj. 年轻的"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "child",
+   "phonetic": "/tʃaɪld/",
+   "meanings": [
+    ")儿童"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "miss",
+   "phonetic": "/mɪs/",
+   "meanings": [
+    "v. 怀念",
+    "v. 怀念"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "wish",
+   "phonetic": "/wɪʃ/",
+   "meanings": [
+    "v. 希望"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "delicious",
+   "phonetic": "/dɪ'lɪʃəs/",
+   "meanings": [
+    "adj. 可口的",
+    "adj. 美味的"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "still",
+   "phonetic": "/stɪl/",
+   "meanings": [
+    "adv. 还",
+    "adv. 仍然"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "living room",
+   "phonetic": "/'lɪvɪŋ/",
+   "meanings": [
+    "客厅"
+   ],
+   "unit": "Unit 6"
+  },
+  {
+   "word": "rain",
+   "phonetic": "/reɪn/",
+   "meanings": [
+    "v. 下雨",
+    "v. n.雨水"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "windy",
+   "phonetic": "/'wɪndi/",
+   "meanings": [
+    "adj. 多风的"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "cloudy",
+   "phonetic": "/'klaʊdi/",
+   "meanings": [
+    "adj. 多云的"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "sunny",
+   "phonetic": "/'sʌni/",
+   "meanings": [
+    "adj. 晴朗的"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "snow",
+   "phonetic": "/snəʊ/",
+   "meanings": [
+    "v. 下雪",
+    "v. n.雪"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "weather",
+   "phonetic": "/'weðə(r)/",
+   "meanings": [
+    "n. 天气"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "cook",
+   "phonetic": "/kʊk/",
+   "meanings": [
+    "v. 做饭"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "bad",
+   "phonetic": "/bæd/",
+   "meanings": [
+    "adj. 坏的",
+    "adj. 糟的"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "park",
+   "phonetic": "/pɑ:(r)k/",
+   "meanings": [
+    "n. 公园"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "message",
+   "phonetic": "/'mesɪdʒ/",
+   "meanings": [
+    "n. 信息",
+    "n. 消息"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "him",
+   "phonetic": "/hɪm/",
+   "meanings": [
+    "pron. 他(he 的宾格)"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "could",
+   "phonetic": "/kʊd/",
+   "meanings": [
+    "modal v. 能",
+    "modal v. 可以"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "back",
+   "phonetic": "/bæk/",
+   "meanings": [
+    "adv. 回来",
+    "adv. 回原处"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "problem",
+   "phonetic": "/'prɒbləm/",
+   "meanings": [
+    "n. 困难",
+    "n. 难题"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "again",
+   "phonetic": "/ə'ɡen/",
+   "meanings": [
+    "adv. 再一次",
+    "adv. 又一次"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "dry",
+   "phonetic": "/draɪ/",
+   "meanings": [
+    "adj. 干燥的"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "cold",
+   "phonetic": "/kəʊld/",
+   "meanings": [
+    "adj. 寒冷的",
+    "adj. 冷的"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "hot",
+   "phonetic": "/hɒt/",
+   "meanings": [
+    "adj. 热 的"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "warm",
+   "phonetic": "/wɔ:(r)m/",
+   "meanings": [
+    "adj. 温暖的"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "visit",
+   "phonetic": "/'vɪzɪt/",
+   "meanings": [
+    "v. 拜 访",
+    "v. 参 观"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "Canada",
+   "phonetic": "/'kænədə/",
+   "meanings": [
+    "n. 加拿大"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "summer",
+   "phonetic": "/'sʌmə(r)/",
+   "meanings": [
+    "n. 夏天",
+    "n. 夏季"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "sit",
+   "phonetic": "/sɪt/",
+   "meanings": [
+    "v. 坐"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "juice",
+   "phonetic": "/dʒu:s/",
+   "meanings": [
+    "n. 果汁",
+    "n. 饮料"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "soon",
+   "phonetic": "/su:n/",
+   "meanings": [
+    "adv. 不久",
+    "adv. 很快"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "vacation",
+   "phonetic": "/veɪ'keɪʃn/",
+   "meanings": [
+    "n. 假 期"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "hard",
+   "phonetic": "/hɑ:(r)d/",
+   "meanings": [
+    "adv. 努力地",
+    "adv. adj.困难的"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "Europe",
+   "phonetic": "/'jʊərəp/",
+   "meanings": [
+    "n. 欧洲"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "mountain",
+   "phonetic": "/'maʊntən/",
+   "meanings": [
+    "n. 高山"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "country",
+   "phonetic": "/'kʌntri/",
+   "meanings": [
+    "n. 国",
+    "n. 国家"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "skate",
+   "phonetic": "/skeɪt/",
+   "meanings": [
+    "v. 滑冰"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "snowy",
+   "phonetic": "/'snəʊi/",
+   "meanings": [
+    "adj. 下雪的"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "winter",
+   "phonetic": "/'wɪntə(r)/",
+   "meanings": [
+    "n. 冬天",
+    "n. 冬季"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "Russian",
+   "phonetic": "/'rʌʃn/",
+   "meanings": [
+    "adj. 俄罗斯的",
+    "adj. 俄罗斯人的"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "snowman",
+   "phonetic": "/'snəʊmæn/",
+   "meanings": [
+    "n. 雪人（pl. snowmen）"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "rainy",
+   "phonetic": "/'reɪni/",
+   "meanings": [
+    "adj. 阴雨的",
+    "adj. 多雨的"
+   ],
+   "unit": "Unit 7"
+  },
+  {
+   "word": "post",
+   "phonetic": "/pəʊst/",
+   "meanings": [
+    "n. 邮政"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "office",
+   "phonetic": "/'ɒfɪs/",
+   "meanings": [
+    "n. 办公室"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "police",
+   "phonetic": "/pə'li:s/",
+   "meanings": [
+    "n. 警察"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "hotel",
+   "phonetic": "/həʊ'tel/",
+   "meanings": [
+    "n. 旅馆",
+    "n. 酒店"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "restaurant",
+   "phonetic": "/'restrɒnt/",
+   "meanings": [
+    "n. 餐馆"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "bank",
+   "phonetic": "/bæŋk/",
+   "meanings": [
+    "n. 银行"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "street",
+   "phonetic": "/stri:t/",
+   "meanings": [
+    "n. 大街"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "pay",
+   "phonetic": "/peɪ/",
+   "meanings": [
+    "v.&n. 付费"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "near",
+   "phonetic": "/nɪə/",
+   "meanings": [
+    "prep. 在……附近"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "across",
+   "phonetic": "/ə'krɒs/",
+   "meanings": [
+    "adv.&prep. 过",
+    "adv.&prep. 穿过"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "front",
+   "phonetic": "/frʌnt/",
+   "meanings": [
+    "n. 前面"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "behind",
+   "phonetic": "/bɪ'haɪnd/",
+   "meanings": [
+    "prep. 在……后面"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "town",
+   "phonetic": "/taʊn/",
+   "meanings": [
+    "n. 镇",
+    "n. 市镇"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "around",
+   "phonetic": "/ə'raʊnd/",
+   "meanings": [
+    "adv.&prep. 到处",
+    "adv.&prep. 大约"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "north",
+   "phonetic": "/nɔ:(r)θ/",
+   "meanings": [
+    "n. 北",
+    "n. 北方"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "along",
+   "phonetic": "/ə'lɒŋ/",
+   "meanings": [
+    "prep. 沿着"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "turn",
+   "phonetic": "/tɜ:(r)n/",
+   "meanings": [
+    "v. 转向",
+    "v. 翻"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "left",
+   "phonetic": "/left/",
+   "meanings": [
+    "adv.&n. 向左边",
+    "adv.&n. 左边"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "turn right",
+   "phonetic": "/left向右/",
+   "meanings": [
+    "左转"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "crossing",
+   "phonetic": "/'krɒsɪŋ/",
+   "meanings": [
+    "n. 十字路口"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "neighborhood",
+   "phonetic": "/'neɪbə(r)hʊd/",
+   "meanings": [
+    "n. 街区",
+    "n. 街坊"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "spend",
+   "phonetic": "/spend/",
+   "meanings": [
+    "v. 花(时间、钱等)"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "climb",
+   "phonetic": "/klaɪm/",
+   "meanings": [
+    "v. 爬"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "road",
+   "phonetic": "/rəʊd/",
+   "meanings": [
+    "n. 路"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "often",
+   "phonetic": "/'ɒfn/",
+   "meanings": [
+    "adv. 时常",
+    "adv. 常常"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "air",
+   "phonetic": "/eə/",
+   "meanings": [
+    "n. 空气"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "sunshine",
+   "phonetic": "/'sʌnʃaɪn/",
+   "meanings": [
+    "n. 阳光"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "enjoy",
+   "phonetic": "/ɪn'dʒɔɪ/",
+   "meanings": [
+    "v. 享受",
+    "v. 喜爱"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "easily",
+   "phonetic": "/'i:zəli/",
+   "meanings": [
+    "adv. 容易地"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "money",
+   "phonetic": "/'mʌni/",
+   "meanings": [
+    "n. 钱"
+   ],
+   "unit": "Unit 8"
+  },
+  {
+   "word": "curly",
+   "phonetic": "/'kɜ:(r)li/",
+   "meanings": [
+    "adj. 卷曲的"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "straight",
+   "phonetic": "/streɪt/",
+   "meanings": [
+    "adj. 直的"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "tall",
+   "phonetic": "/tɔ:l/",
+   "meanings": [
+    "adj. 高的"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "medium",
+   "phonetic": "/'mi:diəm/",
+   "meanings": [
+    "adj. 中等的"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "height",
+   "phonetic": "/haɪt/",
+   "meanings": [
+    "n. 身高",
+    "n. 高度"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "thin",
+   "phonetic": "/θɪn/",
+   "meanings": [
+    "adj. 瘦的"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "heavy",
+   "phonetic": "/'hevi/",
+   "meanings": [
+    "adj. 重的"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "build",
+   "phonetic": "/bɪld/",
+   "meanings": [
+    "n. 身材"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "tonight",
+   "phonetic": "/tə'naɪt/",
+   "meanings": [
+    "adv.&n. (在)今晚",
+    "adv.&n. (在)今夜"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "little",
+   "phonetic": "/'lɪtl/",
+   "meanings": [
+    "adj. 小的"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "cinema",
+   "phonetic": "/'sɪnəmə/",
+   "meanings": [
+    "n. 电影院"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "glasses",
+   "phonetic": "/'glɑ:sɪz/",
+   "meanings": [
+    "n. (pl.)眼睛"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "later",
+   "phonetic": "/'leɪtə(r)/",
+   "meanings": [
+    "adv. 以后"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "handsome",
+   "phonetic": "/'hænsəm/",
+   "meanings": [
+    "adj. 英俊的"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "actor",
+   "phonetic": "/'æktə(r)/",
+   "meanings": [
+    "n. 演员"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "actress",
+   "phonetic": "/'æktrəs/",
+   "meanings": [
+    "n. 女演员"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "person",
+   "phonetic": "/'pɜ:(r)sn/",
+   "meanings": [
+    "n. 人"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "nose",
+   "phonetic": "/nəʊz/",
+   "meanings": [
+    "n. 鼻 子"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "blonde",
+   "phonetic": "/blɒnd/",
+   "meanings": [
+    "adj. 金黄色的"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "mouth",
+   "phonetic": "/maʊθ/",
+   "meanings": [
+    "n. 嘴"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "round",
+   "phonetic": "/raʊnd/",
+   "meanings": [
+    "adj. 圆形的"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "face",
+   "phonetic": "/feɪs/",
+   "meanings": [
+    "n. 脸"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "eye",
+   "phonetic": "/aɪ/",
+   "meanings": [
+    "n. 眼睛"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "singer",
+   "phonetic": "/'sɪŋə(r)/",
+   "meanings": [
+    "n. 歌手"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "artist",
+   "phonetic": "/'ɑ:(r)tɪst/",
+   "meanings": [
+    "n. 艺术家"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "crime",
+   "phonetic": "/kraɪm/",
+   "meanings": [
+    "n. 犯罪活动"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "criminal",
+   "phonetic": "/'krɪmɪnl/",
+   "meanings": [
+    "n. 罪犯"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "put",
+   "phonetic": "/pʊt/",
+   "meanings": [
+    "v. 放"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "each",
+   "phonetic": "/i:tʃ/",
+   "meanings": [
+    "adj.&pron. 每个",
+    "adj.&pron. 各自"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "way",
+   "phonetic": "/weɪ/",
+   "meanings": [
+    "n. 方式",
+    "n. 路 线"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "describe",
+   "phonetic": "/dɪ'skraɪb/",
+   "meanings": [
+    "v. 描述"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "differently",
+   "phonetic": "/'dɪfərəntli/",
+   "meanings": [
+    "adv. 不同地"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "another",
+   "phonetic": "/ə'nʌðə(r)/",
+   "meanings": [
+    "adj.&pron. 另一",
+    "adj.&pron. 又一"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "end",
+   "phonetic": "/end/",
+   "meanings": [
+    "n. 结尾",
+    "n. 尽头"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "real",
+   "phonetic": "/rɪəl/",
+   "meanings": [
+    "adj. 真正的",
+    "adj. 真实的"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "jeans",
+   "phonetic": "/dʒi:nz/",
+   "meanings": [
+    "n. 牛仔裤"
+   ],
+   "unit": "Unit 9"
+  },
+  {
+   "word": "noodle",
+   "phonetic": "/'nu:dl/",
+   "meanings": [
+    "n. 面条"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "mutton",
+   "phonetic": "/'mʌtn/",
+   "meanings": [
+    "n. 羊肉"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "beef",
+   "phonetic": "/bi:f/",
+   "meanings": [
+    "n. 牛 肉"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "cabbage",
+   "phonetic": "/'kæbɪdʒ/",
+   "meanings": [
+    "n. 卷心菜",
+    "n. 洋白菜"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "potato",
+   "phonetic": "/pə'teɪtəʊ/",
+   "meanings": [
+    "n. 土豆",
+    "n. 马铃薯"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "special",
+   "phonetic": "/'speʃəl/",
+   "meanings": [
+    "n. 特色菜",
+    "n. 特价品"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "would",
+   "phonetic": "/wʊd/",
+   "meanings": [
+    "modal v. (表示意愿)愿意"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "yet",
+   "phonetic": "/jet/",
+   "meanings": [
+    "adv. (常用于否定句或疑问句)还",
+    "adv. 仍然"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "large",
+   "phonetic": "/lɑ:(r)dʒ/",
+   "meanings": [
+    "adj. 大号的",
+    "adj. 大的"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "order",
+   "phonetic": "/'ɔ:(r)də(r)/",
+   "meanings": [
+    "n.&v. 点菜",
+    "n.&v. 命令"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "size",
+   "phonetic": "/saɪz/",
+   "meanings": [
+    "n. 大小",
+    "n. 尺码"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "bowl",
+   "phonetic": "/bəʊl/",
+   "meanings": [
+    "n. 碗"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "tofu",
+   "phonetic": "/'təʊfu:/",
+   "meanings": [
+    "n. 豆腐"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "meat",
+   "phonetic": "/mi:t/",
+   "meanings": [
+    "n. (可食用的)肉"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "dumpling",
+   "phonetic": "/'dʌmplɪŋ/",
+   "meanings": [
+    "n. 饺子"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "porridge",
+   "phonetic": "/'pɒrɪdʒ/",
+   "meanings": [
+    "n. 粥",
+    "n. 面糊"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "onion",
+   "phonetic": "/'ʌnjən/",
+   "meanings": [
+    "n. 洋葱"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "fish",
+   "phonetic": "/fɪʃ/",
+   "meanings": [
+    "n. 鱼",
+    "n. 鱼肉"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "pancake",
+   "phonetic": "/'pænkeɪk/",
+   "meanings": [
+    "n. 烙饼",
+    "n. 薄饼"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "world",
+   "phonetic": "/wɜ:(r)ld/",
+   "meanings": [
+    "n. 世界"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "answer",
+   "phonetic": "/'ɑ:nsə/",
+   "meanings": [
+    "n. 答案",
+    "n. v.回答"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "different",
+   "phonetic": "/'dɪfərənt/",
+   "meanings": [
+    "adj. 不同的"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "cake",
+   "phonetic": "/keɪk/",
+   "meanings": [
+    "n. 蛋糕"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "candle",
+   "phonetic": "/'kændl/",
+   "meanings": [
+    "n. 蜡烛"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "age",
+   "phonetic": "/eɪdʒ/",
+   "meanings": [
+    "n. 年龄"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "blow",
+   "phonetic": "/bləʊ/",
+   "meanings": [
+    "v. 吹"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "if",
+   "phonetic": "/ɪf/",
+   "meanings": [
+    "conj. 如果",
+    "conj. 是否"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "will",
+   "phonetic": "/wɪl/",
+   "meanings": [
+    "v. 将要",
+    "v. 会"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "the UK",
+   "phonetic": "/ju:'keɪ/",
+   "meanings": [
+    "（\\=the United Kingdom） n.英国"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "candy",
+   "phonetic": "/'kændi/",
+   "meanings": [
+    "n. 糖果"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "lucky",
+   "phonetic": "/'lʌki/",
+   "meanings": [
+    "adj. 幸运的"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "idea",
+   "phonetic": "/aɪ'dɪə/",
+   "meanings": [
+    "n. 想法",
+    "n. 主意"
+   ],
+   "unit": "Unit 10"
+  },
+  {
+   "word": "cow",
+   "phonetic": "/kaʊ/",
+   "meanings": [
+    "n. 奶牛"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "horse",
+   "phonetic": "/hɔ:(r)s/",
+   "meanings": [
+    "n. 马"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "feed",
+   "phonetic": "/fi:d/",
+   "meanings": [
+    ")喂养",
+    "饲养"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "farmer",
+   "phonetic": "/'fɑ:(r)mə(r)/",
+   "meanings": [
+    "n. 农民",
+    "n. 农场主"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "quite",
+   "phonetic": "/kwaɪt/",
+   "meanings": [
+    "adv. 相当",
+    "adv. 完全"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "anything",
+   "phonetic": "/'enɪθɪŋ/",
+   "meanings": [
+    "pron. (常用于否定句或疑问句)任何东西",
+    "pron. 任何事物"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "grow",
+   "phonetic": "/grəʊ/",
+   "meanings": [
+    ")种植",
+    "生长"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "farm",
+   "phonetic": "/fɑ:(r)m/",
+   "meanings": [
+    "n. 农场",
+    "n. v.务农"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "pick",
+   "phonetic": "/pɪk/",
+   "meanings": [
+    "v. 采",
+    "v. 摘"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "excellent",
+   "phonetic": "/'eksələnt/",
+   "meanings": [
+    "adj. 极好的",
+    "adj. 优秀的"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "countryside",
+   "phonetic": "/'kʌntrisaɪd/",
+   "meanings": [
+    "n. 乡村",
+    "n. 农村"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "yesterday",
+   "phonetic": "/'jestə(r)di/",
+   "meanings": [
+    "adv. 昨天"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "flower",
+   "phonetic": "/'flaʊə(r)/",
+   "meanings": [
+    "n. 花"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "worry",
+   "phonetic": "/'wʌri/",
+   "meanings": [
+    "v.&n. 担心",
+    "v.&n. 担忧"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "luckily",
+   "phonetic": "/'lʌkɪli/",
+   "meanings": [
+    "adv. 幸运地",
+    "adv. 好运地"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "sun",
+   "phonetic": "/sʌn/",
+   "meanings": [
+    "n. 太阳"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "museum",
+   "phonetic": "/mju:'ziəm/",
+   "meanings": [
+    "n. 博物馆"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "fire",
+   "phonetic": "/'faɪə(r)/",
+   "meanings": [
+    "n. 火",
+    "n. 火灾"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "painting",
+   "phonetic": "/'peɪntɪŋ/",
+   "meanings": [
+    "n. 油画",
+    "n. 绘画"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "exciting",
+   "phonetic": "/ɪk'saɪtɪŋ/",
+   "meanings": [
+    "adj. 使人兴奋的",
+    "adj. 令人激动的"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "lovely",
+   "phonetic": "/'lʌvli/",
+   "meanings": [
+    "adj. 可爱的"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "expensive",
+   "phonetic": "/ɪk'spensɪv/",
+   "meanings": [
+    "adj. 昂贵的"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "cheap",
+   "phonetic": "/tʃi:p/",
+   "meanings": [
+    "adj. 廉价的",
+    "adj. 便宜的"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "slow",
+   "phonetic": "/sləʊ/",
+   "meanings": [
+    "adj. 缓慢的",
+    "adj. 迟缓的"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "fast",
+   "phonetic": "/fɑ:st/",
+   "meanings": [
+    "adv.&adj. 快地(的)"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "robot",
+   "phonetic": "/'rəʊbɒt/",
+   "meanings": [
+    "n. 机器人"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "guide",
+   "phonetic": "/gaɪd/",
+   "meanings": [
+    "n. 导游",
+    "n. 向导"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "gift",
+   "phonetic": "/gɪft/",
+   "meanings": [
+    "n. 礼物",
+    "n. 赠品"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "everything",
+   "phonetic": "/'evriθɪŋ/",
+   "meanings": [
+    "pron. 所有事物",
+    "pron. 一切"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "interested",
+   "phonetic": "/'ɪntrəstɪd/",
+   "meanings": [
+    "adj. 感兴趣的"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "dark",
+   "phonetic": "/dɑ:(r)k/",
+   "meanings": [
+    "adj. 黑暗的",
+    "adj. 昏暗的"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "hear",
+   "phonetic": "/hɪə/",
+   "meanings": [
+    ")听到",
+    "听见"
+   ],
+   "unit": "Unit 11"
+  },
+  {
+   "word": "camp",
+   "phonetic": "/kæmp/",
+   "meanings": [
+    "v. 扎营",
+    "v. 搭帐篷"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "lake",
+   "phonetic": "/leɪk/",
+   "meanings": [
+    "n. 湖",
+    "n. 湖泊"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "beach",
+   "phonetic": "/bi:tʃ/",
+   "meanings": [
+    "n. 海滩",
+    "n. 沙滩"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "badminton",
+   "phonetic": "/'bædmɪntən/",
+   "meanings": [
+    "n. 羽毛球运动"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "sheep",
+   "phonetic": "/ʃi:p/",
+   "meanings": [
+    "n. 羊",
+    "n. 绵羊"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "as",
+   "phonetic": "/æz, əz/",
+   "meanings": [
+    "prep.&adv. 作为",
+    "prep.&adv. 当作"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "natural",
+   "phonetic": "/'nætʃərəl/",
+   "meanings": [
+    "adj. 自然的"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "butterfly",
+   "phonetic": "/'bʌtə(r)flaɪ/",
+   "meanings": [
+    "n. 蝴蝶"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "visitor",
+   "phonetic": "/'vɪzɪtə(r)/",
+   "meanings": [
+    "n. 游客",
+    "n. 访问者"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "tired",
+   "phonetic": "/taɪə(r)d/",
+   "meanings": [
+    "adj. 疲倦的",
+    "adj. 疲劳的"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "stay",
+   "phonetic": "/steɪ/",
+   "meanings": [
+    "v. 停留",
+    "v. 待"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "away",
+   "phonetic": "/ə'weɪ/",
+   "meanings": [
+    "adv. 离开",
+    "adv. 远离"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "mouse",
+   "phonetic": "/maʊs/",
+   "meanings": [
+    ")老鼠",
+    "耗子"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "baby",
+   "phonetic": "/'beɪbi/",
+   "meanings": [
+    "adj. 幼小的",
+    "adj. n.婴儿"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "shout",
+   "phonetic": "/ʃaʊt/",
+   "meanings": [
+    "v. 呼叫",
+    "v. 喊叫"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "woof",
+   "phonetic": "/wʊf/",
+   "meanings": [
+    "int. (狗叫声)汪汪"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "language",
+   "phonetic": "/'læŋgwɪdʒ/",
+   "meanings": [
+    "n. 语言"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "fly",
+   "phonetic": "/flaɪ/",
+   "meanings": [
+    ")飞"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "kite",
+   "phonetic": "/kaɪt/",
+   "meanings": [
+    "n. 风筝"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "high",
+   "phonetic": "/haɪ/",
+   "meanings": [
+    "adj.&adv. 高的(地)"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "ago",
+   "phonetic": "/ə'gəʊ/",
+   "meanings": [
+    "adv. 以前"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "India",
+   "phonetic": "/'ɪndiə/",
+   "meanings": [
+    "n. 印度"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "tent",
+   "phonetic": "/tent/",
+   "meanings": [
+    "n. 帐篷"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "moon",
+   "phonetic": "/mu:n/",
+   "meanings": [
+    "n. 月亮"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "surprise",
+   "phonetic": "/sə(r)'praɪz/",
+   "meanings": [
+    "n. 惊奇",
+    "n. 惊讶"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "snake",
+   "phonetic": "/sneɪk/",
+   "meanings": [
+    "n. 蛇"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "scared",
+   "phonetic": "/skeəd/",
+   "meanings": [
+    "adj. 惊慌的",
+    "adj. 吓坏了的"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "move",
+   "phonetic": "/mu:v/",
+   "meanings": [
+    "v. 移动"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "start",
+   "phonetic": "/stɑ:(r)t/",
+   "meanings": [
+    "v. 开始",
+    "v. 着手"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "jump",
+   "phonetic": "/dʒʌmp/",
+   "meanings": [
+    "v. 跳",
+    "v. 跃"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "wake",
+   "phonetic": "/weɪk/",
+   "meanings": [
+    ")弄醒",
+    "醒"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "into",
+   "phonetic": "/'ɪntu:/",
+   "meanings": [
+    "prep. 到……里面",
+    "prep. 进入"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "forest",
+   "phonetic": "/'fɒrɪst/",
+   "meanings": [
+    "n. 森林"
+   ],
+   "unit": "Unit 12"
+  },
+  {
+   "word": "ear",
+   "phonetic": "/ɪə/",
+   "meanings": [
+    "n. 耳朵"
+   ],
+   "unit": "Unit 12"
+  }
+ ]
+}

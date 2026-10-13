@@ -1,0 +1,54 @@
+{
+ "model": "qwen-plus",
+ "kb": 38,
+ "problems": [
+  {
+   "severity": "P0",
+   "where": "server/internal/scheduler/scheduler.go:MarkPlacement",
+   "problem": "MarkPlacement 中对 StatusMastered → StatusNew 的回退未加守卫：若该卡已是 Learning/Graduated 状态，取消勾选仍会错误回退为 New（违反语义：mastered 仅由摸底产生，Learning/Graduated 卡不可被摸底覆盖）。",
+   "fix": "将 MarkPlacement 中的回退逻辑改为：仅当 c.Status == StatusMastered 时才允许回退到 StatusNew；其他状态（Learning/Graduated）无论 known[c.WordID] 是否为 false 均保持原状。"
+  },
+  {
+   "severity": "P0",
+   "where": "server/internal/scheduler/scheduler.go:ResetForReplacement",
+   "problem": "ResetForReplacement 作废 scheduled 课后将对应卡片 Status 置为 StatusNew，但未处理已存在 StatusMastered 的卡——这些卡在摸底后本应保留 mastered 状态，却被强制降级为 new，导致摸底结果丢失（与 BUG-5 修复目标直接冲突）。",
+   "fix": "在 ResetForReplacement 的批次卡回退循环中，增加判断：if c.Status == StatusMastered { continue }，跳过 mastered 卡；仅重置 StatusLearning / StatusNew 卡。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/scheduler/scheduler.go:PlanNext",
+   "problem": "PlanNext 在检查 '已有 scheduled 未过期课' 时，仅过滤 Status == LessonScheduledStr，但 ResetForReplacement 将作废课设为 'voided_replacement' —— 此状态课不被拦截，后续 PlanNext 可能因残留 voided_replacement 课而误判为 '已排课'（ErrAlreadyPlanned），导致新课无法生成（尤其在用户快速重摸底+提交 finish 时）。",
+   "fix": "PlanNext 的守卫逻辑应扩展为：if l.Status == LessonScheduledStr || l.Status == \"voided_replacement\"，统一视为需排除的无效 scheduled 状态。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/api/app.go:PlacementSubmit",
+   "problem": "PlacementSubmit 中 ResetForReplacement 和 PlanNext 是顺序执行，但 PlanNext 内部调用 planNext 时仍会遍历全部 lessons（含刚被设为 voided_replacement 的课），而 planNext 的守卫未识别 voided_replacement，导致 PlanNext 可能因旧课残留状态失败（与上一条形成链式故障）。",
+   "fix": "确保 ResetForReplacement 调用后，PlanNext 执行前无竞态；同时按上条修复 PlanNext 守卫逻辑，形成防御闭环。"
+  },
+  {
+   "severity": "P1",
+   "where": "server/internal/scheduler/scheduler.go:MarkPlacement",
+   "problem": "MarkPlacement 对草稿 placementDrafts 的保存发生在 SaveCard 之前，若 SaveCard 失败（如 DB error），草稿已更新但卡片状态未变，造成草稿与实际状态不一致（状态失同步），用户二次进入看到错误勾选状态。",
+   "fix": "将 placementDrafts 更新移至所有 SaveCard 成功之后（即事务末尾），保证草稿仅在状态持久化成功后才更新。"
+  },
+  {
+   "severity": "P2",
+   "where": "web/src/pages/Placement.tsx",
+   "problem": "摸底页无‘全选/取消全选’快捷操作，100词/屏下用户需逐个点击，易误操作（如滑动误触）、效率低、无障碍支持弱（无键盘全选支持）。",
+   "fix": "在每屏顶部增加「全选当前屏」「清空当前屏」按钮，并支持空格键/Enter 键触发；按钮 aria-label 明确作用域（如 '全选第2屏的100个单词'）。"
+  },
+  {
+   "severity": "P2",
+   "where": "server/internal/scheduler/scheduler.go:PlanNext",
+   "problem": "PlanNext 构造批次时，boosted/due/new 三段词均未去重，若某词因异常同时出现在 boosted 和 due 列表（如 BoostFlag=true 且 NextDueAt 过期），会被重复加入 batch，导致同一词在单节课中出现多次（违反 SDD §6.3 '唯一性' 要求）。",
+   "fix": "在 batch 构造各阶段（boosted/due/fresh）插入前，用 map[int64]bool 记录已加入 wordID，跳过重复项。"
+  },
+  {
+   "severity": "P2",
+   "where": "server/internal/scheduler/scheduler.go:MarkPlacement",
+   "problem": "MarkPlacement 对已为 StatusLearning 或 StatusGraduated 的卡不做任何处理，但用户重新摸底时可能期望：已掌握的 Graduated 词应保持 mastered（即 StatusMastered），而非维持 Graduated —— 当前逻辑未提供 graduated → mastered 的升级路径，导致摸底语义覆盖不完整。",
+   "fix": "补充逻辑：若 known[c.WordID] && (c.Status == StatusGraduated || c.Status == StatusLearning)，则 c.Status = StatusMastered（Graduated/Learning 均可被摸底覆盖为 mastered，符合‘最新勾选为准’定案）。"
+  }
+ ]
+}
