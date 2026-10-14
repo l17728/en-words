@@ -5,6 +5,18 @@ import os
 from pathlib import Path
 import sys
 import time
+import importlib
+import inspect
+
+
+def stage(event):
+    print(json.dumps({'event': event, 'monotonic': time.monotonic(), 'pid': os.getpid()}), flush=True)
+
+
+def verify_source(value, expected, module=False):
+    actual = value.__file__ if module else inspect.getfile(value)
+    if Path(actual).resolve() != expected:
+        raise RuntimeError('model_source_contract_failed')
 
 MAX_JSON = 1024 * 1024
 
@@ -51,8 +63,10 @@ def extract_text(raw, warmup=False):
 class Recognizer:
     def __init__(self, config):
         # Imports happen only inside the resource-controlled runtime process.
+        stage('runtime_import_started')
         import torch
         from funasr import AutoModel
+        from funasr.register import tables
         import importlib.metadata
         for package in config['runtime_packages']:
             if importlib.metadata.version(package['name']) != package['version']:
@@ -63,8 +77,21 @@ class Recognizer:
         torch.set_num_threads(2)
         torch.set_num_interop_threads(1)
         sys.path.insert(0, config['source_dir'])
-        self.model = AutoModel(model=config['model_dir'], remote_code=str(Path(config['source_dir']) / 'model.py'),
+        stage('runtime_import_completed')
+        source = (Path(config['source_dir']) / 'model.py').resolve()
+        stage('source_import_started')
+        module = importlib.import_module('model')
+        verify_source(module, source, module=True)
+        verify_source(tables.model_classes['FunASRNano'], source)
+        stage('source_import_verified')
+        stage('automodel_construct_started')
+        self.model = AutoModel(model=config['model_dir'], remote_code=source.as_posix(), ncpu=2,
                                trust_remote_code=True, device='cpu', disable_update=True)
+        verify_source(type(self.model.model), source)
+        self.class_source = str(Path(inspect.getfile(type(self.model.model))).resolve())
+        if torch.get_num_threads() != 2 or torch.get_num_interop_threads() != 1:
+            raise RuntimeError('cpu_thread_contract_failed')
+        stage('automodel_construct_verified')
         self.llm_dtype = self.model.model.llm_dtype
         if self.llm_dtype not in ('fp32', 'fp16', 'bf16'):
             raise RuntimeError('unknown_model_dtype')
