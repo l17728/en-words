@@ -312,7 +312,7 @@ func TestIT04_ClassroomFullFlow(t *testing.T) {
 func TestIT05_VoiceDualChannel(t *testing.T) {
 	app, clk := newTestApp(t)
 	atok, _ := loginGet(t, app, "admin", "adminpw")
-	bid := seedBook(t, app, atok, "v库", "g7", []string{"w1", "w2", "w3", "w4", "w5"})
+	bid := seedBook(t, app, atok, "v库", "g7", []string{"cat", "dog", "owl", "bee", "fox"})
 	_, _ = app.Auth.CreateUser("s5", "pw", "小", auth.RoleStudent)
 	_, uid := loginGet(t, app, "s5", "pw")
 	require.NoError(t, app.EnableBook(uid, bid))
@@ -336,8 +336,8 @@ func TestIT05_VoiceDualChannel(t *testing.T) {
 	cmd, _ = room.HandleVoiceText("我读完了")
 	assert.Equal(t, "", cmd)
 	assert.Equal(t, classroom.PhaseRepeating, room.Machine().Phase(), "没读对不推进")
-	// 读对当前词（w1）→ 判读通过 → 下一词（repeatTimes 默认 1）
-	cmd, _ = room.HandleVoiceText("w1")
+	// 读对真实词 cat；不依赖旧判分器将含数字的 w1 截断成 w。
+	cmd, _ = room.HandleVoiceText("cat")
 	assert.Equal(t, "repeat_read", cmd)
 	assert.Equal(t, classroom.PhaseShowWord, room.Machine().Phase())
 
@@ -353,10 +353,10 @@ func TestIT05_VoiceDualChannel(t *testing.T) {
 
 	// 语音作答（测试阶段转写→判分）：教完剩余词到完整测试（新流程：教完全部词才测）
 	cfg := ttsCfg{en: 3, rp: 3}
-	teachOneRoom(room, cfg) // w2
-	teachOneRoom(room, cfg) // w3
-	teachOneRoom(room, cfg) // w4
-	teachOneRoom(room, cfg) // w5 → final 完整测试
+	teachOneRoom(room, cfg) // dog
+	teachOneRoom(room, cfg) // owl
+	teachOneRoom(room, cfg) // bee
+	teachOneRoom(room, cfg) // fox → final 完整测试
 	require.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase())
 	fc := &fakeClient{}
 	room.Join(fc)

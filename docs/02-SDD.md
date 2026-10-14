@@ -791,7 +791,7 @@ GET  /agent/tools                      # 该 Agent 可见工具清单（给 LLM 
 学生语音作答（wait_answer 相位浏览器自动开麦，zh-CN）→ Web Speech / Omni 转写文本
   → WS voice_text 帧 / REST /voice（同一 HandleVoiceText 管线）
   → 非指令文本 → answer_submitted 进判分管线
-  → Judge 两级判分: L1 归一化关键词匹配（中文同义/英文不区分大小写与冠词）
+  → Judge 两级判分: L1 整体短答与显式同义表（英文保留完整词序，可选冠词及重复；复杂句交L2）
                    L2 智谱 GLM 语义判分（近似/同义表述）
 文本兜底: 测试界面常驻输入框（K3 双通道；E2E/无麦克风环境走 REST 提交）
 ```
@@ -967,3 +967,8 @@ feedbackStore / adminStore —— classroomStore 只由 WS 与本地回执写入
 §14新增`judge_decision`：每次JudgeContext只记录一次source=l1/l2/fallback、result=correct/near/wrong与固定reason。合法模型wrong记model_verdict；非法/缺失枚举返回ErrInvalidJudgment并记invalid_judgment，不能冒充成功模型判断。App钩子读取当前日志器、沿用课堂lesson trace；不记录答案、词面、原始模型回复或底层错误。评分/提示/机会数不变，取消后结果仍由Room代次校验拒绝。具体合同与红绿证据见27。
 
 新增日志 `feedback_quota_checked/boost_pool_updated/feedback_clarification_linked/overdue_replanned/overdue_replan_failed/overdue_conflict` 记录父trace和任务/资源ID；事务内日志标明pending，业务成功以提交凭证和提交后事件为准，不记录正文、记忆内容、token或音频。最新增量最终验收尚未封版，不能沿用历史覆盖率宣称新代码已验收。
+
+
+### 28 语义判分边界增量（实施与验收中）
+
+L1 不再以任意英文 token 或泛编辑距离放行；英文含义与同义词也保留词边界。整体中文义项与显式同义表保留；复杂句、否定、多选及元指令交 L2。仅调整安全判分边界，不改老师 Agent 的课次与两次机会政策。候选提示已冻结但未采纳，须经28的95%/安全误接收0/旧100不退化门。

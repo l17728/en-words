@@ -36,7 +36,7 @@ export async function login(page: Page, username: string) {
 }
 export async function media(page: Page, mode = 'success', duration = 80) {
   await page.addInitScript(({ mode, duration }) => {
-    const state = { spoken: [] as any[], completed: [] as any[], canceled: 0, recognition: null as any, mode }
+    const state = { spoken: [] as any[], utterances: [] as any[], completed: [] as any[], canceled: 0, recognition: null as any, mode }
     ;(window as any).__media = state
     class Utterance { constructor(public text: string) {} }
     const timers = new Set<ReturnType<typeof setTimeout>>()
@@ -44,7 +44,7 @@ export async function media(page: Page, mode = 'success', duration = 80) {
     Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: {
       getVoices: () => state.mode === 'no_voice' ? [] : ['en-US', 'zh-CN'].map(lang => ({ name: `MOCK ${lang}`, lang, localService: true })),
       speak: (u: any) => {
-        state.spoken.push({ text: u.text, lang: u.lang })
+        state.spoken.push({ text: u.text, lang: u.lang }); state.utterances.push(u)
         if (state.mode === 'throw') throw new Error('Fixture synthesis failure')
         if (state.mode === 'timeout' || state.mode === 'hold' || (state.mode === 'hold_second' && state.spoken.length > 1)) return
         u.onstart?.()

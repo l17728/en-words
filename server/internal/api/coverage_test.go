@@ -287,7 +287,7 @@ func TestCov_TicketLifecycle(t *testing.T) {
 func TestCov_RealWSRoundtrip(t *testing.T) {
 	app, clk := newTestApp(t)
 	atok, _ := loginGet(t, app, "admin", "adminpw")
-	bid := seedBook(t, app, atok, "ws库", "g7", []string{"w1", "w2", "w3", "w4", "w5"})
+	bid := seedBook(t, app, atok, "ws库", "g7", []string{"cat", "dog", "owl", "bee", "fox"})
 	_, _ = app.Auth.CreateUser("sws", "pw", "小", auth.RoleStudent)
 	stok, uid := loginGet(t, app, "sws", "pw")
 	require.NoError(t, app.EnableBook(uid, bid))
@@ -326,7 +326,7 @@ func TestCov_RealWSRoundtrip(t *testing.T) {
 	var snap Msg
 	require.NoError(t, conn.ReadJSON(&snap))
 	require.Equal(t, "state_snapshot", snap["type"])
-	assert.Equal(t, "w1", snap["word"])
+	assert.Equal(t, "cat", snap["word"])
 
 	// 心跳
 	require.NoError(t, conn.WriteJSON(Msg{"type": "heartbeat"}))
@@ -360,7 +360,7 @@ func TestCov_RealWSRoundtrip(t *testing.T) {
 	for i := 0; i < 4; i++ {
 		sendFixtureWS(t, conn, &turnContext, Msg{"type": "student_event", "event": "tts_finished"}, "fixture-tts-"+itoa(i))
 	}
-	sendFixtureWS(t, conn, &turnContext, Msg{"type": "voice_text", "text": "w1"}, "fixture-repeat")
+	sendFixtureWS(t, conn, &turnContext, Msg{"type": "voice_text", "text": "cat"}, "fixture-repeat")
 	frames = sendFixtureWS(t, conn, &turnContext, Msg{"type": "voice_text", "text": "下一个"}, "fixture-next")
 
 	found := false

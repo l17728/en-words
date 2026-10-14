@@ -139,7 +139,15 @@ test('first use and complete classroom with MOCK browser speech, report and next
   }
   const lessonPath = new URL(page.url()).pathname
   const taught = []
+  let narrationPass = 0
   const repeatWord = async () => {
+    // Observe each declared media completion, including progress already received.
+    // Four 1600ms segments + configured gaps do not share a single UI wait budget.
+    for (let segment = 1; segment <= 4; segment++) {
+      await expect.poll(() => page.evaluate(() => window.__mockClassroomSpeech.completed.length),
+        { timeout: 15_000 }).toBeGreaterThanOrEqual(narrationPass * 4 + segment)
+    }
+    narrationPass++
     await expect(page.getByText('轮到你读了！大声一点没关系', { exact: true })).toBeVisible()
     await expect.poll(() => page.evaluate(() => window.__mockClassroomSpeech.recognition?.lang)).toBe('en-US')
     const word = await page.getByRole('button', { name: /^(cat|dog)$/ }).textContent()

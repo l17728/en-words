@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "status": "labels_frozen_independent_review_approved_before_inference",
+  "scope": "Known user-confirmed B journey regression; one seen synthetic answer, separate denominator",
+  "cases": [
+    {
+      "case_id": "JB-001",
+      "group": "known_journey",
+      "word": "cat",
+      "standard_meanings": [
+        "猫"
+      ],
+      "student_answer": "这是一只猫。",
+      "expected_accept": true,
+      "allowed_judgments": [
+        "correct",
+        "near"
+      ]
+    }
+  ]
+}

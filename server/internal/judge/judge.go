@@ -112,7 +112,7 @@ func (j *Judge) Level1(word string, meanings []string, text string) Judgment {
 	if ans == "" || isGiveUp(ans) {
 		return JudgmentWrong
 	}
-	// 英文作答：整体或任一 token 等价（去标点分词，token 天然剥离冠词）
+	// 英文短答必须整体匹配，不能仅凭句中出现目标词通过。
 	if enMatch(text, word) {
 		return JudgmentCorrect
 	}
@@ -121,52 +121,77 @@ func (j *Judge) Level1(word string, meanings []string, text string) Judgment {
 			if cand == "" {
 				continue
 			}
-			if ans == cand {
+			if shortAnswerMatch(text, ans, cand) {
 				return JudgmentCorrect
 			}
-			// 同义表（双向）
+			// 显式同义表，不猜测编辑距离相近的词是否同义。
 			for _, s := range j.syn[cand] {
-				if s == ans {
+				if shortAnswerMatch(text, ans, s) {
 					return JudgmentNear // 同义命中=near（IsCorrect 判对，JU-03/JU-05）
 				}
-			}
-			// 编辑距离 ≤1 容错（双方均 ≥2 字防短词误判）
-			if len([]rune(cand)) >= 2 && len([]rune(ans)) >= 2 && editDistanceLE1(ans, cand) {
-				return JudgmentNear
-			}
-			if enMatch(text, cand) {
-				return JudgmentCorrect
 			}
 		}
 	}
 	return JudgmentWrong
 }
 
-// enMatch 英文匹配：任一 token 等价（去冠词后完整 token 比对；R4-backend#5 简化单路径）。
-func enMatch(text, target string) bool {
-	nt := normEn(target)
-	if nt == "" {
-		return false
+// English meanings and synonyms must preserve boundaries too. Chinese
+// normalization must not turn "no where" into the English word "nowhere".
+func shortAnswerMatch(text, normalized, target string) bool {
+	if strings.IndexFunc(target, func(r rune) bool { return unicode.Is(unicode.Latin, r) }) >= 0 {
+		return enMatch(text, target)
 	}
-	for _, tok := range enTokens(text) {
-		tok = strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(tok, "the "), "an "), "a "))
-		if tok == nt {
-			return true
-		}
-	}
-	return false
+	return normalized == target
 }
 
-// enTokens 按非字母切分的英文 token（小写）。
+// enMatch accepts a complete English short answer, including repeated targets.
+// Every word must be accounted for; a target mentioned in a sentence is not proof
+// of its meaning. Complex answers are delegated to L2 (docs/28).
+func enMatch(text, target string) bool {
+	want := enTokens(target)
+	if len(want) > 1 && article(want[0]) {
+		want = want[1:]
+	}
+	got := enTokens(text)
+	if len(want) == 0 || len(got) == 0 {
+		return false
+	}
+	for len(got) > 0 {
+		// Do not discard an article when it is itself the target word.
+		if got[0] != want[0] && article(got[0]) {
+			got = got[1:]
+		}
+		if len(got) < len(want) {
+			return false
+		}
+		for i, token := range want {
+			if got[i] != token {
+				return false
+			}
+		}
+		got = got[len(want):]
+	}
+	return true
+}
+
+func article(s string) bool { return s == "a" || s == "an" || s == "the" }
+
+// enTokens preserves word boundaries and rejects mixed-language/number content
+// instead of silently dropping it before matching an English target.
 func enTokens(s string) []string {
 	var out []string
 	var cur strings.Builder
 	for _, r := range strings.ToLower(s) {
 		if r >= 'a' && r <= 'z' {
 			cur.WriteRune(r)
-		} else if cur.Len() > 0 {
-			out = append(out, cur.String())
-			cur.Reset()
+		} else {
+			if !unicode.IsSpace(r) && !unicode.IsPunct(r) {
+				return nil
+			}
+			if cur.Len() > 0 {
+				out = append(out, cur.String())
+				cur.Reset()
+			}
 		}
 	}
 	if cur.Len() > 0 {
@@ -246,27 +271,6 @@ func normalizeZh(s string) string {
 	return out
 }
 
-// eqEn 英文等价：小写、去冠词/标点/空白。
-func eqEn(a, b string) bool {
-	na := normEn(a)
-	nb := normEn(b)
-	return na != "" && na == nb
-}
-
-func normEn(s string) string {
-	s = strings.ToLower(strings.TrimSpace(s))
-	for _, art := range []string{"an ", "a ", "the "} {
-		s = strings.TrimPrefix(s, art)
-	}
-	var b strings.Builder
-	for _, r := range s {
-		if r >= 'a' && r <= 'z' {
-			b.WriteRune(r)
-		}
-	}
-	return b.String()
-}
-
 // isGiveUp 放弃类回答判错（AI-09：不知道/忘了…）。
 func isGiveUp(s string) bool {
 	giveups := []string{"不知道", "不认识", "不记得", "想不起来", "忘了", "不清楚", "没学过"}
@@ -311,50 +315,4 @@ func stripParen(s string) string {
 		}
 	}
 	return s
-}
-
-// editDistanceLE1 编辑距离 ≤1（仅同长或差 1 的快速路径）。
-func editDistanceLE1(a, b string) bool {
-	ra, rb := []rune(a), []rune(b)
-	if abs(len(ra)-len(rb)) > 1 {
-		return false
-	}
-	if len(ra) == len(rb) {
-		diff := 0
-		for i := range ra {
-			if ra[i] != rb[i] {
-				diff++
-				if diff > 1 {
-					return false
-				}
-			}
-		}
-		return diff <= 1
-	}
-	// 长度差 1：单字符插入/删除
-	long, short := ra, rb
-	if len(short) > len(long) {
-		long, short = short, long
-	}
-	i, j, skipped := 0, 0, false
-	for i < len(long) && j < len(short) {
-		if long[i] == short[j] {
-			i++
-			j++
-			continue
-		}
-		if skipped {
-			return false
-		}
-		skipped = true
-		i++
-	}
-	return true
-}
-
-func abs(n int) int {
-	if n < 0 {
-		return -n
-	}
-	return n
 }

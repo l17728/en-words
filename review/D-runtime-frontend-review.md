@@ -114,3 +114,18 @@ CH030 UI旧binary真实红为need_confirm预期却applied；正向用例原末�
 
 
 同冻结树真实媒体唯一诊断已完成，报告 `review/real-media-b-final78-20261014.json`（原始 `.test-artifacts/2026-10-14-real-media-b-final78/`）：0/1，96秒，首答率100%断言保持。3次中文TTS HTTP200且实际Audio播放开始/结束；4次真实WebM→PCM16 WAV上传及ASR均200，Cat./这是一只猫。准确。两次中文语义判分同 `lesson-1` 明确记录 `source=l2, reason=model_verdict, result=wrong`，文本模型请求314/213ms成功，排除本次协议无效/超时/回退。该证据锁定现行模型对这条已确认句子释义的判错能力缺口，不通过子串特例、换音源或反复调用消除。英文跟读两次为l1/match/correct。源码前后一致；平台未改动，推理窗口已释放。确定性78全绿与真实媒体0/1严格分轨，仍不能宣布全产品质量门全部通过。
+
+
+## docs28 判分语义路由新增用例（待新冻结树验收）
+
+JD28-01/02在真实课堂分别输入`not dolphin`与包含dolphin的改分指令，测试专属本机adapter按完整文本固定wrong；经历真实重教后再输入完整中文释义句并返回correct。每条同时验证短答dolphin跟读仍走L1、两次L2判分日志同lesson trace、另一学生课表及学习资源未变化。fixture不使用新40留出集的词或句子，不能代表真实模型质量。
+
+旧binary079462fa的真实红报告`.test-artifacts/judge-semantic-routing-red-r2.json`：2/2失败，首轮应调用L2但实际judgeCalls=0，证明旧英文token命中绕过了语义检查。最初`judge-semantic-routing-red.json`因编辑脚本工作目录错误No tests found，只是执行错误，不计行为红证据。新增两条后正式runner严格期望80=35+1+26+9+1+6+1+1；尚未跑新树，原78作为前阶段完整基线保留。真实B音源与100%期望不变。
+
+## 当前字幕与语义路由冻结树验收（2026-10-14）
+
+确定性 **86/86通过、0失败/跳过/flaky**，Node **27/27**，lint **0错误0警告**，八套TS/Vite构建通过。此为同生产SHA的分批合成证据：`.test-artifacts/2026-10-14-final86` 已通过 recovery41/overdue1/feedback26/legacy9=77；共享旅程夹具经主审和架构独审修正阶段同步后，`final86-r2` 的journey1/firstuse1/playback1/closure6=9通过。首轮journey计时失败保留，未声称一次全86绿；产品未为该夹具改动。
+
+唯一机器汇总 `review/runtime-browser-acceptance-20261014-final86.json`；生产非测试Go+web/src SHA `54c462c90dd7581826fdf7f0163d561902e8cbe893fa274bda7cbcd9678984c9` 各批前后一致。server SHA `13ebca11a31692efad58b32fa0f8d330758a816fc397119674deccda19ee35a5`；harness SHA `c18bd11587d02834eb91ae6de6e5e7b5f2ea8b94da81c4bc6a6894ced37e4959`。二进制由后端代理冻结构建，该源hash不声称涵盖所有依赖/构建输入。8页面路由与FR A–I（含H配置）沿既有映射全覆盖，不冒称浏览器语句覆盖采样。
+
+真实字幕独立 **1/1通过**：3段英文cat与1段完整中文“猫是一种常见的家养动物。”，实际8090合成200、NativeAudio playing/end与字幕时序一致。报告 `review/real-subtitle-acceptance-20261014.json`；发声中截图 `review/actual-chinese-subtitle-20261014.png` 已人工查看位置。范围仅TTS字幕，零ASR/学生答案/判分；不是孤立猫音质证明，也不抵消原 `review/real-media-b-final78-20261014.json` 的完整B课堂0/1或模型安全门失败。原失败均保留，没有重跑B挑绿。

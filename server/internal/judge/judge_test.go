@@ -66,12 +66,20 @@ func TestMeaningParsing(t *testing.T) {
 	assert.Equal(t, JudgmentCorrect, j.Level1("address", []string{"n. 地址"}, "地址"))
 	// 多义项 "v.&n. 放弃；抛弃" → 候选 {放弃,抛弃}
 	assert.Equal(t, JudgmentCorrect, j.Level1("abandon", []string{"v.&n. 放弃；抛弃"}, "放弃"))
-	assert.Equal(t, JudgmentNear, j.Level1("abandon", []string{"v.&n. 放弃；抛弃"}, "抛弃2"), "编辑距离容错≤1")
+	assert.Equal(t, JudgmentWrong, j.Level1("abandon", []string{"v.&n. 放弃；抛弃"}, "抛弃2"), "额外字符不得由编辑距离直接接受")
+	llm := &fakeLLM{ret: "near"}
+	j.LLM = llm
+	assert.Equal(t, JudgmentNear, j.Judge("abandon", []string{"v.&n. 放弃；抛弃"}, "抛弃2"))
+	assert.Equal(t, 1, llm.called, "容错解释交L2，而不是删除容错场景")
 }
 
 // ---- Level2：LLM 兜底仅未命中时调用 ----
 
-type fakeLLM struct{ called int; ret string; err error }
+type fakeLLM struct {
+	called int
+	ret    string
+	err    error
+}
 
 func (f *fakeLLM) Judge(word string, meanings []string, text string) (string, error) {
 	f.called++

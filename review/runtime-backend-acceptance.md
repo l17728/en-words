@@ -102,3 +102,15 @@ docs/26 的数量源约束和 docs/27 的判分来源日志经架构独立实际
 浏览器使用独立新产物，旧红例二进制保留：`feedback-acceptance-quantity-server.exe` SHA256 `079462FAAAD05A61B92AC2D466A3B138039A7FF88CD2F1C584FB513E25E289D1`，`browser-overdue-quantity-harness.exe` SHA256 `4A2C81DA9791EFCCFA18FA5285F8AD6FC91CBA66F42B9CEC2730E2454D496857`（均在`.test-artifacts/`）。浏览器、真实模型质量和人工音频结论仍分别验收，Go通过不代表模型语义门通过。
 
 候选工具生命周期最后加固后，统一执行`python -m unittest discover -s review -p test_*.py -v`，19/19通过（11.366秒）：候选代理5、生命周期4、ASR对照4、语音评分6。日志`.test-artifacts/review-python-final-r6.txt`。仅隔离loopback假上游与短寿命启动器，不调用共享模型、不下载资源。生命周期加固测试是当前行为验证；同型旧capture也能通过，因此不能声称已证实真实pending的唯一根因，真实恢复仍以独立后验身份/健康证据判断。
+
+## 整体短答语义边界后的最终 Go 验收（r8）
+
+docs/28收紧L1并新增生产同轨judge-eval工具后，r7完整运行暴露两条旧API夹具使用`w1`当英文跟读，依赖旧判分删除数字再匹配的行为。失败报告`final-runtime-coverage-r7-summary.json`完整保留：失败为TestCov_RealWSRoundtrip、TestIT05_VoiceDualChannel；不是网络随机失败。经主审批准，仅这两例词库和当前词断言改为真实cat/dog/owl/bee/fox，原WS、指令、阶段断言保留，定向3.312秒通过。产品数字边界未放宽。
+
+r8全量覆盖率/vet149.22秒通过；完整race255.83秒通过。两轮20个测试包通过（新增cmd/judge-eval，cmd/server无测试），463顶层=456通过+7显式跳过，943含子用例=936通过+7跳过，0失败/无数据竞态。证据`server/.test-artifacts/final-runtime-{coverage,race}-r8-summary.json`及JSONL/profile/vet文件。冻结源码SHA `a1072bcbad3dfc55332df0958527a43cf055e4b35313547d015a41ca9a9947ce`两轮一致且执行前后未变。
+
+覆盖率与r6各模块一致，仅judge因删除危险泛编辑距离、加入完整短答边界变为120/122=98.36%；API3167/3926=80.67%、feedback417/440=94.77%、classroom91.30%、scheduler90.21%，其余核心全部≥80%。七项opt-in跳过及理由不变，不计作通过。便携clang/CGO、低并发参数同r6，无真实模型与race并发。
+
+新产品二进制`.test-artifacts/feedback-acceptance-semantic-server.exe` SHA `13EBCA11A31692EFAD58B32FA0F8D330758A816FC397119674DECCDA19EE35A5`；harness `browser-overdue-semantic-harness.exe` SHA `C18BD11587D02834EB91AE6DE6E5E7B5F2EA8B94DA81C4BC6A6894CED37E4959`，交浏览器代理单独验收。两个旧Go测试数据随后修正不改变这些产物实际运行的生产/harness入口。
+
+模型结果仍单独分账：六组真实语义对照见`judge-semantic-evaluation-20261014/README.md`；候选新40虽97.5%但误接收2，故不采纳，生产SystemPrompt未替换。r8绿仅证明代码与确定性合同，不声明模型语义质量已过门。

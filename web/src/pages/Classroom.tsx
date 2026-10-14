@@ -5,6 +5,7 @@ import type { InputRef } from 'antd'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api, ApiError, type FeedbackRecord } from '../api/client'
 import { ClassroomWS, type Frame, type TurnContext } from '../ws/client'
+import { PlaybackCaption, shouldCancelPlaybackPhase } from '../audio/caption'
 import { capabilities, recordLocal, playLocalChinese, type Capabilities } from '../audio/local'
 import { useAuthStore } from '../stores/auth'
 import { useFeedback } from '../feedback/useFeedback'
@@ -92,6 +93,9 @@ export default function ClassroomPage() {
   const localAudioRef = useRef<AbortController | null>(null)
   const localRecordingRef = useRef<AbortController | null>(null)
   const [speechError, setSpeechError] = useState('')
+  const [captionText, setCaptionText] = useState('')
+  const captionRef = useRef<PlaybackCaption | null>(null)
+  if (!captionRef.current) captionRef.current = new PlaybackCaption(setCaptionText)
   const [connectionError, setConnectionError] = useState<{ message: string; retryable: boolean } | null>(null)
   useEffect(() => {
     let disposed = false
@@ -161,6 +165,7 @@ export default function ClassroomPage() {
   const ttsDelayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const cancelTts = useCallback(() => {
     ttsEpochRef.current++
+    captionRef.current?.reset()
     localAudioRef.current?.abort()
     ttsQueueRef.current = []
     ttsBusyRef.current = false
@@ -190,6 +195,10 @@ export default function ClassroomPage() {
       return
     }
     let fired = false
+    let captionLease = captionRef.current!.begin()
+    const started = () => {
+      if (!fired && epoch === ttsEpochRef.current) captionRef.current?.show(captionLease, next.text)
+    }
     const dbg: TtsDebugEntry = { textLength: next.text.length, lang: next.lang, voice: null,
       local: null, startMs: null, status: 'pending' }
     const w = window as typeof window & { __ttsDebug?: TtsDebugEntry[] }
@@ -197,6 +206,7 @@ export default function ClassroomPage() {
     const complete = (failure?: string) => {
       if (fired || epoch !== ttsEpochRef.current) return
       fired = true
+      captionRef.current?.clear(captionLease)
       if (ttsTimerRef.current) clearTimeout(ttsTimerRef.current)
       ttsTimerRef.current = null
       ttsBusyRef.current = false
@@ -235,7 +245,7 @@ export default function ClassroomPage() {
       // 可观测探针：记录本段 voice 决策（onstart 后补记实际发声时刻）
       dbg.voice = v.name; dbg.local = v.localService
       const t0 = performance.now()
-      u.onstart = () => { if (!fired && epoch === ttsEpochRef.current) { dbg.startMs = Math.round(performance.now() - t0); dbg.status = 'started' } }
+      u.onstart = () => { if (!fired && epoch === ttsEpochRef.current) { dbg.startMs = Math.round(performance.now() - t0); dbg.status = 'started'; started() } }
       u.onend = once
       u.onerror = () => complete('engine_error')
       window.speechSynthesis.speak(u)
@@ -249,8 +259,10 @@ export default function ClassroomPage() {
     if (next.lang === 'zh-CN' && providersRef.current?.tts_zh) {
       const controller = new AbortController()
       localAudioRef.current = controller
-      playLocalChinese(next.text, controller.signal, lessonId).then(once).catch(() => {
-        if (controller.signal.aborted) return
+      playLocalChinese(next.text, controller.signal, lessonId, started).then(once).catch(() => {
+        if (controller.signal.aborted || fired || epoch !== ttsEpochRef.current) return
+        captionRef.current?.clear(captionLease)
+        captionLease = captionRef.current!.begin()
         setSpeechError('本机中文朗读暂不可用，已尝试浏览器语音。')
         browserSpeak()
       })
@@ -336,9 +348,9 @@ export default function ClassroomPage() {
         (f.type === 'phase_changed' && inputGate.current.ready && f.phase !== inputGate.current.ready.phase) ||
         ['session_timeout', 'classroom_error', 'lesson_summary'].includes(f.type) ||
         (f.type === 'ui_action' && ['show_word', 'play_tts', 'lesson_paused', 'lesson_summary'].includes(f.action?.type))) revokeInput()
-      if ((f.type === 'state_snapshot' && f.paused) || f.type === 'session_timeout' ||
+      if ((f.type === 'state_snapshot' && shouldCancelPlaybackPhase(f.phase, !!f.paused)) || f.type === 'session_timeout' ||
         f.type === 'lesson_summary' ||
-        (f.type === 'phase_changed' && !['tts_seg', 'reteach_show'].includes(f.phase)) ||
+        (f.type === 'phase_changed' && shouldCancelPlaybackPhase(f.phase)) ||
         (f.type === 'ui_action' && ['show_word', 'start_repeat', 'show_quiz_item', 'lesson_summary', 'lesson_paused'].includes(f.action?.type))) {
         cancelTts()
       }
@@ -770,6 +782,13 @@ export default function ClassroomPage() {
                 看中文意思回忆一下
               </Typography.Text>
             )}
+
+            <div role="status" aria-label="当前朗读字幕" aria-live="polite" aria-atomic="true"
+              style={{ minHeight: 56, width: '100%', maxWidth: 640, boxSizing: 'border-box',
+                padding: '8px 16px', textAlign: 'center', overflowWrap: 'anywhere', whiteSpace: 'pre-wrap',
+                color: '#334155', fontSize: 22, lineHeight: 1.5 }}>
+              {captionText && <><span style={{ display: 'block', fontSize: 13, color: '#64748B' }}>正在朗读</span><span>{captionText}</span></>}
+            </div>
 
             {/* 老师气泡（内容来自 ui_action.say，无硬编码前缀；R4-fe#4） */}
             {bubble && (

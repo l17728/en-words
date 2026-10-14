@@ -34,10 +34,12 @@ e2e/smoke.spec.ts      # Playwright 无头冒烟（docs/08）
 
 ## 完整隔离验收
 
-在仓库根目录使用 `python review/run_browser_acceptance.py --server <后端绝对路径> --harness <Go测试harness绝对路径>`；8套无头Playwright配置覆盖73条，另跑Node11与lint，配置各自执行TypeScript/Vite构建。完整构建命令、端口/DB隔离和真实媒体显式`--media`规则见 [docs17](../docs/17-E2E迁移与恢复验收设计.md)。所有输出保存在新建`.test-artifacts/browser-*`，失败不覆盖历史记录。
+先按 [docs17](../docs/17-E2E迁移与恢复验收设计.md) 构建server与测试harness，再在仓库根执行：
 
+```powershell
+python review/run_browser_acceptance.py --server <absolute-server.exe> --harness <absolute-harness.exe> --output <new-report-directory>
+```
 
-当前完整验收入口（75 E2E / Node17）：先按docs17构建server与测试harness，再从仓库根执行`python review/run_browser_acceptance.py --server <absolute-server.exe> --harness <absolute-harness.exe> --output <new-report-directory>`。默认只跑隔离确定性后端；真实平台另显式`--media`并指定已人工确认的`--chinese-audio`，严禁把旧未确认音源当模型质量基准。
+入口串行运行8套隔离无头配置，严格核验86 E2E、27 Node、lint及各套TypeScript/Vite构建；默认不访问共享模型。当前同生产树86条分批全部通过（首批77+修正旅程夹具后9），Node27、lint0警告；首批计时失败保留。证据见 `../review/runtime-browser-acceptance-20261014-final86.json`，不宣称单次全绿。
 
-
-当前冻结树验收：78 E2E + 17 Node 用例、lint 0 警告、8 套构建通过。证据见 `../review/runtime-browser-acceptance-20261014-final78.json`；真实模型媒体另轨，不纳入78。
+实际TTS字幕另轨1/1通过，见 `../review/real-subtitle-acceptance-20261014.json`；复现需绝对路径`E2E_SERVER_BINARY`与协调8090空闲窗口后运行 `npx playwright test --config=playwright.subtitle-real.config.ts`。该项仅英3段/中文完整句1段播放字幕，无ASR/判分。原B完整课堂真实模型失败仍单列；`--media`不得隐式开启或用mock结果代替真实质量。

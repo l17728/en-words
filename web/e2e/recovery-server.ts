@@ -55,6 +55,11 @@ export const test = base.extend<{ localModel: boolean; modelSchema: string; over
           model.judgeCalls++
           answer = model.judgeCalls === 1 ? { judgment: 'wrong' } : { judgment: 'not-a-verdict' }
         }
+        if (modelSchema === 'judge-semantic-routing' && content.includes('student_answer')) {
+          model.judgeCalls++
+          const input = JSON.parse(content)
+          answer = { judgment: input.student_answer === '这是一只海豚。' ? 'correct' : 'wrong' }
+        }
         res.end(JSON.stringify({ choices: [{ message: { content: JSON.stringify(answer) } }] }))
       })
     })

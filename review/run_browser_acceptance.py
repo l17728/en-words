@@ -15,7 +15,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 SUITES = ["recovery", "overdue", "feedback", "legacy", "journey", "closure", "firstuse", "playback"]
-EXPECTED = dict(zip(SUITES, [33, 1, 26, 9, 1, 6, 1, 1]), media=1)
+EXPECTED = dict(zip(SUITES, [41, 1, 26, 9, 1, 6, 1, 1]), media=1)
 
 
 def sha(path):
@@ -67,7 +67,7 @@ def main():
         return result.returncode
 
     try:
-        code = run("node-unit", [args.node, "--experimental-strip-types", "--test", str(ROOT / "web/tests/audio-wav.test.ts"), str(ROOT / "web/tests/ws-client.test.ts"), str(ROOT / "web/tests/schedule-clock.test.ts"), str(ROOT / "web/tests/input-readiness.test.ts")])
+        code = run("node-unit", [args.node, "--experimental-strip-types", "--test", str(ROOT / "web/tests/audio-wav.test.ts"), str(ROOT / "web/tests/ws-client.test.ts"), str(ROOT / "web/tests/schedule-clock.test.ts"), str(ROOT / "web/tests/input-readiness.test.ts"), str(ROOT / "web/tests/caption.test.ts")])
         if code: return code
         code = run("lint", [args.node, str(ROOT / "web/node_modules/oxlint/bin/oxlint")], ROOT / "web")
         if code: return code

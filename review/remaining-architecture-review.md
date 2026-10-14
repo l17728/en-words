@@ -117,3 +117,21 @@ docs27实际实现复核与定向结果：Judge每条返回路径只调用一次
 - docs27最小判分来源设计独审通过，不改评分/提示/课堂机会数。已后台实跑适配器红例：`TestLLMAdapterSeparatesInvalidJudgmentFromModelWrong`失败于缺失/非法枚举返回nil，证据`.test-artifacts/judge-observability-red.txt`。真实句子B准确ASR+HTTP成功仍无法凭旧日志区分合法wrong与协议失败，需同次来源证据，不能新增猫子串规则迎合。
 - 实读recovery-regression新增两条数量/一条判分测试与专属本地adapter：真实POST重放、同ID幂等、两学生四资源表不变、合法双维配置、两次真实作答后重教/0%结果及不同判分来源日志，未发现新阻断。它们是协议夹具E2E，不是模型质量证明；新增和全量通过数待实跑。
 - 候选生命周期恢复启动只做DEVNULL句柄加固，snapshot仍捕获结构化输出。同型Windows临时Start-Process在旧/新行为均通过，因此保留真实pending和独立恢复证据，不冒充已证明挂起根因。完整观察见`candidate-launcher-observation-20261014.md`。
+
+### 28 判分边界独立复核（2026-10-14，实施验收中）
+
+设计、冻结候选提示与40条独立标签已盲审通过；40标签SHA为509423198f2045c91f82ed384e36a9b271db5db221cb05f58b8ab7590c5fed45。旧100转换已逐条机械核对word/meaning/answer/expected及来源SHA一致，B仅作为已见回归，不混新留出。
+
+首版L1移除任意token/泛编辑距离后仍存在英文含义与同义词通过normalizeZh拼接旁路（no where/nowhere、ap ple/apple）；已交根代理修为shortAnswerMatch，Latin目标统一原文enMatch。实际第二版已复核关闭，中文显式同义与完整英文词组保留，新增红绿测试由后端执行。两条JD28实际E2E经复核：否定/指令先错、完整正确答句第二次通过、首答率0%、两学生隔离和来源日志分账；旧版真实红是L2调用数0，错误cwd的No tests found不算红。
+
+judge-eval二轮实际复核通过：只替换冻结system、生产8秒512token合同、强制一次L2诊断、同次响应回放不再联网、错误不赚负例语义分；源树变化强制门失败，原始/产品双95%、结构100%、安全0与旧100逐项退化检查明确。六组真实推理已完成：新40题原提示74/80、候选78/80，但候选错误接受2次，违反预声明安全0门；旧100题原提示196/200、候选200/200，已知B原提示0/2、候选2/2。因此不采纳候选提示，生产原提示保留，整体判分质量缺口未关闭。docs00/02/04/05同步安全边界，未改变两次机会政策或AGENTS。
+
+### 30 字幕实际代码复核（实施验收中）
+
+已独立审阅caption.ts、playback.ts、local.ts及Classroom接线。字幕由实际native onstart或Audio playing发布；加载/段间空，React文本转义、流布局换行。每次尝试独立lease，clear/reset先失效再取消媒体，平台失败降级新lease，旧回调不清新字幕。发现并关闭finish(error?)将falsy拒绝当成功的边界：现显式finish(ok,error)，只有ended成功，观察回调异常也失败清理。
+
+snapshot-only进入非朗读相位曾遗漏清理，按主审采用与phase_changed同一shouldCancelPlaybackPhase：仅tts_seg/reteach_show且未暂停保留，其他同步cancelTts，未从snapshot发起朗读。实际保存点复核通过；SUB03先锁500ms真实红，15秒旧断言可能被watchdog掩盖，不计有效红。TTS-only实测若通过仅证明英/中逐段媒体字幕，不代替严格B整课判分质量。Node27及lint零警告已通过；真实字幕轨1/1通过，英文三段和本机中文完整句一段均实际发声后显示、结束清空，0次ASR/答题。见real-subtitle-acceptance-20261014.json；完整86条尚在最终分组收尾，不能冒充整课质量通过。
+
+### 28/30 最终浏览器证据复核
+
+已逐一读取final86汇总引用的八套原始JSON，与每套统计逐项比对：总86通过，失败/跳过/flaky均0。报告明确首批77与修正阶段媒体同步夹具后9合成，不称单次全绿；生产组合SHA始终54c462c90dd7581826fdf7f0163d561902e8cbe893fa274bda7cbcd9678984c9，范围为非测试Go与web/src。journey原失败为四段真实fixture播放的等待预算未按阶段划分，实际完成与start_repeat日志不能被15秒首段合并等待充分覆盖；修改保留1600ms、完整次数、间隔及最终逐段完成断言，只按completed逐段有界同步后等跟读。实际helper代码独审通过。模型候选未过安全门、B整课未通过的结论保持。

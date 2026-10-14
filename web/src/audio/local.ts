@@ -1,5 +1,6 @@
 import { api } from '../api/client'
 import { recordingToWav } from './wav'
+import { playAudio } from './playback'
 
 export interface Capabilities { local: boolean; asr: boolean; tts_zh: boolean; tts_en: boolean }
 export const capabilities = () => api.get<Capabilities>('/providers')
@@ -49,7 +50,7 @@ export async function recordLocal(lessonId: string, language: string, signal: Ab
   } finally { stream.getTracks().forEach(t => t.stop()) }
 }
 
-export async function playLocalChinese(text: string, signal: AbortSignal, lessonId?: string): Promise<void> {
+export async function playLocalChinese(text: string, signal: AbortSignal, lessonId?: string, onPlaying?: () => void): Promise<void> {
   const identity = session(signal)
   const res = await fetch('/api/v1/speech/synthesize', { method: 'POST', headers: { ...identity.headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ text, lang: 'zh', ...(lessonId ? { lesson_id: Number(lessonId) } : {}) }), signal })
   identity.check()
@@ -61,15 +62,6 @@ export async function playLocalChinese(text: string, signal: AbortSignal, lesson
   try {
     const player = new Audio(url)
     audio = player
-    await new Promise<void>((resolve, reject) => {
-      const cleanup = () => { clearTimeout(timer); signal.removeEventListener('abort', abort) }
-      const abort = () => { cleanup(); player.pause(); reject(new DOMException('Aborted', 'AbortError')) }
-      const timer = setTimeout(() => { cleanup(); player.pause(); reject(new Error('语音播放超时')) }, 20000)
-      player.onended = () => { cleanup(); try { identity.check(); resolve() } catch (error) { reject(error) } }
-      player.onerror = () => { cleanup(); reject(new Error('语音播放失败')) }
-      signal.addEventListener('abort', abort, { once: true })
-      if (signal.aborted) { abort(); return }
-      player.play().catch(e => { cleanup(); reject(e) })
-    })
+    await playAudio(player, signal, identity.check, onPlaying)
   } finally { audio?.pause(); URL.revokeObjectURL(url) }
 }
