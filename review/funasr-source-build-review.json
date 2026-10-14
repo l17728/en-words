@@ -1,0 +1,93 @@
+{
+  "status": "cross_review_passed",
+  "boundary": "Build entrypoints only; fixed official sdists. Does not assert arbitrary runtime code is sandboxed. No build executed yet.",
+  "build_environment": "setuptools80.9.0 wheel0.45.1 packaging25.0 offline",
+  "packages": [
+    {
+      "package": "antlr4-python3-runtime",
+      "version": "4.9.3",
+      "sdist_sha256": "f224469b4168294902bb1efa80a8bf7855f24c99aef99cbefc1bcd3cce77881b",
+      "reviewed_build_files": [
+        {
+          "path": "antlr4-python3-runtime-4.9.3/setup.cfg",
+          "sha256": "1c473cbaee8da5fc46e7f0158794af5cea4414c34a3cf3f180c2001f5e38bd3e",
+          "bytes": 38
+        },
+        {
+          "path": "antlr4-python3-runtime-4.9.3/setup.py",
+          "sha256": "00ce3bb1670e8e4961d9ef2414dfa6ac467b52465382841b432578f91733ec67",
+          "bytes": 527
+        }
+      ],
+      "review": "Declarative setuptools package list; Python<3.5 typing marker inactive on 3.12."
+    },
+    {
+      "package": "crcmod",
+      "version": "1.7",
+      "sdist_sha256": "dc7051a0db5f2bd48665a990d3ec1cc305a466a77358ca4492826f41f283601e",
+      "reviewed_build_files": [
+        {
+          "path": "crcmod-1.7/setup.py",
+          "sha256": "129c37991924b5950aa28a5f854cd44a3f5af1d3c92c616897409a05b0fce40b",
+          "bytes": 1983
+        }
+      ],
+      "review": "Official setup tries C extension and catches build errors to rebuild pure Python; no global compiler installation."
+    },
+    {
+      "package": "jieba",
+      "version": "0.42.1",
+      "sdist_sha256": "055ca12f62674fafed09427f176506079bc135638a14e23e25be909131928db2",
+      "reviewed_build_files": [
+        {
+          "path": "jieba-0.42.1/setup.py",
+          "sha256": "47babfbd4fb1504e5871d95e31fe207203f1c23105781039d63ba3a6ccbdc74f",
+          "bytes": 2563
+        }
+      ],
+      "review": "Declarative distutils package/data list; isolated setuptools supplies Python3.12 distutils compatibility."
+    },
+    {
+      "package": "openai-whisper",
+      "version": "20250625",
+      "sdist_sha256": "37a91a3921809d9f44748ffc73c0a55c9f366c85a3ef5c2ae0cc09540432eb96",
+      "reviewed_build_files": [
+        {
+          "path": "openai_whisper-20250625/pyproject.toml",
+          "sha256": "9c8111da3701070095304ea5e12b6301eddcca3bb65e491a982b102d6042b1c4",
+          "bytes": 1418
+        },
+        {
+          "path": "openai_whisper-20250625/setup.cfg",
+          "sha256": "1c473cbaee8da5fc46e7f0158794af5cea4414c34a3cf3f180c2001f5e38bd3e",
+          "bytes": 38
+        },
+        {
+          "path": "openai_whisper-20250625/whisper/version.py",
+          "sha256": "c4d27ecccdd52a9cded762f1a82da3152db12cbc0aa6ea781f945446a143cfaf",
+          "bytes": 25
+        }
+      ],
+      "review": "setuptools>=61.2 build backend; dynamic version points to literal whisper/version.py; no network/model load needed for version."
+    },
+    {
+      "package": "oss2",
+      "version": "2.19.1",
+      "sdist_sha256": "a8ab9ee7eb99e88a7e1382edc6ea641d219d585a7e074e3776e9dec9473e59c1",
+      "reviewed_build_files": [
+        {
+          "path": "oss2-2.19.1/setup.cfg",
+          "sha256": "1c473cbaee8da5fc46e7f0158794af5cea4414c34a3cf3f180c2001f5e38bd3e",
+          "bytes": 38
+        },
+        {
+          "path": "oss2-2.19.1/setup.py",
+          "sha256": "21128b30e6138cc4fe03aca66c7ecb2936a164ed984abf6db27e0219a3d8688e",
+          "bytes": 1705
+        }
+      ],
+      "review": "Reads local __init__.py version by regex and README.rst; declarative dependency list, no package import."
+    }
+  ],
+  "cross_review": "backend_acceptance independently verified all five archive and reviewed entrypoint hashes; no build executed."
+}

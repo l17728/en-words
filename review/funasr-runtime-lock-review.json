@@ -1,0 +1,12 @@
+{
+  "status": "approved_for_isolated_install",
+  "reviewer": "root",
+  "runtime_lock_sha256": "5e0992db0018f13444c4c8f9542e0acd87602eb4b6e107f41797518c48fed636",
+  "checks": [
+    "86 wheel bytes and sha256",
+    "top-level wheel metadata",
+    "exact runtime requirement names and versions",
+    "build plan sha256"
+  ],
+  "boundary": "Approval for isolated installation only; model compatibility and quality not yet tested."
+}

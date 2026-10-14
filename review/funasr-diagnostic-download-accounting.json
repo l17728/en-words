@@ -1,0 +1,9 @@
+{
+  "status": "interrupted_before_install",
+  "torch_wheel_announced_bytes": 109280887,
+  "actual_transferred_bytes": null,
+  "conservative_budget_charge_bytes": 134217728,
+  "evidence": "Tool output showed Downloading torch-2.9.0-cp312-cp312-win_amd64.whl (109.3 MB); session99838 interrupted exit1. Prior dry-run log was reused; this observation does not claim a retained complete original download log.",
+  "installed": false,
+  "shared_services_changed": false
+}

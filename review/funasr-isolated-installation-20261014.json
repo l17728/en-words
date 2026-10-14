@@ -1,0 +1,69 @@
+{
+  "status": "isolated_runtime_installed_cpu_import_passed",
+  "runtime_lock_sha256": "5e0992db0018f13444c4c8f9542e0acd87602eb4b6e107f41797518c48fed636",
+  "versions": {
+    "torch": "2.9.0+cpu",
+    "torchaudio": "2.9.0+cpu",
+    "transformers": "4.51.3"
+  },
+  "pip_check": "No broken requirements found.",
+  "funasr_import": true,
+  "cuda_version_is_none": true,
+  "environment_unchanged": {
+    "unchanged": true,
+    "observed": {
+      "system_torch": "2.6.0+cu124",
+      "piper_file_sha256": {
+        ".test-tools\\piper-venv\\pyvenv.cfg": "c53014fe39e4280fb94581c9adafa64883222ff9e0d42b7ae56f394738838df0",
+        ".test-tools\\piper-venv\\Scripts\\python.exe": "0b471133e110cfb53a061cad528ce8e517d7b9ac41a0a396c39ad795a487fc14"
+      },
+      "piper_distributions": [
+        "flatbuffers-25.12.19.dist-info",
+        "numpy-2.5.4.dist-info",
+        "onnxruntime-1.31.0.dist-info",
+        "packaging-26.3.dist-info",
+        "pathvalidate-3.3.1.dist-info",
+        "pip-25.0.1.dist-info",
+        "piper_tts-1.8.0.dist-info",
+        "protobuf-7.36.2.dist-info"
+      ],
+      "listeners": [
+        {
+          "LocalPort": 8090,
+          "OwningProcess": 3552
+        },
+        {
+          "LocalPort": 8002,
+          "OwningProcess": 8908
+        },
+        {
+          "LocalPort": 8001,
+          "OwningProcess": 7728
+        },
+        {
+          "LocalPort": 8000,
+          "OwningProcess": 3740
+        }
+      ],
+      "system_torch_init_sha256": "0901a8ad92b30f947405e28fc98dd21c578cfbe8796b0173de931f42079b1f89"
+    }
+  },
+  "shared_service_identity_comparison": "PID, creation time and executable unchanged after identical JSON normalization; no command lines collected",
+  "model_loaded": false,
+  "model_weights_download_complete": false,
+  "import_process": {
+    "reason": "completed",
+    "exit_code": 0,
+    "pid": 8824,
+    "elapsed_ms": 29641,
+    "peak_job_commit_bytes": 579645440,
+    "peak_tree_rss_sampled_bytes": 390115328,
+    "rss_sampling_nominal_ms": 100,
+    "rss_sampling_max_gap_ms": 1437.0,
+    "disk_sampling_nominal_ms": 1000,
+    "disk_sampling_max_gap_ms": 1453.0,
+    "disk_scan_max_duration_ms": 1328.0,
+    "rss_limit_bytes": 5000000000,
+    "memory_limit_bytes": 5000000000
+  }
+}
