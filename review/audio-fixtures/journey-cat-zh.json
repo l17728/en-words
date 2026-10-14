@@ -1,0 +1,8 @@
+{
+  "text": "猫",
+  "scope": "predeclared browser cat/猫 journey fixture; excluded from 12-case quality denominator",
+  "source": "independent Piper zh_CN-huayan-medium CPU defaults",
+  "model_sha256": "9929917bf8cabb26fd528ea44d3a6699c11e87317a14765312420be230be0f3d",
+  "sha256": "9d48dc9b6e077221aa3a67253f1dc151313f7bc648f28b2b15c6b56d80cd16f2",
+  "human_listening": "pending"
+}

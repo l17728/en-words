@@ -331,22 +331,37 @@ func TestCov_RealWSRoundtrip(t *testing.T) {
 	// 心跳
 	require.NoError(t, conn.WriteJSON(Msg{"type": "heartbeat"}))
 	var ack Msg
-	require.NoError(t, conn.ReadJSON(&ack))
-	assert.Equal(t, "heartbeat_ack", ack["type"])
+	var turnContext any = snap["context"]
+	for {
+		require.NoError(t, conn.ReadJSON(&ack))
+		if context, ok := ack["context"]; ok {
+			turnContext = context
+		}
+		if ack["type"] == "heartbeat_ack" {
+			break
+		}
+		require.Contains(t, []string{"ui_action", "state_snapshot", "teacher_say"}, ack["type"])
+		if ack["type"] == "ui_action" {
+			action, ok := ack["action"].(map[string]any)
+			require.True(t, ok)
+			require.NotEmpty(t, action["type"])
+		}
+	}
 
 	// 学生事件（点击单词）→ ui_action 流（首帧可能含 join 前遗留的 show_word，逐帧找 play_tts）
-	var turnContext any = snap["context"]
-	frames := sendFixtureWS(t, conn, &turnContext, Msg{"type":"student_event", "event":"word_clicked"}, "fixture-click")
+	frames := sendFixtureWS(t, conn, &turnContext, Msg{"type": "student_event", "event": "word_clicked"}, "fixture-click")
 	foundPlay := false
 	for _, frame := range frames {
-		if action, ok := frame["action"].(map[string]any); ok && action["type"] == "play_tts" { foundPlay = true }
+		if action, ok := frame["action"].(map[string]any); ok && action["type"] == "play_tts" {
+			foundPlay = true
+		}
 	}
 	assert.True(t, foundPlay)
 	for i := 0; i < 4; i++ {
-		sendFixtureWS(t, conn, &turnContext, Msg{"type":"student_event", "event":"tts_finished"}, "fixture-tts-"+itoa(i))
+		sendFixtureWS(t, conn, &turnContext, Msg{"type": "student_event", "event": "tts_finished"}, "fixture-tts-"+itoa(i))
 	}
-	sendFixtureWS(t, conn, &turnContext, Msg{"type":"voice_text", "text":"w1"}, "fixture-repeat")
-	frames = sendFixtureWS(t, conn, &turnContext, Msg{"type":"voice_text", "text":"下一个"}, "fixture-next")
+	sendFixtureWS(t, conn, &turnContext, Msg{"type": "voice_text", "text": "w1"}, "fixture-repeat")
+	frames = sendFixtureWS(t, conn, &turnContext, Msg{"type": "voice_text", "text": "下一个"}, "fixture-next")
 
 	found := false
 	for _, f := range frames {

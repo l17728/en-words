@@ -7,70 +7,88 @@ type Handlers = {
   onFrame: (f: Frame) => void
   onOpen?: () => void
   onClose?: () => void
+  onError?: (message: string, retryable: boolean) => void
 }
 
 export class ClassroomWS {
   private ws: WebSocket | null = null
   private lessonId: number
-  private ticket: string
+  private authorize: () => Promise<string>
+  private sessionToken = localStorage.getItem('token')
   private handlers: Handlers
   private retry = 0
   private closed = false
   private heartbeat: ReturnType<typeof setInterval> | null = null
   private reconnect: ReturnType<typeof setTimeout> | null = null
 
-  constructor(lessonId: number, ticket: string, handlers: Handlers) {
+  constructor(lessonId: number, authorize: () => Promise<string>, handlers: Handlers) {
     this.lessonId = lessonId
-    this.ticket = ticket
+    this.authorize = authorize
     this.handlers = handlers
     this.connect()
   }
 
-  private url(): string {
+  private url(ticket: string): string {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-    return `${proto}://${location.host}/ws/classroom?lessonId=${this.lessonId}&ticket=${this.ticket}`
+    return `${proto}://${location.host}/ws/classroom?lessonId=${this.lessonId}&ticket=${encodeURIComponent(ticket)}`
   }
 
-  private connect(): void {
-    if (this.closed) return
-    // R5-P1：token 感知——401 登出后停止重连（防旧 ticket 僵尸连接）
+  private scheduleReconnect(): void {
+    if (this.closed || this.reconnect) return
+    const delay = Math.min(1000 * Math.pow(2, this.retry++), 60000)
+    this.reconnect = setTimeout(() => { this.reconnect = null; void this.connect() }, delay)
+  }
+
+  private async connect(): Promise<void> {
+    const current = () => !this.closed && !!this.sessionToken && localStorage.getItem('token') === this.sessionToken
+    if (!current()) { this.close(); return }
     try {
-      if (!localStorage.getItem('token')) {
-        this.closed = true
+      // Tickets are short-lived and bound to the authenticated session; every
+      // attempt must refresh one, including after a backend restart.
+      const ticket = await this.authorize()
+      if (!current()) { this.close(); return }
+      const socket = new WebSocket(this.url(ticket))
+      this.ws = socket
+      socket.onopen = () => {
+        if (!current()) { socket.close(); return }
+        this.retry = 0
+        if (this.heartbeat) clearInterval(this.heartbeat)
+        this.heartbeat = setInterval(() => this.send({ type: 'heartbeat' }), 25000)
+        this.handlers.onOpen?.()
+      }
+      socket.onmessage = ev => {
+        if (!current() || this.ws !== socket) return
+        try {
+          const frame = JSON.parse(ev.data)
+          if (frame.type === 'kick') this.close()
+          this.handlers.onFrame(frame)
+        } catch { /* malformed frames are ignored */ }
+      }
+      socket.onerror = () => socket.close()
+      socket.onclose = () => {
+        if (this.ws !== socket) return
+        if (this.heartbeat) clearInterval(this.heartbeat)
+        this.heartbeat = null
         this.handlers.onClose?.()
+        if (!current()) { this.close(); return }
+        this.scheduleReconnect()
+      }
+    } catch (error) {
+      this.handlers.onClose?.()
+      const code = (error as { code?: number }).code
+      if (!current()) { this.close(); return }
+      if (code === 401 || code === 403 || code === 404) {
+        this.close()
+        this.handlers.onError?.('课堂暂不可进入，请返回课程表确认当前账号和课程。', false)
         return
       }
-    } catch { /* 存储不可用时继续尝试连接 */ }
-    this.ws = new WebSocket(this.url())
-    this.ws.onopen = () => {
-      if (this.closed) { this.ws?.close(); return }
-      this.retry = 0
-      if (this.heartbeat) clearInterval(this.heartbeat)
-      this.heartbeat = setInterval(() => this.send({ type: 'heartbeat' }), 25000)
-      this.handlers.onOpen?.()
-    }
-    this.ws.onmessage = (ev) => {
-      try {
-        const frame = JSON.parse(ev.data)
-        if (frame.type === 'kick') this.close()
-        this.handlers.onFrame(frame)
-      } catch {
-        /* 非 JSON 帧忽略 */
-      }
-    }
-    this.ws.onclose = () => {
-      if (this.heartbeat) clearInterval(this.heartbeat)
-      this.heartbeat = null
-      this.handlers.onClose?.()
-      if (this.closed) return
-      // 指数退避重连 1s..60s（SDD §11.3）
-      const delay = Math.min(1000 * Math.pow(2, this.retry++), 60000)
-      this.reconnect = setTimeout(() => this.connect(), delay)
+      this.handlers.onError?.('课堂连接暂未恢复，请重试或返回课程表。', true)
+      this.scheduleReconnect()
     }
   }
 
   send(m: Frame): boolean {
-    if (this.ws?.readyState === WebSocket.OPEN) {
+    if (!this.closed && this.sessionToken === localStorage.getItem('token') && this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(m))
       return true
     }
@@ -81,8 +99,8 @@ export class ClassroomWS {
     return this.send({ type: 'student_event', event, text, ...envelope })
   }
 
-  sendVoiceText(text: string, envelope: Envelope): boolean {
-    return this.send({ type: 'voice_text', text, ...envelope })
+  sendVoiceText(text: string, envelope: Envelope, submissionId?: string): boolean {
+    return this.send({ type: 'voice_text', text, submission_id: submissionId, ...envelope })
   }
 
   close(): void {

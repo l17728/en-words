@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"enwords/internal/classroom"
 	"enwords/internal/config"
 	"enwords/internal/memory"
+	"enwords/internal/scheduler"
 	"enwords/internal/store"
 	"enwords/internal/tools"
 	"gorm.io/gorm"
@@ -46,7 +48,7 @@ func (a *App) callAgentTool(ctx context.Context, name string, args any) (any, er
 			return e
 		}
 		reg := tools.New(buffer)
-		if e := a.registerAgentTools(reg, agentServices{config: cfg, memory: memory.NewService(store.NewMemoryRepo(tx)), transactional: true}); e != nil {
+		if e := a.registerAgentTools(reg, agentServices{config: cfg, memory: memory.NewService(store.NewMemoryRepo(tx)), scheduler: scheduler.NewService(store.NewSchedulerRepo(tx), cfg, a.Clock), report: func(id int64) (*classroom.Result, error) { return capabilityReportTx(tx, id) }, transactional: true}); e != nil {
 			return e
 		}
 		if e := a.registerTeacherTool(reg); e != nil {

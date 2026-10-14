@@ -3,9 +3,14 @@ import { Alert, Button, Typography, Spin, Modal, Input, message, Tag } from 'ant
 import { CheckCircleFilled, CloseCircleFilled } from '@ant-design/icons'
 import type { InputRef } from 'antd'
 import { useParams, useNavigate } from 'react-router-dom'
-import { api } from '../api/client'
+import { api, ApiError, type FeedbackRecord } from '../api/client'
 import { ClassroomWS, type Frame, type TurnContext } from '../ws/client'
 import { capabilities, recordLocal, playLocalChinese, type Capabilities } from '../audio/local'
+import { useAuthStore } from '../stores/auth'
+import { useFeedback } from '../feedback/useFeedback'
+import { FeedbackResults } from '../feedback/FeedbackResults'
+import { markFeedbackPending } from '../feedback/pending'
+import { InputReadiness, sameContext, dispatchClassroom, type InputTurn } from '../ws/input-readiness'
 
 // 协同课堂页（docs/07 §6.3）：WS 驱动（R4-fe#1），REST 仅 enter 取 ticket。
 // REPEATING 禁 TTS（回声抑制 FE-02/R4-fe#2）；语音不可用降级视觉动画。
@@ -36,23 +41,58 @@ const PHASE_TIP: Record<string, string> = {
 }
 
 // TTS 可观测探针（铁律 3 定位日志）：window.__ttsDebug 暴露每段 voice 选择与 onstart 实况。
-// E2E 据此断言"真的发声"（onstart=音频实际播出的唯一可靠信号）且选中本地 voice（无声 BUG 回归锁定）。
+// 探针证明浏览器生命周期；扬声器实际可听性由独立真实媒体验收证明。
 interface TtsDebugEntry {
-  text: string
+  textLength: number
   lang: string
   voice: string | null
   local: boolean | null
+  status: 'pending' | 'started' | 'completed' | 'failed'
+  failure?: string
   startMs: number | null // null=onstart 从未触发（看门狗/静默路径）
 }
 
 export default function ClassroomPage() {
   const { lessonId } = useParams()
   const nav = useNavigate()
+  const userId = useAuthStore(s => s.userId)
+  const sessionToken = useAuthStore(s => s.token)
+  const feedback = useFeedback(userId)
+  const feedbackRef = useRef(feedback)
+  feedbackRef.current = feedback
+  const voiceFeedbackRef = useRef(new Map<string, { id: string; text: string; timer?: ReturnType<typeof setTimeout> }>())
+  const feedbackLifetime = useRef(0)
+  const [undeliveredFeedback, setUndeliveredFeedback] = useState<{ id: string; original: string; text: string } | null>(null)
+  const [resendingFeedback, setResendingFeedback] = useState(false)
+  const queryVoiceFeedback = useCallback(async (id: string, text: string) => {
+    const lifetime = feedbackLifetime.current
+    try { await feedbackRef.current.query(id) }
+    catch (error) {
+      if (lifetime !== feedbackLifetime.current) return
+      if (error instanceof ApiError && error.code === 404) setUndeliveredFeedback({ id, original: text, text })
+      else setSpeechError('反馈处理状态暂时未知，可到课程表查询反馈历史。')
+    }
+  }, [])
+  useEffect(() => {
+    const pendingVoiceFeedback = voiceFeedbackRef.current // This Map instance is never replaced.
+    feedbackLifetime.current++
+    setUndeliveredFeedback(null)
+    setResendingFeedback(false)
+    setSpeechError('')
+    return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- Invalidate the latest feedback generation before any late query can apply.
+      feedbackLifetime.current++
+      for (const entry of pendingVoiceFeedback.values()) if (entry.timer) clearTimeout(entry.timer)
+      pendingVoiceFeedback.clear()
+    }
+  }, [lessonId, userId, sessionToken])
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
   const [providers, setProviders] = useState<Capabilities | null>(null)
   const providersRef = useRef<Capabilities | null>(null)
   const localAudioRef = useRef<AbortController | null>(null)
+  const localRecordingRef = useRef<AbortController | null>(null)
   const [speechError, setSpeechError] = useState('')
+  const [connectionError, setConnectionError] = useState<{ message: string; retryable: boolean } | null>(null)
   useEffect(() => {
     let disposed = false
     capabilities().then(p => { if (!disposed) { providersRef.current = p; setProviders(p) } }).catch(() => {})
@@ -64,6 +104,14 @@ export default function ClassroomPage() {
   const [ended, setEnded] = useState(false)
   const [summary, setSummary] = useState<Record<string, any> | null>(null)
   const [wsOk, setWsOk] = useState(false)
+  const onlineRef = useRef(false)
+  const inputGate = useRef(new InputReadiness())
+  const [inputTurn, setInputTurn] = useState<InputTurn | null>(null)
+  const revokeInput = () => { inputGate.current.revoke(); setInputTurn(null); stopListening() }
+  const grantInput = (context: TurnContext, phase: InputTurn['phase']) => {
+    if (inputGate.current.grant(context, phase)) setAnswer('')
+    setInputTurn(inputGate.current.ready)
+  }
   const [resuming, setResuming] = useState(false)
   const [resumeError, setResumeError] = useState('')
   const resumeRequestRef = useRef(0)
@@ -76,7 +124,7 @@ export default function ClassroomPage() {
   // 页面加载即触发 getVoices + voiceschanged 监听重取，确保第一词就有声。
   // voice 显式选择（2026-08-26 无声 BUG 实证修复）：真实 Chrome 默认会选中 Google 在线语音
   // （国内网络不可达→speak 静默挂起，看门狗推进=课堂正常但无声）。严格本地优先，绝不主动选网络语音：
-  // 精确 lang 本地 → 同语言族本地（中文 voice 也能读英文单词）→ 任意本地 → null（浏览器默认兜底）。
+  // 精确lang本地 → 同语言族本地；无匹配本地voice明确失败，禁止静默默认网络语音。
   const voicesRef = useRef<SpeechSynthesisVoice[]>([])
   useEffect(() => {
     if (!('speechSynthesis' in window)) return
@@ -93,7 +141,7 @@ export default function ClassroomPage() {
       vs.find((v) => v.localService && v.lang === lang) ||
       vs.find((v) => v.localService && v.lang.startsWith(base)) ||
       // 不再 fallback 到任意本地 voice（zh-CN voice 读英文=用户听到中文腔→根因）
-      // 返回 null 让浏览器选默认 voice（Windows=Microsoft David en-US）
+      // 返回null走明确失败与文字提示，不假报已播放。
       null
     )
   }, [])
@@ -105,7 +153,7 @@ export default function ClassroomPage() {
   const sendVoiceRef = useRef<((text: string, context?: TurnContext) => void) | null>(null)
 
   // ===== TTS 串行播放器（修复：连续段被吞/哑火——cancel+speak 快速连发会杀掉未入队段）=====
-  // 每段排队逐个播（onend 驱动出队），看门狗兜底 onend 失联；tts_finished 每段上报一次。
+  // 每段排队逐个播；仅onend成功回执，看门狗/error失败不回执，由服务端显式超时跳段。
   const ttsQueueRef = useRef<Array<{ text: string; lang: 'en-US' | 'zh-CN'; context: TurnContext; delayMs: number; segment: number }>>([])
   const ttsBusyRef = useRef(false)
   const ttsEpochRef = useRef(0)
@@ -141,32 +189,35 @@ export default function ClassroomPage() {
       ttsBusyRef.current = false
       return
     }
-    console.log(`[TTS-pump] text="${next.text}" lang=${next.lang} phase=${phaseRef.current} queueLen=${ttsQueueRef.current.length}`)
-    // 回声抑制：跟读阶段不发声——静默段仍链式出队+回执（R5-P0：防队列卡死）
-    if (phaseRef.current === 'repeating' || (!ttsAvail.current && !(next.lang === 'zh-CN' && providersRef.current?.tts_zh))) {
-      console.log(`[TTS-pump] SILENT-SKIP phase=${phaseRef.current} ttsAvail=${ttsAvail.current}`)
-      ttsBusyRef.current = true
-      ttsTimerRef.current = setTimeout(() => {
-        if (epoch !== ttsEpochRef.current) return
-        if (ttsTimerRef.current) clearTimeout(ttsTimerRef.current)
-        ttsTimerRef.current = null
-        ttsBusyRef.current = false
-        sendEventRef.current?.('tts_finished', undefined, next.context)
-        pumpTts() // 链式出队（修复：静默后队列卡死）
-      }, 200) // 静默段统一 200ms（模拟段间隔，保持节奏）
-      return
-    }
-    ttsBusyRef.current = true
     let fired = false
-    const once = () => {
+    const dbg: TtsDebugEntry = { textLength: next.text.length, lang: next.lang, voice: null,
+      local: null, startMs: null, status: 'pending' }
+    const w = window as typeof window & { __ttsDebug?: TtsDebugEntry[] }
+    ;(w.__ttsDebug ??= []).push(dbg)
+    const complete = (failure?: string) => {
       if (fired || epoch !== ttsEpochRef.current) return
       fired = true
       if (ttsTimerRef.current) clearTimeout(ttsTimerRef.current)
       ttsTimerRef.current = null
       ttsBusyRef.current = false
-      console.log(`[TTS-pump] DONE text="${next.text}" lang=${next.lang}`)
-      sendEventRef.current?.('tts_finished', undefined, next.context)
-      pumpTts() // 链式出队（间隔由后端 ttsIntervalMs 配置，此处紧接）
+      dbg.status = failure ? 'failed' : 'completed'
+      if (failure) {
+        dbg.failure = failure
+        localAudioRef.current?.abort()
+        try { window.speechSynthesis?.cancel() } catch { /* unavailable */ }
+        setSpeechError('语音播放失败，请先看屏幕文字；老师会稍后继续。')
+      }
+      console.info(failure ? '[playback_failed]' : '[playback_completed]', {
+        lesson_id: lessonId, epoch: next.context.epoch, turn: next.context.turn,
+        segment: next.segment, language: next.lang, text_length: next.text.length, failure })
+      if (!failure) sendEventRef.current?.('tts_finished', undefined, next.context)
+      pumpTts()
+    }
+    const once = () => complete()
+    if (phaseRef.current === 'repeating') { ttsBusyRef.current = false; return }
+    if (!ttsAvail.current && !(next.lang === 'zh-CN' && providersRef.current?.tts_zh)) {
+      complete('unavailable')
+      return
     }
     const browserSpeak = () => { if (epoch !== ttsEpochRef.current) return; try {
       const u = new SpeechSynthesisUtterance(next.text)
@@ -176,35 +227,29 @@ export default function ClassroomPage() {
         u.voice = v
         u.lang = v.lang // 与选中 voice 对齐（中文 voice 兜底读英文时以 voice 引擎为准）
       } else {
-        u.lang = next.lang
+        complete('no_local_voice')
+        return
       }
       u.rate = next.lang === 'en-US' ? 0.8 : 0.95
       console.log(`[TTS-pump] SPEAK voice=${v?.name ?? 'null'} local=${v?.localService ?? 'null'} u.lang=${u.lang} u.rate=${u.rate}`)
       // 可观测探针：记录本段 voice 决策（onstart 后补记实际发声时刻）
-      const dbg: TtsDebugEntry = { text: next.text, lang: next.lang, voice: v?.name ?? null, local: v?.localService ?? null, startMs: null }
+      dbg.voice = v.name; dbg.local = v.localService
       const t0 = performance.now()
-      if (typeof window !== 'undefined') {
-        const w = window as typeof window & { __ttsDebug?: TtsDebugEntry[] }
-        ;(w.__ttsDebug ??= []).push(dbg)
-      }
-      const markStart = () => { dbg.startMs = Math.round(performance.now() - t0) }
-      u.onstart = markStart
+      u.onstart = () => { if (!fired && epoch === ttsEpochRef.current) { dbg.startMs = Math.round(performance.now() - t0); dbg.status = 'started' } }
       u.onend = once
-      u.onerror = once
+      u.onerror = () => complete('engine_error')
       window.speechSynthesis.speak(u)
       // 看门狗：onend 失联=引擎挂起（如 Google 网络语音不可达）→ cancel 清挂起段，防阻塞后续所有段
       ttsTimerRef.current = setTimeout(() => {
-        console.log(`[TTS-pump] WATCHDOG-FIRE text="${next.text}" lang=${next.lang}`)
-        try { window.speechSynthesis.cancel() } catch { /* noop */ }
-        once()
+        complete('timeout')
       }, segDur(next.text, next.lang) * 2.5)
     } catch {
-      once()
+      complete('engine_exception')
     } }
     if (next.lang === 'zh-CN' && providersRef.current?.tts_zh) {
       const controller = new AbortController()
       localAudioRef.current = controller
-      playLocalChinese(next.text, controller.signal).then(once).catch(() => {
+      playLocalChinese(next.text, controller.signal, lessonId).then(once).catch(() => {
         if (controller.signal.aborted) return
         setSpeechError('本机中文朗读暂不可用，已尝试浏览器语音。')
         browserSpeak()
@@ -220,7 +265,7 @@ export default function ClassroomPage() {
   // speak = 入队（保持外部签名；word 参数已内聚在 text）
   const speak = useCallback(
     (text: string, lang: 'en-US' | 'zh-CN', delayBeforeMs: unknown = 0, segment = 0) => {
-      console.log(`[TTS-speak] IN text="${text}" lang=${lang} phase=${phaseRef.current}`)
+      console.debug('[classroom_media]', { lesson_id: lessonId, phase: phaseRef.current })
       // R6-fe#1：REPEATING 相位不入队（回声抑制入口守卫——防相位切换竞态时旧段发声）
       if (phaseRef.current === 'repeating') { console.log('[TTS-speak] BLOCKED by repeating phase'); return }
       const delayMs = typeof delayBeforeMs === 'number' && Number.isFinite(delayBeforeMs)
@@ -228,7 +273,7 @@ export default function ClassroomPage() {
       ttsQueueRef.current.push({ text, lang, context: { ...contextRef.current }, delayMs, segment })
       pumpTts()
     },
-    [pumpTts],
+    [pumpTts, lessonId],
   )
   // 阶段切换清队列（防旧词语音溢到新词）；R5：cancel 中断正在播的段+清 timer
   useEffect(() => {
@@ -244,11 +289,37 @@ export default function ClassroomPage() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [speak],
+    [speak, userId, sessionToken],
   )
 
   const handleFrame = useCallback(
     (f: Frame) => {
+      if (useAuthStore.getState().userId !== userId || localStorage.getItem('token') !== sessionToken) return
+      // Feedback has its own durable identity/version, independent of classroom
+      // playback seq and turn. A late task result must not move the lesson.
+      if (f.type === 'feedback_reply') {
+        const record = f.feedback as FeedbackRecord | undefined
+        if (record) {
+          feedbackRef.current.accept(record)
+          for (const [event, entry] of voiceFeedbackRef.current) if (entry.id === record.submission_id) {
+            if (entry.timer) clearTimeout(entry.timer)
+            voiceFeedbackRef.current.delete(event)
+          }
+        } else if (f.reply) feedbackRef.current.accept({ id: 0, status: f.status || 'processing', reply: f.reply, text: '', created_at: '' })
+        else if (f.error_code) setSpeechError(f.msg || '反馈未完成，请查询反馈历史。')
+        return
+      }
+      if ((f.type === 'event_rejected' || f.type === 'event_processed') && f.event_id) {
+        const pending = voiceFeedbackRef.current.get(f.event_id)
+        if (pending && f.type === 'event_rejected') void queryVoiceFeedback(pending.id, pending.text)
+        if (pending && f.command === 'feedback' && typeof f.normalized_text === 'string') pending.text = f.normalized_text
+        if (!pending && f.command === 'feedback' && f.submission_id && typeof f.normalized_text === 'string') {
+          markFeedbackPending(userId, f.submission_id, true)
+          const entry = { id: f.submission_id as string, text: f.normalized_text as string,
+            timer: setTimeout(() => { void queryVoiceFeedback(f.submission_id, f.normalized_text) }, 5000) }
+          voiceFeedbackRef.current.set(f.event_id, entry)
+        }
+      }
       if (f.context?.epoch && typeof f.seq === 'number') {
         // One server action can arrive over WS and its REST response. Old frames
         // must not reset context or restart speech after a newer segment arrived.
@@ -257,17 +328,29 @@ export default function ClassroomPage() {
         if (last.epoch === f.context.epoch && f.seq <= last.seq) return
         lastFrameRef.current = { epoch: f.context.epoch, seq: f.seq }
       }
-      if (f.context) contextRef.current = f.context
+      if (f.context) {
+        if (inputGate.current.ready && !sameContext(inputGate.current.ready, f.context)) revokeInput()
+        contextRef.current = f.context
+      }
+      if ((f.type === 'state_snapshot' && (f.paused || (inputGate.current.ready && f.phase !== inputGate.current.ready.phase))) ||
+        (f.type === 'phase_changed' && inputGate.current.ready && f.phase !== inputGate.current.ready.phase) ||
+        ['session_timeout', 'classroom_error', 'lesson_summary'].includes(f.type) ||
+        (f.type === 'ui_action' && ['show_word', 'play_tts', 'lesson_paused', 'lesson_summary'].includes(f.action?.type))) revokeInput()
       if ((f.type === 'state_snapshot' && f.paused) || f.type === 'session_timeout' ||
         f.type === 'lesson_summary' ||
         (f.type === 'phase_changed' && !['tts_seg', 'reteach_show'].includes(f.phase)) ||
         (f.type === 'ui_action' && ['show_word', 'start_repeat', 'show_quiz_item', 'lesson_summary', 'lesson_paused'].includes(f.action?.type))) {
         cancelTts()
       }
+      if (f.type === 'classroom_error') {
+        cancelTts(); stopListening()
+        setConnectionError({ message: '课堂动作暂未完成，请重新连接继续当前进度。', retryable: true })
+        return
+      }
       switch (f.type) {
         case 'state_snapshot':
           if (typeof f.teacher_text === 'string') setBubble(f.teacher_text)
-          console.log(`[TTS-recv] state_snapshot phase=${f.phase} word="${f.word}"`)
+          console.debug('[classroom_media]', { lesson_id: lessonId, phase: phaseRef.current })
           setSnapshot({ phase: f.phase, word: f.word, quiz_word: f.quiz_word,
             zhMeaning: f.zhMeaning, paused: f.paused })
           phaseRef.current = f.phase
@@ -284,7 +367,7 @@ export default function ClassroomPage() {
               setSnapshot(s => s ? { ...s, paused: true } : s)
               break
             case 'show_word':
-              console.log(`[TTS-recv] show_word word="${a.word}" meanings=${JSON.stringify(a.meanings)} phase=${phaseRef.current}`)
+              console.debug('[classroom_media]', { lesson_id: lessonId, phase: phaseRef.current })
               setSnapshot((s) => ({ ...(s ?? { phase: 'show_word' }), phase: 'show_word', paused: false,
                 word: a.word, zhMeaning: Array.isArray(a.meanings) && a.meanings.length > 0 ? a.meanings[0] : s?.zhMeaning })) // R5：meanings 防空保旧
               setJudge(null)
@@ -295,7 +378,7 @@ export default function ClassroomPage() {
               cancelTts()
               setSnapshot(s => s ? { ...s, paused: false } : s)
               phaseRef.current = 'tts_seg'
-              console.log(`[TTS-recv] seg=${a.seg_idx} lang=${a.lang} word="${a.word}" meanings=${JSON.stringify(a.meanings)} phase=${phaseRef.current}`)
+              console.debug('[classroom_media]', { lesson_id: lessonId, phase: phaseRef.current })
               // Meanings：en 首段即携带中文释义（点击即显示中英对照——原始需求）
               {
                 const zh = a.lang === 'zh' && a.word ? a.word
@@ -306,20 +389,21 @@ export default function ClassroomPage() {
                 }
               }
               if (a.word) {
-                console.log(`[TTS-recv] seg=${a.seg_idx} lang=${a.lang} word="${a.word}" phase=${phaseRef.current}`)
+                console.debug('[classroom_media]', { lesson_id: lessonId, phase: phaseRef.current })
                 speak(a.word, a.lang === 'zh' ? 'zh-CN' : 'en-US', a.delay_before_ms, a.seg_idx)
               }
               break
             case 'start_repeat':
               console.log(`[TTS-recv] start_repeat phase=${phaseRef.current} ttsQueueLen=${ttsQueueRef.current.length}`)
               setSnapshot((s) => ({ ...(s ?? { phase: 'repeating' }), phase: 'repeating', paused: false }))
+              if (f.context) grantInput(f.context, 'repeating')
               phaseRef.current = 'repeating' // 禁后续 TTS（回声抑制）
               break
             case 'show_quiz_item':
               setSnapshot((s) => ({ ...(s ?? { phase: 'wait_answer' }), phase: 'wait_answer', quiz_word: a.word, paused: false }))
               phaseRef.current = 'wait_answer'
               setJudge(null)
-              setAnswer('')
+              if (f.context) grantInput(f.context, 'wait_answer')
               setTimeout(() => inputRef.current?.focus(), 100)
               break
             case 'show_check':
@@ -364,43 +448,45 @@ export default function ClassroomPage() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [speak, cancelTts],
+    [speak, cancelTts, userId, sessionToken],
   )
 
   useEffect(() => {
     let ws: ClassroomWS | null = null
     let disposed = false
+    const current = () => !disposed && useAuthStore.getState().userId === userId && localStorage.getItem('token') === sessionToken
+    cancelTts()
+    stopListening()
+    onlineRef.current = false; inputGate.current.reset(); setInputTurn(null); setAnswer('')
+    setSnapshot(null); setBubble(''); setEnded(false); setSummary(null); setWsOk(false)
     resumeRequestRef.current++
     lastFrameRef.current = { epoch: '', seq: 0 }
     setResuming(false)
     setResumeError('')
-    api
-      .post<EnterResult>(`/classroom/lessons/${lessonId}/enter`)
-      .then((r) => {
-        if (disposed) return
-        console.log(`[TTS-enter] phase=${r.snapshot.phase} word="${r.snapshot.word}"`)
-        setSnapshot(r.snapshot)
-        if (typeof r.snapshot.teacher_text === 'string') setBubble(r.snapshot.teacher_text)
-        if (r.snapshot.context) contextRef.current = r.snapshot.context
-        phaseRef.current = r.snapshot.phase
-        // enter 朗读已移除：服务端 show_word 800ms 超时自动触发 enterTTS → play_tts en seg1，
-        // 前端冗余 speak 导致第一词多读一遍（铁律 M4 最小改动）
-        // R4-fe#1：真 WebSocket 连接（事件/指令全部走 WS）
-        ws = new ClassroomWS(Number(lessonId), r.ticket, {
-          onFrame: handleFrame,
-          onOpen: () => setWsOk(true),
-          onClose: () => setWsOk(false),
-        })
-        wsRef.current = ws
-      })
-      .catch((e) => {
-        if (disposed) return
-        message.error((e as Error).message)
-        nav('/dashboard')
-      })
-    return () => { disposed = true; resumeRequestRef.current++; ws?.close(); wsRef.current = null }
+    setConnectionError(null)
+    ws = new ClassroomWS(Number(lessonId), async () => {
+      onlineRef.current = false; revokeInput()
+      const r = await api.post<EnterResult>(`/classroom/lessons/${lessonId}/enter`)
+      if (!current()) throw new ApiError('Session changed', 401)
+      setSnapshot(r.snapshot)
+      if (typeof r.snapshot.teacher_text === 'string') setBubble(r.snapshot.teacher_text)
+      if (r.snapshot.context) {
+        if (contextRef.current.epoch !== r.snapshot.context.epoch) lastFrameRef.current = { epoch: '', seq: 0 }
+        contextRef.current = r.snapshot.context
+      }
+      phaseRef.current = r.snapshot.phase
+      return r.ticket
+    }, {
+      onFrame: frame => { if (current()) handleFrame(frame) },
+      onOpen: () => { if (current()) { onlineRef.current = true; setWsOk(true); setConnectionError(null) } },
+      onClose: () => { if (current()) { onlineRef.current = false; revokeInput(); setWsOk(false); cancelTts() } },
+      onError: (message, retryable) => { if (current()) { onlineRef.current = false; revokeInput(); setWsOk(false); setConnectionError({ message, retryable }) } },
+    })
+    wsRef.current = ws
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Increment the latest resume generation; capturing an old scalar would not invalidate all requests.
+    return () => { disposed = true; onlineRef.current = false; inputGate.current.reset(); resumeRequestRef.current++; ws?.close(); wsRef.current = null; cancelTts(); stopListening() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lessonId])
+  }, [lessonId, userId, sessionToken])
 
   // ===== 默认语音监听模式（用户定案：语音是默认作答方式，无需点击按钮）=====
   // wait_answer 相位自动启动 SpeechRecognition；识别结果→sendVoice（voice_text 管线）。
@@ -410,6 +496,7 @@ export default function ClassroomPage() {
   const [listening, setListening] = useState(false)
 
   const stopListening = useCallback(() => {
+    localRecordingRef.current?.abort()
     listenActiveRef.current = false
     setListening(false)
     try {
@@ -423,6 +510,8 @@ export default function ClassroomPage() {
   const startListening = useCallback(() => {
     if (providersRef.current?.local) return // Local mode never silently invokes a browser cloud recognizer.
     if (listenActiveRef.current) return
+    const capture = inputGate.current.ready
+    if (!capture || !inputGate.current.accepts(contextRef.current, phaseRef.current, onlineRef.current, capture)) return
     // E2E 测试模式：URL 带 ?e2e=1 时禁自动监听（避免 TTS 朗读被拾音→自动提交
     // 与测试显式提交叠加造成"回答两次"；真实拾音路径由 omni 回环测试覆盖）
     if (new URLSearchParams(window.location.search).get('e2e') === '1') return
@@ -432,18 +521,22 @@ export default function ClassroomPage() {
     listenActiveRef.current = true
     setListening(true)
     const recog = new SR()
+    const captureToken = localStorage.getItem('token')
     recogRef.current = recog
     // 跟读判读听英文（学生读单词）；答题听中文（说释义）——按当前相位选语言
     recog.lang = phaseRef.current === 'repeating' ? 'en-US' : 'zh-CN'
     recog.interimResults = false
     recog.continuous = false
-    let captureContext = { ...contextRef.current }
-    recog.onstart = () => { captureContext = { ...contextRef.current } }
+    const captureContext = { epoch: capture.epoch, turn: capture.turn }
+    const captureCurrent = () => inputGate.current.accepts(contextRef.current, phaseRef.current, onlineRef.current, capture)
+    recog.onstart = () => { if (!captureCurrent()) { try { recog.stop() } catch { /* stale capture */ } } }
     recog.onresult = (ev: any) => {
+      if (!listenActiveRef.current || recogRef.current !== recog || localStorage.getItem('token') !== captureToken || !captureCurrent()) return
       const text = ev.results?.[0]?.[0]?.transcript || ''
       if (text) sendVoiceRef.current?.(text.trim(), captureContext) // 语音作答/判读/指令统一管线
     }
     recog.onend = () => {
+      if (recogRef.current !== recog || localStorage.getItem('token') !== captureToken || !captureCurrent()) return
       // 相位仍在跟读/答题且未停止 → 持续监听（用户可以说多次）
       if (listenActiveRef.current &&
           (phaseRef.current === 'wait_answer' || phaseRef.current === 'repeating')) {
@@ -469,25 +562,47 @@ export default function ClassroomPage() {
   }, [])
 
   const sendEvent = (event: string, text?: string, context = contextRef.current) => {
+    if (event === 'answer_submitted' && (localStorage.getItem('token') !== sessionToken ||
+      phaseRef.current !== 'wait_answer' || !inputGate.current.answer(context, onlineRef.current, text || ''))) return
     const envelope = { context, event_id: `${eventPrefixRef.current}-${++eventCounterRef.current}` }
-    if (!wsRef.current?.sendEvent(event, text, envelope)) {
+    dispatchClassroom(() => wsRef.current?.sendEvent(event, text, envelope) ?? false, () => {
       // WS 未连接降级 REST（双通道保障）
       api
         .post<Frame[]>(`/classroom/lessons/${lessonId}/event`, { event, text, ...envelope })
         .then(applyFrames)
         .catch((e) => message.error((e as Error).message))
-    }
+    }, event === 'answer_submitted')
   }
   sendEventRef.current = sendEvent // TTS onend 回执上报通道
 
-  const sendVoice = (text: string, context = contextRef.current) => {
+  const sendVoice = (text: string, capturedContext?: TurnContext) => {
+    const context = capturedContext ?? contextRef.current
+    if (!text.trim() || localStorage.getItem('token') !== sessionToken) return
+    if ((capturedContext || ['wait_answer', 'repeating'].includes(phaseRef.current)) &&
+      !inputGate.current.accepts(context, phaseRef.current, onlineRef.current)) return
+    const lifetime = feedbackLifetime.current
     const envelope = { context, event_id: `${eventPrefixRef.current}-${++eventCounterRef.current}` }
-    if (!wsRef.current?.sendVoiceText(text, envelope)) {
-      api
-        .post<{ command: string; frames: Frame[] }>(`/classroom/lessons/${lessonId}/voice`, { text, ...envelope })
-        .then((r) => applyFrames(r.frames || []))
-        .catch((e) => message.error((e as Error).message))
+    const submissionId = crypto.randomUUID()
+    // This conservative prefix check only exposes a recovery UI; the server is
+    // authoritative for classification and returns its exact normalized body.
+    const match = text.trim().match(/^(?:我想反馈|我要反馈|我反馈|提个意见|反馈|建议)\s*(.+)$/s)
+    if (match) {
+      markFeedbackPending(userId, submissionId, true)
+      const pending = { id: submissionId, text: match[1], timer: undefined as ReturnType<typeof setTimeout> | undefined }
+      pending.timer = setTimeout(() => { void queryVoiceFeedback(pending.id, pending.text) }, 5000)
+      voiceFeedbackRef.current.set(envelope.event_id, pending)
+      while (voiceFeedbackRef.current.size > 128) {
+        const oldest = voiceFeedbackRef.current.keys().next().value!
+        clearTimeout(voiceFeedbackRef.current.get(oldest)?.timer)
+        voiceFeedbackRef.current.delete(oldest)
+      }
     }
+    dispatchClassroom(() => wsRef.current?.sendVoiceText(text, envelope, submissionId) ?? false, () => {
+      api
+        .post<{ command: string; frames: Frame[]; feedback?: FeedbackRecord }>(`/classroom/lessons/${lessonId}/voice`, { text, ...envelope, submission_id: submissionId })
+        .then((r) => { if (lifetime !== feedbackLifetime.current || localStorage.getItem('token') !== sessionToken) return; applyFrames(r.frames || []); if (r.feedback) handleFrame({ type: 'feedback_reply', feedback: r.feedback }) })
+        .catch((e) => { if (lifetime === feedbackLifetime.current) message.error((e as Error).message) })
+    }, !!capturedContext || ['wait_answer', 'repeating'].includes(phaseRef.current))
   }
   sendVoiceRef.current = sendVoice // 语音识别结果上报通道
 
@@ -518,16 +633,20 @@ export default function ClassroomPage() {
   }, [phase, snapshot?.paused, cancelTts])
 
   useEffect(() => {
-    if (!providers?.asr || !lessonId || ended || snapshot?.paused || !['repeating', 'wait_answer'].includes(phase)) return
+    if (!inputTurn || !inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) return
+    if (!wsOk || !providers?.asr || !lessonId || ended || snapshot?.paused || !['repeating', 'wait_answer'].includes(phase)) return
     if (new URLSearchParams(location.search).get('e2e') === '1') return
     const controller = new AbortController()
+    localRecordingRef.current = controller
     const listen = async () => {
       try {
         while (!controller.signal.aborted) {
           setListening(true)
-          const captureContext = { ...contextRef.current }
+          if (!inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) return
+          const captureContext = { epoch: inputTurn.epoch, turn: inputTurn.turn }
           const text = await recordLocal(lessonId, phase === 'repeating' ? 'en' : 'zh', controller.signal)
-          if (controller.signal.aborted) return
+          if (controller.signal.aborted || localStorage.getItem('token') !== sessionToken ||
+            !inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) return
           sendVoiceRef.current?.(text, captureContext)
           // One transcript per turn; a changed question/phase starts a fresh capture.
           break
@@ -538,17 +657,17 @@ export default function ClassroomPage() {
     }
     void listen()
     return () => { controller.abort(); setListening(false) }
-  }, [providers?.asr, lessonId, phase, snapshot?.word, snapshot?.quiz_word, snapshot?.paused, ended])
+  }, [inputTurn, wsOk, providers?.asr, lessonId, phase, snapshot?.word, snapshot?.quiz_word, snapshot?.paused, ended, userId, sessionToken])
 
   // 相位驱动：进跟读/答题自动开麦；离场停麦（phase 声明之后）
   useEffect(() => {
-    if (phase === 'wait_answer' || phase === 'repeating') {
+    if (inputTurn && inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn) && wsOk && !snapshot?.paused && (phase === 'wait_answer' || phase === 'repeating')) {
       const t = setTimeout(() => startListening(), 300) // 等 UI 稳定
-      return () => clearTimeout(t)
+      return () => { clearTimeout(t); stopListening() }
     }
     stopListening()
     return undefined
-  }, [phase, startListening, stopListening])
+  }, [inputTurn, wsOk, snapshot?.paused, phase, startListening, stopListening])
   useEffect(() => () => stopListening(), [stopListening])
 
   const bigWord = phase === 'repeating' || phase === 'tts_seg' ? snapshot?.word
@@ -571,12 +690,39 @@ export default function ClassroomPage() {
           })
         }}>退出</Button>
         <span style={{ color: '#5C6B73' }}>{PHASE_TIP[phase] || phase}</span>
-        <Tag color={wsOk ? 'success' : 'warning'}>{wsOk ? '已连接' : '重连中…'}</Tag>
+        <Tag color={wsOk ? 'success' : 'warning'}>{wsOk ? '已连接' : connectionError && !connectionError.retryable ? '连接已停止' : '重连中…'}</Tag>
       </div>
 
       {/* 主角卡 */}
+      {!!feedback.records.length && <div aria-label="课堂反馈结果" style={{ padding: '0 20px' }}>
+        {feedback.records.map(record => <FeedbackResults key={record.submission_id || record.id} record={record}
+          busy={feedback.busy.includes(record.submission_id || '')}
+          onClarify={(id, text, parent) => feedback.submit(id, text, 'page', parent)} onQuery={() => void feedback.recover(record.submission_id!)} onRetry={() => void feedback.recover(record.submission_id!, true)} />)}
+        <Button onClick={() => nav('/dashboard')}>查看反馈历史</Button>
+      </div>}
+      {feedback.error && <Alert type="error" title={feedback.error} />}
+      <Modal title="反馈未送达" open={!!undeliveredFeedback} okText="确认提交反馈" confirmLoading={resendingFeedback}
+        onCancel={() => setUndeliveredFeedback(null)} onOk={async () => {
+          if (!undeliveredFeedback || resendingFeedback) return
+          const lifetime = feedbackLifetime.current
+          setResendingFeedback(true)
+          try {
+            const id = undeliveredFeedback.text === undeliveredFeedback.original ? undeliveredFeedback.id : crypto.randomUUID()
+            await feedbackRef.current.submit(id, undeliveredFeedback.text, 'voice')
+            if (lifetime === feedbackLifetime.current) setUndeliveredFeedback(null)
+          } catch (error) { if (lifetime === feedbackLifetime.current) message.error((error as Error).message) }
+          finally { if (lifetime === feedbackLifetime.current) setResendingFeedback(false) }
+        }}>
+        <p>未查询到这次反馈。请确认正文后提交；此操作不会重放课堂语音事件。</p>
+        <Input.TextArea aria-label="待确认反馈正文" value={undeliveredFeedback?.text || ''}
+          onChange={e => setUndeliveredFeedback(value => value ? { ...value, text: e.target.value } : value)} />
+      </Modal>
       {snapshot?.paused && <Alert type="info" title="课堂已暂停" description={resumeError || '休息好了就继续当前学习进度。'}
         action={<Button loading={resuming} disabled={resuming} onClick={() => void resumeClassroom()}>继续课堂</Button>} />}
+      {connectionError && <Alert type="error" title={connectionError.message} action={<>
+        <Button onClick={() => window.location.reload()}>重新连接课堂</Button>
+        <Button onClick={() => nav('/dashboard')}>返回课程表</Button>
+      </>} />}
       {speechError && <Alert type="warning" title={speechError} closable onClose={() => setSpeechError('')} />}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: 24 }}>
         {!snapshot ? (
@@ -668,7 +814,7 @@ export default function ClassroomPage() {
           <>
             {/* 默认语音监听指示（无需点击；识别结果自动提交） */}
             <Tag color={listening ? 'processing' : 'default'} aria-live="polite">
-              {listening ? '🎙 正在听你说…（说出中文意思即可）' : '语音就绪'}
+              {!inputTurn ? '正在恢复题目，请稍候' : listening ? '🎙 正在听你说…（说出中文意思即可）' : '语音就绪'}
             </Tag>
             <Input
               ref={inputRef}
@@ -676,11 +822,12 @@ export default function ClassroomPage() {
               style={{ width: 320 }}
               placeholder={listening ? '或直接打字（语音优先）' : '输入中文意思'}
               aria-label="答案输入框"
+              disabled={!wsOk || !inputTurn || inputTurn.phase !== 'wait_answer'}
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
               onPressEnter={() => sendEvent('answer_submitted', answer)}
             />
-            <Button type="primary" size="large" onClick={() => sendEvent('answer_submitted', answer)}>
+            <Button type="primary" size="large" disabled={!wsOk || !inputTurn || inputTurn.phase !== 'wait_answer' || !answer.trim()} onClick={() => sendEvent('answer_submitted', answer)}>
               回答
             </Button>
           </>

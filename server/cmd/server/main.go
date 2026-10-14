@@ -84,7 +84,23 @@ func main() {
 	}
 
 	// 计时循环（相位超时/会话超时）
-	go app.Rooms.RunTimers()
+	runtimeCtx, cancelRuntime := context.WithCancel(context.Background())
+	defer cancelRuntime()
+	go app.Rooms.RunTimersContext(runtimeCtx)
+	go func() {
+		ticker := time.NewTicker(30 * time.Minute)
+		defer ticker.Stop()
+		for {
+			if err := app.RunOverdue(runtimeCtx); err != nil && runtimeCtx.Err() == nil {
+				log.Error("scheduler", "overdue_scan_failed", map[string]any{"reason": "scan_or_transaction_failed"})
+			}
+			select {
+			case <-runtimeCtx.Done():
+				return
+			case <-ticker.C:
+			}
+		}
+	}()
 
 	r := app.Router()
 	srv := &http.Server{Addr: fmt.Sprintf(":%d", *port), Handler: r,
@@ -102,6 +118,7 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
+	cancelRuntime()
 	log.Info("main", "shutting_down", nil)
 	_ = srv.Close()
 }

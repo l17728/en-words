@@ -2,10 +2,12 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"enwords/internal/auth"
@@ -76,44 +78,59 @@ func (a *App) registerProviderRoutes(g *gin.RouterGroup) {
 		if !a.ownLesson(c, id) {
 			return
 		}
+		reject := func(status int, reason, message string) {
+			a.Log.ErrorCtx(obs.WithTrace(c.Request.Context(), fmt.Sprintf("lesson-%d", id)), "speech", "audio_rejected", map[string]any{"lesson_id": id, "student_id": claimsOf(c).UID, "reason": reason, "request_trace_id": obs.TraceID(c.Request.Context())})
+			c.JSON(status, fail(status, message))
+		}
 		if a.Local == nil {
-			c.JSON(503, fail(503, "本机语音识别不可用，请使用文字输入"))
+			reject(503, "provider_unavailable", "本机语音识别不可用，请使用文字输入")
 			return
 		}
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, localmodel.MaxAudio+(64<<10))
 		if err := c.Request.ParseMultipartForm(localmodel.MaxAudio); err != nil {
-			c.JSON(400, fail(400, "音频过大或格式错误"))
+			if c.Request.MultipartForm != nil {
+				_ = c.Request.MultipartForm.RemoveAll()
+			}
+			reject(400, "invalid_multipart_or_limit", "音频过大或格式错误")
 			return
 		}
 		defer c.Request.MultipartForm.RemoveAll()
 		f, header, err := c.Request.FormFile("file")
 		if err != nil {
-			c.JSON(400, fail(400, "缺少音频"))
+			reject(400, "missing_audio", "缺少音频")
 			return
 		}
 		defer f.Close()
 		raw, err := io.ReadAll(io.LimitReader(f, localmodel.MaxAudio+1))
-		if err != nil || len(raw) > localmodel.MaxAudio {
-			c.JSON(400, fail(400, "音频过大"))
+		if err != nil || len(raw) == 0 || len(raw) > localmodel.MaxAudio {
+			reject(400, "empty_unreadable_or_oversized", "音频为空、过大或不可读取")
 			return
 		}
 		lang := c.PostForm("language")
 		if lang != "en" && lang != "zh" {
-			c.JSON(400, fail(400, "language 必须为 en 或 zh"))
+			reject(400, "invalid_language", "language 必须为 en 或 zh")
 			return
 		}
 		// Do not accept user-controlled paths as an upstream filename.
 		name := "recording.webm"
+		format := "browser_container"
 		if header.Header.Get("Content-Type") == "audio/wav" {
 			name = "recording.wav"
+			format = "wav"
 		}
-		text, err := a.Local.Transcribe(c.Request.Context(), raw, name, lang)
+		ctx := obs.WithTrace(c.Request.Context(), fmt.Sprintf("lesson-%d", id))
+		a.Log.InfoCtx(ctx, "speech", "audio_received", map[string]any{"lesson_id": id, "student_id": claimsOf(c).UID, "request_trace_id": obs.TraceID(c.Request.Context()), "bytes": len(raw), "language": lang, "format": format})
+		text, err := a.Local.Transcribe(ctx, raw, name, lang)
 		if err != nil {
 			c.JSON(503, fail(503, "语音识别失败，请使用文字输入"))
 			return
 		}
-		a.Log.InfoCtx(c.Request.Context(), "speech", "audio_transcribed", map[string]any{"lesson_id": id, "student_id": claimsOf(c).UID, "text_length": len([]rune(text))})
-		c.JSON(200, ok(gin.H{"text": sanitizeText(text)}))
+		a.Log.InfoCtx(ctx, "speech", "audio_transcribed", map[string]any{"lesson_id": id, "student_id": claimsOf(c).UID, "text_length": len([]rune(text))})
+		if !validVoiceText(text) {
+			reject(400, "invalid_transcript", "invalid voice text")
+			return
+		}
+		c.JSON(200, ok(gin.H{"text": text}))
 	})
 	g.POST("/speech/synthesize", func(c *gin.Context) {
 		if a.Local == nil {
@@ -122,14 +139,24 @@ func (a *App) registerProviderRoutes(g *gin.RouterGroup) {
 		}
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 4096)
 		var in struct {
-			Text string `json:"text"`
-			Lang string `json:"lang"`
+			Text     string `json:"text"`
+			Lang     string `json:"lang"`
+			LessonID int64  `json:"lesson_id,omitempty"`
 		}
-		if c.ShouldBindJSON(&in) != nil || in.Lang != "zh" || len([]rune(in.Text)) > 300 {
+		if c.ShouldBindJSON(&in) != nil || in.Lang != "zh" || strings.TrimSpace(in.Text) == "" || len([]rune(in.Text)) > 300 {
+			a.Log.ErrorCtx(c.Request.Context(), "speech", "synthesis_rejected", map[string]any{"reason": "invalid_text_or_language"})
 			c.JSON(400, fail(400, "仅支持短中文朗读"))
 			return
 		}
-		raw, err := a.Local.Synthesize(c.Request.Context(), in.Text, in.Lang)
+		ctx := c.Request.Context()
+		if in.LessonID != 0 {
+			if !a.ownLesson(c, in.LessonID) {
+				return
+			}
+			ctx = obs.WithTrace(ctx, fmt.Sprintf("lesson-%d", in.LessonID))
+		}
+		a.Log.InfoCtx(ctx, "speech", "synthesis_requested", map[string]any{"lesson_id": in.LessonID, "student_id": claimsOf(c).UID, "request_trace_id": obs.TraceID(c.Request.Context()), "text_length": len([]rune(in.Text)), "language": in.Lang})
+		raw, err := a.Local.Synthesize(ctx, in.Text, in.Lang)
 		if err != nil {
 			c.JSON(503, fail(503, "语音合成失败"))
 			return

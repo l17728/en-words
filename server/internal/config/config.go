@@ -118,6 +118,7 @@ type Store struct {
 	audit     Auditor
 	globals   map[string]any           // 显式设置过的全局值
 	overrides map[int64]map[string]any // 学生覆盖
+	revisions map[int64]map[string]int64
 	// OnLadderChanged 在 ladder 变更持久化前调用（如缩短截断 memory_cards.ladder_step），
 	// 返回错误则整个 Set 中止（R2-AR-02 事务语义）。
 	OnLadderChanged func(newLadder []int) error
@@ -126,6 +127,7 @@ type Store struct {
 func NewStore(p Persister, a Auditor) (*Store, error) {
 	s := &Store{persist: p, audit: a,
 		globals:   map[string]any{},
+		revisions: map[int64]map[string]int64{},
 		overrides: map[int64]map[string]any{},
 	}
 	if p == nil {
@@ -445,6 +447,7 @@ func (s *Store) set(actor string, scope Scope, studentID int64, key string, val 
 		s.audit.ConfigChanged(AuditEntry{Actor: actor, Scope: scope, StudentID: studentID,
 			Key: key, Old: old, New: cv, Reason: reason})
 	}
+	s.bumpRevision(studentID, key)
 	return nil
 }
 
@@ -465,6 +468,7 @@ func (s *Store) DeleteOverride(actor string, studentID int64, key string) error 
 		}
 	}
 	delete(s.overrides[studentID], key)
+	s.bumpRevision(studentID, key)
 	if s.audit != nil {
 		s.audit.ConfigChanged(AuditEntry{Actor: actor, Scope: ScopeStudent, StudentID: studentID,
 			Key: key, Old: old, New: nil, Reason: "删除覆盖，回落全局"})

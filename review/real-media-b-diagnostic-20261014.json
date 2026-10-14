@@ -1,0 +1,458 @@
+{
+  "server_sha256": "6003511c174d86bc36c71539f5b011dcef78d0c8dd6eb318ccca8c24bc01074b",
+  "english_audio": "review\\audio-fixtures\\en\\05.wav",
+  "english_sha256": "def819a48d66c1058257c227245f267714ff74547e122952d8f6e2a1adb2eca5",
+  "chinese_audio": "review\\audio-fixtures\\journey-cat-b-sentence-20261014.wav",
+  "chinese_sha256": "48b4c8024ac97779747239a05c314332c93e5690b8652140916f19cd35603bf1",
+  "chinese_label": "这是一只猫。",
+  "human_chinese_source": "User confirmed B clear and accurate before inference; A rejected as unclear",
+  "human_tts_12": "User confirmed all twelve clear",
+  "scope": "Sentence Chinese ASR journey, not isolated-word quality; native MediaRecorder and real product conversion/providers",
+  "exit": 1,
+  "report": ".test-artifacts\\2026-10-14-real-media-b-final75\\media-results.json",
+  "stats": {
+    "startTime": "2026-10-14T10:15:53.552Z",
+    "duration": 95384.71900000001,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  },
+  "unchanged": true,
+  "source_sha256": "4a88132a3e9675bed69df543216ee4c748c07da51243d7f588af47f9c059a537",
+  "evidence": {
+    "responses": [
+      {
+        "kind": "tts",
+        "status": 200,
+        "mime": "audio/wav"
+      },
+      {
+        "kind": "asr",
+        "status": 200,
+        "body": {
+          "code": 0,
+          "msg": "ok",
+          "data": {
+            "text": "Cat."
+          }
+        }
+      },
+      {
+        "kind": "asr",
+        "status": 200,
+        "body": {
+          "code": 0,
+          "msg": "ok",
+          "data": {
+            "text": "这是一只猫。"
+          }
+        }
+      },
+      {
+        "kind": "tts",
+        "status": 200,
+        "mime": "audio/wav"
+      },
+      {
+        "kind": "asr",
+        "status": 200,
+        "body": {
+          "code": 0,
+          "msg": "ok",
+          "data": {
+            "text": "Cat."
+          }
+        }
+      },
+      {
+        "kind": "asr",
+        "status": 200,
+        "body": {
+          "code": 0,
+          "msg": "ok",
+          "data": {
+            "text": "这是一只猫。"
+          }
+        }
+      },
+      {
+        "kind": "tts",
+        "status": 200,
+        "mime": "audio/wav"
+      }
+    ],
+    "uploads": [
+      {
+        "filename": true,
+        "riff": true,
+        "format": 1,
+        "channels": 1,
+        "sampleRate": 16000,
+        "bits": 16
+      },
+      {
+        "filename": true,
+        "riff": true,
+        "format": 1,
+        "channels": 1,
+        "sampleRate": 16000,
+        "bits": 16
+      },
+      {
+        "filename": true,
+        "riff": true,
+        "format": 1,
+        "channels": 1,
+        "sampleRate": 16000,
+        "bits": 16
+      },
+      {
+        "filename": true,
+        "riff": true,
+        "format": 1,
+        "channels": 1,
+        "sampleRate": 16000,
+        "bits": 16
+      }
+    ],
+    "browser": {
+      "audio": [
+        {
+          "playing": 1,
+          "ended": 1,
+          "errors": 0
+        },
+        {
+          "playing": 1,
+          "ended": 1,
+          "errors": 0
+        },
+        {
+          "playing": 1,
+          "ended": 1,
+          "errors": 0
+        }
+      ],
+      "captures": [
+        "en",
+        "zh",
+        "en",
+        "zh"
+      ],
+      "recordings": [
+        {
+          "mime": "audio/webm;codecs=opus",
+          "bytes": 16475,
+          "magic": [
+            26,
+            69,
+            223,
+            163
+          ]
+        },
+        {
+          "mime": "audio/webm;codecs=opus",
+          "bytes": 16732,
+          "magic": [
+            26,
+            69,
+            223,
+            163
+          ]
+        },
+        {
+          "mime": "audio/webm;codecs=opus",
+          "bytes": 16475,
+          "magic": [
+            26,
+            69,
+            223,
+            163
+          ]
+        },
+        {
+          "mime": "audio/webm;codecs=opus",
+          "bytes": 16732,
+          "magic": [
+            26,
+            69,
+            223,
+            163
+          ]
+        }
+      ],
+      "starts": [
+        {
+          "recorderStartMs": 16629.5,
+          "sourceStartMs": 16630,
+          "durationMs": 1260
+        },
+        {
+          "recorderStartMs": 21162,
+          "sourceStartMs": 21162,
+          "durationMs": 1056.5
+        },
+        {
+          "recorderStartMs": 38230.09999999404,
+          "sourceStartMs": 38230.09999999404,
+          "durationMs": 1260
+        },
+        {
+          "recorderStartMs": 42501.19999999553,
+          "sourceStartMs": 42501.19999999553,
+          "durationMs": 1056.5
+        }
+      ]
+    },
+    "playback": [
+      {
+        "textLength": 3,
+        "lang": "en-US",
+        "voice": "Microsoft Zira Desktop - English (United States)",
+        "local": true,
+        "startMs": 349,
+        "status": "completed"
+      },
+      {
+        "textLength": 3,
+        "lang": "en-US",
+        "voice": "Microsoft Zira Desktop - English (United States)",
+        "local": true,
+        "startMs": 105,
+        "status": "completed"
+      },
+      {
+        "textLength": 3,
+        "lang": "en-US",
+        "voice": "Microsoft Zira Desktop - English (United States)",
+        "local": true,
+        "startMs": 126,
+        "status": "completed"
+      },
+      {
+        "textLength": 1,
+        "lang": "zh-CN",
+        "voice": null,
+        "local": null,
+        "startMs": null,
+        "status": "completed"
+      },
+      {
+        "textLength": 1,
+        "lang": "zh-CN",
+        "voice": null,
+        "local": null,
+        "startMs": null,
+        "status": "completed"
+      },
+      {
+        "textLength": 3,
+        "lang": "en-US",
+        "voice": "Microsoft Zira Desktop - English (United States)",
+        "local": true,
+        "startMs": 55,
+        "status": "completed"
+      },
+      {
+        "textLength": 3,
+        "lang": "en-US",
+        "voice": "Microsoft Zira Desktop - English (United States)",
+        "local": true,
+        "startMs": 50,
+        "status": "completed"
+      },
+      {
+        "textLength": 3,
+        "lang": "en-US",
+        "voice": "Microsoft Zira Desktop - English (United States)",
+        "local": true,
+        "startMs": 48,
+        "status": "completed"
+      },
+      {
+        "textLength": 3,
+        "lang": "en-US",
+        "voice": "Microsoft Zira Desktop - English (United States)",
+        "local": true,
+        "startMs": 67,
+        "status": "completed"
+      },
+      {
+        "textLength": 3,
+        "lang": "en-US",
+        "voice": "Microsoft Zira Desktop - English (United States)",
+        "local": true,
+        "startMs": 115,
+        "status": "completed"
+      },
+      {
+        "textLength": 3,
+        "lang": "en-US",
+        "voice": "Microsoft Zira Desktop - English (United States)",
+        "local": true,
+        "startMs": 107,
+        "status": "completed"
+      },
+      {
+        "textLength": 1,
+        "lang": "zh-CN",
+        "voice": null,
+        "local": null,
+        "startMs": null,
+        "status": "completed"
+      }
+    ]
+  },
+  "judge_trace": [
+    {
+      "level": "info",
+      "ts": "2026-10-14T18:16:31.855+0800",
+      "msg": "judge_started",
+      "module": "judge",
+      "event": "judge_started",
+      "trace_id": "lesson-1",
+      "word_id": 1,
+      "answer_length": 4,
+      "turn": "7:repeating/0/4/0/0/0/0/false/false/0/false/0/0",
+      "lesson_id": 1
+    },
+    {
+      "level": "info",
+      "ts": "2026-10-14T18:16:31.855+0800",
+      "msg": "judge_completed",
+      "module": "judge",
+      "event": "judge_completed",
+      "trace_id": "lesson-1",
+      "turn": "7:repeating/0/4/0/0/0/0/false/false/0/false/0/0",
+      "duration_ms": 0,
+      "lesson_id": 1,
+      "word_id": 1
+    },
+    {
+      "level": "info",
+      "ts": "2026-10-14T18:16:36.636+0800",
+      "msg": "judge_started",
+      "module": "judge",
+      "event": "judge_started",
+      "trace_id": "lesson-1",
+      "turn": "9:judging/1/4/0/1/0/1/false/false/0/false/0/0",
+      "lesson_id": 1,
+      "word_id": 1,
+      "answer_length": 6
+    },
+    {
+      "level": "info",
+      "ts": "2026-10-14T18:16:37.653+0800",
+      "msg": "model_request_completed",
+      "module": "provider",
+      "event": "model_request_completed",
+      "trace_id": "lesson-1",
+      "task": "text",
+      "model": "Qwen/Qwen3-VL-8B-Instruct-GGUF:Q4_K_M",
+      "duration_ms": 1016
+    },
+    {
+      "level": "info",
+      "ts": "2026-10-14T18:16:37.654+0800",
+      "msg": "judge_completed",
+      "module": "judge",
+      "event": "judge_completed",
+      "trace_id": "lesson-1",
+      "turn": "9:judging/1/4/0/1/0/1/false/false/0/false/0/0",
+      "duration_ms": 1017,
+      "lesson_id": 1,
+      "word_id": 1
+    },
+    {
+      "level": "info",
+      "ts": "2026-10-14T18:16:37.654+0800",
+      "msg": "quiz_judged",
+      "module": "judge",
+      "event": "quiz_judged",
+      "trace_id": "lesson-1",
+      "round": 0,
+      "answer_length": 6,
+      "judgment": "wrong",
+      "lesson_id": 1,
+      "word": "cat",
+      "word_id": 1,
+      "kind": "final"
+    },
+    {
+      "level": "info",
+      "ts": "2026-10-14T18:16:53.215+0800",
+      "msg": "judge_started",
+      "module": "judge",
+      "event": "judge_started",
+      "trace_id": "lesson-1",
+      "lesson_id": 1,
+      "word_id": 1,
+      "answer_length": 4,
+      "turn": "14:repeating/1/4/0/1/0/0/true/false/5/false/0/0"
+    },
+    {
+      "level": "info",
+      "ts": "2026-10-14T18:16:53.216+0800",
+      "msg": "judge_completed",
+      "module": "judge",
+      "event": "judge_completed",
+      "trace_id": "lesson-1",
+      "duration_ms": 0,
+      "lesson_id": 1,
+      "word_id": 1,
+      "turn": "14:repeating/1/4/0/1/0/0/true/false/5/false/0/0"
+    },
+    {
+      "level": "info",
+      "ts": "2026-10-14T18:16:57.605+0800",
+      "msg": "judge_started",
+      "module": "judge",
+      "event": "judge_started",
+      "trace_id": "lesson-1",
+      "lesson_id": 1,
+      "word_id": 1,
+      "answer_length": 6,
+      "turn": "16:judging/1/4/0/1/0/1/false/false/5/false/0/0"
+    },
+    {
+      "level": "info",
+      "ts": "2026-10-14T18:16:57.821+0800",
+      "msg": "model_request_completed",
+      "module": "provider",
+      "event": "model_request_completed",
+      "trace_id": "lesson-1",
+      "model": "Qwen/Qwen3-VL-8B-Instruct-GGUF:Q4_K_M",
+      "duration_ms": 215,
+      "task": "text"
+    },
+    {
+      "level": "info",
+      "ts": "2026-10-14T18:16:57.822+0800",
+      "msg": "judge_completed",
+      "module": "judge",
+      "event": "judge_completed",
+      "trace_id": "lesson-1",
+      "duration_ms": 216,
+      "lesson_id": 1,
+      "word_id": 1,
+      "turn": "16:judging/1/4/0/1/0/1/false/false/5/false/0/0"
+    },
+    {
+      "level": "info",
+      "ts": "2026-10-14T18:16:57.822+0800",
+      "msg": "quiz_judged",
+      "module": "judge",
+      "event": "quiz_judged",
+      "trace_id": "lesson-1",
+      "word_id": 1,
+      "kind": "final",
+      "round": 1,
+      "answer_length": 6,
+      "judgment": "wrong",
+      "lesson_id": 1,
+      "word": "cat"
+    }
+  ],
+  "conclusion": "Strict lesson first-answer 100% failed. Human-confirmed sentence was transcribed exactly, all real audio transports/playback completed. Text requests completed without timeout/HTTP/JSON parse failure; current judge adapter silently maps missing/invalid judgment to wrong, so retained logs cannot distinguish semantic wrong from invalid enum. No repeated inference or weakened expectation."
+}

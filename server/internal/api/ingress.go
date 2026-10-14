@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"enwords/internal/classroom"
 	"enwords/internal/obs"
 	"fmt"
@@ -12,8 +13,9 @@ type TurnContext struct {
 	Turn  string `json:"turn"`
 }
 type ClientEnvelope struct {
-	Context TurnContext `json:"context"`
-	EventID string      `json:"event_id"`
+	Context      TurnContext `json:"context"`
+	EventID      string      `json:"event_id"`
+	SubmissionID string      `json:"submission_id,omitempty"`
 }
 
 func (r *Room) contextLocked() TurnContext {
@@ -48,29 +50,62 @@ func (r *Room) acceptLocked(e ClientEnvelope) bool {
 	}
 	return true
 }
-func (r *Room) rejectedLocked() []Msg {
-	r.app.Log.Info("classroom", "event_rejected", map[string]any{"lesson_id": r.lessonID, "reason": "missing_stale_or_duplicate"})
-	return []Msg{{"type": "event_rejected", "reason": "missing_stale_or_duplicate", "context": r.contextLocked()}, r.snapshotLocked()}
+func (r *Room) rejectedLocked(e ClientEnvelope) []Msg {
+	r.app.Log.InfoCtx(r.traceContext(), "classroom", "event_rejected", map[string]any{"lesson_id": r.lessonID, "reason": "missing_stale_or_duplicate"})
+	return []Msg{{"type": "event_rejected", "reason": "missing_stale_or_duplicate", "context": r.contextLocked(), "event_id": e.EventID, "submission_id": e.SubmissionID}, r.snapshotLocked()}
 }
 func (r *Room) HandleClientEvent(e ClientEnvelope, ev classroom.Event, source ...Client) []Msg {
+	return r.HandleClientEventContext(context.Background(), e, ev, source...)
+}
+func (r *Room) HandleClientEventContext(ctx context.Context, e ClientEnvelope, ev classroom.Event, source ...Client) []Msg {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if (len(source) > 0 && r.currentCli != source[0]) || !r.acceptLocked(e) {
-		return r.rejectedLocked()
+	if r.retired || ctx.Err() != nil || (len(source) > 0 && !r.activeLocked(source[0])) || !r.acceptLocked(e) {
+		return r.rejectedLocked(e)
 	}
+	r.inputContext = ctx
+	r.app.Log.InfoCtx(r.traceContext(), "classroom", "event_received", map[string]any{"lesson_id": r.lessonID, "event_id": e.EventID, "request_trace_id": obs.TraceID(ctx), "event_type": ev.Type})
 	out := r.handleEventLocked(ev)
+	if r.retired {
+		return nil
+	}
 	done := Msg{"type": "event_processed", "event_id": e.EventID}
 	r.emitLocked(done)
 	return append(out, done)
 }
 func (r *Room) HandleClientVoice(e ClientEnvelope, text string, source ...Client) (string, []Msg) {
+	cmd, _, frames := r.HandleClientVoiceSubmission(e, text, source...)
+	return cmd, frames
+}
+
+// Return the body belonging to this event while still holding the Room lock.
+// HTTP/WS must never consume a shared queue after another event could replace it.
+func (r *Room) HandleClientVoiceSubmission(e ClientEnvelope, text string, source ...Client) (string, string, []Msg) {
+	return r.HandleClientVoiceSubmissionContext(context.Background(), e, text, source...)
+}
+func (r *Room) HandleClientVoiceSubmissionContext(ctx context.Context, e ClientEnvelope, text string, source ...Client) (string, string, []Msg) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if (len(source) > 0 && r.currentCli != source[0]) || !r.acceptLocked(e) {
-		return "", r.rejectedLocked()
+	if r.retired || ctx.Err() != nil || (len(source) > 0 && !r.activeLocked(source[0])) || !r.acceptLocked(e) {
+		return "", "", r.rejectedLocked(e)
 	}
-	command, out := r.handleVoiceLocked(text)
-	done := Msg{"type": "event_processed", "event_id": e.EventID}
+	r.inputContext = ctx
+	r.app.Log.InfoCtx(r.traceContext(), "classroom", "event_received", map[string]any{"lesson_id": r.lessonID, "event_id": e.EventID, "request_trace_id": obs.TraceID(ctx), "event_type": "voice_text", "text_length": len([]rune(text))})
+	var command, payload string
+	var out []Msg
+	if cmd, body, ok := r.voiceParser.MatchFeedback(text); ok {
+		r.activateDeliveryLocked()
+		command, payload = cmd, body
+	} else {
+		command, out = r.handleVoiceLocked(sanitizeText(text))
+	}
+	if r.retired {
+		return "", "", nil
+	}
+	done := Msg{"type": "event_processed", "event_id": e.EventID, "command": command, "submission_id": e.SubmissionID}
+	if command == "feedback" {
+		done["normalized_text"] = strings.TrimSpace(strings.ReplaceAll(payload, "\r\n", "\n"))
+	}
 	r.emitLocked(done)
-	return command, append(out, done)
+	return command, payload, append(out, done)
 }

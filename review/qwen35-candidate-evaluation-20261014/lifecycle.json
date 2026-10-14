@@ -1,0 +1,130 @@
+{
+  "before": [
+    {
+      "port": 8000,
+      "pid": 16352,
+      "path": "D:\\vl-models\\llama.cpp\\llama-server.exe",
+      "created": "2026-10-14T02:49:37.4160380Z",
+      "safe_command": "\"D:\\vl-models\\llama.cpp\\llama-server.exe\" -hf Qwen/Qwen3-VL-8B-Instruct-GGUF:Q4_K_M --host 127.0.0.1 --port 8000 --api-key <redacted> --ctx-size 32768 --gpu-layers all --parallel 2 --cache-type-k q8_0 --cache-type-v q8_0 --video-ffmpeg-dir D:\\vl-models\\ffmpeg\\ffmpeg-n9.0-latest-win64-lgpl-9.0\\bin --video-fps 0.03 --image-max-tokens 512 "
+    },
+    {
+      "port": 8001,
+      "pid": 7728,
+      "path": "D:\\vl-models\\llama.cpp\\llama-server.exe",
+      "created": "2026-10-14T03:12:18.7558210Z",
+      "safe_command": null
+    },
+    {
+      "port": 8002,
+      "pid": 8908,
+      "path": "C:\\Program Files\\nodejs\\node.exe",
+      "created": "2026-10-14T08:40:25.9206740Z",
+      "safe_command": null
+    },
+    {
+      "port": 8090,
+      "pid": 3552,
+      "path": "C:\\Program Files\\nodejs\\node.exe",
+      "created": "2026-10-13T19:20:57.8220090Z",
+      "safe_command": null
+    }
+  ],
+  "start_script_sha256": "0cc9127829d69cf195730286969b8c83a4618e0ddfe8e231f38c9864f4eb6f55",
+  "llama_exe_sha256": "440ca5a3993f529e4d2250c72da520e1de5da7aa2cff992e000cb10caf782cf6",
+  "candidate_model_sha256": "03b74727a860a56338e042c4420bb3f04b2fec5734175f4cb9fa853daf52b7e8",
+  "candidate_argv": [
+    "D:\\VL-models\\llama.cpp\\llama-server.exe",
+    "-m",
+    "D:\\en-words\\.test-tools\\models\\Qwen3.5-9B-Q4_K_M.gguf",
+    "--alias",
+    "qwen3.5-9b-q4_k_m-candidate",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "18000",
+    "--ctx-size",
+    "8192",
+    "--parallel",
+    "1",
+    "--gpu-layers",
+    "all",
+    "--jinja",
+    "--chat-template-kwargs",
+    "{\"enable_thinking\":false}"
+  ],
+  "baseline_sha256": "89c2a331538a6f2f489bae6617a2e4d20285a71e61f4f0b1a804ff49b7024d7c",
+  "started_at": "2026-10-14T17:54:23+0800",
+  "evaluations": [
+    {
+      "dataset": "candidate-holdout",
+      "exit": 1,
+      "report": "D:\\en-words\\review\\qwen35-candidate-evaluation-20261014\\candidate-holdout.json"
+    },
+    {
+      "dataset": "local-cases",
+      "exit": 1,
+      "report": "D:\\en-words\\review\\qwen35-candidate-evaluation-20261014\\local-cases.json"
+    },
+    {
+      "dataset": "local-holdout",
+      "exit": 1,
+      "report": "D:\\en-words\\review\\qwen35-candidate-evaluation-20261014\\local-holdout.json"
+    }
+  ],
+  "stop_method": "manager lifecycle lock + official PID-file removal; watchdog disabled by absent PID file",
+  "candidate_pid": 9388,
+  "candidate_models": {
+    "models": [
+      {
+        "name": "qwen3.5-9b-q4_k_m-candidate",
+        "model": "qwen3.5-9b-q4_k_m-candidate",
+        "modified_at": "",
+        "size": "",
+        "digest": "",
+        "type": "model",
+        "description": "",
+        "tags": [
+          ""
+        ],
+        "capabilities": [
+          "completion"
+        ],
+        "parameters": "",
+        "details": {
+          "parent_model": "",
+          "format": "gguf",
+          "family": "",
+          "families": [
+            ""
+          ],
+          "parameter_size": "",
+          "quantization_level": ""
+        }
+      }
+    ],
+    "object": "list",
+    "data": [
+      {
+        "id": "qwen3.5-9b-q4_k_m-candidate",
+        "aliases": [
+          "qwen3.5-9b-q4_k_m-candidate"
+        ],
+        "tags": [],
+        "object": "model",
+        "created": 1791971717,
+        "owned_by": "llamacpp",
+        "meta": {
+          "vocab_type": true,
+          "n_vocab": 248320,
+          "n_ctx": 8192,
+          "n_ctx_train": 262144,
+          "n_embd": 4096,
+          "n_params": 8953803264,
+          "size": 5669554176,
+          "ftype": "Q4_K - Medium"
+        }
+      }
+    ]
+  },
+  "proxy_pid": 13700
+}

@@ -6,6 +6,8 @@ package feedback
 
 import (
 	"context"
+	"enwords/internal/obs"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -77,6 +79,7 @@ type Parser struct {
 	// LLM 真实解析通道（智谱 GLM，D-12；nil=纯规则 Mock）。
 	// LLM 失败时回退规则解析（课堂永不因外部 API 阻塞）。
 	llm LLMParser
+	log *obs.Logger
 }
 
 // LLMParser LLM 解析最小接口（适配器满足）。
@@ -87,63 +90,143 @@ type LLMParser interface {
 // SetLLM 注入真实 LLM 解析器。
 func (p *Parser) SetLLM(l LLMParser) { p.llm = l }
 
+func (p *Parser) SetLogger(log *obs.Logger) {
+	if log != nil {
+		p.log = log
+	}
+}
+
 func NewParser(now func() time.Time) *Parser {
-	return &Parser{now: now}
+	return &Parser{now: now, log: obs.Nop()}
 }
 
 // Parse 意图解析（可多意图；LLM 真实解析优先，失败回退规则）。
 func (p *Parser) Parse(text string) ParseResult {
-	if p.llm != nil {
-		if intents, err := p.llm.ParseIntents(context.Background(), text, p.now()); err == nil && len(intents) > 0 {
-			return ParseResult{Intents: intents, Raw: text}
+	res, _ := p.ParseContextAt(context.Background(), text, p.now())
+	return res
+}
+
+// ParseContextAt anchors relative dates to the original submission, including
+// recovery before a plan was installed. Cancellation must never become a write.
+func (p *Parser) ParseContextAt(ctx context.Context, text string, anchor time.Time) (ParseResult, error) {
+	if err := ctx.Err(); err != nil {
+		return ParseResult{}, err
+	}
+	// A complaint describes a problem, not authorization to change settings.
+	// Keep its clause out of model candidates while preserving independent requests.
+	var otherSegments []string
+	hasComplaint := false
+	for _, segment := range splitSegments(text) {
+		if strings.Contains(segment, "投诉") {
+			hasComplaint = true
+		} else {
+			otherSegments = append(otherSegments, segment)
 		}
 	}
-	return p.ParseRules(text)
+	if hasComplaint {
+		result := ParseResult{Raw: text, Intents: []Intent{{Kind: IntentComplaint, Confidence: 0.9}}}
+		if len(otherSegments) > 0 {
+			other, err := p.ParseContextAt(ctx, strings.Join(otherSegments, "；"), anchor)
+			if err != nil {
+				return ParseResult{}, err
+			}
+			result.Intents = append(result.Intents, other.Intents...)
+		}
+		result.Intents = deduplicateIntents(result.Intents)
+		return result, ctx.Err()
+	}
+	if p.llm != nil {
+		intents, err := p.llm.ParseIntents(ctx, text, anchor)
+		if canceled := ctx.Err(); canceled != nil {
+			return ParseResult{}, canceled
+		}
+		if err == nil && len(intents) > 0 {
+			anchored := *p
+			anchored.now = func() time.Time { return anchor }
+			for i := range intents {
+				if intents[i].Kind == IntentPostpone && intents[i].Date != nil {
+					if expected, known := anchored.parseDate(text); known && expected.In(anchor.Location()).Format("2006-01-02") != intents[i].Date.In(anchor.Location()).Format("2006-01-02") {
+						intents[i].NeedsConfirm = true
+					}
+				}
+			}
+			if anchored.dateNeedsConfirmation(text) {
+				for i := range intents {
+					if isFeedbackWrite(intents[i].Kind) {
+						intents[i].NeedsConfirm = true
+					}
+				}
+			}
+			return ParseResult{Intents: deduplicateIntents(p.constrainQuantities(ctx, text, intents)), Raw: text}, nil
+		}
+		if p.log != nil {
+			p.log.InfoCtx(ctx, "feedback", "provider_fallback", map[string]any{"task": "feedback", "reason": "model_unavailable_or_invalid_intents"})
+		}
+	}
+	anchored := *p
+	anchored.now = func() time.Time { return anchor }
+	result := anchored.ParseRules(text)
+	result.Intents = p.constrainQuantities(ctx, text, result.Intents)
+	return result, nil
 }
 
 // ParseRules 规则解析（Mock/兜底）。
 func (p *Parser) ParseRules(text string) ParseResult {
 	res := ParseResult{Raw: text}
-	segs := splitSegments(text)
+	active, ambiguousHistory := activeQuantityText(text, false)
+	if ambiguousHistory {
+		intents := []Intent{{Kind: IntentOther, Confidence: 0.8}}
+		if strings.Contains(text, "投诉") {
+			intents = append(intents, Intent{Kind: IntentComplaint, Confidence: 0.9})
+		}
+		return ParseResult{Raw: text, Intents: intents}
+	}
+	segs := splitSegments(active)
 	for _, seg := range segs {
 		if it, ok := p.parseOne(seg); ok {
 			res.Intents = append(res.Intents, it)
 		}
 	}
-	// 同类合并（"太多了，累" = 一个 A）：保留首个，置信取最大，字段互补
-	if len(res.Intents) > 1 {
-		var merged []Intent
-		for _, it := range res.Intents {
-			dup := false
-			for i := range merged {
-				if merged[i].Kind == it.Kind {
-					if it.Confidence > merged[i].Confidence {
-						merged[i].Confidence = it.Confidence
-					}
-					if merged[i].TargetWords == 0 {
-						merged[i].TargetWords = it.TargetWords
-					}
-					if merged[i].Date == nil {
-						merged[i].Date = it.Date
-					}
-					if merged[i].Word == "" {
-						merged[i].Word = it.Word
-					}
-					merged[i].NeedsConfirm = merged[i].NeedsConfirm || it.NeedsConfirm
-					dup = true
-					break
-				}
-			}
-			if !dup {
-				merged = append(merged, it)
-			}
+	for i := range res.Intents {
+		if isFeedbackWrite(res.Intents[i].Kind) && p.dateNeedsConfirmation(text) {
+			res.Intents[i].NeedsConfirm = true
 		}
-		res.Intents = merged
 	}
+	res.Intents = deduplicateIntents(p.constrainQuantities(nil, text, res.Intents))
 	if len(res.Intents) == 0 {
 		res.Intents = []Intent{{Kind: IntentOther, Confidence: 0.3}}
 	}
 	return res
+}
+
+// Apply the same equivalence rule to model candidates and rule candidates.
+func deduplicateIntents(intents []Intent) []Intent {
+	merged := make([]Intent, 0, len(intents))
+	for _, it := range intents {
+		duplicate := false
+		for i := range merged {
+			if equivalentIntent(merged[i], it) {
+				if it.Confidence > merged[i].Confidence {
+					merged[i].Confidence = it.Confidence
+				}
+				merged[i].NeedsConfirm = merged[i].NeedsConfirm || it.NeedsConfirm
+				duplicate = true
+				break
+			}
+		}
+		if !duplicate {
+			merged = append(merged, it)
+		}
+	}
+	return merged
+}
+
+func equivalentIntent(a, b Intent) bool {
+	if a.Kind != b.Kind || a.TargetWords != b.TargetWords || a.LessonsPerDay != b.LessonsPerDay ||
+		a.Word != b.Word {
+		return false
+	}
+	return (a.Date == nil && b.Date == nil) || (a.Date != nil && b.Date != nil && a.Date.Equal(*b.Date))
 }
 
 // splitSegments 多意图拆分：按 ，,。；;而且/并且/另外/还有 切段。
@@ -160,12 +243,157 @@ func splitSegments(text string) []string {
 	return out
 }
 
-var numRe = regexp.MustCompile(`(\d+)\s*(个|词)`)
+var numRe = regexp.MustCompile(`([0-9零〇一二两三四五六七八九十百千]+)\s*(个|词)`)
+
+// Capture malformed year-prefixed dates too, so they cannot fall back to tomorrow.
+var yearDateCueRe = regexp.MustCompile(`\d{4,}[-/][0-9A-Za-z/\-]*`)
+var dateTokenRe = regexp.MustCompile(`\d{4}-\d{2}-\d{2}|\d{1,2}月\d{1,2}[号日]?|下个?月\d{1,2}[号日]?|大后天|后天|明天|下?周[一二三四五六日天]|下?星期[一二三四五六日天]`)
+var dateAlternativeRe = regexp.MustCompile(`(?:\d{4}-\d{2}-\d{2}|\d{1,2}月\d{1,2}[号日]?|下个?月\d{1,2}[号日]?|(?:下?周|下?星期)[一二三四五六日天]|大后天|后天|明天)[\s,，;；]*?(?:或(?:者)?|还是|[、/／])\s*(?:\d|[零〇一二两三四五六七八九十]|(?:下?周|下?星期)|明天|后天|大后天)`)
+var chineseDateUnitRe = regexp.MustCompile(`[零〇一二两三四五六七八九十]+[月日号]`)
+var chineseMonthDayRe = regexp.MustCompile(`月[零〇一二两三四五六七八九十]+`)
+
+func calendarNumber(s string) (int, bool) {
+	digits := map[rune]int{'零': 0, '〇': 0, '一': 1, '二': 2, '两': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9}
+	r := []rune(s)
+	if len(r) == 1 {
+		if r[0] == '十' {
+			return 10, true
+		}
+		n, ok := digits[r[0]]
+		return n, ok
+	}
+	parts := strings.Split(s, "十")
+	if len(parts) != 2 {
+		return 0, false
+	}
+	tens, units := 1, 0
+	if parts[0] != "" {
+		v := []rune(parts[0])
+		if len(v) != 1 {
+			return 0, false
+		}
+		var ok bool
+		tens, ok = digits[v[0]]
+		if !ok || tens == 0 {
+			return 0, false
+		}
+	}
+	if parts[1] != "" {
+		v := []rune(parts[1])
+		if len(v) != 1 {
+			return 0, false
+		}
+		var ok bool
+		units, ok = digits[v[0]]
+		if !ok || units == 0 {
+			return 0, false
+		}
+	}
+	return tens*10 + units, true
+}
+
+// Only calendar quantities are normalized; raw feedback and word counts stay intact.
+func normalizeCalendarText(text string) string {
+	text = chineseDateUnitRe.ReplaceAllStringFunc(text, func(s string) string {
+		r := []rune(s)
+		n, ok := calendarNumber(string(r[:len(r)-1]))
+		if !ok {
+			return s
+		}
+		return strconv.Itoa(n) + string(r[len(r)-1])
+	})
+	return chineseMonthDayRe.ReplaceAllStringFunc(text, func(s string) string {
+		n, ok := calendarNumber(strings.TrimPrefix(s, "月"))
+		if !ok {
+			return s
+		}
+		return "月" + strconv.Itoa(n)
+	})
+}
+
+func isFeedbackWrite(kind IntentKind) bool {
+	switch kind {
+	case IntentReduce, IntentIncrease, IntentFrequency, IntentPostpone, IntentHardWord:
+		return true
+	}
+	return false
+}
+
+// Neither rules nor a model may silently normalize an impossible date or pick
+// one of multiple distinct date expressions in a postponement request.
+func (p *Parser) dateNeedsConfirmation(text string) bool {
+	text = normalizeCalendarText(text)
+	for _, token := range yearDateCueRe.FindAllString(text, -1) {
+		if _, ok := parseISOCalendarDate(token, p.now().Location()); !ok {
+			return true
+		}
+	}
+	if dateAlternativeRe.MatchString(text) {
+		return true
+	}
+	seen := map[string]bool{}
+	for _, token := range dateTokenRe.FindAllString(text, -1) {
+		seen[token] = true
+		if len(seen) > 1 {
+			return true
+		}
+		if _, ok := p.parseDate(token); !ok {
+			return true
+		}
+	}
+	return false
+}
+
+var frequencyRe = regexp.MustCompile(`(?:一天|每天|一日|每日)\s*(?:安排|学习?|上)?\s*([0-9零〇一二两三四五六七八九十百千]+)\s*(?:课时|节课|次课|堂课|次|遍|节|课)`)
+var frequencyCueRe = regexp.MustCompile(`(?:一天|每天|一日|每日)[^，。；;!?！？\r\n]*(?:课时|节课|次课|堂课|次|遍|节|课)`)
+var frequencyPrefixRe = regexp.MustCompile(`一天|每天|一日|每日`)
+var frequencyContinuationRe = regexp.MustCompile(`^(?:\s*半|\s*(?:[,，;；]\s*)?(?:或|到|至|[~～/／、\-]|[0-9零〇一二两三四五六七八九十百千]+\s*(?:课时|节课|次课|堂课|次|遍|节|课)))`)
+
+// Preserve the entire explicit quantity. Unknown/overflowing numerals are
+// confirmation candidates, never an invented valid default of one lesson.
+func frequencyCount(raw string) int {
+	if n, err := strconv.Atoi(raw); err == nil {
+		return n
+	}
+	switch raw {
+	case "零", "〇":
+		return 0
+	case "一":
+		return 1
+	case "二", "两":
+		return 2
+	case "三":
+		return 3
+	case "四":
+		return 4
+	case "五":
+		return 5
+	case "六":
+		return 6
+	case "七":
+		return 7
+	case "八":
+		return 8
+	case "九":
+		return 9
+	case "十":
+		return 10
+	default:
+		return 0
+	}
+}
 
 // parseOne 单段意图。
 func (p *Parser) parseOne(seg string) (Intent, bool) {
 	s := strings.TrimSpace(seg)
 	low := s
+	if strings.Contains(low, "投诉") {
+		return Intent{Kind: IntentComplaint, Confidence: 0.9}, true
+	}
+	postponeRequested := hasAny(low, "有事", "请假", "没空", "不方便", "推", "缓", "改到", "改期", "挪到", "移到")
+	if postponeRequested && p.dateNeedsConfirmation(low) {
+		return Intent{Kind: IntentPostpone, Confidence: 0.9, NeedsConfirm: true}, true
+	}
 	// E 难词：英文词 + 忘/难
 	if m := regexp.MustCompile(`([A-Za-z][A-Za-z'\- ]*)\s*(?:我?老是?忘|老忘|总是忘|记不住|太难了?|好难)`).FindStringSubmatch(low); m != nil {
 		w := strings.TrimSpace(m[1])
@@ -174,7 +402,7 @@ func (p *Parser) parseOne(seg string) (Intent, bool) {
 		}
 	}
 	// D 推迟：日期/有事/请假/推迟/缓缓
-	if d, ok := p.parseDate(low); ok && hasAny(low, "有事", "请假", "没空", "不方便", "推", "缓", "改到") {
+	if d, ok := p.parseDate(low); ok && postponeRequested {
 		dd := d // 局部副本取地址
 		it := Intent{Kind: IntentPostpone, Confidence: 0.9, Date: &dd}
 		// 超界（>7 天）标记
@@ -184,28 +412,29 @@ func (p *Parser) parseOne(seg string) (Intent, bool) {
 		return it, true
 	}
 	if hasAny(low, "有事", "请假") && !strings.Contains(low, "词") {
+		// An explicit but invalid/ambiguous date must never become tomorrow.
+		if strings.Contains(low, "月") || strings.Contains(low, "周") || strings.Contains(low, "星期") {
+			return Intent{Kind: IntentPostpone, Confidence: 0.9, NeedsConfirm: true}, true
+		}
 		// 无日期的请假 → 明日（保守）
 		t := p.now().AddDate(0, 0, 1)
 		return Intent{Kind: IntentPostpone, Confidence: 0.7, Date: &t}, true
 	}
-	// C 频率：一天/每天 + N次（必须有"次/遍"，防"每天太多"误判）
-	if m := regexp.MustCompile(`(?:一天|每天|一日)[学上两二三\d]*[次遍]`).FindString(low); m != "" {
-		n := 1
-		if strings.Contains(low, "两") || strings.Contains(low, "2") || strings.Contains(low, "二") {
-			n = 2
-		}
-		if strings.Contains(low, "三次") || strings.Contains(low, "3次") {
-			n = 3
-		}
+	// C 频率：完整数量及课程单位，不能将12次误读为2次。
+	if m := frequencyRe.FindStringSubmatch(low); m != nil {
+		n := frequencyCount(m[1])
 		it := Intent{Kind: IntentFrequency, Confidence: 0.85, LessonsPerDay: n}
-		if n > lessonsPerDayMax {
+		if quantityViolationFor(low, it) != nil {
 			it.NeedsConfirm = true
 		}
 		return it, true
 	}
+	if frequencyCueRe.MatchString(low) {
+		return Intent{Kind: IntentOther, Confidence: 0.85}, true
+	}
 	// A/B 词量：显式数字（方向词优先；中性"改到/调到"以默认 60 为基准判向）
 	if m := numRe.FindStringSubmatch(low); m != nil {
-		n, _ := strconv.Atoi(m[1])
+		n, _ := wordQuantityCount(m[1])
 		isReduce := hasAny(low, "降", "减", "少")
 		isIncrease := hasAny(low, "多", "加", "升", "提高")
 		if !isReduce && !isIncrease {
@@ -238,9 +467,19 @@ func (p *Parser) parseOne(seg string) (Intent, bool) {
 	return Intent{}, false
 }
 
-// parseDate 日期解析：明天/后天/大后天/周X/周X有课/月日。
+func parseISOCalendarDate(token string, location *time.Location) (time.Time, bool) {
+	date, err := time.ParseInLocation("2006-01-02", token, location)
+	return date, err == nil && date.Year() > 0 && date.Format("2006-01-02") == token
+}
+
+// parseDate 日期解析：完整 ISO 日期/明天/后天/大后天/周X/月日。
 func (p *Parser) parseDate(s string) (time.Time, bool) {
+	s = normalizeCalendarText(s)
 	now := p.now()
+	if token := yearDateCueRe.FindString(s); token != "" {
+		// Explicit years never roll forward. PlanAt handles past/out-of-window dates.
+		return parseISOCalendarDate(token, now.Location())
+	}
 	if strings.Contains(s, "大后天") { // 先于"后天"检查（包含关系）
 		return now.AddDate(0, 0, 3), true
 	}
@@ -251,26 +490,52 @@ func (p *Parser) parseDate(s string) (time.Time, bool) {
 		return now.AddDate(0, 0, 2), true
 	}
 	// 周X（中文）——找未来最近的那天
-	for wd, name := range map[int]string{1: "一", 2: "二", 3: "三", 4: "四", 5: "五", 6: "六", 0: "日"} {
+	weekday := -1
+	if strings.Contains(s, "周天") || strings.Contains(s, "星期天") {
+		weekday = 0
+	}
+	for wd, name := range []string{"日", "一", "二", "三", "四", "五", "六"} {
 		if strings.Contains(s, "周"+name) || strings.Contains(s, "星期"+name) {
-			return nextWeekday(now, wd), true
+			if weekday >= 0 {
+				return time.Time{}, false
+			}
+			weekday = wd
 		}
+	}
+	if weekday >= 0 {
+		if strings.Contains(s, "下周") || strings.Contains(s, "下星期") {
+			// Natural weeks start on Monday. Unlike an unqualified weekday,
+			// next week must not resolve to a later day of the current week.
+			current := (int(now.Weekday()) + 6) % 7
+			target := (weekday + 6) % 7
+			return now.AddDate(0, 0, 7-current+target), true
+		}
+		return nextWeekday(now, weekday), true
 	}
 	// 月日：X月X号/日
 	if m := regexp.MustCompile(`(\d{1,2})月(\d{1,2})[号日]?`).FindStringSubmatch(s); m != nil {
 		mo, _ := strconv.Atoi(m[1])
 		da, _ := strconv.Atoi(m[2])
 		t := time.Date(now.Year(), time.Month(mo), da, 0, 0, 0, 0, now.Location())
+		if int(t.Month()) != mo || t.Day() != da || t.Year() != now.Year() {
+			return time.Time{}, false
+		}
 		if t.Before(now) { // 已过 → 明年
-			t = t.AddDate(1, 0, 0)
+			t = time.Date(now.Year()+1, time.Month(mo), da, 0, 0, 0, 0, now.Location())
+			if int(t.Month()) != mo || t.Day() != da {
+				return time.Time{}, false
+			}
 		}
 		return t, true
 	}
 	// 下个月X号 / 下月X号（无前置数字的"个月"；R4-be#7：用 AddDate 防月份溢出）
 	if m := regexp.MustCompile(`下个?月(\d{1,2})[号日]?`).FindStringSubmatch(s); m != nil {
 		da, _ := strconv.Atoi(m[1])
-		next := now.AddDate(0, 1, 0) // 先推进月份再设日（time.Date 自带归一化）
+		next := time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, now.Location())
 		t := time.Date(next.Year(), next.Month(), da, 0, 0, 0, 0, now.Location())
+		if t.Month() != next.Month() || t.Day() != da {
+			return time.Time{}, false
+		}
 		return t, true
 	}
 	return time.Time{}, false
@@ -296,11 +561,15 @@ func hasAny(s string, subs ...string) bool {
 
 // Plan 处置决策（02 §7.1 分派 + S-12 多意图逐项）。
 func (p *Parser) Plan(res ParseResult) []PlannedAction {
+	return p.PlanAt(res, p.now())
+}
+
+func (p *Parser) PlanAt(res ParseResult, anchor time.Time) []PlannedAction {
 	out := make([]PlannedAction, 0, len(res.Intents))
-	for _, it := range res.Intents {
+	for _, it := range p.constrainQuantities(nil, res.Raw, res.Intents) {
 		// Models provide candidates, never authority. Apply the same hard limits
 		// to model and rule results immediately before planning any side effect.
-		if it.Confidence < 0.5 || it.Confidence > 1 {
+		if math.IsNaN(it.Confidence) || math.IsInf(it.Confidence, 0) || it.Confidence < 0.5 || it.Confidence > 1 {
 			out = append(out, PlannedAction{Intent: it, Action: ActionClarify})
 			continue
 		}
@@ -314,7 +583,7 @@ func (p *Parser) Plan(res ParseResult) []PlannedAction {
 				it.NeedsConfirm = true
 			}
 		case IntentPostpone:
-			if it.Date == nil || !it.Date.After(p.now()) || it.Date.After(p.now().AddDate(0, 0, postponeMaxDays)) {
+			if it.Date == nil || !it.Date.After(anchor) || it.Date.After(anchor.AddDate(0, 0, postponeMaxDays)) {
 				it.NeedsConfirm = true
 			}
 		case IntentHardWord:
@@ -337,11 +606,32 @@ func (p *Parser) Plan(res ParseResult) []PlannedAction {
 			}
 			out = append(out, PlannedAction{Intent: it, Action: a})
 		case IntentHardWord:
-			out = append(out, PlannedAction{Intent: it, Action: ActionBoost})
+			a := ActionBoost
+			if it.NeedsConfirm {
+				a = ActionNeedConfirm
+			}
+			out = append(out, PlannedAction{Intent: it, Action: a})
 		case IntentComplaint:
 			out = append(out, PlannedAction{Intent: it, Action: ActionEscalate})
 		default:
 			out = append(out, PlannedAction{Intent: it, Action: ActionClarify})
+		}
+	}
+	// Contradictory targets require a new, explicit submission. Do not silently
+	// discard one intent or pick the last configuration value.
+	for i := range out {
+		for j := 0; j < i; j++ {
+			a, b := out[i].Intent, out[j].Intent
+			wordsA := a.Kind == IntentReduce || a.Kind == IntentIncrease
+			wordsB := b.Kind == IntentReduce || b.Kind == IntentIncrease
+			conflict := wordsA && wordsB && (a.TargetWords != b.TargetWords ||
+				(a.TargetWords == 0 && a.Kind != b.Kind))
+			conflict = conflict || (a.Kind == IntentFrequency && b.Kind == IntentFrequency && a.LessonsPerDay != b.LessonsPerDay)
+			conflict = conflict || (a.Kind == IntentPostpone && b.Kind == IntentPostpone &&
+				(a.Date == nil || b.Date == nil || !a.Date.Equal(*b.Date)))
+			if conflict {
+				out[i].Action, out[j].Action = ActionNeedConfirm, ActionNeedConfirm
+			}
 		}
 	}
 	return out

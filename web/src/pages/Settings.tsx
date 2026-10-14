@@ -37,6 +37,7 @@ export default function SettingsPage() {
   useEffect(() => {
     requestEpoch.current++
     let disposed = false
+    // oxlint-disable-next-line react/set-state-in-effect -- External settings scope/retry changes must reset prior save state before the guarded request.
     setLoading(true)
     setSaving(false)
     setRefreshPending(false)
@@ -52,6 +53,7 @@ export default function SettingsPage() {
     }).catch((cause: unknown) => {
       if (!disposed) setError(cause instanceof Error ? cause.message : '无法读取朗读设置')
     }).finally(() => { if (!disposed) setLoading(false) })
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Increment the latest request generation to reject in-flight saves; this is not a DOM ref.
     return () => { disposed = true; requestEpoch.current++ }
   }, [path, attempt, form])
 

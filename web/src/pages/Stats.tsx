@@ -29,6 +29,7 @@ export default function StatsPage() {
   const [attempt, setAttempt] = useState(0)
   useEffect(() => {
     let disposed = false
+    // oxlint-disable-next-line react/set-state-in-effect -- An external statistics retry must immediately reset loading/error before its guarded response.
     setLoading(true)
     setError('')
     api.get<StudentStats>('/student/stats').then(value => {

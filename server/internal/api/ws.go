@@ -3,12 +3,16 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
+	"enwords/internal/auth"
+	"enwords/internal/obs"
 	"errors"
 	"net/http"
 	"strconv"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"enwords/internal/classroom"
 
@@ -27,13 +31,16 @@ var upgrader = websocket.Upgrader{
 
 // wsClient 适配 Client 接口；写串行化（gorilla 单写者约束）。
 type wsClient struct {
-	conn    *websocket.Conn
-	send    chan Msg
-	control chan Msg
-	done    chan struct{}
-	mu      sync.Mutex
-	closed  bool
+	conn           *websocket.Conn
+	send           chan Msg
+	control        chan Msg
+	done           chan struct{}
+	mu             sync.Mutex
+	closed         bool
+	onBackpressure func()
 }
+
+func (c *wsClient) IsClosed() bool { c.mu.Lock(); defer c.mu.Unlock(); return c.closed }
 
 func (c *wsClient) Close() error {
 	c.mu.Lock()
@@ -122,7 +129,17 @@ func (c *wsClient) Send(m Msg) error {
 	case c.send <- m:
 		return nil
 	default:
-		return errBackpressure // 队列满丢弃非关键帧（快照可经 REST 兜底重取）
+		// Do not continue a stream after silently losing a business command.
+		// This path must not re-enter Room or acquire c.mu through Close.
+		c.closed = true
+		close(c.done)
+		if c.conn != nil {
+			_ = c.conn.Close()
+		}
+		if c.onBackpressure != nil {
+			c.onBackpressure()
+		}
+		return errBackpressure
 	}
 }
 
@@ -144,11 +161,19 @@ func (a *App) handleWS(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "msg": "lesson unavailable"})
 		return
 	}
+	if !a.activeAccount(c.Request.Context(), tk.StudentID, auth.RoleStudent, "") {
+		c.JSON(http.StatusUnauthorized, fail(401, "account unavailable"))
+		return
+	}
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		return
 	}
+	conn.SetReadLimit(16 << 10)
 	client := newWSClient(conn)
+	client.onBackpressure = func() {
+		a.Log.ErrorCtx(obs.WithTrace(context.Background(), "lesson-"+strconv.FormatInt(lessonID, 10)), "ws", "ws_backpressure", map[string]any{"lesson_id": lessonID, "student_id": tk.StudentID, "capacity": cap(client.send)})
+	}
 	room, _, err := a.Rooms.Enter(lessonID, tk.StudentID)
 	if err != nil {
 		_ = client.Close()
@@ -158,7 +183,17 @@ func (a *App) handleWS(c *gin.Context) {
 	a.Log.Info("ws", "client_connected", map[string]any{
 		"lesson_id": lessonID, "student_id": tk.StudentID}) // §14 WS 连接
 
+	// The upgraded connection outlives Gin's HTTP request context.
+	ctx, cancel := context.WithCancel(obs.WithTrace(context.Background(), obs.TraceID(c.Request.Context())))
 	go func() {
+		select {
+		case <-client.done:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+	go func() {
+		defer cancel()
 		defer func() {
 			room.Leave(client)
 			_ = client.Close()
@@ -167,16 +202,33 @@ func (a *App) handleWS(c *gin.Context) {
 		}()
 		for {
 			_ = conn.SetReadDeadline(time.Now().Add(90 * time.Second))
+			_, raw, readErr := conn.ReadMessage()
+			if readErr != nil || !utf8.Valid(raw) {
+				return
+			}
 			var m Msg
-			if err := conn.ReadJSON(&m); err != nil {
+			if err := json.Unmarshal(raw, &m); err != nil {
 				return
 			}
 			if !room.IsActive(client) {
 				return
 			}
+			if !a.activeAccount(ctx, tk.StudentID, auth.RoleStudent, "") {
+				return
+			}
 			var envelope ClientEnvelope
-			raw, _ := json.Marshal(m)
-			_ = json.Unmarshal(raw, &envelope)
+			submissionValue, submissionPresent := m["submission_id"]
+			if err := json.Unmarshal(raw, &envelope); err != nil || (submissionPresent && submissionValue == nil) {
+				rejected := Msg{"type": "event_rejected", "reason": "invalid_envelope"}
+				if id, ok := m["event_id"].(string); ok && len(id) <= 128 {
+					rejected["event_id"] = id
+				}
+				if id, ok := m["submission_id"].(string); ok && feedbackSubmissionID.MatchString(id) {
+					rejected["submission_id"] = id
+				}
+				_ = client.Send(rejected)
+				continue
+			}
 			typ, _ := m["type"].(string)
 			switch typ {
 			case "heartbeat":
@@ -187,7 +239,7 @@ func (a *App) handleWS(c *gin.Context) {
 				if !validClassroomEvent(ev) {
 					continue
 				}
-				frames := room.HandleClientEvent(envelope, classroom.Event{Type: ev, Text: sanitizeText(text)}, client)
+				frames := room.HandleClientEventContext(ctx, envelope, classroom.Event{Type: ev, Text: sanitizeText(text)}, client)
 				if len(frames) > 0 && frames[0]["type"] == "event_rejected" {
 					for _, f := range frames {
 						_ = client.Send(f)
@@ -195,19 +247,34 @@ func (a *App) handleWS(c *gin.Context) {
 				}
 			case "voice_text": // Omni 中继 / 前端 Web Speech 上报的转写文本
 				text, _ := m["text"].(string)
-				cmd, frames := room.HandleClientVoice(envelope, sanitizeText(text), client)
+				if !validVoiceText(text) {
+					_ = client.Send(Msg{"type": "event_rejected", "event_id": envelope.EventID, "submission_id": envelope.SubmissionID, "reason": "invalid_text"})
+					continue
+				}
+				if _, body, matched := room.voiceParser.MatchFeedback(text); matched {
+					if _, err := normalizeFeedback(FeedbackSubmission{SubmissionID: envelope.SubmissionID, Text: body, Channel: "voice"}); err != nil {
+						failure := Msg(feedbackError(err))
+						failure["type"] = "feedback_reply"
+						failure["submission_id"] = envelope.SubmissionID
+						_ = client.Send(failure)
+						continue
+					}
+				}
+				cmd, body, frames := room.HandleClientVoiceSubmissionContext(ctx, envelope, text, client)
 				if len(frames) > 0 && frames[0]["type"] == "event_rejected" {
 					for _, f := range frames {
 						_ = client.Send(f)
 					}
 				}
-				if cmd == "feedback" { // D-14 语音反馈闭环（G-2 同管线）
-					select {
-					case fb := <-room.FeedbackCh:
-						rec := a.HandleFeedbackContext(c.Request.Context(), tk.StudentID, fb)
-						_ = client.Send(Msg{"type": "feedback_reply",
-							"status": rec.Status, "reply": rec.Reply})
-					default:
+				if cmd == "feedback" {
+					rec, err := a.SubmitFeedback(ctx, tk.StudentID, FeedbackSubmission{SubmissionID: envelope.SubmissionID, Text: body, Channel: "voice"})
+					if err != nil {
+						failure := Msg(feedbackError(err))
+						failure["type"] = "feedback_reply"
+						failure["submission_id"] = envelope.SubmissionID
+						_ = client.Send(failure)
+					} else {
+						_ = client.Send(Msg{"type": "feedback_reply", "submission_id": rec.SubmissionID, "status": rec.Status, "reply": rec.Reply, "feedback": rec})
 					}
 				}
 			case "resume":

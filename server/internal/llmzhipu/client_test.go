@@ -13,8 +13,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
 func loadClient(t *testing.T) *Client {
 	t.Helper()
+	if os.Getenv("ENWORDS_REAL_API_TESTS") != "1" {
+		t.Skip("cloud integration requires explicit ENWORDS_REAL_API_TESTS=1")
+	}
 	p := filepath.Join("..", "..", "..", "secrets", "dashscope.local.yaml")
 	raw, err := os.ReadFile(p)
 	if err != nil {

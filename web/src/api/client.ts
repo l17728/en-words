@@ -1,3 +1,4 @@
+import { clearFeedbackPending } from '../feedback/pending'
 // REST 客户端（docs/02 §10 约定：{code,msg,data}）
 // 【类级修复】token 唯一事实源=localStorage，每次请求实时读取——
 // 消灭"模块级缓存与 localStorage 失同步"这一类 401 问题（登录/登出/多标签页场景全免疫）。
@@ -7,6 +8,24 @@ export interface Resp<T = unknown> {
   code: number
   msg: string
   data: T
+  error_code?: string
+  submission_id?: string
+  retryable?: boolean
+}
+
+export class ApiError extends Error {
+  readonly code: number
+  readonly error_code?: string
+  readonly data?: unknown
+  readonly submission_id?: string
+  readonly retryable?: boolean
+  constructor(message: string, code: number, error_code?: string,
+    data?: unknown, submission_id?: string, retryable?: boolean) {
+    super(message)
+    this.name = 'ApiError'
+    this.code = code; this.error_code = error_code; this.data = data
+    this.submission_id = submission_id; this.retryable = retryable
+  }
 }
 
 export function setToken(t: string) {
@@ -15,6 +34,7 @@ export function setToken(t: string) {
 
 export function clearToken() {
   localStorage.removeItem('token')
+  clearFeedbackPending()
 }
 
 function liveToken(): string {
@@ -48,15 +68,19 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
   const resp = (await res.json()) as Resp<T>
+  // A response belongs to the session that sent it, including a delayed 401.
+  // Never publish old account data or clear a newer login's token.
+  if (tok !== liveToken()) throw new ApiError('当前会话已改变，请重试当前操作', 409, 'session_changed')
   if (resp.code === 401) {
     // 会话失效（过期/服务重启）同类问题的统一恢复路径：清态回登录页
     clearToken()
     if (!location.pathname.startsWith('/login')) {
       location.href = '/login'
     }
-    throw new Error('登录已过期，请重新登录')
+    throw new ApiError('登录已过期，请重新登录', 401, resp.error_code, resp.data, resp.submission_id, resp.retryable)
   }
-  if (resp.code !== 0) throw new Error(resp.msg || `错误 ${resp.code}`)
+  if (resp.code !== 0) throw new ApiError(resp.msg || `错误 ${resp.code}`, resp.code, resp.error_code,
+    resp.data, resp.submission_id, resp.retryable)
   return resp.data
 }
 
@@ -102,9 +126,46 @@ export interface Notification {
 }
 
 export interface FeedbackRecord {
+  parent_submission_id?: string
+  conversation_id?: string
+  clarification_answered?: boolean
   id: number
   text: string
   status: string
   reply: string
   created_at: string
+  student_id?: number
+  submission_id?: string
+  task_id?: string
+  version?: number
+  results?: FeedbackIntentResult[]
+  retryable?: boolean
+  refresh_pending?: boolean
+  updated_at?: string
+  idempotency?: string
+  retry_after_ms?: number
+  error_code?: string
+}
+
+export interface FeedbackIntentResult {
+  index: number
+  kind: string
+  status: string
+  result_code: string
+  reply: string
+  retryable: boolean
+  refresh_pending: boolean
+  actual?: unknown
+}
+
+export interface FeedbackTodo {
+  id: number
+  task_id: string
+  intent_index: number
+  student_id: number
+  status: string
+  text: string
+  created_at: string
+  legacy?: boolean
+  reply?: string
 }

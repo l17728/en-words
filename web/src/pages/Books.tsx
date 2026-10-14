@@ -66,11 +66,11 @@ export default function BooksPage() {
             <Card
               hoverable
               actions={[
-                <Button type="primary" loading={enabling === b.ID} onClick={() => enable(b)}>
+                <Button key="select" type="primary" loading={enabling === b.ID} onClick={() => enable(b)}>
                   选择这个词库
                 </Button>,
                 ...(isAdmin ? [
-                  <Button danger type="link" onClick={() => deleteBook(b)}>删除</Button>,
+                  <Button key="delete" danger type="link" onClick={() => deleteBook(b)}>删除</Button>,
                 ] : []),
               ]}
             >

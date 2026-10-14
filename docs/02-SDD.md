@@ -33,7 +33,7 @@
 
 ```
 ┌─────────────────────────────── 用户层 ────────────────────────────────┐
-│  学生浏览器 (React18+AntD5+Zustand)          管理员浏览器（管理后台）    │
+│  学生浏览器 (React19+AntD6+Zustand)          管理员浏览器（管理后台）    │
 │   学习UI / 协同课堂UI / 反馈 / TTS播放/语音识别/麦克风 │ 词库管理/配置/审计    │
 └──────────────┬──────────────────────────────┬────────────────────────┘
                │ HTTPS(WSS)                   │ HTTPS
@@ -303,7 +303,7 @@ Agent(LLM function call)
 LESSON（可跨多个 SESSION 续课，见 §5.5）
   ├─ TEACHING (w=1..W, W=wordsPerLesson)  # 教学阶段，逐词顺序推进（无分组、无插入测试）
   │   ├─ SHOW_WORD                        #   中英对照展示（点击或 0.8s 自动开读）
-  │   ├─ TTS_SEG (i=1..N+1)               #   朗读段：en×ttsEnRepeat 后 zh×1（R2-FE-02 拆分）
+  │   ├─ TTS_SEG (i=1..N+M)               #   朗读段：en×ttsEnRepeat 后 zh×ttsZhRepeat（间隔见14）
   │   ├─ REPEATING                        #   学生跟读一遍；老师听读判读（ASR 转写匹配当前词，
   │   │                                   #   correct/near → 判定读完；超时 nudge 后计为完成兜底）
   │   └─ WORD_DONE → 下一个词（直至全部教完）
@@ -435,7 +435,7 @@ ladderDefault = [1,1,2,2,4,7,14,30]  // 天；ladder[k]=第k+1次复习距上次
 ### 6.3 排课算法（plan_next_lesson）
 
 ```
-输入: studentId, bookId, config(wordsPerLesson W∈[40,100])
+输入: studentId, bookId, config(wordsPerLesson W∈[50,100])
 1. dueWords  = {status=learning, NextDueAt ≤ now+24h} 按 NextDueAt 升序   ← 全部保留
 2. boosted   = {BoostFlag=true 且未在 due} 按标记时间倒序
 3. newWords  = {status=new, 未被摸底标记 mastered} 按词库序
@@ -499,7 +499,7 @@ submitted → processing → applied
 
 | 调整 | 边界 | 超界处理 |
 |---|---|---|
-| wordsPerLesson | [40,100] | 学生确认 or escalate |
+| wordsPerLesson | [50,100] | 超界不应用，需确认或升级 |
 | lessonsPerDay | [1,2] | 同上 |
 | 推迟天数 | ≤7 天/次，月累计 ≤3 次 | 同上 |
 | 单词 Boost | 每词库同时 ≤20 词 | FIFO 淘汰最旧 |
@@ -515,8 +515,11 @@ submitted → processing → applied
 | key | 类型 | 默认 | 边界 | 说明 |
 |---|---|---|---|---|
 | wordsPerLesson | int | 60 | [50,100] | 每课词数（用户定案 2026-08-25：一次课 50~100 词） |
-| ttsEnRepeat | int | 3 | [1,5] | 英文朗读遍数（3 遍英文+1 遍中文） |
-| ttsIntervalMs | int | 1500 | [500,4000] | 朗读间隔 |
+| ttsEnRepeat | int | 3 | [1,5] | 英文朗读遍数；3英文+1中文为默认，可分别设置 |
+| ttsZhRepeat | int | 1 | [1,5] | 中文朗读遍数 |
+| ttsIntervalMs | int | 1500 | [0,10000] | 相邻英文段间隔（毫秒） |
+| ttsZhIntervalMs | int | 1500 | [0,10000] | 相邻中文段间隔（毫秒） |
+| ttsSwitchIntervalMs | int | 1500 | [0,10000] | 英文切换中文的间隔（毫秒）；五项原子保存与冻结见14 |
 | repeatTimes | int | 1 | [1,5] | 跟读遍数（用户定案 2026-08-25：跟读一遍，老师听读判读通过即下一词） |
 | timeoutShowWordS | int | 8 | [3,30] | 展示等点击（实际生效 0.8s 自动开读，见 §5.3 定案注记） |
 | timeoutRepeatS | int | 10 | [5,60] | 单遍跟读（超时 nudge 后计为完成兜底） |
@@ -754,7 +757,7 @@ GET  /agent/tools                      # 该 Agent 可见工具清单（给 LLM 
 接口: TTSProvider.Synthesize(ctx, text, lang, voice) → audio bytes/URL
 实现: MockTTS(返回标记文本，前端转 Web Speech API 本地朗读)
       DashScopeTTS(Omni 非实时 qwen3.5-omni-plus 单段合成+播放队列编排, D-17 定案; cosyvoice 已砍, 见05)
-播放: 前端 audio/ 模块统一排队播放（en×n 间隔 ttsIntervalMs + zh×1）
+播放: 前端串行队列按课程冻结配置播放（en×ttsEnRepeat 后 zh×ttsZhRepeat，三类间隔见14）
 兜底: Web Speech API 的 voices 异步加载/onend 不可靠 → 前端按字数估时+1s 看门狗
       强制视为完成；Web Speech 完全不可用 → 静音计时+视觉动画，tts_finished 照常
       上报，流程不阻塞（评审发现 FE-03，P0）
@@ -917,15 +920,50 @@ feedbackStore / adminStore —— classroomStore 只由 WS 与本地回执写入
 
 ## 17. 部署设计
 
-```
-构建: make build → dist/enwords-server.exe(内嵌 web/dist 静态资源) + enwords.db
+> 反馈任务增量实施合同见docs12 §8，覆盖本文件旧反馈单状态/共享语音队列描述。API仍采用`{code,msg,data}`，错误补充`error_code/submission_id/retryable`，不改变成功code=0的约定。
+
+| 反馈增量入口 | 权限与语义 |
+|---|---|
+| POST `/api/v1/feedbacks` | 学生；text/channel/submission_id，16KiB JSON；同ID同文返回原任务，异文409 |
+| GET `/api/v1/feedbacks/mine` | 当前学生历史，逐项results及version |
+| GET `/api/v1/feedbacks/submissions/:id` | 当前学生查询，不重新执行业务 |
+| POST `/api/v1/feedbacks/submissions/:id/retry` | 当前学生显式恢复未完成项，空体或{}，不允许替换原文 |
+| GET `/api/v1/admin/todos`、`/todos/:id` | 管理员独立待办列表/详情；不以总反馈状态筛选 |
+| GET `/api/v1/admin/notifications` | 管理员自己的通知 |
+| POST `/api/v1/admin/notifications/read` | 管理员自己的通知已读；学生沿用student入口 |
+
+课堂REST voice和WS voice_text携带submission_id。event_processed回显event_id/command/submission_id，反馈分支增加normalized_text；event_rejected回显两ID。feedback_reply保留status/reply并带完整feedback记录；该记录依submission_id/version合并，独立于课堂seq/turn。WS任务上下文使用连接生命周期并保留HTTP trace，不能复用已结束的升级请求上下文。
+
+反馈凭证采用feedback_tasks/feedback_intents/feedback_todos/feedback_notices独立表，配置revision保留删除墓碑。日志沿HTTP trace记录task/attempt/intent、工具与资源摘要、事务提交或回滚，不输出反馈正文或底层错误原文。旧反馈迁移只迁历史及待办，不重新执行工具或发通知。
+
+以下为原始部署目标，当前仓库尚无`make build`、静态资源内嵌或每日自动备份实现，不能当作可执行说明或已验收能力。当前可执行开发启动与持久化参数见09/10；技术栈基线采用01的2026-10-14 ADR（React19/AntD6）。
+
+```text
+目标构建: make build → dist/enwords-server.exe(内嵌 web/dist 静态资源) + enwords.db
 运行: 双击/命令行启动 → 监听 :8080 → 家庭局域网访问 http://<host>:8080
       开发: go run ./cmd/server [-persist] [-testmode] [-providers real]
       参数: -persist 启用 SQLite 持久化（默认 data/enwords.db；-db <路径> 自定义）
             -providers mock|real（real=智谱 GLM 判分L2+反馈解析，密钥读 secrets）
             -testmode 跳过课程开放时间校验（E2E 专用，产品禁用）
-      持久化范围: 用户/词库/词条/记忆卡/课程/摸底草稿（store 包 14 表 GORM 自动迁移）
+      持久化范围: 用户/词库/词条/记忆卡/课程/摸底草稿，以及运行记录、反馈任务/意图/待办/通知与配置版本；表清单以store.Open的GORM迁移列表为准。
 首次: 引导创建管理员 → 导入词库 → 建学生账号
 备份: SQLite 单文件，内置每日自动 backup 到 ./backups（保留 14 份）
 升级: 替换单文件，migrations 自动执行
 ```
+# 2026-10-14 工具与持久任务实施补充
+
+本节更新历史“22工具”口径：当前31个真实Registry名称与角色边界以 `review/tool-capability-catalog.json` 和 docs/16 对照表为准；管理词库REST是管理能力，不能等同Agent自主权限。`feedback.apply_adjustment` 的规范执行名为 `config.set_student`，无新增别名写旁路。Teacher冻结效果→工具→Hub单一发送出口；工具不回调Room锁，锁外模型结果按代次提交，详见18。
+
+逾期巡检调用 `App.RunOverdue`：Agent冻结重排计划，工具事务提交旧课expired、新课预约、学生通知、审计和OverdueTask完成凭证。任务键绑定原课与OpenAt，prepared计划包含PlannedAt/Version，冷恢复目标过期保留历史并重计划；连续逾期仅建议暂停。已存在课堂48小时保护，不静默判空答。旧Scheduler.HandleOverdue不是生产调用入口。
+
+反馈POST `/api/v1/feedbacks` 新增可选 `parent_submission_id`，列表与详情返回 `parent_submission_id/conversation_id/clarification_answered`。父必须为同学生的已完成clarify结果；父认领和子冻结计划同事务，拒绝不得残留无计划子任务。同提交ID不同父构成冲突。月主动改期计同学生、原任务北京时间自然月中成功D意图receipt，前三次可执行、第四次need_confirm且无绕额度确认写接口。每学生词库难词池容量20、BoostSequence FIFO，重复加强不刷新年龄，消费保留序号。协议、故障与UI合同见19。
+
+### 反馈显式数量约束增量（26已实施，定向通过/全量待验）
+
+新增合同见[26-反馈显式数量与动作授权边界.md](26-反馈显式数量与动作授权边界.md)。平台对规则/模型/携Raw规划统一核对数量、单位、维度及候选一致性，拒绝显式零被当作相对调整省略值；教学决策仍由Agent负责。保留合法混合与明确历史分句边界。现有反馈API与配置键不变；`need_confirm`无越界确认写入口。§14日志补`feedback_constraint_rejected`固定原因摘要及trace，不记录原文。实际代码独审和定向通过，完整Go/race及真实浏览器证据待回收。
+
+### 判分来源观测增量（27已实施，定向通过/全量待验）
+
+§14新增`judge_decision`：每次JudgeContext只记录一次source=l1/l2/fallback、result=correct/near/wrong与固定reason。合法模型wrong记model_verdict；非法/缺失枚举返回ErrInvalidJudgment并记invalid_judgment，不能冒充成功模型判断。App钩子读取当前日志器、沿用课堂lesson trace；不记录答案、词面、原始模型回复或底层错误。评分/提示/机会数不变，取消后结果仍由Room代次校验拒绝。具体合同与红绿证据见27。
+
+新增日志 `feedback_quota_checked/boost_pool_updated/feedback_clarification_linked/overdue_replanned/overdue_replan_failed/overdue_conflict` 记录父trace和任务/资源ID；事务内日志标明pending，业务成功以提交凭证和提交后事件为准，不记录正文、记忆内容、token或音频。最新增量最终验收尚未封版，不能沿用历史覆盖率宣称新代码已验收。

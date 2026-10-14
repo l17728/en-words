@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"enwords/internal/classroom"
 	"enwords/internal/config"
 	"enwords/internal/memory"
 	"enwords/internal/obs"
@@ -33,7 +34,7 @@ func (a *App) newAgentTaskContext(ctx context.Context, sid, bid, lid int64, trig
 	if role == tools.RoleTeacherAgent && (lid == 0 || trigger != "classroom_event") {
 		return nil, fmt.Errorf("teacher task requires classroom event")
 	}
-	if role == tools.RoleSystemAgent && trigger != "feedback_submitted" && trigger != "lesson_finished" {
+	if role == tools.RoleSystemAgent && trigger != "feedback_submitted" && trigger != "lesson_finished" && trigger != "cron_overdue" {
 		return nil, fmt.Errorf("unsupported system task trigger")
 	}
 	if trigger == "lesson_finished" && lid == 0 {
@@ -89,8 +90,10 @@ func taskFromContext(ctx context.Context, caller tools.Caller) (*agentTask, erro
 
 // Handlers must use these services, including when bound to a SQLite transaction.
 type agentServices struct {
+	report        func(int64) (*classroom.Result, error)
 	scheduler     *scheduler.Service
 	publisher     *lessonPublisher
+	feedback      *feedbackToolSession
 	config        *config.Store
 	memory        *memory.Service
 	transactional bool
@@ -118,11 +121,14 @@ func (a *App) setStudentFromAgent(sid int64, key string, value any, reason strin
 }
 
 func (a *App) registerStudentTools() {
-	svc := agentServices{config: a.Cfg, memory: a.Mem, scheduler: a.Sched}
+	svc := agentServices{config: a.Cfg, memory: a.Mem, scheduler: a.Sched, report: a.capabilityReport}
 	if err := a.registerAgentTools(a.Tools, svc); err != nil {
 		panic(err)
 	}
 	if err := a.registerLessonAgentTools(a.Tools, svc); err != nil {
+		panic(err)
+	}
+	if err := a.registerFeedbackTools(a.Tools, svc); err != nil {
 		panic(err)
 	}
 }
@@ -255,5 +261,5 @@ func (a *App) registerAgentTools(reg *tools.Registry, svc agentServices) error {
 			return err
 		}
 	}
-	return nil
+	return a.registerCapabilityTools(reg, svc)
 }

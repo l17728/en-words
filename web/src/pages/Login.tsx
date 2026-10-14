@@ -14,6 +14,7 @@ export default function LoginPage() {
   const [setup, setSetup] = useState<boolean | null>(null)
   const [setupError, setSetupError] = useState('')
   const checkSetup = () => {
+    // oxlint-disable-next-line react/set-state-in-effect -- Bootstrap discovery and user-triggered retry synchronously reset the previous external request error.
     setSetupError('')
     api.get<{ needed: boolean }>('/bootstrap/status').then(r => setSetup(r.needed))
       .catch(e => setSetupError((e as Error).message))

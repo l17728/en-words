@@ -1,0 +1,27 @@
+[
+  {
+    "source": "local-feedback-evaluation-20261014-protocol-v2.json",
+    "sha256": "808ff3e61078c69b71ef3f4b30542df51fc07141beab29378d1eb5735f97eac9",
+    "actual_model_calls": 116,
+    "invalid_calendar_dates": [],
+    "scope": "offline calendar-protocol audit of same recorded responses; not a new inference or changed semantic denominator"
+  },
+  {
+    "source": "local-feedback-holdout-20261014-protocol-v2.json",
+    "sha256": "97e79850ded3d2ce9ea53a7f6ed568c3550e4bc684522bd5193c9b800b9604e1",
+    "actual_model_calls": 56,
+    "invalid_calendar_dates": [
+      {
+        "case_id": "HO-026",
+        "repeat": 1,
+        "date": "2027-04-31"
+      },
+      {
+        "case_id": "HO-026",
+        "repeat": 2,
+        "date": "2027-04-31"
+      }
+    ],
+    "scope": "offline calendar-protocol audit of same recorded responses; not a new inference or changed semantic denominator"
+  }
+]

@@ -37,7 +37,14 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--base', default='http://127.0.0.1:8090')
     p.add_argument('--output', default='review/local-model-evaluation.json')
+    p.add_argument('--extended-pairs', help='JSON file with labeled [word,meaning,accepted,rejected] pairs')
+    p.add_argument('--text-only', action='store_true', help='Evaluate text without TTS/ASR smoke')
     args = p.parse_args()
+    cases = list(CASES)
+    if args.extended_pairs:
+        pairs = json.loads(Path(args.extended_pairs).read_text(encoding='utf-8'))['pairs']
+        for word, meaning, accepted, rejected in pairs:
+            cases.extend([(word, meaning, accepted, True), (word, meaning, rejected, False)])
     opener = urllib.request.build_opener(NoRedirect)
     def request(path, body=None, content_type='application/json', timeout=8):
         req = urllib.request.Request(args.base.rstrip('/') + path, data=body,
@@ -50,7 +57,7 @@ def main():
     # Exercise the production prompt, not a more favorable evaluation-only one.
     source = (Path(__file__).resolve().parents[1] / 'server/internal/judge/judge.go').read_text(encoding='utf-8')
     system_prompt = re.search(r'const SystemPrompt = `([\s\S]*?)`', source).group(1)
-    for word, meaning, answer, expected in CASES:
+    for word, meaning, answer, expected in cases:
         start = time.monotonic()
         row = dict(word=word, meaning=meaning, answer=answer, expected=expected)
         try:
@@ -67,7 +74,7 @@ def main():
         rows.append(row)
         print(json.dumps(row, ensure_ascii=False), flush=True)
     speech = []
-    for text in ('苹果', 'apple'):
+    for text in (() if args.text_only else ('苹果', 'apple')):
         row = {'input': text, 'listening_verified': False}
         start = time.monotonic()
         try:
@@ -86,7 +93,7 @@ def main():
         row['duration_ms'] = round((time.monotonic() - start) * 1000)
         speech.append(row)
         print(json.dumps(row, ensure_ascii=False), flush=True)
-    report = {'scope': '20 labeled text smoke cases; not the 100-case acceptance or human audio assessment',
+    report = {'scope': f'{len(cases)} curated labeled text cases using the production prompt; not a random-population estimate or human audio assessment',
               'models': ids, 'passed': sum(r['passed'] for r in rows), 'total': len(rows),
               'fallback_used': False, 'cases': rows, 'speech_smoke': speech}
     Path(args.output).write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')

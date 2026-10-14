@@ -3,6 +3,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -39,6 +40,8 @@ type Clock interface {
 type App struct {
 	agentWriteMu      sync.Mutex
 	completionMu      sync.Mutex
+	feedbackState     *feedbackMemoryState
+	overdueTasks      map[string]store.OverdueTask
 	completionTargets map[int64]int
 	completionTasks   map[int64]*lessonCompletion
 	StartupError      error
@@ -178,12 +181,38 @@ func NewApp(clock Clock, db *gorm.DB) *App {
 	mem := memory.NewService(memRepo)
 	fb := feedback.NewParser(clock.Now)
 	authSvc := auth.NewService("enwords-dev-secret", 7*24*time.Hour)
-	authSvc.EnsureAgentAccounts()
 	restoredUsers := 0
-	if db != nil { // 持久化：启动加载全部用户（重启不丢账号）
-		if n, err := store.NewAuthStore(db).LoadAll(authSvc); err == nil {
+	if db != nil {
+		err := db.Transaction(func(tx *gorm.DB) error {
+			// Serialize concurrent initializers before reading the persisted IDs.
+			if err := tx.Exec("UPDATE users SET id=id WHERE 1=0").Error; err != nil {
+				return err
+			}
+			p := store.NewAuthStore(tx)
+			n, err := p.LoadAll(authSvc)
+			if err != nil {
+				return err
+			}
 			restoredUsers = n
+			missing := []string{}
+			for _, name := range []string{"teacher-agent", "system-agent"} {
+				if !authSvc.HasUser(name) {
+					missing = append(missing, name)
+				}
+			}
+			authSvc.EnsureAgentAccounts()
+			for _, name := range missing {
+				if err := p.SaveUser(authSvc, name); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			panic("load or initialize persisted identities failed")
 		}
+	} else {
+		authSvc.EnsureAgentAccounts()
 	}
 	toolAudit := &tools.MemAuditor{}
 	app := &App{
@@ -202,6 +231,11 @@ func NewApp(clock Clock, db *gorm.DB) *App {
 		Log:       obs.Nop(),
 		Clock:     clock,
 		tickets:   map[string]*Ticket{},
+	}
+	app.Judge.OnDecision = func(ctx context.Context, decision judge.Decision) {
+		app.Log.InfoCtx(ctx, "judge", "judge_decision", map[string]any{
+			"source": decision.Source, "reason": decision.Reason, "result": decision.Result,
+		})
 	}
 	if restoredUsers > 0 {
 		app.Log.Info("store", "users_restored", map[string]any{"count": restoredUsers})
@@ -223,6 +257,9 @@ func NewApp(clock Clock, db *gorm.DB) *App {
 	app.registerTeacherTools()
 	app.DB = db
 	app.restoreRuntime()
+	if err := app.migrateLegacyFeedback(); err != nil {
+		panic(fmt.Sprintf("migrate feedback: %v", err))
+	}
 	return app
 }
 
@@ -327,32 +364,53 @@ func (a *App) openNowIfTestMode(l *scheduler.Lesson) {
 func (a *App) SetLogger(l *obs.Logger) {
 	if l != nil {
 		a.Log = l
+		if a.FB != nil {
+			a.FB.SetLogger(l)
+		}
 	}
 }
 
 // CronOverdue 定时巡检（S-10/S-11）：scheduler 重排 + 逾期通知学生（§14 逾期日志）。
 func (a *App) CronOverdue() ([]int64, error) {
-	replanned, err := a.Sched.HandleOverdue()
+	before, err := a.Sched.AllLessons()
 	if err != nil {
 		return nil, err
 	}
-	for _, id := range replanned {
-		l, err := a.Sched.Lesson(id)
-		if err != nil {
-			continue
+	seen := map[int64]bool{}
+	for _, l := range before {
+		seen[l.ID] = true
+	}
+	if err := a.RunOverdue(context.Background()); err != nil {
+		return nil, err
+	}
+	after, err := a.Sched.AllLessons()
+	if err != nil {
+		return nil, err
+	}
+	a.agentWriteMu.Lock()
+	completed := map[int64]bool{}
+	if a.DB != nil {
+		var rows []store.OverdueTask
+		err = a.DB.Where("status=?", "completed").Find(&rows).Error
+		for _, row := range rows {
+			completed[row.NewLessonID] = true
 		}
-		old, _ := a.Sched.Lessons(l.StudentID, l.BookID)
-		var origAt string
-		for _, o := range old {
-			if o.ID != id && o.Status == "expired" {
-				origAt = o.OpenAt.Format("1月2日")
+	} else {
+		for _, row := range a.overdueTasks {
+			if row.Status == "completed" {
+				completed[row.NewLessonID] = true
 			}
 		}
-		a.Notify(l.StudentID, "课程已改期",
-			"你缺席了 "+origAt+" 的课，已改到 "+l.OpenAt.Format("1月2日 15:04")+"，别再错过啦")
-		a.Log.Warn("scheduler", "lesson_expired_replanned", map[string]any{
-			"student_id": l.StudentID, "old_lesson": origAt,
-			"new_lesson_id": id, "new_open_at": l.OpenAt.Format(time.RFC3339)})
+	}
+	a.agentWriteMu.Unlock()
+	if err != nil {
+		return nil, err
+	}
+	replanned := []int64{}
+	for _, l := range after {
+		if !seen[l.ID] && completed[l.ID] {
+			replanned = append(replanned, l.ID)
+		}
 	}
 	return replanned, nil
 }
@@ -450,9 +508,12 @@ func (a *App) Report(lessonID int64) (*classroom.Result, bool) {
 // ---- 课堂状态持久化（IT-12：房间丢失后恢复）----
 
 func (a *App) saveLessonState(lessonID int64, st classroom.State) {
+	a.saveLessonStateContext(context.Background(), lessonID, st)
+}
+func (a *App) saveLessonStateContext(ctx context.Context, lessonID int64, st classroom.State) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	if !a.saveRuntimeLocked(fmt.Sprintf("snapshot/%d", lessonID), st) {
+	if !a.saveRuntimeContextLocked(ctx, fmt.Sprintf("snapshot/%d", lessonID), st) {
 		return
 	}
 	if a.lessonStates == nil {
@@ -501,14 +562,7 @@ func (a *App) Notify(userID int64, title, body string) {
 
 // Notifications 用户通知列表。
 func (a *App) Notifications(userID int64) []Notification {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	var out []Notification
-	for _, n := range a.notifications {
-		if n.UserID == userID {
-			out = append(out, n)
-		}
-	}
+	out, _ := a.NotificationsContext(context.Background(), userID)
 	return out
 }
 

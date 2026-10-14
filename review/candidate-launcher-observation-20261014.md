@@ -1,0 +1,9 @@
+# 候选文本恢复启动器观察与加固
+
+真实本轮生命周期报告保持原pending及独立恢复证据，不追写“完整恢复流程已验证通过”。恢复启动分支改为stdout/stderr DEVNULL，其他PowerShell结构化查询继续捕获输出；启动文件原SHA、健康/模型身份、其他服务PID检查保持。该修改避免此分支主动创建可被后台进程继承的输出管道，但不宣称已经证明真实挂起的唯一根因。
+
+隔离测试仅使用临时PowerShell `Start-Process -WindowStyle Hidden` 启动独有Python短寿命子进程，stop文件协作结束且10秒自限；不调用共享start/stop、不查询或结束真实模型进程。新用例验证启动器返回时后台子进程仍活动，结束时确认自己的子进程已清理。原三个恢复/强制清理测试保留。
+
+重要证据边界：同型Start-Process用例强制恢复旧capture=True也通过，因此这是当前行为验证，不是区分旧新实现的BUG红绿。最初另一fixture用PowerShell直接运行native Python再生成子进程，旧实现失败，但DEVNULL也失败；它引入PowerShell自己的native pipeline等待，已移除，不能用其失败作为当前加固的有效红证据。相关实验日志保留在忽略目录，未篡改成成功。按照主审意见没有添加仅断言mock参数的伪红绿测试。
+
+真实生命周期挂点仍需进一步区分PowerShell脚本控制流与Python communicate等待；本轮不重复停模型来猜测。共享原服务恢复事实以已保存独立PID/健康/模型身份核验为准。此工具修补不影响Go产品源树或当前模型评测结果。

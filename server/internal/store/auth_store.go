@@ -35,10 +35,10 @@ func (a *AuthStore) LoadAll(svc *auth.Service) (int, error) {
 		if svc.HasUser(u.Username) {
 			continue // 幂等：已存在不计数
 		}
-		if err := svc.RestoreUser(u.ID, u.Username, u.Nickname, auth.Role(u.Role),
-			u.Status, u.Salt, u.Hash); err == nil {
-			n++
+		if err := svc.RestoreUser(u.ID, u.Username, u.Nickname, auth.Role(u.Role), u.Status, u.Salt, u.Hash); err != nil {
+			return n, err
 		}
+		n++
 	}
 	return n, nil
 }

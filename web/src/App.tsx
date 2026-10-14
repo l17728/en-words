@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Modal } from 'antd'
 import { useAuthStore } from './stores/auth'
 import LoginPage from './pages/Login'
 import BooksPage from './pages/Books'
@@ -12,9 +14,11 @@ import SettingsPage from './pages/Settings'
 export default function App() {
   const token = useAuthStore((s) => s.token)
   const role = useAuthStore((s) => s.role)
+  const userId = useAuthStore((s) => s.userId)
+  useEffect(() => () => Modal.destroyAll(), [userId, token])
   return (
     <BrowserRouter>
-      <Routes>
+      <Routes key={`${userId}:${token}`}>
         <Route path="/login" element={<LoginPage />} />
         {token ? (
           <>

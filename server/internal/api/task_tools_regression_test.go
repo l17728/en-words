@@ -101,6 +101,7 @@ func (p *refreshFailurePersister) LoadGlobals() (map[string]json.RawMessage, err
 
 func TestFeedbackCommittedConfigRefreshFailureDoesNotInviteRetry(t *testing.T) {
 	app, sid, _, _, _ := durableSettlementFixture(t)
+	app.persistUser("settlement-student")
 	persister := &refreshFailurePersister{Persister: store.NewConfigPersister(app.DB)}
 	cfg, err := config.NewStore(persister, nil)
 	require.NoError(t, err)
@@ -191,22 +192,25 @@ func TestPersistentAgentToolAuditFailureRollsBackMutation(t *testing.T) {
 }
 
 func TestFeedbackParentTraceAndCancellation(t *testing.T) {
-	app, _ := newTestApp(t)
+	app, _, _, room := setupRoom(t)
+	sid := room.studentID
+	beforeAudit := len(app.ToolAudit.Snapshot())
 	parent := obs.WithTrace(context.Background(), "feedback-parent-trace")
-	rec := app.HandleFeedbackContext(parent, 7, "每课70个单词")
+	rec := app.HandleFeedbackContext(parent, sid, "每课70个单词")
 	require.Equal(t, "applied", rec.Status)
-	require.Equal(t, 70, app.Cfg.Int(7, "wordsPerLesson"))
-	entries := app.ToolAudit.Snapshot()
+	require.Equal(t, 70, app.Cfg.Int(sid, "wordsPerLesson"))
+	entries := app.ToolAudit.Snapshot()[beforeAudit:]
 	require.NotEmpty(t, entries)
 	for _, entry := range entries {
 		require.Equal(t, "feedback-parent-trace", entry.TraceID)
 	}
 	for _, persistent := range []bool{false, true} {
 		t.Run(map[bool]string{false: "memory", true: "sqlite"}[persistent], func(t *testing.T) {
-			a, _ := newTestApp(t)
-			sid := int64(7)
+			a, _, _, fixtureRoom := setupRoom(t)
+			sid := fixtureRoom.studentID
 			if persistent {
 				a, sid, _, _, _ = durableSettlementFixture(t)
+				a.persistUser("settlement-student")
 			}
 			before := a.Cfg.Int(sid, "wordsPerLesson")
 			require.NotEqual(t, 70, before, "cancellation fixture must attempt a real change")

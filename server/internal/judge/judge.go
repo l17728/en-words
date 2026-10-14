@@ -6,6 +6,7 @@ package judge
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"unicode"
 )
@@ -24,11 +25,26 @@ type LLMJudge interface {
 	Judge(word string, meanings []string, text string) (string, error)
 }
 
+type ContextLLMJudge interface {
+	JudgeContext(context.Context, string, []string, string) (string, error)
+}
+
 // Judge 判分器。
 type Judge struct {
 	syn map[string][]string // 规范词 → 同义词组
 	LLM LLMJudge
+	// OnDecision observes a bounded outcome; it never receives learner content.
+	OnDecision func(context.Context, Decision)
 }
+
+type Decision struct {
+	Source string
+	Reason string
+	Result Judgment
+}
+
+// ErrInvalidJudgment distinguishes an invalid model response from an explicit wrong verdict.
+var ErrInvalidJudgment = errors.New("invalid model judgment")
 
 // ZhipuLLM 真实智谱判分适配器（L2；D-12）。
 type ZhipuLLM struct {
@@ -52,18 +68,22 @@ func NewZhipu(c ZhipuChat) *ZhipuLLM { return &ZhipuLLM{Client: c} }
 
 // Judge L2 判分（智谱 GLM 真实调用）。
 func (z *ZhipuLLM) Judge(word string, meanings []string, text string) (string, error) {
+	return z.JudgeContext(context.Background(), word, meanings, text)
+}
+
+func (z *ZhipuLLM) JudgeContext(ctx context.Context, word string, meanings []string, text string) (string, error) {
 	var out struct {
 		Judgment string `json:"judgment"`
 	}
 	user, _ := json.Marshal(map[string]any{"word": word, "standard_meanings": meanings, "student_answer": text})
-	if err := z.Client.ChatJSON(context.Background(), SystemPrompt, string(user), &out); err != nil {
+	if err := z.Client.ChatJSON(ctx, SystemPrompt, string(user), &out); err != nil {
 		return "", err
 	}
 	switch out.Judgment {
 	case "correct", "near", "wrong":
 		return out.Judgment, nil
 	}
-	return "wrong", nil
+	return "", ErrInvalidJudgment
 }
 
 // New 构造；syn 同义表（key/value 均为规范词）。
@@ -157,23 +177,52 @@ func enTokens(s string) []string {
 
 // Judge 两级判分入口（课堂调用）。
 func (j *Judge) Judge(word string, meanings []string, text string) Judgment {
+	return j.JudgeContext(context.Background(), word, meanings, text)
+}
+
+func (j *Judge) JudgeContext(ctx context.Context, word string, meanings []string, text string) Judgment {
+	if ctx.Err() != nil {
+		return j.decided(ctx, "fallback", "context_canceled", JudgmentWrong)
+	}
 	l1 := j.Level1(word, meanings, text)
 	if l1 != JudgmentWrong {
-		return l1 // L1 命中（correct/near）零成本返回
+		return j.decided(ctx, "l1", "match", l1) // L1 命中（correct/near）零成本返回
 	}
-	if strings.TrimSpace(text) == "" || j.LLM == nil {
-		return JudgmentWrong
+	if strings.TrimSpace(text) == "" {
+		return j.decided(ctx, "l1", "empty_answer", JudgmentWrong)
 	}
-	got, err := j.LLM.Judge(word, meanings, text)
+	if j.LLM == nil {
+		return j.decided(ctx, "fallback", "provider_unavailable", JudgmentWrong)
+	}
+	var got string
+	var err error
+	if llm, ok := j.LLM.(ContextLLMJudge); ok {
+		got, err = llm.JudgeContext(ctx, word, meanings, text)
+	} else {
+		got, err = j.LLM.Judge(word, meanings, text)
+	}
 	if err != nil {
-		return JudgmentWrong // LLM 失败回退 L1 结果（05 §2.1）
+		reason := "provider_error"
+		if errors.Is(err, ErrInvalidJudgment) {
+			reason = "invalid_judgment"
+		} else if ctx.Err() != nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			reason = "context_canceled"
+		}
+		return j.decided(ctx, "fallback", reason, JudgmentWrong) // LLM 失败回退 L1 结果（05 §2.1）
 	}
 	switch Judgment(got) {
 	case JudgmentCorrect, JudgmentNear, JudgmentWrong:
-		return Judgment(got)
+		return j.decided(ctx, "l2", "model_verdict", Judgment(got))
 	default:
-		return JudgmentWrong
+		return j.decided(ctx, "fallback", "invalid_judgment", JudgmentWrong)
 	}
+}
+
+func (j *Judge) decided(ctx context.Context, source, reason string, result Judgment) Judgment {
+	if j.OnDecision != nil {
+		j.OnDecision(ctx, Decision{Source: source, Reason: reason, Result: result})
+	}
+	return result
 }
 
 // ---- 文本工具 ----

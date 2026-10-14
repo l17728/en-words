@@ -1,0 +1,11 @@
+{
+  "time": "2026-10-14T13:31:04.759404",
+  "endpoint": "http://127.0.0.1:8090/api/tts/speech",
+  "input": "猫",
+  "timeout_seconds": 20,
+  "attempts": 1,
+  "prior_invalid_probe": "tts-cat-diagnostic-20261014.json had input ? due to shell pipe encoding; not a successful cat test",
+  "status": 500,
+  "error_excerpt": "{\"error\":\"<local-path> From sherpa-onnx v1.12.15, you don't need to provide dict_dir for this model. Ignore it\\r\\n<local-path> Ignore OOV 'è'\\r\\n<local-path> Failed to convert è to token IDs\\r\\nError in generating audio. Please read previous error messages.\"}",
+  "duration_ms": 7890
+}

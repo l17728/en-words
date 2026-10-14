@@ -24,6 +24,8 @@ func durableSettlementFixture(t *testing.T) (*App, int64, int64, int64, *classro
 	require.Equal(t, 0, newAppBootstrap(t, a))
 	_, err = a.Auth.CreateUser("settlement-student", "fixturepw", "Student", auth.RoleStudent)
 	require.NoError(t, err)
+	// Persistent fixtures must satisfy the same DB-backed identity contract as real accounts.
+	require.NoError(t, store.NewAuthStore(db).SaveUser(a.Auth, "settlement-student"))
 	_, sid := loginGet(t, a, "settlement-student", "fixturepw")
 	admin := loginGet2(t, a)
 	bid := seedBook(t, a, admin, "Settlement fixture", "g7", []string{"cat", "dog"})

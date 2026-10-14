@@ -1,15 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Alert, Card, Typography, Button, List, Badge, Progress, Input, Modal, message } from 'antd'
 import { BellOutlined, BookOutlined, SoundOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
-import type { Book, Lesson, Notification, FeedbackRecord } from '../api/client'
+import type { Book, Lesson, Notification } from '../api/client'
 import { useAuthStore } from '../stores/auth'
+import { useFeedback, feedbackStatus } from '../feedback/useFeedback'
+import { FeedbackResults } from '../feedback/FeedbackResults'
+import { isLessonOpen, watchScheduleClock } from '../schedule/clock'
 
 // 课程表首页（docs/07 §6.2：下一课卡片/计划一览/通知/反馈入口）
 export default function DashboardPage() {
   const nav = useNavigate()
-  const { nickname, logout } = useAuthStore()
+  const { nickname, logout, userId } = useAuthStore()
   const [books, setBooks] = useState<Book[]>([])
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [selectedBook, setSelectedBook] = useState<Book | null>(null)
@@ -17,60 +20,88 @@ export default function DashboardPage() {
   const [fbOpen, setFbOpen] = useState(false)
   const [fbText, setFbText] = useState('')
   const [fbBusy, setFbBusy] = useState(false)
-  const [feedback, setFeedback] = useState<FeedbackRecord[]>([])
+  const feedback = useFeedback(userId, true)
+  const draft = useRef<{ id: string; text: string } | null>(null)
+  const feedbackSending = useRef(false)
+  const pageGeneration = useRef(0)
+  useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- Identity changes must synchronously clear private feedback drafts.
+    pageGeneration.current++; draft.current = null; setFbText(''); setFbBusy(false); feedbackSending.current = false
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- This is a monotonic request generation, not a DOM ref; invalidate the latest requests.
+    return () => { pageGeneration.current++ }
+  }, [userId])
   const [report, setReport] = useState<{ total_words: number; correct_count: number; first_try_rate: number } | null>(null)
 
   const refresh = () => {
     api.get<Book[]>('/student/books').then((bs) => setBooks(bs || [])).catch(() => {})
     api.get<Notification[]>('/student/notifications').then((ns) => setNotifs(ns || [])).catch(() => {})
-    api.get<FeedbackRecord[]>('/feedbacks/mine').then(setFeedback).catch(() => {})
   }
   useEffect(refresh, [])
 
   const [picking, setPicking] = useState(false) // R5：防连点+清旧课表防混合
+  const feedbackRevision = feedback.records.map(record => `${record.submission_id || record.id}:${record.version || 0}:${record.status}`).join('|')
+  useEffect(() => {
+    if (!selectedBook) return
+    let disposed = false
+    const generation = pageGeneration.current
+    api.get<Lesson[]>(`/student/lessons?bookId=${selectedBook.ID}`)
+      .then(rows => { if (!disposed && generation === pageGeneration.current) setLessons(rows || []) })
+      .catch(e => { if (!disposed && generation === pageGeneration.current) message.error(`课程表刷新失败：${e.message}`) })
+      .finally(() => { if (!disposed && generation === pageGeneration.current) setPicking(false) })
+    return () => { disposed = true }
+  }, [selectedBook, feedbackRevision, userId])
   const pick = (b: Book) => {
     if (picking) return
     setPicking(true)
-    setSelectedBook(b)
+    setSelectedBook({ ...b })
     setLessons([]) // 清空旧数据（防上一词库残留与新课混合）
-    api.get<Lesson[]>(`/student/lessons?bookId=${b.ID}`)
-      .then(setLessons)
-      .catch((e) => message.error((e as Error).message))
-      .finally(() => setPicking(false))
   }
 
   const removeBook = (b: Book) => {
+    const generation = pageGeneration.current
+    const token = localStorage.getItem('token')
     Modal.confirm({
       title: '移除词库',
       content: `确定要从「我的词库」中移除「${b.Name}」吗？课程进度将被清除。`,
       okText: '移除',
       okType: 'danger',
       cancelText: '取消',
-      onOk: () => api.del(`/student/books/${b.ID}`).then(() => {
-        message.success('已移除')
-        if (selectedBook?.ID === b.ID) setSelectedBook(null)
-        refresh()
-      }).catch((e) => message.error((e as Error).message)),
+      onOk: () => {
+        if (generation !== pageGeneration.current || token !== localStorage.getItem('token')) return
+        return api.del(`/student/books/${b.ID}`).then(() => {
+          message.success('已移除')
+          if (selectedBook?.ID === b.ID) setSelectedBook(null)
+          refresh()
+        }).catch((e) => { if (generation === pageGeneration.current) message.error((e as Error).message) })
+      },
     })
   }
 
   const nextLesson = lessons.find((l) => l.Status === 'scheduled')
-  const openNow = (l: Lesson) => new Date(l.OpenAt).getTime() <= Date.now()
+  const [now, setNow] = useState(Date.now)
+  useEffect(() => watchScheduleClock(setNow), [])
+  const openNow = (l: Lesson) => isLessonOpen(l.OpenAt, now)
   const fmt = (s: string) => new Date(s).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 
   const sendFeedback = () => {
-    if (fbBusy || !fbText.trim()) return
+    if (feedbackSending.current || !fbText.trim()) return
+    const text = fbText.replace(/\r\n/g, '\n').trim()
+    if (!draft.current || draft.current.text !== text) draft.current = { id: crypto.randomUUID(), text }
+    const attempt = draft.current
+    const generation = pageGeneration.current
+    feedbackSending.current = true
     setFbBusy(true)
-    api
-      .post<FeedbackRecord>('/feedbacks', { text: fbText, channel: 'page' })
-      .then(() => {
-        message.success('叮当老师已收到你的反馈！')
+    feedback.submit(attempt.id, attempt.text)
+      .then(record => {
+        if (generation !== pageGeneration.current) return
+        message.info(feedbackStatus[record.status] || record.status)
         setFbOpen(false)
         setFbText('')
+        draft.current = null
         refresh()
       })
-      .catch((e) => message.error((e as Error).message))
-      .finally(() => setFbBusy(false))
+      .catch((e) => { if (generation === pageGeneration.current) message.error((e as Error).message) })
+      .finally(() => { if (generation === pageGeneration.current) { feedbackSending.current = false; setFbBusy(false) } })
   }
 
   return (
@@ -180,7 +211,12 @@ export default function DashboardPage() {
         <Button type="primary" ghost onClick={() => setFbOpen(true)}>
           我想说点啥（词太多/要请假/某个词太难…）
         </Button>
-        {feedback.slice(-5).reverse().map(f => <Alert key={f.id} style={{ marginTop: 8 }} type={f.status === 'failed' ? 'error' : 'info'} title={f.reply} description={`处理状态：${f.status}`} />)}
+        {feedback.error && <Alert type="error" title={feedback.error} />}
+        {feedback.pending.filter(id => !feedback.records.some(record => record.submission_id === id)).map(id => <Alert key={id} type="warning" title="反馈送达状态待确认"
+          action={<Button disabled={feedback.busy.includes(id)} onClick={() => void feedback.recover(id)}>查询处理进度</Button>} />)}
+        {feedback.records.slice().reverse().map(f => <FeedbackResults key={f.submission_id || f.id} record={f}
+          busy={feedback.busy.includes(f.submission_id || '')}
+          onClarify={(id, text, parent) => feedback.submit(id, text, 'page', parent)} onQuery={() => void feedback.recover(f.submission_id!)} onRetry={() => void feedback.recover(f.submission_id!, true)} />)}
       </Card>
 
       {lessons.filter(l => l.Status === 'finished').map(l => <Button key={l.ID} style={{ marginTop: 12 }} onClick={() => {
@@ -217,7 +253,7 @@ export default function DashboardPage() {
         <Input.TextArea
           rows={3}
           value={fbText}
-          onChange={(e) => setFbText(e.target.value)}
+          onChange={(e) => { setFbText(e.target.value); if (draft.current?.text !== e.target.value.replace(/\r\n/g, '\n').trim()) draft.current = null }}
           placeholder="例如：每次词太多了 / 这周三有事 / abandon 我老忘"
         />
       </Modal>

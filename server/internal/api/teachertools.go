@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"enwords/internal/agent"
-	"enwords/internal/obs"
 	"enwords/internal/tools"
 )
 
@@ -20,6 +19,9 @@ func (a *App) registerTeacherTools() {
 }
 
 func (a *App) registerTeacherTool(reg *tools.Registry) error {
+	if err := a.registerTeacherEffects(reg); err != nil {
+		return err
+	}
 	return reg.Register(tools.Tool{Name: "classroom.say", Domain: "classroom", Risk: tools.RiskLow,
 		Scope:       []tools.Role{tools.RoleTeacherAgent},
 		InputSchema: mustSchema(`{"type":"object","properties":{"text":{"type":"string"},"category":{"type":"string"}},"required":["text","category"]}`),
@@ -104,7 +106,7 @@ func (r *Room) teacherUtteranceLocked(ctx context.Context, in agent.TeacherInput
 
 func (r *Room) teacherTaskLocked() (context.Context, error) {
 	// Room turn is the causal trace; each group receives one shared call budget.
-	ctx := obs.WithTrace(context.Background(), r.contextLocked().Epoch)
+	ctx := r.traceContext()
 	return r.app.newAgentTaskContext(ctx, r.studentID, r.bookID, r.lessonID, "classroom_event", tools.RoleTeacherAgent)
 }
 

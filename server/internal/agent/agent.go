@@ -9,6 +9,7 @@ package agent
 
 import (
 	"strings"
+	"time"
 
 	"enwords/internal/classroom"
 	"enwords/internal/config"
@@ -127,14 +128,17 @@ type SystemInput struct {
 	AvgAnswerMs    int
 	OverdueLessons int
 	// feedback
-	FeedbackText   string
-	ParsedFeedback *feedback.ParseResult         // Parse once; execution and audit use identical candidates.
-	Now            func() (year, month, day int) // 简化日期注入（测试可控）
+	FeedbackText       string
+	ClarificationReply bool
+	FeedbackAnchor     time.Time
+	ParsedFeedback     *feedback.ParseResult         // Parse once; execution and audit use identical candidates.
+	Now                func() (year, month, day int) // 简化日期注入（测试可控）
 }
 
 // SystemAction 系统动作（工具调用序列的抽象；由装配层映射到具体工具）。
 type SystemAction struct {
-	Kind string // plan_normal | plan_stall | adjust_words_down | suggest_up_needconfirm |
+	IntentIndex int    // Feedback intent ownership; every dependent action keeps this index.
+	Kind        string // plan_normal | plan_stall | adjust_words_down | suggest_up_needconfirm |
 	//         postpone | boost | escalate | reply_* | memory_append | memory_recall
 	Params    map[string]any
 	ReplyCat  string // 非空=需渲染回复话术（scripts 分类）
@@ -164,12 +168,14 @@ func (a *SystemAgent) Decide(in SystemInput) []SystemAction {
 	case "feedback_submitted":
 		return a.decideFeedback(in)
 	case "cron_overdue":
-		if in.OverdueLessons >= 3 {
-			return []SystemAction{{Kind: "suggest_pause", ReplyCat: "feedback_reply",
-				ReplyVars: map[string]any{"name": ""}}}
+		acts := []SystemAction{{Kind: "postpone"}, {Kind: "notify_replan", ReplyCat: "system_notify", ReplyVars: map[string]any{}}}
+		if in.OverdueLessons >= 2 {
+			acts = append(acts, SystemAction{Kind: "reply_care", ReplyCat: "feedback_reply"})
 		}
-		return []SystemAction{{Kind: "postpone"}, {Kind: "notify_replan",
-			ReplyCat: "system_notify", ReplyVars: map[string]any{}}}
+		if in.OverdueLessons >= 3 {
+			acts = append(acts, SystemAction{Kind: "suggest_pause", ReplyCat: "feedback_reply", ReplyVars: map[string]any{"name": ""}})
+		}
+		return acts
 	}
 	return nil
 }
@@ -209,16 +215,20 @@ func (a *SystemAgent) decideFeedback(in SystemInput) []SystemAction {
 		res = a.feedbackParser.Parse(in.FeedbackText)
 	}
 	plans := a.feedbackParser.Plan(res)
+	if !in.FeedbackAnchor.IsZero() {
+		plans = a.feedbackParser.PlanAt(res, in.FeedbackAnchor)
+	}
 	var acts []SystemAction
-	for _, p := range plans {
+	for index, p := range plans {
+		start := len(acts)
 		switch p.Action {
 		case "apply_config":
 			if p.Intent.Kind == feedback.IntentFrequency {
 				acts = append(acts, SystemAction{Kind: "adjust_frequency", Params: map[string]any{"target": p.Intent.LessonsPerDay}})
-				continue
+			} else {
+				acts = append(acts, SystemAction{Kind: "adjust_words",
+					Params: map[string]any{"target": p.Intent.TargetWords, "dir": string(p.Intent.Kind)}})
 			}
-			acts = append(acts, SystemAction{Kind: "adjust_words",
-				Params: map[string]any{"target": p.Intent.TargetWords, "dir": string(p.Intent.Kind)}})
 		case "need_confirm":
 			acts = append(acts, SystemAction{Kind: "reply_needconfirm", ReplyCat: "feedback_reply",
 				ReplyVars: map[string]any{"n": p.Intent.TargetWords}})
@@ -241,7 +251,14 @@ func (a *SystemAgent) decideFeedback(in SystemInput) []SystemAction {
 		case "escalate":
 			acts = append(acts, SystemAction{Kind: "escalate"}, SystemAction{Kind: "reply_escalated", ReplyCat: "feedback_reply"})
 		case "clarify":
-			acts = append(acts, SystemAction{Kind: "reply_clarify", ReplyCat: "feedback_reply"})
+			if in.ClarificationReply {
+				acts = append(acts, SystemAction{Kind: "escalate", Params: map[string]any{"clarification": true}}, SystemAction{Kind: "reply_escalated", ReplyCat: "feedback_reply"})
+			} else {
+				acts = append(acts, SystemAction{Kind: "reply_clarify", ReplyCat: "feedback_reply"})
+			}
+		}
+		for i := start; i < len(acts); i++ {
+			acts[i].IntentIndex = index
 		}
 	}
 	return acts

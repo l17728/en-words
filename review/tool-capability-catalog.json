@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "stage": "T1/T2/T3 implementation; final integration acceptance pending",
+  "registered_tools": [
+    "classroom.say", "classroom.show_word", "classroom.play_tts", "classroom.start_repeat", "classroom.start_quiz", "classroom.judge_answer", "classroom.start_review", "classroom.show_feedback_ui", "classroom.get_state",
+    "config.set", "config.get", "config.set_student",
+    "memory.append", "memory.recall", "memory.list", "memory.revise", "memory.delete",
+    "scheduler.plan_next_lesson", "scheduler.postpone_lesson", "scheduler.boost_word", "scheduler.get_due_words", "scheduler.get_progress_summary", "progress.query",
+    "scripts.list", "scripts.pick", "feedback.reply", "feedback.escalate", "report.compose_reply", "report.publish", "scheduler.replan_overdue", "notification.publish_overdue"
+  ],
+  "canonical_mappings": {
+    "feedback.apply_adjustment": "config.set_student"
+  },
+  "management_capabilities": {
+    "wordbook.import_parse": "existing authenticated management REST",
+    "wordbook.import_commit": "existing authenticated management REST",
+    "wordbook.crud_*": "existing authenticated management REST; not a literal registry tool"
+  },
+  "authorization": "Business calls require server-created task context. Arbitrary HTTP agent callers cannot construct trusted student/book/lesson identities.",
+  "remaining": ["cron task receipt and real production overdue journey", "tool journey E2E and final coverage/review"]
+}

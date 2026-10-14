@@ -1,0 +1,142 @@
+{
+  "cases": [
+    {
+      "case_id": "TTS-ZH-01",
+      "human_listening": "pending",
+      "sample_rate": 16000,
+      "channels": 1,
+      "frame_count": 8361,
+      "duration_ms": 522.5625,
+      "pcm_rms": 0.07789477494116646,
+      "peak": 0.2611083984375,
+      "decoded_non_silent": true
+    },
+    {
+      "case_id": "TTS-ZH-02",
+      "human_listening": "pending",
+      "sample_rate": 16000,
+      "channels": 1,
+      "frame_count": 7936,
+      "duration_ms": 496.0,
+      "pcm_rms": 0.05134289114133861,
+      "peak": 0.164794921875,
+      "decoded_non_silent": true
+    },
+    {
+      "case_id": "TTS-ZH-03",
+      "human_listening": "pending",
+      "sample_rate": 16000,
+      "channels": 1,
+      "frame_count": 7424,
+      "duration_ms": 464.0,
+      "pcm_rms": 0.06871774725333865,
+      "peak": 0.212158203125,
+      "decoded_non_silent": true
+    },
+    {
+      "case_id": "TTS-ZH-04",
+      "human_listening": "pending",
+      "sample_rate": 16000,
+      "channels": 1,
+      "frame_count": 12032,
+      "duration_ms": 752.0,
+      "pcm_rms": 0.06594899067666668,
+      "peak": 0.292999267578125,
+      "decoded_non_silent": true
+    },
+    {
+      "case_id": "TTS-ZH-05",
+      "human_listening": "pending",
+      "sample_rate": 16000,
+      "channels": 1,
+      "frame_count": 23040,
+      "duration_ms": 1440.0,
+      "pcm_rms": 0.04846592431285642,
+      "peak": 0.2459716796875,
+      "decoded_non_silent": true
+    },
+    {
+      "case_id": "TTS-ZH-06",
+      "human_listening": "pending",
+      "sample_rate": 16000,
+      "channels": 1,
+      "frame_count": 26153,
+      "duration_ms": 1634.5625,
+      "pcm_rms": 0.04846037335566519,
+      "peak": 0.28759765625,
+      "decoded_non_silent": true
+    },
+    {
+      "case_id": "TTS-ZH-07",
+      "human_listening": "pending",
+      "sample_rate": 16000,
+      "channels": 1,
+      "frame_count": 21462,
+      "duration_ms": 1341.375,
+      "pcm_rms": 0.047593730405207854,
+      "peak": 0.204132080078125,
+      "decoded_non_silent": true
+    },
+    {
+      "case_id": "TTS-ZH-08",
+      "human_listening": "pending",
+      "sample_rate": 16000,
+      "channels": 1,
+      "frame_count": 32289,
+      "duration_ms": 2018.0625,
+      "pcm_rms": 0.0423686350082588,
+      "peak": 0.19647216796875,
+      "decoded_non_silent": true
+    },
+    {
+      "case_id": "TTS-ZH-09",
+      "human_listening": "pending",
+      "sample_rate": 16000,
+      "channels": 1,
+      "frame_count": 24601,
+      "duration_ms": 1537.5625,
+      "pcm_rms": 0.05550546135897364,
+      "peak": 0.2122802734375,
+      "decoded_non_silent": true
+    },
+    {
+      "case_id": "TTS-ZH-10",
+      "human_listening": "pending",
+      "sample_rate": 16000,
+      "channels": 1,
+      "frame_count": 32512,
+      "duration_ms": 2032.0,
+      "pcm_rms": 0.05458211395206192,
+      "peak": 0.253387451171875,
+      "decoded_non_silent": true
+    },
+    {
+      "case_id": "TTS-ZH-11",
+      "human_listening": "pending",
+      "sample_rate": 16000,
+      "channels": 1,
+      "frame_count": 29857,
+      "duration_ms": 1866.0625,
+      "pcm_rms": 0.05992442051059419,
+      "peak": 0.295989990234375,
+      "decoded_non_silent": true
+    },
+    {
+      "case_id": "TTS-ZH-12",
+      "human_listening": "pending",
+      "sample_rate": 16000,
+      "channels": 1,
+      "frame_count": 39815,
+      "duration_ms": 2488.4375,
+      "pcm_rms": 0.050294397103476635,
+      "peak": 0.239227294921875,
+      "decoded_non_silent": true
+    }
+  ],
+  "attempted": 12,
+  "expected": 12,
+  "unattempted": 0,
+  "human_listening": "pending",
+  "decoded_non_silent_pass": 12,
+  "capture_sha256": "716e4e5e8fdf7cc2497ab510efc4690e0250e4ef8feb09c92a929e1c23ddbb37"
+}

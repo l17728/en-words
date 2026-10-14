@@ -5,6 +5,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -90,7 +91,9 @@ func (a *App) registerUserRoutes(g *gin.RouterGroup) {
 		c.JSON(http.StatusOK, ok(a.Auth.ListUsers()))
 	})
 	g.POST("/users/:username/reset_password", func(c *gin.Context) {
-		var in struct{ Password string `json:"password"` }
+		var in struct {
+			Password string `json:"password"`
+		}
 		_ = c.ShouldBindJSON(&in)
 		if err := a.Auth.ResetPassword(c.Param("username"), in.Password); err != nil {
 			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
@@ -120,16 +123,27 @@ func (a *App) registerUserRoutes(g *gin.RouterGroup) {
 		c.JSON(http.StatusOK, ok("enabled"))
 	})
 	// 管理员待办：已升级（escalated）的反馈（FR-G5/G6 闭环视图）
+	a.registerNotificationRoutes(g)
 	g.GET("/todos", func(c *gin.Context) {
-		a.mu.Lock()
-		defer a.mu.Unlock()
-		var out []FeedbackRecord
-		for _, f := range a.feedbackRecs {
-			if f.Status == "escalated" {
-				out = append(out, f)
-			}
+		rows, err := a.FeedbackAdminTodosContext(c.Request.Context())
+		if err != nil {
+			a.respondFeedbackError(c, err)
+			return
 		}
-		c.JSON(http.StatusOK, ok(out))
+		c.JSON(200, ok(rows))
+	})
+	g.GET("/todos/:id", func(c *gin.Context) {
+		id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+		if err != nil {
+			c.JSON(200, fail(400, "invalid todo id"))
+			return
+		}
+		row, err := a.FeedbackAdminTodoContext(c.Request.Context(), id)
+		if err != nil {
+			a.respondFeedbackError(c, err)
+			return
+		}
+		c.JSON(200, ok(row))
 	})
 }
 
@@ -153,13 +167,14 @@ func (a *App) registerConfigRoutes(g *gin.RouterGroup) {
 
 // Todos 公开只读（ws/外部装配用）。
 func (a *App) Todos() []FeedbackRecord {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	var out []FeedbackRecord
-	for _, f := range a.feedbackRecs {
-		if f.Status == "escalated" {
-			out = append(out, f)
-		}
+	rows, err := a.FeedbackAdminTodosContext(context.Background())
+	if err != nil {
+		return nil
+	}
+	out := make([]FeedbackRecord, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, FeedbackRecord{ID: row.ID, TaskID: row.TaskID, StudentID: row.StudentID,
+			Text: row.Text, Status: "escalated", Reply: row.Reply, CreatedAt: row.CreatedAt})
 	}
 	return out
 }

@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-14",
+  "source": "explicit user statement relayed by coordinating agent; not inferred from signal metrics",
+  "user_statement": "12条全部清楚、正确、完整",
+  "report": "review/local-tts-quality-20261014-utf8-fixed.json",
+  "report_sha256": "716e4e5e8fdf7cc2497ab510efc4690e0250e4ef8feb09c92a929e1c23ddbb37",
+  "frozen_label_sha256": "6958ef3e6d2a74fadc9c8eead3f20b21d1f52f8e207ba82920105ab1b3ee966d",
+  "cases": [
+    {
+      "case_id": "TTS-ZH-01",
+      "reference": "苹果",
+      "file": "review/local-tts-quality-20261014-utf8-fixed.json.TTS-ZH-01.wav",
+      "sha256": "e4e8c1d665979a3df07c22aebd6b44f114235e1712227e149828bc0f11080968",
+      "human_result": "clear_correct_complete"
+    },
+    {
+      "case_id": "TTS-ZH-02",
+      "reference": "老师",
+      "file": "review/local-tts-quality-20261014-utf8-fixed.json.TTS-ZH-02.wav",
+      "sha256": "4a069673c29314293eee913a4cf08aa8fb583a8401b874bf51a701d2ec413aa1",
+      "human_result": "clear_correct_complete"
+    },
+    {
+      "case_id": "TTS-ZH-03",
+      "reference": "美丽",
+      "file": "review/local-tts-quality-20261014-utf8-fixed.json.TTS-ZH-03.wav",
+      "sha256": "7fa38d4f5969d25649fe1704b039f448d038a58db3386953f760df54a3327c0f",
+      "human_result": "clear_correct_complete"
+    },
+    {
+      "case_id": "TTS-ZH-04",
+      "reference": "放弃",
+      "file": "review/local-tts-quality-20261014-utf8-fixed.json.TTS-ZH-04.wav",
+      "sha256": "544b8a4640b19e9d910f188a80aa87932e60e6fbe91dd9b05a309cc713cd9abb",
+      "human_result": "clear_correct_complete"
+    },
+    {
+      "case_id": "TTS-ZH-05",
+      "reference": "苹果是一种水果。",
+      "file": "review/local-tts-quality-20261014-utf8-fixed.json.TTS-ZH-05.wav",
+      "sha256": "390be4ec8ea76265739d03f2bac9944794b71d8b85de5a1572ebe45df9a563b4",
+      "human_result": "clear_correct_complete"
+    },
+    {
+      "case_id": "TTS-ZH-06",
+      "reference": "老师是教学生的人。",
+      "file": "review/local-tts-quality-20261014-utf8-fixed.json.TTS-ZH-06.wav",
+      "sha256": "cd085c97af0dcdd1553fc87f9c28bcff8e77d5ca60b630c16f5d6bbfd26e8320",
+      "human_result": "clear_correct_complete"
+    },
+    {
+      "case_id": "TTS-ZH-07",
+      "reference": "美丽的意思是漂亮。",
+      "file": "review/local-tts-quality-20261014-utf8-fixed.json.TTS-ZH-07.wav",
+      "sha256": "b5664e4ee81caa8c6995cce9f8dd6c68032b27520b4a89867e75fdb5607b406d",
+      "human_result": "clear_correct_complete"
+    },
+    {
+      "case_id": "TTS-ZH-08",
+      "reference": "放弃的意思是不再继续。",
+      "file": "review/local-tts-quality-20261014-utf8-fixed.json.TTS-ZH-08.wav",
+      "sha256": "187fc8aaf4c9fdeb9ef25add09fd382b5c65a93b285f1d19c51917d6524b87e8",
+      "human_result": "clear_correct_complete"
+    },
+    {
+      "case_id": "TTS-ZH-09",
+      "reference": "请跟我朗读这个单词。",
+      "file": "review/local-tts-quality-20261014-utf8-fixed.json.TTS-ZH-09.wav",
+      "sha256": "e718722a90c32c6425e55c9faa44c84eea425cec2537f1b6fa2ab379c39c6917",
+      "human_result": "clear_correct_complete"
+    },
+    {
+      "case_id": "TTS-ZH-10",
+      "reference": "现在开始今天的单词学习。",
+      "file": "review/local-tts-quality-20261014-utf8-fixed.json.TTS-ZH-10.wav",
+      "sha256": "4823bdd22b1d89869c9f3c5030c965afe12dddde5dcd7c1f932a932ea0ea50e6",
+      "human_result": "clear_correct_complete"
+    },
+    {
+      "case_id": "TTS-ZH-11",
+      "reference": "请说出这个词的中文意思。",
+      "file": "review/local-tts-quality-20261014-utf8-fixed.json.TTS-ZH-11.wav",
+      "sha256": "b903a102b4c9fb5ddc76f45320ea7ebdf8643079cac1c043fc36258d0121a12e",
+      "human_result": "clear_correct_complete"
+    },
+    {
+      "case_id": "TTS-ZH-12",
+      "reference": "今天的课程结束了，明天见。",
+      "file": "review/local-tts-quality-20261014-utf8-fixed.json.TTS-ZH-12.wav",
+      "sha256": "a8f8b35e2caa16990a40886c2d6b7814c506e11167d71de53d44641b6485b2b2",
+      "human_result": "clear_correct_complete"
+    }
+  ],
+  "original_capture_and_labels_modified": false
+}

@@ -99,9 +99,7 @@ func TestConsoleCancellationAndInvalidOrigin(t *testing.T) {
 }
 
 func TestConsoleMediaContractsAndLimits(t *testing.T) {
-	wav := make([]byte, 44)
-	copy(wav, "RIFF")
-	copy(wav[8:], "WAVE")
+	wav := pcmWAVFixture()
 	var calls atomic.Int32
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		calls.Add(1)

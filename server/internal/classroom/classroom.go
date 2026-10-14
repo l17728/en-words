@@ -307,10 +307,17 @@ func (m *Machine) Snapshot() State {
 }
 
 func (m *Machine) Restore(s State) error {
-	if s.Phase == "" {
+	if err := m.validateRuntimePosition(s); err != nil {
+		return err
+	}
+	raw, err := json.Marshal(s)
+	if err != nil {
 		return fmt.Errorf("classroom: bad snapshot")
 	}
-	cp := s
+	var cp State
+	if err := json.Unmarshal(raw, &cp); err != nil {
+		return fmt.Errorf("classroom: bad snapshot")
+	}
 	var restoredCfg config.EffectiveSnapshot
 	if cp.Config == nil || cp.Config.PlaybackVersion == 0 {
 		restoredCfg = legacySnapshotConfig(cp.Config)

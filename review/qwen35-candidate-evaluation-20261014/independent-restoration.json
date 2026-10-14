@@ -1,0 +1,43 @@
+{
+  "verified_at": "2026-10-14T18:11:18+0800",
+  "restored": true,
+  "after": [
+    {
+      "port": 8000,
+      "pid": 3740,
+      "path": "D:\\VL-models\\llama.cpp\\llama-server.exe",
+      "created": "2026-10-14T10:03:14.5603380Z",
+      "safe_command": "\"D:\\VL-models\\llama.cpp\\llama-server.exe\" -hf Qwen/Qwen3-VL-8B-Instruct-GGUF:Q4_K_M --host 127.0.0.1 --port 8000 --api-key <redacted> --ctx-size 32768 --gpu-layers all --parallel 2 --cache-type-k q8_0 --cache-type-v q8_0 --video-ffmpeg-dir D:\\VL-models\\ffmpeg\\ffmpeg-n9.0-latest-win64-lgpl-9.0\\bin --video-fps 0.03 --image-max-tokens 512 "
+    },
+    {
+      "port": 8001,
+      "pid": 7728,
+      "path": "D:\\vl-models\\llama.cpp\\llama-server.exe",
+      "created": "2026-10-14T03:12:18.7558210Z",
+      "safe_command": null
+    },
+    {
+      "port": 8002,
+      "pid": 8908,
+      "path": "C:\\Program Files\\nodejs\\node.exe",
+      "created": "2026-10-14T08:40:25.9206740Z",
+      "safe_command": null
+    },
+    {
+      "port": 8090,
+      "pid": 3552,
+      "path": "C:\\Program Files\\nodejs\\node.exe",
+      "created": "2026-10-13T19:20:57.8220090Z",
+      "safe_command": null
+    }
+  ],
+  "health": {
+    "status": "ok"
+  },
+  "model": "Qwen/Qwen3-VL-8B-Instruct-GGUF:Q4_K_M",
+  "candidate_processes_absent": true,
+  "candidate_listeners_absent": true,
+  "unrelated_service_identities_unchanged": true,
+  "original_script_and_executable_unchanged": true,
+  "reason": "Independent verification because lifecycle wrapper did not return from original launcher subprocess capture; original pending lifecycle evidence retained"
+}

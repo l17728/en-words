@@ -90,11 +90,12 @@ func TestClosureRuntimeSurvivesFreshApp(t *testing.T) {
 }
 
 func TestClosureFeedbackLowerBoundAndFailedWrite(t *testing.T) {
-	app, _ := newTestApp(t)
-	require.NoError(t, app.Cfg.SetStudent("system_agent", 7, "wordsPerLesson", 50, "fixture"))
-	result := app.HandleFeedback(7, "每次词太多了")
+	app, _, _, room := setupRoom(t)
+	sid := room.studentID
+	require.NoError(t, app.Cfg.SetStudent("system_agent", sid, "wordsPerLesson", 50, "fixture"))
+	result := app.HandleFeedback(sid, "每次词太多了")
 	require.Equal(t, "applied", result.Status)
-	require.Equal(t, 50, app.Cfg.Int(7, "wordsPerLesson"))
+	require.Equal(t, 50, app.Cfg.Int(sid, "wordsPerLesson"))
 	require.Contains(t, result.Reply, "50")
 
 	db, err := store.Open(filepath.Join(t.TempDir(), "failed.db"))
@@ -103,7 +104,7 @@ func TestClosureFeedbackLowerBoundAndFailedWrite(t *testing.T) {
 	sql, err := db.DB()
 	require.NoError(t, err)
 	require.NoError(t, sql.Close())
-	failed := persistent.HandleFeedback(7, "每次词太多了")
+	failed := persistent.HandleFeedback(sid, "每次词太多了")
 	require.Equal(t, "failed", failed.Status, "write failure cannot claim applied")
 }
 

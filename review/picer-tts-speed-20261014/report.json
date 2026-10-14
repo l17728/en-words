@@ -1,0 +1,39 @@
+{
+  "scope": "same local sherpa-onnx-vits-zh-ll and voice 0; speed-only comparison; not a configuration change",
+  "reference": "现在开始今天的单词学习。",
+  "human_listening": "pending",
+  "cases": [
+    {
+      "speed": 1.0,
+      "model": "sherpa-onnx-vits-zh-ll",
+      "voice": 0,
+      "transport_pass": true,
+      "status": 200,
+      "audio": {
+        "rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_seconds": 1.9094375
+      },
+      "file": "speed-1.0.wav",
+      "sha256": "9c6a2741e296b8b314984058e9c6b225abed3010b88c1755e692966309782744",
+      "duration_ms": 11922
+    },
+    {
+      "speed": 1.05,
+      "model": "sherpa-onnx-vits-zh-ll",
+      "voice": 0,
+      "transport_pass": true,
+      "status": 200,
+      "audio": {
+        "rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_seconds": 2.032
+      },
+      "file": "speed-1.05.wav",
+      "sha256": "72645f6343bd3b10af733ff9fb78b8240725f9c5c17fd3b5abe84de72883b430",
+      "duration_ms": 6172
+    }
+  ]
+}

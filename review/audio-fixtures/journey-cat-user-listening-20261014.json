@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-14",
+  "evidence_source": "用户本轮明确回复，由主代理转达",
+  "user_statement": "A不清楚，B清楚准确",
+  "frozen_manifest": "journey-cat-candidates-20261014.json",
+  "manifest_modified": false,
+  "samples": [
+    {
+      "case_id": "JOURNEY-CAT-A",
+      "file": "journey-cat-a-period-20261014.wav",
+      "text": "猫。",
+      "sha256": "0f96c3357111535c9f08a85378794568b32df28ace90993d587df9a54e853f7c",
+      "human_listening": "rejected_unclear",
+      "selected": false
+    },
+    {
+      "case_id": "JOURNEY-CAT-B",
+      "file": "journey-cat-b-sentence-20261014.wav",
+      "text": "这是一只猫。",
+      "sha256": "48b4c8024ac97779747239a05c314332c93e5690b8652140916f19cd35603bf1",
+      "human_listening": "confirmed_clear_and_correct",
+      "selected": true
+    }
+  ],
+  "selection_basis": "预声明A优先，仅人工拒绝A后选择B；选择前没有候选音频ASR输出",
+  "acceptance_scope": "B为独立合成完整句子，可用作真实课堂输入；不代表孤立单词ASR、真人麦克风或所有音频通过"
+}

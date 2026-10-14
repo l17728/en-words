@@ -5,22 +5,24 @@ package voicecmd
 import (
 	"sort"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
 // 指令集（01 FR-L1/L3）。
 // 注：repeat_done 口令已随 2026-08-25"老师听学生读完"定案移除——
 // 跟读推进只认语音判读（HandleVoiceText 听读匹配当前词），不认口令。
 const (
-	CmdNext       = "next"     // 下一个/继续
-	CmdSkip       = "skip"     // 跳过（测试作答期唯一生效的教学指令）
-	CmdReplay     = "replay"   // 重听一遍
-	CmdPause      = "pause"    // 暂停
-	CmdExit       = "exit"     // 退出课堂
-	CmdFeedback   = "feedback" // 我想反馈…（前缀捕获）
-	CmdNavHome    = "nav_home"
+	CmdNext        = "next"     // 下一个/继续
+	CmdSkip        = "skip"     // 跳过（测试作答期唯一生效的教学指令）
+	CmdReplay      = "replay"   // 重听一遍
+	CmdPause       = "pause"    // 暂停
+	CmdExit        = "exit"     // 退出课堂
+	CmdFeedback    = "feedback" // 我想反馈…（前缀捕获）
+	CmdNavHome     = "nav_home"
 	CmdNavSchedule = "nav_schedule"
-	CmdNavStats   = "nav_stats"
-	CmdNavStart   = "nav_start"
+	CmdNavStats    = "nav_stats"
+	CmdNavStart    = "nav_start"
 )
 
 // Table 指令词表：指令 → 触发词组。
@@ -29,15 +31,15 @@ type Table map[string][]string
 // DefaultTable 默认词表（config voiceCommands 可覆盖，L5）。
 func DefaultTable() Table {
 	return Table{
-		CmdNext:       {"下一个", "继续", "下一题", "下一词"},
-		CmdSkip:       {"跳过", "跳过这个词", "不会", "过"},
-		CmdReplay:     {"重听", "再读一遍", "重听一遍"},
-		CmdPause:      {"暂停", "暂停一下", "歇会"},
-		CmdExit:       {"退出", "退出课堂", "下课"},
-		CmdNavHome:    {"首页", "回首页", "主页"},
+		CmdNext:        {"下一个", "继续", "下一题", "下一词"},
+		CmdSkip:        {"跳过", "跳过这个词", "不会", "过"},
+		CmdReplay:      {"重听", "再读一遍", "重听一遍"},
+		CmdPause:       {"暂停", "暂停一下", "歇会"},
+		CmdExit:        {"退出", "退出课堂", "下课"},
+		CmdNavHome:     {"首页", "回首页", "主页"},
 		CmdNavSchedule: {"课程表", "我的课表"},
-		CmdNavStats:   {"统计", "看统计", "学习统计"},
-		CmdNavStart:   {"开始学习", "开始上课", "上课"},
+		CmdNavStats:    {"统计", "看统计", "学习统计"},
+		CmdNavStart:    {"开始学习", "开始上课", "上课"},
 	}
 }
 
@@ -131,10 +133,35 @@ func (p *Parser) Match(text string) (string, bool) {
 
 // MatchFeedback 反馈捕获（前缀触发，返回指令与剩余文本作为反馈内容）。
 func (p *Parser) MatchFeedback(text string) (string, string, bool) {
-	n := normalize(text)
+	// Normalize only the command prefix. The submitted body is user data:
+	// spaces, decimal points, punctuation and final syllables are significant.
+	n := strings.TrimLeftFunc(text, func(r rune) bool {
+		return unicode.IsSpace(r) || strings.ContainsRune("嗯啊哦呃呀诶，,。.!！?？", r)
+	})
 	for _, pre := range feedbackPrefixes {
-		if strings.HasPrefix(n, pre) {
-			payload := strings.TrimSpace(n[len(pre):])
+		pos := 0
+		matched := true
+		for _, want := range pre {
+			for pos < len(n) {
+				r, size := utf8.DecodeRuneInString(n[pos:])
+				if !unicode.IsSpace(r) {
+					break
+				}
+				pos += size
+			}
+			if pos >= len(n) {
+				matched = false
+				break
+			}
+			r, size := utf8.DecodeRuneInString(n[pos:])
+			if r != want {
+				matched = false
+				break
+			}
+			pos += size
+		}
+		if matched {
+			payload := strings.TrimSpace(n[pos:])
 			return CmdFeedback, payload, payload != ""
 		}
 	}

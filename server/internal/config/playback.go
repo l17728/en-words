@@ -63,6 +63,7 @@ func (s *Store) SetPlayback(actor string, studentID int64, global bool, values P
 		} else {
 			s.overrides[studentID][key] = vals[i]
 		}
+		s.bumpRevision(studentID, key)
 	}
 	if s.audit != nil {
 		for i, key := range keys {

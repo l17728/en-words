@@ -15,14 +15,14 @@ import (
 func cardTo(m *MemoryCard) *scheduler.Card {
 	c := &scheduler.Card{StudentID: m.StudentID, BookID: m.BookID, WordID: m.WordID,
 		Status: scheduler.Status(m.Status), LadderStep: m.LadderStep,
-		BoostFlag: m.BoostFlag, LastReviewAt: m.LastReviewAt, NextDueAt: m.NextDueAt}
+		BoostFlag: m.BoostFlag, BoostSequence: m.BoostSequence, LastReviewAt: m.LastReviewAt, NextDueAt: m.NextDueAt}
 	return c
 }
 
 func cardFrom(c *scheduler.Card) *MemoryCard {
 	return &MemoryCard{StudentID: c.StudentID, BookID: c.BookID, WordID: c.WordID,
 		Status: string(c.Status), LadderStep: c.LadderStep,
-		BoostFlag: c.BoostFlag, LastReviewAt: c.LastReviewAt, NextDueAt: c.NextDueAt}
+		BoostFlag: c.BoostFlag, BoostSequence: c.BoostSequence, LastReviewAt: c.LastReviewAt, NextDueAt: c.NextDueAt}
 }
 
 func lessonTo(l *Lesson) *scheduler.Lesson {
@@ -66,12 +66,15 @@ func (r *SchedulerRepo) SaveCard(c *scheduler.Card) error {
 	res := r.db.Where("student_id=? AND book_id=? AND word_id=?",
 		m.StudentID, m.BookID, m.WordID).First(&MemoryCard{})
 	if res.Error != nil {
+		if res.Error != gorm.ErrRecordNotFound {
+			return res.Error
+		}
 		return r.db.Create(m).Error
 	}
 	return r.db.Model(&MemoryCard{}).Where("student_id=? AND book_id=? AND word_id=?",
 		m.StudentID, m.BookID, m.WordID).Updates(map[string]any{
 		"status": m.Status, "ladder_step": m.LadderStep,
-		"boost_flag": m.BoostFlag, "last_review_at": m.LastReviewAt,
+		"boost_flag": m.BoostFlag, "boost_sequence": m.BoostSequence, "last_review_at": m.LastReviewAt,
 		"next_due_at": m.NextDueAt}).Error
 }
 

@@ -169,12 +169,15 @@ func TestFrequencyOverflowNeedsConfirm(t *testing.T) { // 一天三次 → 超�
 	assert.Equal(t, ActionNeedConfirm, d[0].Action)
 }
 
-func TestMergeComplementaryFields(t *testing.T) { // 同类合并字段互补
+func TestExplicitAndRelativeTargetsNeedConfirmation(t *testing.T) {
 	out := newP().Parse("词量降到30个，太多了") // 两段同为 A
-	require.Len(t, out.Intents, 1, "同类合并为一个")
+	require.Len(t, out.Intents, 2, "explicit and relative targets are distinct intents")
 	i := out.Intents[0]
 	assert.Equal(t, 30, i.TargetWords, "显式数字保留")
 	assert.True(t, i.NeedsConfirm, "超界标记保留")
+	for _, action := range newP().Plan(out) {
+		assert.Equal(t, ActionNeedConfirm, action.Action, "neither conflicting intent may write configuration")
+	}
 }
 
 func TestExplicitIncreaseInRange(t *testing.T) { // 界内加量

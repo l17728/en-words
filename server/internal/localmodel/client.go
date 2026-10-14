@@ -72,6 +72,7 @@ func (c *Client) request(ctx context.Context, path, contentType string, body io.
 	}
 	raw, err := io.ReadAll(io.LimitReader(resp.Body, limit+1))
 	if err != nil || int64(len(raw)) > limit {
+		c.Log.ErrorCtx(ctx, "provider", "model_request_failed", map[string]any{"endpoint": path, "reason": "invalid_or_oversized_response", "duration_ms": time.Since(start).Milliseconds()})
 		return nil, fmt.Errorf("model console: invalid or oversized response")
 	}
 	c.Log.InfoCtx(ctx, "provider", "model_http_completed", map[string]any{"endpoint": path, "bytes": len(raw), "duration_ms": time.Since(start).Milliseconds()})
@@ -151,12 +152,15 @@ func (c *Client) ChatJSON(ctx context.Context, system, user string, out any) (er
 	return nil
 }
 
-func (c *Client) Transcribe(ctx context.Context, audio []byte, filename, language string) (string, error) {
+func (c *Client) Transcribe(ctx context.Context, audio []byte, filename, language string) (text string, err error) {
+	ctx = obs.WithChild(ctx, "asr")
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+	start := time.Now()
+	defer func() { c.mediaResult(ctx, "asr", language, len(audio), start, err) }()
 	if !c.Has("asr", "asr") || len(audio) == 0 || len(audio) > MaxAudio {
 		return "", fmt.Errorf("model console: audio unavailable or invalid")
 	}
-	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
-	defer cancel()
 	var body bytes.Buffer
 	w := multipart.NewWriter(&body)
 	f, err := w.CreateFormFile("file", filename)
@@ -189,19 +193,35 @@ func (c *Client) Transcribe(ctx context.Context, audio []byte, filename, languag
 	return strings.TrimSpace(out.Text), nil
 }
 
-func (c *Client) Synthesize(ctx context.Context, text, lang string) ([]byte, error) {
+func (c *Client) Synthesize(ctx context.Context, text, lang string) (audio []byte, err error) {
+	ctx = obs.WithChild(ctx, "tts")
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+	start := time.Now()
+	defer func() { c.mediaResult(ctx, "tts", lang, len(audio), start, err) }()
 	if !c.Has("tts", "tts") || lang != "zh" || len([]rune(text)) > 300 || strings.TrimSpace(text) == "" {
 		return nil, fmt.Errorf("model console: unsupported speech request")
 	}
-	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
-	defer cancel()
 	body, _ := json.Marshal(map[string]any{"model": c.Services["tts"].Model, "input": text, "voice": "default", "response_format": "wav"})
 	raw, err := c.request(ctx, "/api/tts/speech", "application/json", bytes.NewReader(body), MaxAudio)
 	if err != nil {
 		return nil, err
 	}
-	if len(raw) < 44 || string(raw[:4]) != "RIFF" || string(raw[8:12]) != "WAVE" {
-		return nil, fmt.Errorf("model console: invalid WAV")
+	if err := validateWAV(raw); err != nil {
+		return nil, err
 	}
 	return raw, nil
+}
+
+func (c *Client) mediaResult(ctx context.Context, task, lang string, bytes int, start time.Time, err error) {
+	fields := map[string]any{"task": task, "model": c.Services[task].Model, "language": lang, "bytes": bytes, "duration_ms": time.Since(start).Milliseconds()}
+	if err != nil {
+		fields["reason"] = "invalid_media_or_provider_failure"
+		if ctx.Err() != nil {
+			fields["reason"] = "canceled_or_timeout"
+		}
+		c.Log.ErrorCtx(ctx, "provider", "model_request_failed", fields)
+	} else {
+		c.Log.InfoCtx(ctx, "provider", "model_request_completed", fields)
+	}
 }

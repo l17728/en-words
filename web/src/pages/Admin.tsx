@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Button, Card, Form, Input, Select, Space, Typography, message } from 'antd'
+import { Alert, Button, Card, Form, Input, List, Modal, Select, Space, Typography, message } from 'antd'
 import { useNavigate } from 'react-router-dom'
-import { api, type Book } from '../api/client'
+import { api, type Book, type FeedbackTodo, type Notification } from '../api/client'
 import { useAuthStore } from '../stores/auth'
 
 export default function AdminPage() {
@@ -11,6 +11,20 @@ export default function AdminPage() {
   const [bookId, setBookId] = useState<number>()
   const [raw, setRaw] = useState('')
   const [busy, setBusy] = useState(false)
+  const [todos, setTodos] = useState<FeedbackTodo[]>([])
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [todoError, setTodoError] = useState('')
+  const [selectedTodo, setSelectedTodo] = useState<FeedbackTodo | null>(null)
+  const [todoAttempt, setTodoAttempt] = useState(0)
+  useEffect(() => {
+    let disposed = false
+    // oxlint-disable-next-line react/set-state-in-effect -- Refreshing external todos/notifications synchronously clears the previous request error.
+    setTodoError('')
+    Promise.all([api.get<FeedbackTodo[]>('/admin/todos'), api.get<Notification[]>('/admin/notifications')])
+      .then(([items, notices]) => { if (!disposed) { setTodos(items || []); setNotifications(notices || []) } })
+      .catch(e => { if (!disposed) setTodoError(e.message) })
+    return () => { disposed = true }
+  }, [todoAttempt])
   const refresh = () => api.get<Book[]>('/wordbooks').then(setBooks).catch(e => message.error(e.message))
   useEffect(() => { void refresh() }, [])
   const run = async (f: () => Promise<void>) => {
@@ -23,6 +37,22 @@ export default function AdminPage() {
       <Button onClick={() => nav('/books')}>词库广场</Button>
       <Button onClick={() => nav('/settings')}>学习设置</Button>
       <Button onClick={() => { logout(); nav('/login') }}>退出</Button></Space>
+    <Card title="学生反馈待办" style={{ marginBottom: 16 }} extra={<Button onClick={() => setTodoAttempt(n => n + 1)}>刷新待办</Button>}>
+      {todoError && <Alert type="error" title={todoError} />}
+      <List dataSource={todos} locale={{ emptyText: '暂无反馈待办' }} renderItem={todo => <List.Item key={todo.id}
+        actions={[<Button key="detail" onClick={() => setSelectedTodo(todo)}>查看反馈详情</Button>]}>
+        <List.Item.Meta title={`学生 ${todo.student_id} · ${todo.legacy ? '历史待办' : '待管理员查看'}`} description={todo.text} />
+      </List.Item>} />
+    </Card>
+    <Card title="管理员通知" style={{ marginBottom: 16 }}>
+      <List dataSource={notifications} locale={{ emptyText: '暂无通知' }} renderItem={notice => <List.Item key={notice.id}>
+        <List.Item.Meta title={notice.title} description={notice.body} />
+      </List.Item>} />
+    </Card>
+    <Modal title="反馈待办详情" open={!!selectedTodo} footer={null} onCancel={() => setSelectedTodo(null)}>
+      {selectedTodo && <><p>学生：{selectedTodo.student_id}</p><p>{selectedTodo.text}</p>
+        <p>{selectedTodo.reply || '已转交管理员，尚未处理。'}</p></>}
+    </Modal>
     <Card title="创建学生" style={{ marginBottom: 16 }}>
       <Form layout="vertical" onFinish={v => run(async () => {
         await api.post('/admin/users', { ...v, role: 'student' }); message.success('学生已创建')

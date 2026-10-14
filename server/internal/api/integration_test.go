@@ -466,7 +466,7 @@ func TestIT09_OverdueReplan(t *testing.T) {
 
 	// 未逾期：不动（openAt=8/24 10:00，now 推进到 8/25 09:00 仍 < openAt+24h）
 	clk.Advance(47 * time.Hour)
-	replanned, err := app.Sched.HandleOverdue()
+	replanned, err := app.CronOverdue()
 	require.NoError(t, err)
 	assert.Empty(t, replanned)
 
@@ -478,10 +478,13 @@ func TestIT09_OverdueReplan(t *testing.T) {
 	got, _ := app.Sched.Lesson(lessons[0].ID)
 	assert.Equal(t, scheduler.LessonExpiredStr, got.Status)
 	newL, _ := app.Sched.Lesson(replanned[0])
-	assert.Equal(t, lessons[0].OpenAt.Add(24*time.Hour), newL.OpenAt)
+	nextDay := clk.Now().AddDate(0, 0, 1)
+	expected := time.Date(nextDay.Year(), nextDay.Month(), nextDay.Day(), lessons[0].OpenAt.Hour(), lessons[0].OpenAt.Minute(), 0, 0, lessons[0].OpenAt.Location())
+	assert.Equal(t, expected, newL.OpenAt)
 	ns := app.Notifications(uid)
 	require.NotEmpty(t, ns, "逾期重排通知学生(S-10)")
-	assert.Contains(t, ns[0].Body, "改到")
+	assert.Contains(t, ns[0].Body, "重新安排课程")
+	assert.Contains(t, ns[0].Body, expected.Format("2006-01-02 15:04"))
 }
 
 // ---- IT-10 Agent 越权 ----

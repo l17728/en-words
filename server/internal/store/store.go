@@ -5,6 +5,7 @@ package store
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"time"
@@ -64,6 +65,7 @@ type MemoryCard struct {
 	ConsecutiveCorrect int
 	WrongCount         int
 	BoostFlag          bool
+	BoostSequence      int64
 	FirstLearnedAt     *time.Time
 	LastReviewAt       *time.Time
 	NextDueAt          *time.Time `gorm:"index:idx_card_due,priority:1"`
@@ -205,6 +207,8 @@ func Open(dbPath string) (*gorm.DB, error) {
 	}
 	// 自动迁移
 	if err := d.AutoMigrate(
+		&OverdueTask{},
+		&FeedbackTask{}, &FeedbackIntent{}, &FeedbackTodo{}, &FeedbackNotice{}, &ConfigRevision{},
 		&RuntimeRecord{}, &DurableMemory{},
 		&User{}, &WordBook{}, &WordEntry{}, &MemoryCard{}, &Lesson{},
 		&ClassroomEvent{}, &WsTicket{}, &ConfigGlobal{}, &ConfigOverride{},
@@ -213,6 +217,9 @@ func Open(dbPath string) (*gorm.DB, error) {
 		return nil, fmt.Errorf("store: migrate: %w", err)
 	}
 	// R6 修复：旧库的 idx_book_norm 是单列唯一（跨库同词冲突真凶）——强制重建为复合 (book_id, norm_key)
+	if err := installConfigRevisionTriggers(d); err != nil {
+		return nil, err
+	}
 	d.Exec("DROP INDEX IF EXISTS idx_book_norm")
 	if err := d.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_book_norm ON word_entries(book_id, norm_key)").Error; err != nil {
 		return nil, fmt.Errorf("store: fix idx_book_norm: %w", err)
@@ -250,7 +257,10 @@ func (r *WordbookRepo) CreateBook(b *wordbook.Book) error {
 func (r *WordbookRepo) GetBook(id int64) (*wordbook.Book, error) {
 	var w WordBook
 	if err := r.db.First(&w, id).Error; err != nil {
-		return nil, wordbook.ErrBookNotFound
+		if err == gorm.ErrRecordNotFound {
+			return nil, wordbook.ErrBookNotFound
+		}
+		return nil, err
 	}
 	return &wordbook.Book{ID: w.ID, Name: w.Name, Grade: w.Grade,
 		Description: w.Description, Source: w.Source,
@@ -297,7 +307,10 @@ func (r *WordbookRepo) CreateEntry(e *wordbook.Entry) error {
 func (r *WordbookRepo) GetEntry(id int64) (*wordbook.Entry, error) {
 	var w WordEntry
 	if err := r.db.First(&w, id).Error; err != nil {
-		return nil, wordbook.ErrEntryNotFound
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, wordbook.ErrEntryNotFound
+		}
+		return nil, err
 	}
 	return entryFrom(&w), nil
 }
@@ -328,7 +341,10 @@ func (r *WordbookRepo) CountEntries(bookID int64) (int64, error) {
 func (r *WordbookRepo) EntryByKey(bookID int64, key string) (*wordbook.Entry, error) {
 	var w WordEntry
 	if err := r.db.Where("book_id = ? AND norm_key = ?", bookID, key).First(&w).Error; err != nil {
-		return nil, wordbook.ErrEntryNotFound
+		if err == gorm.ErrRecordNotFound {
+			return nil, wordbook.ErrEntryNotFound
+		}
+		return nil, err
 	}
 	return entryFrom(&w), nil
 }

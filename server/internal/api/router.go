@@ -2,6 +2,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -259,40 +260,9 @@ func (a *App) Router() *gin.Engine {
 		c.JSON(http.StatusOK, ok(LessonReportView{LessonID: id, Report: res.Report, Correct: res.Correct}))
 	})
 
-	student.GET("/notifications", func(c *gin.Context) {
-		c.JSON(http.StatusOK, ok(a.Notifications(claimsOf(c).UID)))
-	})
-	student.POST("/notifications/read", func(c *gin.Context) {
-		a.mu.Lock()
-		defer a.mu.Unlock()
-		for i := range a.notifications {
-			if a.notifications[i].UserID == claimsOf(c).UID {
-				a.notifications[i].Read = true
-			}
-		}
-		if !a.saveRuntimeLocked("notifications", a.notifications) {
-			c.JSON(200, fail(500, "通知状态未能保存"))
-			return
-		}
-		c.JSON(http.StatusOK, ok("read"))
-	})
+	a.registerNotificationRoutes(student)
+	a.registerFeedbackRoutes(authed.Group("/feedbacks", a.roleMW(auth.RoleStudent)))
 
-	// ---- 反馈（学生；文字/语音同管线 G-2）----
-	fb := authed.Group("/feedbacks", a.roleMW(auth.RoleStudent))
-	fb.POST("", func(c *gin.Context) {
-		var in struct{ Text, Channel string }
-		_ = c.ShouldBindJSON(&in)
-		if strings.TrimSpace(in.Text) == "" {
-			c.JSON(http.StatusOK, fail(errBadRequest, "text required"))
-			return
-		}
-		c.JSON(http.StatusOK, ok(a.HandleFeedbackContext(c.Request.Context(), claimsOf(c).UID, in.Text)))
-	})
-	fb.GET("/mine", func(c *gin.Context) {
-		c.JSON(http.StatusOK, ok(a.Feedbacks(claimsOf(c).UID)))
-	})
-
-	// ---- 课堂（学生）----
 	cr := authed.Group("/classroom", a.roleMW(auth.RoleStudent))
 	cr.POST("/lessons/:id/enter", func(c *gin.Context) {
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -311,7 +281,11 @@ func (a *App) Router() *gin.Engine {
 		}
 		room, snap, err := a.Rooms.Enter(id, claimsOf(c).UID)
 		if err != nil {
-			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
+			code := errBadRequest
+			if errors.Is(err, errLessonUnavailable) {
+				code = errForbidden
+			}
+			c.JSON(http.StatusOK, fail(code, err.Error()))
 			return
 		}
 		ticket := a.IssueTicket(id, claimsOf(c).UID)
@@ -339,7 +313,7 @@ func (a *App) Router() *gin.Engine {
 			c.JSON(http.StatusOK, fail(errBadRequest, "unknown event"))
 			return
 		}
-		msgs := room.HandleClientEvent(in.ClientEnvelope, classroom.Event{Type: in.Event, Text: sanitizeText(in.Text)})
+		msgs := room.HandleClientEventContext(c.Request.Context(), in.ClientEnvelope, classroom.Event{Type: in.Event, Text: sanitizeText(in.Text)})
 		c.JSON(http.StatusOK, ok(msgs))
 	})
 	cr.POST("/lessons/:id/voice", func(c *gin.Context) {
@@ -351,27 +325,35 @@ func (a *App) Router() *gin.Engine {
 			ClientEnvelope
 			Text string
 		}
-		_ = c.ShouldBindJSON(&in)
+		if bindFeedbackJSON(c, &in, false) != nil {
+			c.JSON(200, fail(400, "invalid_json"))
+			return
+		}
 		room, okk := a.Rooms.Room(id)
 		if !okk {
 			c.JSON(http.StatusOK, fail(errNotFound, "room not found"))
 			return
 		}
 		// R4-sec#3：长度限制+控制字符清洗（防注入下游管线）
-		in.Text = sanitizeText(in.Text)
-		if in.Text == "" {
-			c.JSON(http.StatusOK, fail(errBadRequest, "empty text"))
+		if !validVoiceText(in.Text) {
+			c.JSON(200, fail(400, "invalid voice text"))
 			return
 		}
-		cmd, msgs := room.HandleClientVoice(in.ClientEnvelope, in.Text)
-		out := gin.H{"command": cmd, "frames": msgs}
-		if cmd == "feedback" { // 语音反馈闭环（与 WS 同管线）
-			select {
-			case fb := <-room.FeedbackCh:
-				rec := a.HandleFeedbackContext(c.Request.Context(), claimsOf(c).UID, fb)
-				out["feedback"] = rec
-			default:
+		if _, body, matched := room.voiceParser.MatchFeedback(in.Text); matched {
+			if _, err := normalizeFeedback(FeedbackSubmission{SubmissionID: in.SubmissionID, Text: body, Channel: "voice"}); err != nil {
+				a.respondFeedbackError(c, err)
+				return
 			}
+		}
+		cmd, body, msgs := room.HandleClientVoiceSubmissionContext(c.Request.Context(), in.ClientEnvelope, in.Text)
+		out := gin.H{"command": cmd, "frames": msgs}
+		if cmd == "feedback" {
+			rec, err := a.SubmitFeedback(c.Request.Context(), claimsOf(c).UID, FeedbackSubmission{SubmissionID: in.SubmissionID, Text: body, Channel: "voice"})
+			if err != nil {
+				a.respondFeedbackError(c, err)
+				return
+			}
+			out["feedback"] = rec
 		}
 		c.JSON(http.StatusOK, ok(out))
 	})
@@ -498,6 +480,10 @@ func (a *App) authMW() gin.HandlerFunc {
 		cl, err := a.Auth.Verify(tok)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusOK, fail(errUnauthorized, "unauthorized"))
+			return
+		}
+		if !a.activeAccount(c.Request.Context(), cl.UID, cl.Role, cl.Username) {
+			c.AbortWithStatusJSON(http.StatusOK, fail(errUnauthorized, "account unavailable"))
 			return
 		}
 		c.Set(claimsKey, cl)

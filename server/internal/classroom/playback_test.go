@@ -20,8 +20,10 @@ func TestPlaybackRestoreRejectsCorruptActivePosition(t *testing.T) {
 				switch mode {
 				case "reteach":
 					st.Phase, st.InReteach, st.ReteachSeg = PhaseReteachShow, true, seg
+					st.QuizQueue = []QuizItemID{{WordID: m.words[0].ID}}
 				case "review":
 					st.InReview, st.ReviewSeg = true, seg
+					st.ReviewList = []int64{m.words[0].ID}
 				}
 				err := m.Restore(st)
 				if seg < 1 || seg > 4 {

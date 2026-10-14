@@ -18,6 +18,8 @@ tmp/
 # 工具状态目录
 .omo/
 .codegraph/
+__pycache__/
+*.py[cod]
 
 # E2E 产物
 e2e-dev.log

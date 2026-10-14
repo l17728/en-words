@@ -5,8 +5,10 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http/httptest"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -93,21 +95,41 @@ func TestCov_WSClientBackpressure(t *testing.T) {
 		_ = conn.WriteJSON(Msg{"type": "student_event", "event": "word_clicked", "context": turnContext, "event_id": "flood-click-" + itoa(i)})
 		_ = conn.WriteJSON(Msg{"type": "student_event", "event": "tts_finished", "context": turnContext, "event_id": "flood-tts-" + itoa(i)})
 	}
-	// 不读：writePump 队列（64）必然溢出 → 部分帧丢弃（背压分支命中）
-	// 断言连接仍活着（关键帧不致命）
+	// OS socket buffering makes actual saturation nondeterministic. A saturated
+	// queue must close; if writes drain fast enough heartbeat remains usable.
 	_ = conn.WriteJSON(Msg{"type": "heartbeat"})
 	_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 	var m Msg
 	gotAck := false
+	closed := false
 	for !gotAck { // Read deadline bounds the full backlog, not an arbitrary frame count.
 		if err := conn.ReadJSON(&m); err != nil {
+			t.Logf("flood read termination: %T %v", err, err)
+			_, closed = err.(*websocket.CloseError)
+			closed = closed || errors.Is(err, syscall.ECONNRESET) || errors.Is(err, syscall.Errno(10054))
 			break
 		}
 		if m["type"] == "heartbeat_ack" {
 			gotAck = true
 		}
 	}
-	assert.True(t, gotAck, "背压后连接与心跳仍可用")
+	require.True(t, gotAck || closed, "flood must retain heartbeat or explicitly close, not hang")
+	_ = conn.Close()
+	// Either outcome must be recoverable using a new ticket for the same lesson.
+	reentered := req2(t, app.Router(), "POST", "/api/v1/classroom/lessons/"+itoa64(lid)+"/enter", mustStuToken(t, app), map[string]any{})
+	require.Equal(t, 0, reentered.Code)
+	data := reentered.Data.(map[string]any)
+	newConn, _, err := websocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(srv.URL, "http")+"/ws/classroom?lessonId="+itoa64(lid)+"&ticket="+data["ticket"].(string), nil)
+	require.NoError(t, err)
+	defer newConn.Close()
+	require.NoError(t, newConn.SetReadDeadline(time.Now().Add(5*time.Second)))
+	var fresh Msg
+	require.NoError(t, newConn.ReadJSON(&fresh))
+	require.Equal(t, "state_snapshot", fresh["type"])
+	ctx := fresh["context"]
+	frames := sendFixtureWS(t, newConn, &ctx, Msg{"type": "student_event", "event": "word_clicked"}, "after-flood-reconnect")
+	require.False(t, hasFrame(frames, "event_rejected"))
+	require.NotEmpty(t, frames)
 }
 
 func mustStuToken(t *testing.T, app *App) string {

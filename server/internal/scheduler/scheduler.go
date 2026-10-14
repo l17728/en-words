@@ -35,6 +35,8 @@ const (
 )
 
 var (
+	ErrCardNotFound   = errors.New("scheduler: card not found")
+	ErrLessonNotFound = errors.New("scheduler: lesson not found")
 	ErrNoWords        = errors.New("scheduler: no words to schedule")
 	ErrAlreadyPlanned = errors.New("scheduler: next lesson already scheduled")
 )
@@ -47,6 +49,7 @@ type Card struct {
 	Status                    Status
 	LadderStep                int
 	BoostFlag                 bool
+	BoostSequence             int64
 	LastReviewAt              *time.Time
 	NextDueAt                 *time.Time
 }
@@ -106,7 +109,7 @@ func (m *MemRepo) GetCard(s, b, w int64) (*Card, error) {
 	defer m.mu.Unlock()
 	c, ok := m.cards[cardKey(s, b, w)]
 	if !ok {
-		return nil, errors.New("scheduler: card not found")
+		return nil, ErrCardNotFound
 	}
 	cp := *c
 	return &cp, nil
@@ -139,7 +142,7 @@ func (m *MemRepo) Boost(s, b, w int64) error {
 	defer m.mu.Unlock()
 	c, ok := m.cards[cardKey(s, b, w)]
 	if !ok {
-		return errors.New("scheduler: card not found")
+		return ErrCardNotFound
 	}
 	c.BoostFlag = true
 	return nil
@@ -166,7 +169,7 @@ func (m *MemRepo) GetLesson(id int64) (*Lesson, error) {
 			return &cp, nil
 		}
 	}
-	return nil, errors.New("scheduler: lesson not found")
+	return nil, ErrLessonNotFound
 }
 
 func (m *MemRepo) SaveLesson(l *Lesson) error {
@@ -180,7 +183,7 @@ func (m *MemRepo) SaveLesson(l *Lesson) error {
 			return nil
 		}
 	}
-	return errors.New("scheduler: lesson not found")
+	return ErrLessonNotFound
 }
 
 func (m *MemRepo) ListLessons(s, b int64) ([]*Lesson, error) {
@@ -673,7 +676,8 @@ func (s *Service) SettleLessonFinished(studentID, bookID int64, correct map[int6
 	return nil
 }
 
-// HandleOverdue 逾期巡检（SDD §6.4）：expired + 次日同时段重排 + step/LastReviewAt 不变。
+// HandleOverdue is retained only for legacy repository tests.
+// Deprecated: production callers must use App.RunOverdue's Agent task transaction.
 func (s *Service) HandleOverdue() ([]int64, error) {
 	now := s.clock.Now()
 	// R6-be：逾期阈值按学生级配置（学生覆盖优先于全局；overdueFor 内联缓存）

@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"gorm.io/gorm"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -151,8 +153,7 @@ func TestTTSSegmentLogTracksRealEmittedSegmentWithoutText(t *testing.T) {
 		require.EqualValues(t, action.SegIdx, entry["segment"])
 		require.Equal(t, action.Lang, entry["language"])
 		require.EqualValues(t, action.DelayBeforeMs, entry["delay_before_ms"])
-		// Logger.Info creates an independent real trace. Do not claim request-context propagation.
-		require.Regexp(t, `^tr-[0-9a-f]+$`, entry["trace_id"])
+		require.Equal(t, "lesson-"+itoa64(room.lessonID), entry["trace_id"])
 		for _, field := range []string{"text", "word", "meanings", "asr_text", "prompt", "content"} {
 			require.NotContains(t, entry, field)
 		}
@@ -184,9 +185,11 @@ func TestPlaybackFailureLogsUseRequestTraceAndSafeCodes(t *testing.T) {
 			}
 			if kind == "read_failed" {
 				method = "GET"
-				db, err := a.DB.DB()
-				require.NoError(t, err)
-				require.NoError(t, db.Close())
+				require.NoError(t, a.DB.Callback().Query().Before("gorm:query").Register("fixture_config_read_failure", func(tx *gorm.DB) {
+					if strings.Contains(tx.Statement.Table, "config") {
+						tx.AddError(errors.New("private fixture read detail"))
+					}
+				}))
 			}
 			raw, err := json.Marshal(data)
 			require.NoError(t, err)
@@ -195,7 +198,13 @@ func TestPlaybackFailureLogsUseRequestTraceAndSafeCodes(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 			if kind == "request_cancelled" {
 				ctx, cancel := context.WithCancel(req.Context())
-				cancel()
+				defer cancel()
+				// Cancel after successful authentication so the settings handler itself observes cancellation.
+				require.NoError(t, a.DB.Callback().Query().After("gorm:query").Register("fixture_cancel_after_auth", func(tx *gorm.DB) {
+					if tx.Statement.Table == "users" {
+						cancel()
+					}
+				}))
 				req = req.WithContext(ctx)
 			}
 			var sink bytes.Buffer
