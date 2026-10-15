@@ -7,12 +7,14 @@ import (
 	"enwords/internal/store"
 	"fmt"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -45,6 +47,22 @@ func TestBrowserOverdueHarness(t *testing.T) {
 	require.NoError(t, app.StartupError)
 	app.SetTestMode()
 	app.SetLogger(obs.New(os.Stdout))
+	// Installed before serving: callback registration is never mutated while
+	// HTTP requests run. Count only selected completed-room snapshot keys.
+	var observeMu sync.Mutex
+	observedKeys := map[string]bool{}
+	observedWrites := 0
+	require.NoError(t, db.Callback().Create().Before("gorm:create").Register("browser_finished_snapshot_count", func(tx *gorm.DB) {
+		row, ok := tx.Statement.Dest.(*store.RuntimeRecord)
+		if !ok {
+			return
+		}
+		observeMu.Lock()
+		defer observeMu.Unlock()
+		if observedKeys[row.Key] {
+			observedWrites++
+		}
+	}))
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	timerDone := make(chan struct{})
@@ -77,7 +95,37 @@ func TestBrowserOverdueHarness(t *testing.T) {
 	fmt.Println("BROWSER_OVERDUE_HARNESS_READY")
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
-		require.Equal(t, "overdue", strings.TrimSpace(scanner.Text()), "only overdue command is supported")
+		command := strings.TrimSpace(scanner.Text())
+		if command == "timeout-finished" {
+			app.Rooms.mu.Lock()
+			selected := []*Room{}
+			keys := map[string]bool{}
+			for _, room := range app.Rooms.rooms {
+				room.mu.Lock()
+				finished := room.finished
+				room.mu.Unlock()
+				if finished {
+					selected = append(selected, room)
+					keys[fmt.Sprintf("snapshot/%d", room.lessonID)] = true
+				}
+			}
+			app.Rooms.mu.Unlock()
+			observeMu.Lock()
+			observedKeys = keys
+			observedWrites = 0
+			observeMu.Unlock()
+			for _, room := range selected {
+				room.SessionTimeout()
+			}
+			observeMu.Lock()
+			writes := observedWrites
+			observedKeys = map[string]bool{}
+			observeMu.Unlock()
+			app.Log.InfoCtx(obs.WithTrace(ctx, "browser-timeout-finished"), "test", "browser_timeout_finished", map[string]any{"completed_rooms": len(selected), "snapshot_write_attempts": writes})
+			fmt.Printf("BROWSER_TIMEOUT_FINISHED_DONE rooms=%d writes=%d\n", len(selected), writes)
+			continue
+		}
+		require.Equal(t, "overdue", command, "only overdue/timeout-finished commands are supported")
 		err := app.RunOverdue(ctx)
 		if err != nil {
 			fmt.Println("BROWSER_OVERDUE_ERROR", err)

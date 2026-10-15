@@ -1,0 +1,159 @@
+{
+  "scope": "one deterministic classroom with no concurrent project Go workload; committed classroom.* callAgentTool only; does not prove earlier 15.545s delay resolved",
+  "report": ".test-artifacts/interaction-tool-timing-targeted.json",
+  "events": [
+    {
+      "tool": "classroom.say",
+      "trace_id": "lesson-1",
+      "lock_wait_ms": 0,
+      "transaction_ms": 34,
+      "begin_wait_ms": 0,
+      "config_load_ms": 0,
+      "audit_write_ms": 0,
+      "finalize_ms": 34,
+      "rollback_audit_write_ms": 0
+    },
+    {
+      "tool": "classroom.show_word",
+      "trace_id": "lesson-1",
+      "lock_wait_ms": 0,
+      "transaction_ms": 17,
+      "begin_wait_ms": 0,
+      "config_load_ms": 0,
+      "audit_write_ms": 1,
+      "finalize_ms": 15,
+      "rollback_audit_write_ms": 0
+    },
+    {
+      "tool": "classroom.play_tts",
+      "trace_id": "lesson-1",
+      "lock_wait_ms": 0,
+      "transaction_ms": 16,
+      "begin_wait_ms": 0,
+      "config_load_ms": 1,
+      "audit_write_ms": 0,
+      "finalize_ms": 14,
+      "rollback_audit_write_ms": 0
+    },
+    {
+      "tool": "classroom.play_tts",
+      "trace_id": "lesson-1",
+      "lock_wait_ms": 0,
+      "transaction_ms": 13,
+      "begin_wait_ms": 0,
+      "config_load_ms": 0,
+      "audit_write_ms": 0,
+      "finalize_ms": 12,
+      "rollback_audit_write_ms": 0
+    },
+    {
+      "tool": "classroom.play_tts",
+      "trace_id": "lesson-1",
+      "lock_wait_ms": 0,
+      "transaction_ms": 79,
+      "begin_wait_ms": 0,
+      "config_load_ms": 0,
+      "audit_write_ms": 0,
+      "finalize_ms": 78,
+      "rollback_audit_write_ms": 0
+    },
+    {
+      "tool": "classroom.play_tts",
+      "trace_id": "lesson-1",
+      "lock_wait_ms": 0,
+      "transaction_ms": 73,
+      "begin_wait_ms": 0,
+      "config_load_ms": 0,
+      "audit_write_ms": 0,
+      "finalize_ms": 72,
+      "rollback_audit_write_ms": 0
+    },
+    {
+      "tool": "classroom.start_repeat",
+      "trace_id": "lesson-1",
+      "lock_wait_ms": 0,
+      "transaction_ms": 27,
+      "begin_wait_ms": 0,
+      "config_load_ms": 0,
+      "audit_write_ms": 0,
+      "finalize_ms": 26,
+      "rollback_audit_write_ms": 0
+    },
+    {
+      "tool": "classroom.start_quiz",
+      "trace_id": "lesson-1",
+      "lock_wait_ms": 0,
+      "transaction_ms": 14,
+      "begin_wait_ms": 0,
+      "config_load_ms": 0,
+      "audit_write_ms": 1,
+      "finalize_ms": 13,
+      "rollback_audit_write_ms": 0
+    },
+    {
+      "tool": "classroom.start_quiz",
+      "trace_id": "lesson-1",
+      "lock_wait_ms": 0,
+      "transaction_ms": 40,
+      "begin_wait_ms": 0,
+      "config_load_ms": 0,
+      "audit_write_ms": 0,
+      "finalize_ms": 39,
+      "rollback_audit_write_ms": 0
+    },
+    {
+      "tool": "classroom.say",
+      "trace_id": "lesson-1",
+      "lock_wait_ms": 0,
+      "transaction_ms": 14,
+      "begin_wait_ms": 0,
+      "config_load_ms": 1,
+      "audit_write_ms": 1,
+      "finalize_ms": 12,
+      "rollback_audit_write_ms": 0
+    },
+    {
+      "tool": "classroom.judge_answer",
+      "trace_id": "lesson-1",
+      "lock_wait_ms": 0,
+      "transaction_ms": 22,
+      "begin_wait_ms": 0,
+      "config_load_ms": 0,
+      "audit_write_ms": 1,
+      "finalize_ms": 21,
+      "rollback_audit_write_ms": 0
+    },
+    {
+      "tool": "classroom.show_feedback_ui",
+      "trace_id": "lesson-1",
+      "lock_wait_ms": 0,
+      "transaction_ms": 64,
+      "begin_wait_ms": 0,
+      "config_load_ms": 0,
+      "audit_write_ms": 0,
+      "finalize_ms": 63,
+      "rollback_audit_write_ms": 0
+    },
+    {
+      "tool": "classroom.say",
+      "trace_id": "lesson-1",
+      "lock_wait_ms": 0,
+      "transaction_ms": 72,
+      "begin_wait_ms": 0,
+      "config_load_ms": 0,
+      "audit_write_ms": 0,
+      "finalize_ms": 72,
+      "rollback_audit_write_ms": 0
+    }
+  ],
+  "count": 13,
+  "max_ms": {
+    "lock_wait_ms": 0,
+    "transaction_ms": 79,
+    "begin_wait_ms": 0,
+    "config_load_ms": 1,
+    "audit_write_ms": 1,
+    "finalize_ms": 78,
+    "rollback_audit_write_ms": 0
+  }
+}

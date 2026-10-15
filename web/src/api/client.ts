@@ -1,3 +1,5 @@
+import { clientId } from '../interaction/client-id'
+import { speechCache } from '../audio/speech-cache'
 import { clearFeedbackPending } from '../feedback/pending'
 // REST 客户端（docs/02 §10 约定：{code,msg,data}）
 // 【类级修复】token 唯一事实源=localStorage，每次请求实时读取——
@@ -29,10 +31,12 @@ export class ApiError extends Error {
 }
 
 export function setToken(t: string) {
+  if (t !== liveToken()) speechCache.clear()
   localStorage.setItem('token', t)
 }
 
 export function clearToken() {
+  speechCache.clear()
   localStorage.removeItem('token')
   clearFeedbackPending()
 }
@@ -57,37 +61,80 @@ export function currentRole(): string {
   }
 }
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const tok = liveToken() // 实时读：登录后立即可用，登出后立即失效
-  const res = await fetch(BASE + path, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(tok ? { Authorization: `Bearer ${tok}` } : {}),
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  })
-  const resp = (await res.json()) as Resp<T>
-  // A response belongs to the session that sent it, including a delayed 401.
-  // Never publish old account data or clear a newer login's token.
-  if (tok !== liveToken()) throw new ApiError('当前会话已改变，请重试当前操作', 409, 'session_changed')
-  if (resp.code === 401) {
-    // 会话失效（过期/服务重启）同类问题的统一恢复路径：清态回登录页
-    clearToken()
-    if (!location.pathname.startsWith('/login')) {
-      location.href = '/login'
-    }
-    throw new ApiError('登录已过期，请重新登录', 401, resp.error_code, resp.data, resp.submission_id, resp.retryable)
+export interface RequestOptions { signal?: AbortSignal; timeoutMs?: number }
+
+async function request<T>(method: string, path: string, body?: unknown, options: RequestOptions = {}): Promise<T> {
+  const tok = liveToken()
+  const startedAt = Date.now()
+  let requestId = 'unavailable'
+  try { requestId = clientId() } catch { /* Diagnostics must not prevent ordinary reads. */ }
+  const safePath = path.split('?')[0].split('#')[0]
+  const lesson = safePath.match(/\/classroom\/lessons\/(\d+)/)?.[1]
+  let serverTraceId: string | undefined
+  const writing = method !== 'GET'
+  const uncertain = writing ? '；操作结果待确认，请先查询状态，勿重复提交' : '，请重试'
+  const controller = new AbortController()
+  let rejectStop: (error: ApiError) => void = () => {}
+  const stop = new Promise<never>((_, reject) => { rejectStop = reject })
+  const cancel = () => { rejectStop(new ApiError('请求已取消' + uncertain, 0, 'request_canceled')); controller.abort() }
+  const requestedTimeout = options.timeoutMs ?? 30_000
+  const timeout = Number.isFinite(requestedTimeout) && requestedTimeout > 0 ? requestedTimeout : 30_000
+  const timer = setTimeout(() => { rejectStop(new ApiError('请求超时' + uncertain, 0, 'request_timeout')); controller.abort() }, timeout)
+  options.signal?.addEventListener('abort', cancel, { once: true })
+  if (options.signal?.aborted) cancel()
+  try {
+    return await Promise.race([stop, (async () => {
+      if (controller.signal.aborted) return await stop
+      let res: Response
+      try {
+        res = await fetch(BASE + path, { method, signal: controller.signal,
+          headers: { 'Content-Type': 'application/json', ...(tok ? { Authorization: `Bearer ${tok}` } : {}) },
+          body: body !== undefined ? JSON.stringify(body) : undefined })
+      } catch {
+        if (controller.signal.aborted) return await stop
+        throw new ApiError('网络连接失败' + uncertain, 0, 'network_error')
+      }
+      const returnedTrace = res.headers?.get('X-Trace-ID')
+      if (returnedTrace && /^[A-Za-z0-9_-]{1,128}$/.test(returnedTrace)) serverTraceId = returnedTrace
+      let resp: Resp<T>
+      try { resp = await res.json() } catch {
+        if (controller.signal.aborted) return await stop
+        throw new ApiError('服务响应暂不可用' + uncertain, 0, 'invalid_response')
+      }
+      // Body parsing may cross a session change; an old 401 must never log out the new account.
+      if (tok !== liveToken()) throw new ApiError('当前会话已改变，请重试当前操作', 409, 'session_changed')
+      if (controller.signal.aborted) return await stop
+      if (!resp || typeof resp !== 'object' || !Number.isFinite(resp.code) || (resp.code === 0 && !res.ok)) {
+        throw new ApiError('服务响应暂不可用' + uncertain, 0, 'invalid_response')
+      }
+      if (resp.code === 401) {
+        clearToken()
+        if (!location.pathname.startsWith('/login')) location.href = '/login'
+        throw new ApiError('登录已过期，请重新登录', 401, resp.error_code, resp.data, resp.submission_id, resp.retryable)
+      }
+      if (resp.code !== 0) {
+        // Server failures can happen after a write; do not expose raw upstream bodies or imply rollback.
+        const message = resp.code >= 500 ? '服务暂不可用' + uncertain : typeof resp.msg === 'string' ? resp.msg : `错误 ${resp.code}`
+        throw new ApiError(message, resp.code, resp.error_code, resp.data, resp.submission_id, resp.retryable)
+      }
+      return resp.data
+    })()])
+  } catch (error) {
+    const localReasons = ['request_timeout', 'request_canceled', 'network_error', 'invalid_response', 'session_changed']
+    const reason = error instanceof ApiError ? (localReasons.includes(error.error_code || '') ? error.error_code : 'application_rejected') : 'unexpected_failure'
+    console.warn('[api_request_failed]', { module: 'api', event: 'request_failed', method, path: safePath,
+      request_id: requestId, server_trace_id: serverTraceId, trace_id: lesson ? `lesson-${lesson}` : `tr-${requestId}`, reason, duration_ms: Date.now() - startedAt })
+    throw error
+  } finally {
+    clearTimeout(timer)
+    options.signal?.removeEventListener('abort', cancel)
   }
-  if (resp.code !== 0) throw new ApiError(resp.msg || `错误 ${resp.code}`, resp.code, resp.error_code,
-    resp.data, resp.submission_id, resp.retryable)
-  return resp.data
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>('GET', path),
-  post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
-  del: <T>(path: string) => request<T>('DELETE', path),
+  get: <T>(path: string, options?: RequestOptions) => request<T>('GET', path, undefined, options),
+  post: <T>(path: string, body?: unknown, options?: RequestOptions) => request<T>('POST', path, body, options),
+  del: <T>(path: string, options?: RequestOptions) => request<T>('DELETE', path, undefined, options),
 }
 
 // ---- 领域类型 ----

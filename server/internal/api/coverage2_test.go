@@ -155,12 +155,12 @@ func TestCov_HelpersAndDrop(t *testing.T) {
 	// mustSchema panic 路径
 	assert.Panics(t, func() { mustSchema("{bad") })
 
-	// 错误登录体（非法 JSON → 空 username → bad credentials）
+	// 非法 JSON 必须在认证前拒绝，不得降成空凭据登录。
 	req := httptest.NewRequest("POST", "/api/v1/auth/login", bytes.NewReader([]byte("not-json")))
 	w := httptest.NewRecorder()
 	app.Router().ServeHTTP(w, req)
 	resp := doJSON(t, w)
-	assert.Equal(t, errUnauthorized, resp.Code)
+	assert.Equal(t, 400, resp.Code)
 
 	// 错误 token
 	req = httptest.NewRequest("GET", "/api/v1/me", nil)

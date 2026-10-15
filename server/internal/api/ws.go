@@ -192,47 +192,33 @@ func (a *App) handleWS(c *gin.Context) {
 		case <-ctx.Done():
 		}
 	}()
+	type queuedWSInput struct {
+		message  Msg
+		envelope ClientEnvelope
+	}
+	inputs := make(chan queuedWSInput, 16)
+	workerDone := make(chan struct{})
 	go func() {
-		defer cancel()
+		defer close(workerDone)
 		defer func() {
-			room.Leave(client)
+			cancel()
 			_ = client.Close()
-			a.Log.Info("ws", "client_disconnected", map[string]any{ // §14 WS 断开
-				"lesson_id": lessonID, "student_id": tk.StudentID})
+			room.Leave(client)
+			a.Log.InfoCtx(obs.WithTrace(ctx, "lesson-"+strconv.FormatInt(lessonID, 10)), "ws", "client_disconnected", map[string]any{"lesson_id": lessonID, "student_id": tk.StudentID})
 		}()
 		for {
-			_ = conn.SetReadDeadline(time.Now().Add(90 * time.Second))
-			_, raw, readErr := conn.ReadMessage()
-			if readErr != nil || !utf8.Valid(raw) {
+			var input queuedWSInput
+			select {
+			case <-ctx.Done():
+				return
+			case input = <-inputs:
+			}
+			if ctx.Err() != nil || !room.IsActive(client) || !a.activeAccount(ctx, tk.StudentID, auth.RoleStudent, "") {
 				return
 			}
-			var m Msg
-			if err := json.Unmarshal(raw, &m); err != nil {
-				return
-			}
-			if !room.IsActive(client) {
-				return
-			}
-			if !a.activeAccount(ctx, tk.StudentID, auth.RoleStudent, "") {
-				return
-			}
-			var envelope ClientEnvelope
-			submissionValue, submissionPresent := m["submission_id"]
-			if err := json.Unmarshal(raw, &envelope); err != nil || (submissionPresent && submissionValue == nil) {
-				rejected := Msg{"type": "event_rejected", "reason": "invalid_envelope"}
-				if id, ok := m["event_id"].(string); ok && len(id) <= 128 {
-					rejected["event_id"] = id
-				}
-				if id, ok := m["submission_id"].(string); ok && feedbackSubmissionID.MatchString(id) {
-					rejected["submission_id"] = id
-				}
-				_ = client.Send(rejected)
-				continue
-			}
+			m, envelope := input.message, input.envelope
 			typ, _ := m["type"].(string)
 			switch typ {
-			case "heartbeat":
-				_ = client.Send(Msg{"type": "heartbeat_ack", "ts": time.Now().Unix()})
 			case "student_event":
 				ev, _ := m["event"].(string)
 				text, _ := m["text"].(string)
@@ -278,7 +264,62 @@ func (a *App) handleWS(c *gin.Context) {
 					}
 				}
 			case "resume":
-				room.Resume()
+				room.resumeClient(ctx, client)
+			}
+		}
+	}()
+	go func() {
+		defer cancel()
+		defer func() {
+			cancel()
+			_ = client.Close()
+			select {
+			case <-workerDone:
+			case <-time.After(10 * time.Second):
+				a.Log.ErrorCtx(ctx, "ws", "ws_worker_cleanup_timeout", map[string]any{"lesson_id": lessonID})
+				return
+			}
+		}()
+		for {
+			_ = conn.SetReadDeadline(time.Now().Add(90 * time.Second))
+			_, raw, readErr := conn.ReadMessage()
+			if readErr != nil || !utf8.Valid(raw) {
+				return
+			}
+			var m Msg
+			if err := json.Unmarshal(raw, &m); err != nil {
+				return
+			}
+			if !room.IsActive(client) {
+				return
+			}
+			if !a.activeAccount(ctx, tk.StudentID, auth.RoleStudent, "") {
+				return
+			}
+			var envelope ClientEnvelope
+			submissionValue, submissionPresent := m["submission_id"]
+			if err := json.Unmarshal(raw, &envelope); err != nil || (submissionPresent && submissionValue == nil) {
+				rejected := Msg{"type": "event_rejected", "reason": "invalid_envelope"}
+				if id, ok := m["event_id"].(string); ok && len(id) <= 128 {
+					rejected["event_id"] = id
+				}
+				if id, ok := m["submission_id"].(string); ok && feedbackSubmissionID.MatchString(id) {
+					rejected["submission_id"] = id
+				}
+				_ = client.Send(rejected)
+				continue
+			}
+			if m["type"] == "heartbeat" {
+				_ = client.Send(Msg{"type": "heartbeat_ack", "ts": time.Now().Unix()})
+				continue
+			}
+			select {
+			case inputs <- queuedWSInput{m, envelope}:
+			case <-ctx.Done():
+				return
+			default:
+				a.Log.ErrorCtx(obs.WithTrace(ctx, "lesson-"+strconv.FormatInt(lessonID, 10)), "ws", "ws_input_backpressure", map[string]any{"lesson_id": lessonID, "capacity": cap(inputs), "reason": "input_queue_full"})
+				return
 			}
 		}
 	}()

@@ -1,8 +1,12 @@
+import { clientId } from '../interaction/client-id'
+import { ExclusiveAction } from '../interaction/exclusive-action'
+import { LatestRead, type ReadState } from '../interaction/latest-read'
+import { FeedbackDraft } from '../interaction/feedback-draft'
 import { useEffect, useRef, useState } from 'react'
 import { Alert, Card, Typography, Button, List, Badge, Progress, Input, Modal, message } from 'antd'
 import { BellOutlined, BookOutlined, SoundOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
-import { api } from '../api/client'
+import { api, ApiError } from '../api/client'
 import type { Book, Lesson, Notification } from '../api/client'
 import { useAuthStore } from '../stores/auth'
 import { useFeedback, feedbackStatus } from '../feedback/useFeedback'
@@ -21,38 +25,49 @@ export default function DashboardPage() {
   const [fbText, setFbText] = useState('')
   const [fbBusy, setFbBusy] = useState(false)
   const feedback = useFeedback(userId, true)
-  const draft = useRef<{ id: string; text: string } | null>(null)
-  const feedbackSending = useRef(false)
+  const draft = useRef(new FeedbackDraft())
+  const [fbUncertain, setFbUncertain] = useState(false)
+  const [fbError, setFbError] = useState('')
   const pageGeneration = useRef(0)
   useEffect(() => {
     // oxlint-disable-next-line react/set-state-in-effect -- Identity changes must synchronously clear private feedback drafts.
-    pageGeneration.current++; draft.current = null; setFbText(''); setFbBusy(false); feedbackSending.current = false
+    pageGeneration.current++; draft.current.reset(); setFbText(''); setFbBusy(false); setFbUncertain(false); setFbError('')
     // eslint-disable-next-line react-hooks/exhaustive-deps -- This is a monotonic request generation, not a DOM ref; invalidate the latest requests.
     return () => { pageGeneration.current++ }
   }, [userId])
   const [report, setReport] = useState<{ total_words: number; correct_count: number; first_try_rate: number } | null>(null)
 
+  const [bookRead, setBookRead] = useState<ReadState<Book[]>>({ status: 'loading' })
+  const [noticeRead, setNoticeRead] = useState<ReadState<Notification[]>>({ status: 'loading' })
+  const [lessonRead, setLessonRead] = useState<ReadState<Lesson[]>>({ status: 'loading' })
+  const bookLoader = useRef(new LatestRead<Book[]>(state => { setBookRead(state); if (state.status === 'ready') setBooks(state.value || []) }))
+  const noticeLoader = useRef(new LatestRead<Notification[]>(state => { setNoticeRead(state); if (state.status === 'ready') setNotifs(state.value || []) }))
+  const lessonLoader = useRef(new LatestRead<Lesson[]>(state => { setLessonRead(state); if (state.status === 'ready') setLessons(state.value || []) }))
+  const [reportId, setReportId] = useState<number | null>(null)
+  const [reportRead, setReportRead] = useState<ReadState<typeof report>>({ status: 'loading' })
+  const reportLoader = useRef(new LatestRead<typeof report>(state => { setReportRead(state); if (state.status === 'ready') setReport(state.value || null) }))
+  const noticeAction = useRef(new ExclusiveAction())
+  const [noticeBusy, setNoticeBusy] = useState(false)
+  const [noticeError, setNoticeError] = useState('')
   const refresh = () => {
-    api.get<Book[]>('/student/books').then((bs) => setBooks(bs || [])).catch(() => {})
-    api.get<Notification[]>('/student/notifications').then((ns) => setNotifs(ns || [])).catch(() => {})
+    void bookLoader.current.run(signal => api.get<Book[]>('/student/books', { signal }))
+    void noticeLoader.current.run(signal => api.get<Notification[]>('/student/notifications', { signal }))
   }
-  useEffect(refresh, [])
-
-  const [picking, setPicking] = useState(false) // R5：防连点+清旧课表防混合
+  useEffect(() => {
+    const books = bookLoader.current; const notices = noticeLoader.current; const reports = reportLoader.current
+    refresh()
+    return () => { books.dispose(); notices.dispose(); reports.dispose() }
+  }, [])
+  const [lessonAttempt, setLessonAttempt] = useState(0)
   const feedbackRevision = feedback.records.map(record => `${record.submission_id || record.id}:${record.version || 0}:${record.status}`).join('|')
   useEffect(() => {
     if (!selectedBook) return
-    let disposed = false
-    const generation = pageGeneration.current
-    api.get<Lesson[]>(`/student/lessons?bookId=${selectedBook.ID}`)
-      .then(rows => { if (!disposed && generation === pageGeneration.current) setLessons(rows || []) })
-      .catch(e => { if (!disposed && generation === pageGeneration.current) message.error(`课程表刷新失败：${e.message}`) })
-      .finally(() => { if (!disposed && generation === pageGeneration.current) setPicking(false) })
-    return () => { disposed = true }
-  }, [selectedBook, feedbackRevision, userId])
+    const loader = lessonLoader.current
+    void loader.run(signal => api.get<Lesson[]>(`/student/lessons?bookId=${selectedBook.ID}`, { signal }))
+    return () => loader.dispose()
+  }, [selectedBook, feedbackRevision, userId, lessonAttempt])
   const pick = (b: Book) => {
-    if (picking) return
-    setPicking(true)
+    setLessonRead({ status: 'loading' })
     setSelectedBook({ ...b })
     setLessons([]) // 清空旧数据（防上一词库残留与新课混合）
   }
@@ -69,11 +84,26 @@ export default function DashboardPage() {
       onOk: () => {
         if (generation !== pageGeneration.current || token !== localStorage.getItem('token')) return
         return api.del(`/student/books/${b.ID}`).then(() => {
+          if (generation !== pageGeneration.current || token !== localStorage.getItem('token')) return
           message.success('已移除')
           if (selectedBook?.ID === b.ID) setSelectedBook(null)
           refresh()
         }).catch((e) => { if (generation === pageGeneration.current) message.error((e as Error).message) })
       },
+    })
+  }
+
+  const showReport = (id: number) => {
+    setReportId(id); setReport(null)
+    void reportLoader.current.run(async signal => (await api.get<{ report: typeof report }>(`/student/lessons/${id}/report`, { signal })).report)
+  }
+  const markRead = () => {
+    const generation = pageGeneration.current
+    void noticeAction.current.run(async () => {
+      setNoticeBusy(true); setNoticeError('')
+      try { await api.post('/student/notifications/read'); if (generation === pageGeneration.current) refresh() }
+      catch (cause) { if (generation === pageGeneration.current) setNoticeError(cause instanceof Error ? cause.message : '通知标记失败，请重试') }
+      finally { if (generation === pageGeneration.current) setNoticeBusy(false) }
     })
   }
 
@@ -84,24 +114,26 @@ export default function DashboardPage() {
   const fmt = (s: string) => new Date(s).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 
   const sendFeedback = () => {
-    if (feedbackSending.current || !fbText.trim()) return
     const text = fbText.replace(/\r\n/g, '\n').trim()
-    if (!draft.current || draft.current.text !== text) draft.current = { id: crypto.randomUUID(), text }
-    const attempt = draft.current
+    const attempt = draft.current.begin(text, () => clientId())
+    if (!attempt) return
     const generation = pageGeneration.current
-    feedbackSending.current = true
-    setFbBusy(true)
+    setFbBusy(true); setFbError('')
     feedback.submit(attempt.id, attempt.text)
       .then(record => {
-        if (generation !== pageGeneration.current) return
+        if (generation !== pageGeneration.current || !draft.current.complete(attempt)) return
         message.info(feedbackStatus[record.status] || record.status)
-        setFbOpen(false)
-        setFbText('')
-        draft.current = null
+        setFbOpen(false); setFbText(''); setFbUncertain(false)
         refresh()
       })
-      .catch((e) => { if (generation === pageGeneration.current) message.error((e as Error).message) })
-      .finally(() => { if (generation === pageGeneration.current) { feedbackSending.current = false; setFbBusy(false) } })
+      .catch(e => {
+        if (generation !== pageGeneration.current) return
+        const definitive = e instanceof ApiError && e.code >= 400 && e.code < 500 && e.error_code !== 'session_changed'
+        draft.current.fail(attempt, definitive)
+        setFbUncertain(!definitive)
+        setFbError(definitive ? e.message : '送达状态待确认，已保留原稿；请查询原提交，勿另建重复反馈。')
+      })
+      .finally(() => { if (generation === pageGeneration.current) setFbBusy(false) })
   }
 
   return (
@@ -115,15 +147,17 @@ export default function DashboardPage() {
 		  <Button style={{ marginLeft: 8 }} onClick={() => nav('/stats')}>学习统计</Button>
           <Button style={{ marginLeft: 8 }} onClick={() => nav('/settings')}>学习设置</Button>
           <Button style={{ marginLeft: 8 }} icon={<BellOutlined />}
-            onClick={() => api.post('/student/notifications/read').then(refresh)}>
+            loading={noticeBusy} disabled={noticeBusy} onClick={markRead}>
             通知 {notifs.filter((n) => !n.read).length ? <Badge count={notifs.filter((n) => !n.read).length} /> : null}
           </Button>
           <Button style={{ marginLeft: 8 }} onClick={() => { logout(); nav('/login') }}>退出</Button>
         </div>
       </div>
 
+      {noticeError && <Alert type="error" title="通知标记失败" description={noticeError} action={<Button onClick={markRead} disabled={noticeBusy}>重试标记通知</Button>} />}
       <Card title="我的词库（点击查看课程）" style={{ marginTop: 16 }}>
-        {books.length === 0 ? (
+        {bookRead.status === 'loading' ? <Typography.Text role="status">正在读取词库</Typography.Text> : bookRead.status === 'error' ?
+          <Alert type="error" title="词库读取失败" description={bookRead.error} action={<Button onClick={refresh}>重新读取词库</Button>} /> : books.length === 0 ? (
           <Typography.Text type="secondary">还没有词库，去 <a onClick={() => nav('/books')}>词库广场</a> 选一个吧</Typography.Text>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
@@ -155,6 +189,7 @@ export default function DashboardPage() {
                   danger
                   size="small"
                   icon={<DeleteOutlined />}
+                  aria-label={`移除 ${b.Name}`}
                   onClick={(e) => { e.stopPropagation(); removeBook(b) }}
                   style={{ position: 'absolute', top: 8, right: 8 }}
                 />
@@ -172,7 +207,8 @@ export default function DashboardPage() {
             <Button size="small" type="link" onClick={() => nav(`/placement/${selectedBook.ID}`)}>重新摸底</Button>
           ) : null}
         >
-          {lessons.length === 0 ? (
+          {lessonRead.status === 'loading' ? <Typography.Text role="status">正在读取课程</Typography.Text> : lessonRead.status === 'error' ?
+            <Alert type="error" title="课程读取失败" description={lessonRead.error} action={<Button onClick={() => setLessonAttempt(n => n + 1)}>重新读取课程</Button>} /> : lessons.length === 0 ? (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography.Text type="secondary">
                 这个词库还没有课程——先完成摸底，叮当老师才能为你排课表
@@ -219,14 +255,17 @@ export default function DashboardPage() {
           onClarify={(id, text, parent) => feedback.submit(id, text, 'page', parent)} onQuery={() => void feedback.recover(f.submission_id!)} onRetry={() => void feedback.recover(f.submission_id!, true)} />)}
       </Card>
 
-      {lessons.filter(l => l.Status === 'finished').map(l => <Button key={l.ID} style={{ marginTop: 12 }} onClick={() => {
-        api.get<{report: typeof report}>(`/student/lessons/${l.ID}/report`).then(r => setReport(r.report)).catch(e => message.error(e.message))
-      }}>查看第 {l.ID} 课课报</Button>)}
-      <Modal title="学习课报" open={!!report} footer={null} onCancel={() => setReport(null)}>
-        {report && <p>本课 {report.total_words} 词，答对 {report.correct_count} 词，首次正确率 {Math.round(report.first_try_rate * 100)}%</p>}
+      {lessons.filter(l => l.Status === 'finished').map(l => <Button key={l.ID} style={{ marginTop: 12 }} onClick={() => showReport(l.ID)}>查看第 {l.ID} 课课报</Button>)}
+      <Modal title={`学习课报 · 第 ${reportId ?? ''} 课`} open={reportId !== null} footer={null}
+        onCancel={() => { reportLoader.current.dispose(); setReportId(null); setReport(null) }}>
+        {reportRead.status === 'loading' ? <p role="status">正在读取课报</p> : reportRead.status === 'error' ?
+          <Alert type="error" title="课报读取失败" description={reportRead.error} action={<Button onClick={() => reportId !== null && showReport(reportId)}>重新读取课报</Button>} /> :
+          report && <p>本课 {report.total_words} 词，答对 {report.correct_count} 词，首次正确率 {Math.round(report.first_try_rate * 100)}%</p>}
       </Modal>
 
-      {notifs.length > 0 && (
+      {noticeRead.status === 'loading' && <Typography.Paragraph role="status">正在读取通知</Typography.Paragraph>}
+      {noticeRead.status === 'error' && <Alert type="error" title="通知读取失败" description={noticeRead.error} action={<Button onClick={refresh}>重新读取通知</Button>} />}
+      {noticeRead.status === 'ready' && notifs.length > 0 && (
         <Card title="通知" style={{ marginTop: 16 }}>
           <List
             size="small"
@@ -243,17 +282,23 @@ export default function DashboardPage() {
       <Modal
         title="告诉叮当老师"
         open={fbOpen}
-        okText="发送"
+        okText={fbUncertain ? '查询原提交' : '发送'}
         cancelText="取消"
         onOk={sendFeedback}
         confirmLoading={fbBusy}
         okButtonProps={{ disabled: !fbText.trim() }}
-        onCancel={() => setFbOpen(false)}
+        cancelButtonProps={{ disabled: fbBusy }}
+        closable={!fbBusy}
+        maskClosable={!fbBusy}
+        keyboard={!fbBusy}
+        onCancel={() => { if (!fbBusy) setFbOpen(false) }}
       >
+        {fbError && <Alert type="warning" title={fbError} />}
         <Input.TextArea
+          disabled={fbBusy || fbUncertain}
           rows={3}
           value={fbText}
-          onChange={(e) => { setFbText(e.target.value); if (draft.current?.text !== e.target.value.replace(/\r\n/g, '\n').trim()) draft.current = null }}
+          onChange={e => setFbText(e.target.value)}
           placeholder="例如：每次词太多了 / 这周三有事 / abandon 我老忘"
         />
       </Modal>

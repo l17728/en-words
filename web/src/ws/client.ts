@@ -18,7 +18,9 @@ export class ClassroomWS {
   private handlers: Handlers
   private retry = 0
   private closed = false
-  private heartbeat: ReturnType<typeof setInterval> | null = null
+  private heartbeat: ReturnType<typeof setTimeout> | null = null
+  private heartbeatDeadline: ReturnType<typeof setTimeout> | null = null
+  private awaitingHeartbeat = false
   private reconnect: ReturnType<typeof setTimeout> | null = null
 
   constructor(lessonId: number, authorize: () => Promise<string>, handlers: Handlers) {
@@ -39,6 +41,37 @@ export class ClassroomWS {
     this.reconnect = setTimeout(() => { this.reconnect = null; void this.connect() }, delay)
   }
 
+  private clearHeartbeat(): void {
+    if (this.heartbeat) clearTimeout(this.heartbeat)
+    if (this.heartbeatDeadline) clearTimeout(this.heartbeatDeadline)
+    this.heartbeat = null
+    this.heartbeatDeadline = null
+    this.awaitingHeartbeat = false
+  }
+
+  private lost(socket: WebSocket, reason?: string): void {
+    if (this.ws !== socket) return
+    this.ws = null // Invalidate before close: a black hole may never return its close handshake.
+    this.clearHeartbeat()
+    this.handlers.onClose?.()
+    if (reason) this.handlers.onError?.(reason, true)
+    try { socket.close() } catch { /* already unusable */ }
+    if (this.sessionToken !== localStorage.getItem('token')) { this.close(); return }
+    this.scheduleReconnect()
+  }
+
+  private ping(socket: WebSocket): void {
+    if (this.closed || this.ws !== socket || this.awaitingHeartbeat) return
+    this.heartbeat = null
+    this.awaitingHeartbeat = true
+    this.heartbeatDeadline = setTimeout(() => {
+      console.warn('[ws_liveness]', { module: 'ws', event: 'heartbeat_timeout',
+        trace_id: `lesson-${this.lessonId}`, lesson_id: this.lessonId, timeout_ms: 10000 })
+      this.lost(socket, '课堂连接暂时无响应，正在重新连接。')
+    }, 10000)
+    if (!this.send({ type: 'heartbeat' })) this.lost(socket)
+  }
+
   private async connect(): Promise<void> {
     const current = () => !this.closed && !!this.sessionToken && localStorage.getItem('token') === this.sessionToken
     if (!current()) { this.close(); return }
@@ -50,29 +83,28 @@ export class ClassroomWS {
       const socket = new WebSocket(this.url(ticket))
       this.ws = socket
       socket.onopen = () => {
-        if (!current()) { socket.close(); return }
+        if (!current() || this.ws !== socket) { socket.close(); return }
         this.retry = 0
-        if (this.heartbeat) clearInterval(this.heartbeat)
-        this.heartbeat = setInterval(() => this.send({ type: 'heartbeat' }), 25000)
+        this.clearHeartbeat()
         this.handlers.onOpen?.()
+        this.ping(socket)
       }
       socket.onmessage = ev => {
         if (!current() || this.ws !== socket) return
         try {
           const frame = JSON.parse(ev.data)
+          if (frame.type === 'heartbeat_ack' && this.awaitingHeartbeat) {
+            this.awaitingHeartbeat = false
+            if (this.heartbeatDeadline) clearTimeout(this.heartbeatDeadline)
+            this.heartbeatDeadline = null
+            this.heartbeat = setTimeout(() => this.ping(socket), 10000)
+          }
           if (frame.type === 'kick') this.close()
           this.handlers.onFrame(frame)
         } catch { /* malformed frames are ignored */ }
       }
-      socket.onerror = () => socket.close()
-      socket.onclose = () => {
-        if (this.ws !== socket) return
-        if (this.heartbeat) clearInterval(this.heartbeat)
-        this.heartbeat = null
-        this.handlers.onClose?.()
-        if (!current()) { this.close(); return }
-        this.scheduleReconnect()
-      }
+      socket.onerror = () => this.lost(socket)
+      socket.onclose = () => this.lost(socket)
     } catch (error) {
       this.handlers.onClose?.()
       const code = (error as { code?: number }).code
@@ -89,8 +121,12 @@ export class ClassroomWS {
 
   send(m: Frame): boolean {
     if (!this.closed && this.sessionToken === localStorage.getItem('token') && this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(m))
-      return true
+      const socket = this.ws
+      try { socket.send(JSON.stringify(m)); return true } catch {
+        console.warn('[ws_liveness]', { module: 'ws', event: 'send_failed',
+          trace_id: `lesson-${this.lessonId}`, lesson_id: this.lessonId })
+        this.lost(socket, '课堂消息暂未发出，正在重新连接。')
+      }
     }
     return false
   }
@@ -105,10 +141,14 @@ export class ClassroomWS {
 
   close(): void {
     this.closed = true
-    if (this.heartbeat) clearInterval(this.heartbeat)
+    this.clearHeartbeat()
     if (this.reconnect) clearTimeout(this.reconnect)
-    this.heartbeat = null
     this.reconnect = null
-    this.ws?.close()
+    const socket = this.ws
+    this.ws = null
+    if (socket) {
+      this.handlers.onClose?.()
+      try { socket.close() } catch { /* no active transport remains */ }
+    }
   }
 }

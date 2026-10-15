@@ -44,7 +44,7 @@ func (a *App) saveRuntimeContextLocked(ctx context.Context, key string, value an
 	ctx = runtimeTraceContext(ctx, key)
 	raw, err := json.Marshal(value)
 	if err == nil {
-		err = a.DB.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "key"}}, DoUpdates: clause.AssignmentColumns([]string{"value"})}).Create(&store.RuntimeRecord{Key: key, Value: string(raw)}).Error
+		err = a.DB.WithContext(ctx).Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "key"}}, DoUpdates: clause.AssignmentColumns([]string{"value"})}).Create(&store.RuntimeRecord{Key: key, Value: string(raw)}).Error
 	}
 	if err != nil {
 		a.Log.ErrorCtx(ctx, "store", "snapshot_failed", map[string]any{"key": key, "reason": "persistence_failed"})

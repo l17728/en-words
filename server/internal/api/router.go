@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"enwords/internal/auth"
 	"enwords/internal/classroom"
@@ -29,7 +30,9 @@ func (a *App) Router() *gin.Engine {
 	// ---- 认证 ----
 	v.POST("/auth/login", func(c *gin.Context) {
 		var body map[string]string
-		_ = c.ShouldBindJSON(&body)
+		if !a.readIdentityBody(c, &body) {
+			return
+		}
 		u := body["username"]
 		p := body["password"]
 		tok, user, err := a.Auth.Login(u, p)
@@ -142,14 +145,20 @@ func (a *App) Router() *gin.Engine {
 		c.JSON(http.StatusOK, ok("deleted"))
 	})
 	adminOnly.POST("/:id/import/commit", func(c *gin.Context) {
+		started := time.Now()
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 		var in struct{ Entries []wordbook.EntryInput }
-		_ = c.ShouldBindJSON(&in)
-		res, err := a.Books.ImportBatch(id, in.Entries)
-		if err != nil {
-			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
+		if err := c.ShouldBindJSON(&in); err != nil {
+			c.JSON(http.StatusOK, fail(errBadRequest, "导入内容格式不正确，请检查后重试"))
 			return
 		}
+		res, err := a.Books.ImportBatchContext(c.Request.Context(), id, in.Entries)
+		if err != nil {
+			a.Log.ErrorCtx(c.Request.Context(), "wordbook", "import_failed", map[string]any{"book_id": id, "input_count": len(in.Entries), "reason": "transaction_failed", "duration_ms": time.Since(started).Milliseconds()})
+			c.JSON(http.StatusOK, fail(errBadRequest, "导入失败，本次词条未保存，请稍后重试"))
+			return
+		}
+		a.Log.InfoCtx(c.Request.Context(), "wordbook", "import_completed", map[string]any{"book_id": id, "inserted": res.Inserted, "skipped": len(res.Skipped), "duration_ms": time.Since(started).Milliseconds()})
 		c.JSON(http.StatusOK, ok(res))
 	})
 	adminOnly.POST("/:id/publish", func(c *gin.Context) {
@@ -184,11 +193,14 @@ func (a *App) Router() *gin.Engine {
 		c.JSON(http.StatusOK, ok(a.MyBooks(claimsOf(c).UID)))
 	})
 	student.POST("/books/:bookId/enable", func(c *gin.Context) {
+		started := time.Now()
 		bid, _ := strconv.ParseInt(c.Param("bookId"), 10, 64)
-		if err := a.EnableBook(claimsOf(c).UID, bid); err != nil {
-			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
+		if err := a.EnableBookContext(c.Request.Context(), claimsOf(c).UID, bid); err != nil {
+			a.Log.ErrorCtx(c.Request.Context(), "wordbook", "enable_failed", map[string]any{"book_id": bid, "student_id": claimsOf(c).UID, "reason": "operation_failed", "duration_ms": time.Since(started).Milliseconds()})
+			c.JSON(http.StatusOK, fail(errBadRequest, "暂时无法选择此词库，请刷新后重试"))
 			return
 		}
+		a.Log.InfoCtx(c.Request.Context(), "wordbook", "enable_completed", map[string]any{"book_id": bid, "student_id": claimsOf(c).UID, "duration_ms": time.Since(started).Milliseconds()})
 		c.JSON(http.StatusOK, ok("enabled"))
 	})
 	student.DELETE("/books/:bookId", func(c *gin.Context) {
@@ -229,9 +241,17 @@ func (a *App) Router() *gin.Engine {
 			KnownWordIDs []int64 `json:"knownWordIds"`
 			Finish       bool    `json:"finish"`
 		}
-		_ = c.ShouldBindJSON(&in)
-		if err := a.PlacementSubmit(claimsOf(c).UID, bid, in.KnownWordIDs, in.Finish); err != nil {
-			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
+		if err := c.ShouldBindJSON(&in); err != nil {
+			c.JSON(http.StatusOK, fail(errBadRequest, "摸底数据格式不正确"))
+			return
+		}
+		if err := a.PlacementSubmitContext(c.Request.Context(), claimsOf(c).UID, bid, in.KnownWordIDs, in.Finish); err != nil {
+			message := "摸底提交未完成，请保留选择后重试"
+			var planErr *placementPlanError
+			if errors.As(err, &planErr) {
+				message = "摸底选择已保存，但课程安排未完成，请重试完成摸底"
+			}
+			c.JSON(http.StatusOK, fail(errBadRequest, message))
 			return
 		}
 		c.JSON(http.StatusOK, ok(gin.H{"finished": in.Finish}))

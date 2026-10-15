@@ -4,7 +4,7 @@ import { createWriteStream } from 'node:fs'
 import { resolve } from 'node:path'
 import { createServer, type ServerResponse } from 'node:http'
 
-export const test = base.extend<{ localModel: boolean; modelSchema: string; overdueHarness: boolean; server: { restart: (whileStopped?: () => void) => Promise<void>; runOverdue: () => void; pids: number[]; db: string; model: { pending: number; canceled: number; feedbackCalls: number; judgeCalls: number } } }>({
+export const test = base.extend<{ localModel: boolean; modelSchema: string; overdueHarness: boolean; server: { restart: (whileStopped?: () => void) => Promise<void>; runOverdue: () => void; timeoutFinished: () => void; log: string; pids: number[]; db: string; model: { pending: number; canceled: number; feedbackCalls: number; judgeCalls: number } } }>({
   localModel: [false, { option: true }],
   modelSchema: ['valid', { option: true }],
   overdueHarness: [false, { option: true }],
@@ -91,7 +91,7 @@ export const test = base.extend<{ localModel: boolean; modelSchema: string; over
         try { return (await request.get('/api/v1/bootstrap/status', { timeout: 1000 })).status() } catch { return 0 }
       }, { timeout: 30_000 }).toBe(200)
     }
-    try { await start(); await runFixture({ restart: async (whileStopped) => { await stop(); whileStopped?.(); await start() }, runOverdue: () => { if (!overdueHarness || !child?.stdin || child.exitCode !== null) throw new Error('Owned overdue harness unavailable'); child.stdin.write('overdue\n') }, pids, db, model }) }
+    try { await start(); await runFixture({ restart: async (whileStopped) => { await stop(); whileStopped?.(); await start() }, runOverdue: () => { if (!overdueHarness || !child?.stdin || child.exitCode !== null) throw new Error('Owned overdue harness unavailable'); child.stdin.write('overdue\n') }, timeoutFinished: () => { if (!overdueHarness || !child?.stdin || child.exitCode !== null) throw new Error('Owned harness unavailable'); child.stdin.write('timeout-finished\n') }, log: info.outputPath('server.log'), pids, db, model }) }
     finally {
       await stop(); out.end()
       for (const response of pending) response.destroy()

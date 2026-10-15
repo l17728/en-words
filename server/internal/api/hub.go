@@ -631,6 +631,9 @@ func (r *Room) applyCommand(cmd string) []Msg {
 func (r *Room) SessionTimeout() []Msg {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if r.retired || r.finished {
+		return nil
+	}
 	_ = r.machine.OnSessionTimeout()
 	if r.machine.Paused() {
 		r.cancelJudgmentLocked()

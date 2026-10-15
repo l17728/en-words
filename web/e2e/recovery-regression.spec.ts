@@ -18,7 +18,7 @@ test('REC12 automatic recognition waits for business readiness and rejects prior
     const flush = () => { const buffered = queue!; queue = null; buffered.forEach(deliver) }
     socket.onMessage(message => { try { sent.push(JSON.parse(String(message))) } catch {} upstream.send(message) })
     upstream.onMessage(message => {
-      if (queue) { queue.push(message); return }
+      if (queue && JSON.parse(String(message)).type !== 'heartbeat_ack') { queue.push(message); return }
       const frame = JSON.parse(String(message)); const action = frame.action?.type
       if (['start_repeat', 'show_quiz_item'].includes(action) && !releases.has(action)) {
         queue = [message]; releases.set(action, flush)
@@ -68,7 +68,7 @@ test('REC11 business question readiness blocks early and blank answers and prese
     const flush = () => { const buffered = queue!; queue = null; buffered.forEach(deliver) }
     socket.onMessage(message => { try { sent.push(JSON.parse(String(message))) } catch {} upstream.send(message) })
     upstream.onMessage(message => {
-      if (queue) { queue.push(message); return }
+      if (queue && JSON.parse(String(message)).type !== 'heartbeat_ack') { queue.push(message); return }
       const frame = JSON.parse(String(message))
       if (holdQuestion && frame.action?.type === 'show_quiz_item' && !held) {
         held = frame; queue = [message]; release = flush
@@ -672,7 +672,7 @@ for (const outcome of ['ended', 'fallback']) test(`SUB02 platform ${outcome} sho
   await page.route('**/api/v1/providers', route => route.fulfill({ json: { code: 0, data: { local: true, tts_zh: true, tts_en: false, asr: false } } }))
   let release: (() => Promise<void>) | undefined
   await page.route('**/api/v1/speech/synthesize', route => new Promise<void>(done => {
-    release = async () => { await route.fulfill({ contentType: 'audio/wav', body: Buffer.from('declared audio protocol fixture') }); done() }
+    release = async () => { await route.fulfill({ contentType: 'audio/wav', body: readFileSync('../review/audio-fixtures/en/05.wav') }); done() }
   }))
   await login(page, f.username); await page.goto(`/classroom/${id}?e2e=1`)
   const caption = page.getByRole('status', { name: '当前朗读字幕' })

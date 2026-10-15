@@ -1,0 +1,111 @@
+{
+  "binary_sha256": "44dc262ed2e61dbec1e3614a6cddbe280889c2441e825b13e82ee57c2a31b9b0",
+  "db": "D:\\en-words\\.test-artifacts\\import-http-old-r2-20261015\\data.db",
+  "cases": [
+    {
+      "size": 100,
+      "operation": "import",
+      "success": true,
+      "elapsed_ms": 8312.0,
+      "other_student_samples": 51,
+      "other_student_max_ms": 188.0,
+      "other_student_errors": [],
+      "reader_stopped": true
+    },
+    {
+      "size": 100,
+      "operation": "publish",
+      "success": true,
+      "elapsed_ms": 141.0,
+      "other_student_samples": 1,
+      "other_student_max_ms": 141.0,
+      "other_student_errors": [],
+      "reader_stopped": true
+    },
+    {
+      "size": 100,
+      "operation": "enable_first",
+      "success": true,
+      "elapsed_ms": 9125.0,
+      "other_student_samples": 51,
+      "other_student_max_ms": 172.0,
+      "other_student_errors": [],
+      "reader_stopped": true
+    },
+    {
+      "size": 100,
+      "operation": "enable_repeat",
+      "success": true,
+      "elapsed_ms": 32.0,
+      "other_student_samples": 1,
+      "other_student_max_ms": 16.0,
+      "other_student_errors": [],
+      "reader_stopped": true
+    },
+    {
+      "size": 1000,
+      "operation": "import",
+      "success": true,
+      "elapsed_ms": 109906.0,
+      "other_student_samples": 581,
+      "other_student_max_ms": 938.0,
+      "other_student_errors": [],
+      "reader_stopped": true
+    },
+    {
+      "size": 1000,
+      "operation": "publish",
+      "success": true,
+      "elapsed_ms": 188.0,
+      "other_student_samples": 1,
+      "other_student_max_ms": 188.0,
+      "other_student_errors": [],
+      "reader_stopped": true
+    },
+    {
+      "size": 1000,
+      "operation": "enable_first",
+      "success": false,
+      "error": "TimeoutError",
+      "elapsed_ms": 110515.0,
+      "other_student_samples": 530,
+      "other_student_max_ms": 1297.0,
+      "other_student_errors": [],
+      "reader_stopped": true
+    }
+  ],
+  "shared_services_used": false,
+  "pid": 11676,
+  "owned_process_stopped": true,
+  "status": "old_baseline_budget_exhausted",
+  "scope": "D-volume real cmd/server HTTP; no concurrent Go/browser/model evaluation",
+  "enable_1000_result": "right_censored: not completed within remaining 110.515 seconds; client total 240-second budget, not a product timeout response",
+  "database_observation": {
+    "connection_scope": "independent readonly Python SQLite connection; connection-local settings do not prove live Go connection settings",
+    "journal_mode": "wal",
+    "synchronous": 2,
+    "entry_counts": [
+      [
+        1,
+        100
+      ],
+      [
+        2,
+        1000
+      ]
+    ],
+    "card_counts": [
+      [
+        4,
+        1,
+        100
+      ],
+      [
+        4,
+        2,
+        753
+      ]
+    ]
+  },
+  "comparison_limit": "C-volume direct Service baseline must not be compared as equal conditions; new binary must use this script and D-volume fresh DB"
+}

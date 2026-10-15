@@ -247,6 +247,9 @@ func NewApp(clock Clock, db *gorm.DB) *App {
 			"lesson_id": l.ID, "open_at": l.OpenAt.Format(time.RFC3339),
 			"batch": len(l.BatchWordIDs)})
 	}
+	sched.OnPlacementSaved = func(ctx context.Context, studentID, bookID int64, inputCount, changed int) {
+		app.Log.InfoCtx(ctx, "scheduler", "placement_saved", map[string]any{"student_id": studentID, "book_id": bookID, "input_count": inputCount, "changed_count": changed})
+	}
 	// R4-backend#3：config.ladder 变更 → scheduler 截断记忆卡 step（SDD §6.2 事务联动）
 	cfgStore.OnLadderChanged = func(newLadder []int) error {
 		return sched.TruncateLadderSteps(len(newLadder))
@@ -286,6 +289,16 @@ func (a *App) MyBooks(studentID int64) []*wordbook.Book {
 
 // EnableBook 选库：为该生该库建立记忆卡（未摸底）。
 func (a *App) EnableBook(studentID, bookID int64) error {
+	return a.EnableBookContext(context.Background(), studentID, bookID)
+}
+
+func (a *App) EnableBookContext(ctx context.Context, studentID, bookID int64) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	b, err := a.Books.GetBook(bookID)
 	if err != nil {
 		return err
@@ -297,16 +310,11 @@ func (a *App) EnableBook(studentID, bookID int64) error {
 	if err != nil {
 		return err
 	}
+	ids := make([]int64, 0, len(entries))
 	for _, e := range entries {
-		// 幂等（R17 类）：卡已存在（含已摸底 mastered）跳过——重复 enable 不得抹掉摸底结果
-		if _, err := a.Sched.GetCard(studentID, bookID, e.ID); err == nil {
-			continue
-		}
-		if err := a.Sched.SeedCard(studentID, bookID, e.ID); err != nil {
-			return err
-		}
+		ids = append(ids, e.ID)
 	}
-	return nil
+	return a.Sched.SeedCards(ctx, studentID, bookID, ids)
 }
 
 // PlacementSubmit 摸底提交（known=已会词 entryID；finish=true 触发首课）。
@@ -314,6 +322,21 @@ func (a *App) EnableBook(studentID, bookID int64) error {
 // 未开始的课作废+批次卡重置（ResetForReplacement），再以新摸底结果排新课。
 // R6-sec：knownWordIds 逐个校验归属该词库（防跨库 ID 注入打乱记忆卡）。
 func (a *App) PlacementSubmit(studentID, bookID int64, known []int64, finish bool) error {
+	return a.PlacementSubmitContext(context.Background(), studentID, bookID, known, finish)
+}
+
+type placementPlanError struct{ cause error }
+
+func (e *placementPlanError) Error() string { return "placement saved; plan incomplete" }
+func (e *placementPlanError) Unwrap() error { return e.cause }
+
+func (a *App) PlacementSubmitContext(ctx context.Context, studentID, bookID int64, known []int64, finish bool) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if len(known) > 0 {
 		valid := map[int64]bool{}
 		entries, _, err := a.Books.ListEntries(bookID, 1, 1<<30)
@@ -329,16 +352,19 @@ func (a *App) PlacementSubmit(studentID, bookID int64, known []int64, finish boo
 			}
 		}
 	}
-	if err := a.Sched.MarkPlacement(studentID, bookID, known); err != nil {
+	if err := a.Sched.MarkPlacementContext(ctx, studentID, bookID, known); err != nil {
+		a.Log.ErrorCtx(ctx, "scheduler", "placement_save_failed", map[string]any{"student_id": studentID, "book_id": bookID, "reason": "transaction_failed"})
 		return err
 	}
 	if finish {
 		if err := a.Sched.ResetForReplacement(studentID, bookID); err != nil {
-			return err
+			a.Log.ErrorCtx(ctx, "scheduler", "placement_plan_failed", map[string]any{"student_id": studentID, "book_id": bookID, "draft_committed": true, "reason": "reset_failed"})
+			return &placementPlanError{cause: err}
 		}
 		l, err := a.Sched.PlanNext(studentID, bookID)
 		if err != nil {
-			return err
+			a.Log.ErrorCtx(ctx, "scheduler", "placement_plan_failed", map[string]any{"student_id": studentID, "book_id": bookID, "draft_committed": true, "reason": "plan_failed"})
+			return &placementPlanError{cause: err}
 		}
 		a.openNowIfTestMode(l)
 	}

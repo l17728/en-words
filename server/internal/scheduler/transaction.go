@@ -13,6 +13,9 @@ func (s *Service) WithMemoryTransaction(cfg LadderSource, fn func(*Service) erro
 	defer original.mu.Unlock()
 	cp := NewMemRepo()
 	cp.nextLesson = original.nextLesson
+	for k, ids := range original.drafts {
+		cp.drafts[k] = append([]int64(nil), ids...)
+	}
 	for k, c := range original.cards {
 		v := *c
 		if c.LastReviewAt != nil {
@@ -39,5 +42,6 @@ func (s *Service) WithMemoryTransaction(cfg LadderSource, fn func(*Service) erro
 		return err
 	}
 	original.cards, original.lessons, original.nextLesson = cp.cards, cp.lessons, cp.nextLesson
+	original.drafts = cp.drafts
 	return nil
 }

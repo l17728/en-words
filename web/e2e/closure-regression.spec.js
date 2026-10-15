@@ -256,7 +256,7 @@ test('injected pause/resume protocol cancels delay and deduplicates recovery spe
   })
   const resumeButton = page.getByRole('button', { name: /^(?:loading\s*)?继续课堂$/ })
   await resumeButton.click()
-  await expect(page.getByText('Failed to fetch', { exact: true })).toBeVisible()
+  await expect(page.getByText('网络连接失败；操作结果待确认，请先查询状态，勿重复提交', { exact: true })).toBeVisible()
   await expect(page.getByText('课堂已暂停', { exact: true })).toBeVisible()
   const lateResponse = page.waitForResponse(response => response.url().endsWith(`/lessons/${id}/resume`))
   await expect(resumeButton).toBeEnabled()

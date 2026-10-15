@@ -2,16 +2,18 @@ import { test, expect } from '@playwright/test'
 import { api, fixture, scheduled, login } from './isolated-fixtures'
 
 // Real browser voices + real local synthesis. No ASR, answers or judge calls.
-test('real English and local Chinese playback each expose and clear the actual subtitle', async ({ page, request }, info) => {
+test('real Chinese cache reuses one synthesis for three actual subtitled playbacks', async ({ page, request }, info) => {
   const f = await fixture(request, 'real-subtitle', [{ word: 'cat', meanings: ['猫是一种常见的家养动物。'] }])
   const id = await scheduled(request, f)
-  for (const [key, value] of Object.entries({ ttsEnRepeat: 3, ttsZhRepeat: 1,
+  for (const [key, value] of Object.entries({ ttsEnRepeat: 3, ttsZhRepeat: 3,
     ttsIntervalMs: 300, ttsZhIntervalMs: 300, ttsSwitchIntervalMs: 300 })) {
     await api(request, '/config/set', f.admin.token, { scope: 'student', studentId: f.student.user_id, key, value, reason: 'real subtitle acceptance' })
   }
   await page.addInitScript(() => {
-    const state = { captions: [] as Array<{ text: string; at: number }>, audio: [] as any[], english: [] as any[] }
+    const state = { cache: [] as any[], scheduled: [] as any[], captions: [] as Array<{ text: string; at: number }>, audio: [] as any[], english: [] as any[] }
     ;(window as any).__realSubtitles = state
+    const info = console.info.bind(console)
+    console.info = (...args) => { if (args[0] === '[speech_cache]') state.cache.push(args[1]); if (args[0] === '[tts_segment_scheduled]') state.scheduled.push({ ...args[1], at: performance.now() }); info(...args) }
     new MutationObserver(() => {
       const region = document.querySelector('[aria-label="当前朗读字幕"]')
       const text = region?.lastElementChild?.textContent || ''
@@ -36,7 +38,8 @@ test('real English and local Chinese playback each expose and clear the actual s
       return player
     }
   })
-  const responses: any[] = []; const asr: string[] = []
+  const responses: any[] = []; const asr: string[] = []; const cache: string[] = []
+  page.on('console', message => { if (message.text().startsWith('[speech_cache]')) cache.push(message.text()) })
   page.on('response', response => {
     if (response.url().endsWith('/speech/synthesize')) responses.push({ status: response.status(), mime: response.headers()['content-type'] })
   })
@@ -51,8 +54,10 @@ test('real English and local Chinese playback each expose and clear the actual s
     await expect(page.getByRole('status', { name: '当前朗读字幕' })).toHaveText('')
     const state = await page.evaluate(() => (window as any).__realSubtitles)
     expect(responses).toEqual([{ status: 200, mime: 'audio/wav' }]); expect(asr).toEqual([])
-    expect(state.captions.filter((c: any) => c.text).map((c: any) => c.text)).toEqual(['cat', 'cat', 'cat', '猫是一种常见的家养动物。'])
-    expect(state.english).toHaveLength(3); expect(state.audio).toHaveLength(1)
+    expect(state.captions.filter((c: any) => c.text).map((c: any) => c.text)).toEqual(['cat', 'cat', 'cat', '猫是一种常见的家养动物。', '猫是一种常见的家养动物。', '猫是一种常见的家养动物。'])
+    expect(state.english).toHaveLength(3); expect(state.audio).toHaveLength(3)
+    expect(state.cache.filter((row: any) => row.cache === 'miss')).toHaveLength(1)
+    expect(state.cache.filter((row: any) => row.cache === 'hit')).toHaveLength(2)
     const media = [...state.english, ...state.audio]
     expect(media.every(row => row.start > 0 && row.end > row.start && row.errors === 0)).toBe(true)
     for (const [index, row] of media.entries()) {
@@ -61,7 +66,7 @@ test('real English and local Chinese playback each expose and clear the actual s
       expect(caption.at).toBeLessThan(row.end)
     }
   } finally {
-    await info.attach('real-subtitle-evidence', { body: JSON.stringify({ responses, asr,
+    await info.attach('real-subtitle-evidence', { body: JSON.stringify({ responses, asr, cache,
       state: await page.evaluate(() => (window as any).__realSubtitles) }), contentType: 'application/json' })
   }
 })

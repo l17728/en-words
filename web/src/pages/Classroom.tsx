@@ -1,3 +1,6 @@
+import { clientId } from '../interaction/client-id'
+import { AnswerFlight } from '../interaction/answer-flight'
+import { speechCache } from '../audio/speech-cache'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Alert, Button, Typography, Spin, Modal, Input, message, Tag } from 'antd'
 import { CheckCircleFilled, CloseCircleFilled } from '@ant-design/icons'
@@ -36,7 +39,7 @@ const PHASE_TIP: Record<string, string> = {
   tts_seg: '叮当老师在读，注意听～',
   repeating: '轮到你读了！大声一点没关系',
   wait_answer: '这个单词是什么意思？',
-  judging: '叮当老师在听…',
+  judging: '叮当老师正在判分…',
   reteach_show: '再认识一遍这个词',
   lesson_end: '下课啦！',
 }
@@ -56,6 +59,7 @@ interface TtsDebugEntry {
 export default function ClassroomPage() {
   const { lessonId } = useParams()
   const nav = useNavigate()
+  useEffect(() => () => speechCache.clear(), [])
   const userId = useAuthStore(s => s.userId)
   const sessionToken = useAuthStore(s => s.token)
   const feedback = useFeedback(userId)
@@ -110,8 +114,10 @@ export default function ClassroomPage() {
   const [wsOk, setWsOk] = useState(false)
   const onlineRef = useRef(false)
   const inputGate = useRef(new InputReadiness())
+  const answerFlight = useRef(new AnswerFlight())
+  const [answerPending, setAnswerPending] = useState(false)
   const [inputTurn, setInputTurn] = useState<InputTurn | null>(null)
-  const revokeInput = () => { inputGate.current.revoke(); setInputTurn(null); stopListening() }
+  const revokeInput = () => { answerFlight.current.reset(); setAnswerPending(false); inputGate.current.revoke(); setInputTurn(null); stopListening() }
   const grantInput = (context: TurnContext, phase: InputTurn['phase']) => {
     if (inputGate.current.grant(context, phase)) setAnswer('')
     setInputTurn(inputGate.current.ready)
@@ -152,7 +158,7 @@ export default function ClassroomPage() {
   // TTS 完成回执通过 WS 上报（声明在前供 speak 闭包引用）
   const contextRef = useRef<TurnContext>({ epoch: "", turn: "" })
   const eventCounterRef = useRef(0)
-  const eventPrefixRef = useRef(crypto.randomUUID())
+  const eventPrefixRef = useRef(clientId())
   const sendEventRef = useRef<((ev: string, text?: string, context?: TurnContext) => void) | null>(null)
   const sendVoiceRef = useRef<((text: string, context?: TurnContext) => void) | null>(null)
 
@@ -322,6 +328,7 @@ export default function ClassroomPage() {
         return
       }
       if ((f.type === 'event_rejected' || f.type === 'event_processed') && f.event_id) {
+        if ((f.type === 'event_rejected' || f.error_code || f.command === 'feedback') && answerFlight.current.reject(f.event_id)) setAnswerPending(false)
         const pending = voiceFeedbackRef.current.get(f.event_id)
         if (pending && f.type === 'event_rejected') void queryVoiceFeedback(pending.id, pending.text)
         if (pending && f.command === 'feedback' && typeof f.normalized_text === 'string') pending.text = f.normalized_text
@@ -506,11 +513,13 @@ export default function ClassroomPage() {
   const recogRef = useRef<any>(null)
   const listenActiveRef = useRef(false)
   const [listening, setListening] = useState(false)
+  const [localStage, setLocalStage] = useState<'idle' | 'preparing' | 'recording' | 'transcribing'>('idle')
 
   const stopListening = useCallback(() => {
     localRecordingRef.current?.abort()
     listenActiveRef.current = false
     setListening(false)
+    setLocalStage('idle')
     try {
       recogRef.current?.stop()
     } catch {
@@ -577,6 +586,10 @@ export default function ClassroomPage() {
     if (event === 'answer_submitted' && (localStorage.getItem('token') !== sessionToken ||
       phaseRef.current !== 'wait_answer' || !inputGate.current.answer(context, onlineRef.current, text || ''))) return
     const envelope = { context, event_id: `${eventPrefixRef.current}-${++eventCounterRef.current}` }
+    if (event === 'answer_submitted') {
+      if (answerFlight.current.send(context, envelope.event_id, () => wsRef.current?.sendEvent(event, text, envelope) ?? false)) { setAnswerPending(true); stopListening() }
+      return
+    }
     dispatchClassroom(() => wsRef.current?.sendEvent(event, text, envelope) ?? false, () => {
       // WS 未连接降级 REST（双通道保障）
       api
@@ -594,7 +607,7 @@ export default function ClassroomPage() {
       !inputGate.current.accepts(context, phaseRef.current, onlineRef.current)) return
     const lifetime = feedbackLifetime.current
     const envelope = { context, event_id: `${eventPrefixRef.current}-${++eventCounterRef.current}` }
-    const submissionId = crypto.randomUUID()
+    const submissionId = clientId()
     // This conservative prefix check only exposes a recovery UI; the server is
     // authoritative for classification and returns its exact normalized body.
     const match = text.trim().match(/^(?:我想反馈|我要反馈|我反馈|提个意见|反馈|建议)\s*(.+)$/s)
@@ -608,6 +621,10 @@ export default function ClassroomPage() {
         clearTimeout(voiceFeedbackRef.current.get(oldest)?.timer)
         voiceFeedbackRef.current.delete(oldest)
       }
+    }
+    if (phaseRef.current === 'wait_answer' && !match) {
+      if (answerFlight.current.send(context, envelope.event_id, () => wsRef.current?.sendVoiceText(text, envelope, submissionId) ?? false)) { setAnswerPending(true); stopListening() }
+      return
     }
     dispatchClassroom(() => wsRef.current?.sendVoiceText(text, envelope, submissionId) ?? false, () => {
       api
@@ -653,10 +670,14 @@ export default function ClassroomPage() {
     const listen = async () => {
       try {
         while (!controller.signal.aborted) {
-          setListening(true)
+          setLocalStage('preparing')
           if (!inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) return
           const captureContext = { epoch: inputTurn.epoch, turn: inputTurn.turn }
-          const text = await recordLocal(lessonId, phase === 'repeating' ? 'en' : 'zh', controller.signal)
+          const text = await recordLocal(lessonId, phase === 'repeating' ? 'en' : 'zh', controller.signal, stage => {
+            if (controller.signal.aborted || localRecordingRef.current !== controller || localStorage.getItem('token') !== sessionToken ||
+              !inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) return
+            setLocalStage(stage); setListening(stage === 'recording')
+          })
           if (controller.signal.aborted || localStorage.getItem('token') !== sessionToken ||
             !inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) return
           sendVoiceRef.current?.(text, captureContext)
@@ -665,10 +686,10 @@ export default function ClassroomPage() {
         }
       } catch (e) {
         if (!controller.signal.aborted) setSpeechError((e as Error).message)
-      } finally { if (!controller.signal.aborted) setListening(false) }
+      } finally { if (!controller.signal.aborted && localRecordingRef.current === controller) { setListening(false); setLocalStage('idle') } }
     }
     void listen()
-    return () => { controller.abort(); setListening(false) }
+    return () => { controller.abort(); setListening(false); setLocalStage('idle') }
   }, [inputTurn, wsOk, providers?.asr, lessonId, phase, snapshot?.word, snapshot?.quiz_word, snapshot?.paused, ended, userId, sessionToken])
 
   // 相位驱动：进跟读/答题自动开麦；离场停麦（phase 声明之后）
@@ -719,7 +740,7 @@ export default function ClassroomPage() {
           const lifetime = feedbackLifetime.current
           setResendingFeedback(true)
           try {
-            const id = undeliveredFeedback.text === undeliveredFeedback.original ? undeliveredFeedback.id : crypto.randomUUID()
+            const id = undeliveredFeedback.text === undeliveredFeedback.original ? undeliveredFeedback.id : clientId()
             await feedbackRef.current.submit(id, undeliveredFeedback.text, 'voice')
             if (lifetime === feedbackLifetime.current) setUndeliveredFeedback(null)
           } catch (error) { if (lifetime === feedbackLifetime.current) message.error((error as Error).message) }
@@ -735,6 +756,7 @@ export default function ClassroomPage() {
         <Button onClick={() => window.location.reload()}>重新连接课堂</Button>
         <Button onClick={() => nav('/dashboard')}>返回课程表</Button>
       </>} />}
+      {localStage !== 'idle' && <div role="status">{localStage === 'preparing' ? '正在准备麦克风' : localStage === 'recording' ? '正在录音' : '正在识别，请稍候'}</div>}
       {speechError && <Alert type="warning" title={speechError} closable onClose={() => setSpeechError('')} />}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: 24 }}>
         {!snapshot ? (
@@ -841,17 +863,17 @@ export default function ClassroomPage() {
               style={{ width: 320 }}
               placeholder={listening ? '或直接打字（语音优先）' : '输入中文意思'}
               aria-label="答案输入框"
-              disabled={!wsOk || !inputTurn || inputTurn.phase !== 'wait_answer'}
+              disabled={answerPending || !wsOk || !inputTurn || inputTurn.phase !== 'wait_answer'}
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
               onPressEnter={() => sendEvent('answer_submitted', answer)}
             />
-            <Button type="primary" size="large" disabled={!wsOk || !inputTurn || inputTurn.phase !== 'wait_answer' || !answer.trim()} onClick={() => sendEvent('answer_submitted', answer)}>
+            <Button type="primary" size="large" disabled={answerPending || !wsOk || !inputTurn || inputTurn.phase !== 'wait_answer' || !answer.trim()} onClick={() => sendEvent('answer_submitted', answer)}>
               回答
             </Button>
           </>
         )}
-        {phase === 'judging' && <Spin />}
+        {(answerPending || phase === 'judging') && <div role="status">正在判分，请稍候 <Spin /></div>}
         {(phase === 'show_word' || phase === 'tts_seg') && (
           <Button size="large" onClick={() => sendVoice('下一个')} aria-label="语音指令：下一个">
             语音：下一个

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"enwords/internal/classroom"
 	"enwords/internal/config"
@@ -33,17 +34,33 @@ func (a *App) callAgentTool(ctx context.Context, name string, args any) (any, er
 		return nil, err
 	}
 	caller := tools.Caller{Role: task.role, ID: string(task.role)}
+	timings := map[string]int64{"lock_wait_ms": 0, "transaction_ms": 0, "begin_wait_ms": 0, "config_load_ms": 0, "audit_write_ms": 0, "finalize_ms": 0, "rollback_audit_write_ms": 0}
+	logCall := func(outcome string, successful bool) {
+		payload := map[string]any{"task_id": task.taskID, "student_id": task.studentID, "lesson_id": task.lessonID, "tool": name, "transaction_outcome": outcome, "ok": successful}
+		for key, value := range timings {
+			payload[key] = value
+		}
+		a.Log.InfoCtx(ctx, "tools", "tool_called", payload)
+	}
 	if a.DB == nil {
 		result, err := a.Tools.Call(ctx, caller, name, raw)
-		a.Log.InfoCtx(ctx, "tools", "tool_called", map[string]any{"task_id": task.taskID, "student_id": task.studentID, "lesson_id": task.lessonID, "tool": name, "transaction_outcome": "memory", "ok": err == nil})
+		logCall("memory", err == nil)
 		return result, err
 	}
+	lockStarted := time.Now()
 	a.agentWriteMu.Lock()
+	timings["lock_wait_ms"] = time.Since(lockStarted).Milliseconds()
 	defer a.agentWriteMu.Unlock()
 	buffer := &tools.MemAuditor{}
 	var result any
+	transactionStarted := time.Now()
+	var callbackFinished time.Time
 	err = a.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		timings["begin_wait_ms"] = time.Since(transactionStarted).Milliseconds()
+		defer func() { callbackFinished = time.Now() }()
+		configStarted := time.Now()
 		cfg, e := config.NewStore(store.NewConfigPersister(tx), nil)
+		timings["config_load_ms"] = time.Since(configStarted).Milliseconds()
 		if e != nil {
 			return e
 		}
@@ -58,8 +75,18 @@ func (a *App) callAgentTool(ctx context.Context, name string, args any) (any, er
 		if e != nil {
 			return e
 		}
-		return persistToolAudits(tx, buffer.Snapshot(), false)
+		auditStarted := time.Now()
+		e = persistToolAudits(tx, buffer.Snapshot(), false)
+		timings["audit_write_ms"] = time.Since(auditStarted).Milliseconds()
+		return e
 	})
+	transactionFinished := time.Now()
+	timings["transaction_ms"] = transactionFinished.Sub(transactionStarted).Milliseconds()
+	if callbackFinished.IsZero() {
+		timings["begin_wait_ms"] = timings["transaction_ms"]
+	} else {
+		timings["finalize_ms"] = transactionFinished.Sub(callbackFinished).Milliseconds()
+	}
 	entries := buffer.Snapshot()
 	outcome := "committed"
 	if err != nil {
@@ -70,14 +97,16 @@ func (a *App) callAgentTool(ctx context.Context, name string, args any) (any, er
 		}
 		// The failed transaction cannot retain its own audit. Record attempts
 		// separately; if storage is still unavailable emit a bounded log event.
+		rollbackAuditStarted := time.Now()
 		if e := persistToolAudits(a.DB, entries, false); e != nil {
 			a.Log.ErrorCtx(ctx, "tools", "audit_persist_failed", map[string]any{"task_id": task.taskID, "tool": name})
 		}
+		timings["rollback_audit_write_ms"] = time.Since(rollbackAuditStarted).Milliseconds()
 	}
 	for _, entry := range entries {
 		a.ToolAudit.ToolCalled(entry)
 	}
-	a.Log.InfoCtx(ctx, "tools", "tool_called", map[string]any{"task_id": task.taskID, "student_id": task.studentID, "lesson_id": task.lessonID, "tool": name, "transaction_outcome": outcome, "ok": err == nil})
+	logCall(outcome, err == nil)
 	if err != nil {
 		return nil, err
 	}

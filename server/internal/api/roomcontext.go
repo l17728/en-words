@@ -67,3 +67,14 @@ func (r *Room) activeLocked(c Client) bool {
 	}
 	return true
 }
+
+// Legacy WS resume remains FIFO, but cannot resume a replacement connection.
+func (r *Room) resumeClient(ctx context.Context, client Client) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if ctx.Err() != nil || !r.activeLocked(client) {
+		return
+	}
+	r.machine.Resume()
+	r.broadcastLocked()
+}

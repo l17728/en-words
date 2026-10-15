@@ -1,3 +1,4 @@
+import { clientId } from '../interaction/client-id'
 import { useEffect, useRef, useState } from 'react'
 import { Alert, Button, Input, Modal, Typography } from 'antd'
 import { ApiError, type FeedbackRecord } from '../api/client'
@@ -18,7 +19,7 @@ export function ClarificationReply({ record, submit }: {
   const send = async () => {
     if (sending.current || !text.trim() || !record.submission_id) return
     const normalized = text.replace(/\r\n/g, '\n').trim()
-    if (!draft.current || draft.current.text !== normalized) draft.current = { id: crypto.randomUUID(), text: normalized }
+    if (!draft.current || draft.current.text !== normalized) draft.current = { id: clientId(), text: normalized }
     sending.current = true; setBusy(true); setError('')
     try {
       await submit(draft.current.id, normalized, record.submission_id)

@@ -718,7 +718,7 @@ GET  /agent/tools                      # 该 Agent 可见工具清单（给 LLM 
 |---|---|---|
 | `student_event` | {event, text?} | 学生活动；event 白名单（R4-sec#6）：word_clicked / tts_finished / repeat_done / repeat_skipped / answer_submitted |
 | `voice_text` | {text} | 语音转写文本（浏览器 Web Speech / Omni 中继）：指令解析→**跟读判读**→反馈捕获→作答 |
-| `heartbeat` | — | 30s 心跳（回 heartbeat_ack） |
+| `heartbeat` | — | 连接后立即发送；当前 ACK 后 10s 再发，10s 未 ACK 判离线并重取 ticket（详见31） |
 | `resume` | — | 断点续课 |
 
 ### 11.3 可靠性
@@ -958,17 +958,54 @@ feedbackStore / adminStore —— classroomStore 只由 WS 与本地回执写入
 
 反馈POST `/api/v1/feedbacks` 新增可选 `parent_submission_id`，列表与详情返回 `parent_submission_id/conversation_id/clarification_answered`。父必须为同学生的已完成clarify结果；父认领和子冻结计划同事务，拒绝不得残留无计划子任务。同提交ID不同父构成冲突。月主动改期计同学生、原任务北京时间自然月中成功D意图receipt，前三次可执行、第四次need_confirm且无绕额度确认写接口。每学生词库难词池容量20、BoostSequence FIFO，重复加强不刷新年龄，消费保留序号。协议、故障与UI合同见19。
 
-### 反馈显式数量约束增量（26已实施，定向通过/全量待验）
+### 反馈显式数量约束增量（26；下述待验语句为实施时记录）
 
 新增合同见[26-反馈显式数量与动作授权边界.md](26-反馈显式数量与动作授权边界.md)。平台对规则/模型/携Raw规划统一核对数量、单位、维度及候选一致性，拒绝显式零被当作相对调整省略值；教学决策仍由Agent负责。保留合法混合与明确历史分句边界。现有反馈API与配置键不变；`need_confirm`无越界确认写入口。§14日志补`feedback_constraint_rejected`固定原因摘要及trace，不记录原文。实际代码独审和定向通过，完整Go/race及真实浏览器证据待回收。
 
-### 判分来源观测增量（27已实施，定向通过/全量待验）
+### 判分来源观测增量（27；下述为实施时记录）
 
 §14新增`judge_decision`：每次JudgeContext只记录一次source=l1/l2/fallback、result=correct/near/wrong与固定reason。合法模型wrong记model_verdict；非法/缺失枚举返回ErrInvalidJudgment并记invalid_judgment，不能冒充成功模型判断。App钩子读取当前日志器、沿用课堂lesson trace；不记录答案、词面、原始模型回复或底层错误。评分/提示/机会数不变，取消后结果仍由Room代次校验拒绝。具体合同与红绿证据见27。
 
 新增日志 `feedback_quota_checked/boost_pool_updated/feedback_clarification_linked/overdue_replanned/overdue_replan_failed/overdue_conflict` 记录父trace和任务/资源ID；事务内日志标明pending，业务成功以提交凭证和提交后事件为准，不记录正文、记忆内容、token或音频。最新增量最终验收尚未封版，不能沿用历史覆盖率宣称新代码已验收。
 
 
-### 28 语义判分边界增量（实施与验收中）
+### 28 语义判分边界增量（实现已验收，真实模型质量未达门）
 
 L1 不再以任意英文 token 或泛编辑距离放行；英文含义与同义词也保留词边界。整体中文义项与显式同义表保留；复杂句、否定、多选及元指令交 L2。仅调整安全判分边界，不改老师 Agent 的课次与两次机会政策。候选提示已冻结但未采纳，须经28的95%/安全误接收0/旧100不退化门。
+
+2026-10-15状态核对：26/27的确定性验收已纳入`review/runtime-browser-acceptance-20261014-final78.json`；28/30后续冻结树Go r8覆盖率/vet/race通过，浏览器86为同树77+9分批通过，Node27及8构建/lint通过，见`review/runtime-backend-acceptance.md`及`review/runtime-browser-acceptance-20261014-final86.json`。原“全量待验”是历史阶段状态。六组真实判分评测已完成，候选新40虽78/80但错误接受2，未达到安全门，生产未采用候选提示；不能把实现回归通过写成模型质量通过。10及28保存完整分账。这些前轮证据不替代下方31交互改动与IX14的新树验收。
+
+## 交互响应与可靠性补充（2026-10-15）
+
+规格、用例和实测基线见[31-交互性能与可靠性评估.md](31-交互性能与可靠性评估.md)。本补充不改变教学决策、词序、机会数或配置键。
+
+- REST普通请求30秒期限包含响应体读取；取消/网络错误/5xx写操作提示结果待确认，不能自动重发。旧会话响应不得清除新会话或更新页面。
+- 中文合成仅缓存本账号本课堂成功播放的完整WAV，最多16条/8MiB、5分钟，换课/登出清空；每次重播独立实际播放、字幕和完成ACK。合成/识别HTTP各30秒，录音4秒和播放时间不计入网络期限。
+- WS读泵与容量16的串行业务队列分离；heartbeat不等待慢模型。队列满断开并记录固定原因，依快照恢复，不自动重放业务。前台正常调度下静默失联检测最多20秒，恢复仍受新ticket请求和退避影响；后台标签不承诺此期限。
+- 快照持久化尊重传入context取消；SQLite驱动busy等待不能据此保证立即退出。定时扫描跳过已成功结算/退休房间，尚未结算的LESSON_END仍保留重试。
+- 仅登录`POST /api/v1/auth/login`和未初始化的`POST /api/v1/bootstrap`使用完整正文16KiB/接收10秒门，含chunked及尾随字节；超限413、超时408、畸形400。成功恢复连接读期限，拒绝关闭连接；已初始化bootstrap仍先返回原HTTP200/code403并关闭连接，不读取慢正文。导入、媒体及其他路由不继承该小报文限额。
+- §14定位补充：`ws_worker_cleanup_timeout`和业务背压记录课堂trace、容量与固定原因；前端`speech_cache/playback_completed`记录课堂trace、命中和总播放耗时（并非纯网络耗时），禁止记录token、语音、密码或反馈正文。UI操作等待、取消与失败原因须与实际请求状态一致。
+- §14身份入口补`auth/identity_body_rejected`：请求trace、route、固定reason和limit_bytes，不记录用户名、密码、原文或底层错误。媒体补`speech/media_request_timeout`：lesson数字ID或preview trace、transcribe/synthesize、期限与实际耗时，仅表示头+body网络等待超时，不表示模型已停止；主动取消不冒充服务故障。前端`ws/heartbeat_timeout`与`ws/send_failed`使用课堂trace和固定原因，无自动业务重放。
+- 本节实施与分域代码复核通过，最终Go/浏览器全量证据仍待回收；独立模型语义质量与SQLite busy限制不由交互回归关闭。
+- IX14实现前合同：导入的非法输入/同库重复仍按原输入顺序Skipped；存储读取、写入、提交或context取消失败整次有效写回滚并返回错误，不得记为普通Skipped。词条ID按合法输入顺序分配，跨库同词允许。选库缺失卡单事务分块INSERT，三元组冲突DO NOTHING保留全部既有学习进度；SQLite/MemRepo原子语义一致。HTTP请求context传至事务，旧内部入口保留Background包装。成功日志仅在提交后记数量；失败仅固定原因，不回显词面。详见31 IX14，实施和回归结果另行登记。
+- IX14当前实现核对：固定sql.Conn内GORM Begin/Commit保留sql.Tx，失败提交在归池前对同连接清理；独立清理context不受已取消请求影响，清理失败丢弃连接，每个替换连接重用DSN foreign_keys/busy_timeout配置。拒绝嵌套仓储事务调用，不把失败提交后的脏连接交下一请求。§14补`wordbook/import_completed`、`import_failed`、`enable_completed`、`enable_failed`，包含请求trace、book/student适用ID、数量/耗时及固定失败原因；成功只在commit后发，无词面和SQL原错。实际代码与定向已通过，最终全量待本轮新树证据。
+<!-- Current IX15 atomic placement contract; validation status is maintained in docs/31. -->
+
+本轮IX15摸底保存增量：HTTP请求context传入原子仓储，SQLite在同一固定连接事务中先取得writer再读取卡，只批量修改真正发生new↔mastered转换的status列，并同事务保存原顺序known草稿。learning/graduated、复习时间等其他字段不变；Mem在同锁内准备副本后发布，内存事务也复制草稿。自定义非原子仓储明确拒绝。保存成功后记录`placement_saved`的input_count/changed_count，失败记录固定reason且不输出正文；finish的ResetForReplacement/PlanNext仍在此事务之外，其失败使用`placement_plan_failed`与“摸底选择已保存，但课程安排未完成”文案，不能声称草稿回滚。前置词库归属读取仍沿原无context接口，不承诺取消这些读取。主审已复核实现，新增双池/取消/提交故障及浏览器总验收待回收。
+2026-10-15冻结树收口核对：IX01–16的代码、端点、局部配置与WS协议增量已交叉审查，当前新增代码评审阻断为0。IX15双池/取消/真实COMMIT及专项UI已绿；普通Go r11已通过489顶层/1009含子用例、7跳过、vet=0及全部覆盖门。最终race和116浏览器验收尚待汇总，不代表全阶段结束。IX16七项计时只约束callAgentTool路径的日志，浏览器聚焦committed classroom.*且必须包含play_tts；独立正常课堂transaction最大79ms不能证明历史15.545秒停顿已修复。SQLite写忙取消延迟、单连接读取等待和真实模型质量门未过仍保留。
+
+### 2026-10-15 后端最终验收更新：r11普通与race同树通过
+
+已核原始 `server/.test-artifacts/final-runtime-coverage-r11-summary.json` 和 `server/.test-artifacts/final-runtime-race-r11-summary.json`：普通/覆盖率/vet运行119.64秒，489顶层、1009含子用例通过，7项显式opt-in或测试harness跳过，20个测试包通过（另1包无测试），vet退出0，覆盖率全部达门。race运行217.58秒，同样489顶层/1009含子通过及7跳过，退出0，无失败/竞争报告。
+
+两轮源码前后均为 `d8dffa31bccdc49265483a0e585b768d233be7fd778bfb37c47593d2d0fb6eb4`，source_unchanged=true。此前“race待回收”为历史时点，此处为最新状态。116浏览器总族仍执行中，恢复组27条已过但不能替代总族；本阶段尚未封板。真实模型质量缺口、SQLitebusy边界及IX16只观测不等于15.545秒停顿消除的结论保持不变。
+
+## 2026-10-15 交互阶段最终验收封板
+
+本轮已准入IX01–16阶段验收完成，新增代码评审阻断0。后端r11普通/覆盖率/vet与race同树全部通过（489顶层、1009含子通过、7显式跳过；普通119.64秒/race217.58秒），覆盖率全部过门；前述“待验收”保留为历史时点，由本节更新现态。
+
+浏览器按三段**完整用例族**接受，总计116：首段recovery41+overdue1；第二段feedback26+legacy9+journey1+closure6+firstuse1+playback1；第三段interaction30。接受族全部0 skipped/unexpected/flaky，Node60、lint0、九族构建通过。不是一次运行全绿：首段feedback有19通过/1旧英文错误文案断言失败/6未跑；续段interaction有29通过/1 AntD离场图标影响精确名称的夹具失败。两次原报告保留，修正仅测试后分别整族重跑，不合并失败族的零散通过项、不修改生产或放宽产品超时。
+
+三段原始manifest已独立核验生产SHA `ea3283a7f342a97310d19ff29981c9110bd4d4db05799e2091a8e127ef11a7c3`、server `5686ce420d5c2c10a6bcbc8e93d687104e5a956547092b9b2a63ee7638a10bfe`、harness `0b47afff2d672fd7a86ad1d1ff8b87243cca5ae4fe126a0cd9f53b62ac43fc07` 一致且unchanged=true。证据汇总为 `review/interaction-browser-final116-20261015.json`，完整阶段说明为 `review/interaction-final-acceptance-20261015.md`；Go源SHA与上述前后端生产指纹范围不同，不混为同一hash。
+
+阶段完成不等于所有历史任务完成：IX16仅分阶段观测，历史15.545秒长尾未宣称消除；SQLitebusy和单连接等待、摸底草稿与排课部分成功边界保留；真实文本/ASR质量未过不被mock回归替代。共享模型未在本轮切换，AGENTS未修改。

@@ -32,6 +32,9 @@ func (a *App) registerBootstrap(r *gin.RouterGroup) {
 	})
 	r.POST("/bootstrap", func(c *gin.Context) {
 		if a.hasAdmin() {
+			// Reject without draining a potentially unfinished identity body.
+			c.Header("Connection", "close")
+			c.Request.Close = true
 			c.JSON(http.StatusOK, fail(errForbidden, "已完成初始化"))
 			return
 		}
@@ -40,8 +43,7 @@ func (a *App) registerBootstrap(r *gin.RouterGroup) {
 			Password string `json:"password"`
 			Nickname string `json:"nickname"`
 		}
-		if err := c.ShouldBindJSON(&in); err != nil {
-			c.JSON(http.StatusOK, fail(errBadRequest, "参数错误"))
+		if !a.readIdentityBody(c, &in) {
 			return
 		}
 		if len(in.Username) < 2 || len(in.Password) < 6 {

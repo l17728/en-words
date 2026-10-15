@@ -4,6 +4,7 @@
 package scheduler
 
 import (
+	"context"
 	"errors"
 	"sort"
 	"sync"
@@ -88,10 +89,11 @@ type MemRepo struct {
 	cards      map[[3]int64]*Card
 	lessons    []*Lesson
 	nextLesson int64
+	drafts     map[placementKey][]int64
 }
 
 func NewMemRepo() *MemRepo {
-	return &MemRepo{cards: map[[3]int64]*Card{}}
+	return &MemRepo{cards: map[[3]int64]*Card{}, drafts: map[placementKey][]int64{}}
 }
 
 func cardKey(s, b, w int64) [3]int64 { return [3]int64{s, b, w} }
@@ -259,10 +261,11 @@ type Service struct {
 	clock              Clock
 	// finishedAt 记录每课实际完成时间（内存版；GORM 版存 lessons.finished_at）
 	finishedAt map[int64]time.Time
-	// placementDrafts 摸底草稿（多次完成 FR-C4；GORM 版存 placements 表）
+	// Legacy read fallback for custom repositories; built-in repos own atomic drafts.
 	placementDrafts map[placementKey][]int64
 	// OnPlanned 排课成功钩子（§14 排课日志：api 装配层注入；可为 nil）
-	OnPlanned func(studentID, bookID int64, l *Lesson)
+	OnPlanned        func(studentID, bookID int64, l *Lesson)
+	OnPlacementSaved func(context.Context, int64, int64, int, int)
 }
 
 func NewService(repo Repo, cfg LadderSource, clock Clock) *Service {
@@ -373,35 +376,9 @@ func (s *Service) ResetForReplacement(studentID, bookID int64) error {
 // MarkPlacement 摸底结算：勾选词 mastered，**取消勾选的回退 new**（覆盖语义——
 // 用户定案：重新摸底以最新勾选为准，点错的可取消）。
 // R5-P0 守卫：Learning/Graduated 卡不可被摸底覆盖（教学成果保护）。
-// 草稿保存（FR-C4 分次完成）移至卡片状态全部持久化成功之后（R5：防草稿与实态失同步）。
+// 草稿与实际状态变化同事务提交；未变化卡不写，存储失败不得部分发布。
 func (s *Service) MarkPlacement(studentID, bookID int64, knownWordIDs []int64) error {
-	known := map[int64]bool{}
-	for _, id := range knownWordIDs {
-		known[id] = true
-	}
-	cards, err := s.repo.ListCards(studentID, bookID)
-	if err != nil {
-		return err
-	}
-	for _, c := range cards {
-		switch {
-		case known[c.WordID] && c.Status == StatusNew:
-			c.Status = StatusMastered
-		case !known[c.WordID] && c.Status == StatusMastered:
-			c.Status = StatusNew // 仅 mastered 可回退（摸底产生的状态只有摸底能撤销）
-		}
-		if err := s.repo.SaveCard(c); err != nil {
-			return err
-		}
-	}
-	if dr, ok := s.repo.(draftRepo); ok {
-		if err := dr.SavePlacementDraft(studentID, bookID, knownWordIDs); err != nil {
-			return err
-		}
-		return nil
-	}
-	s.placementDrafts[placementKey{studentID, bookID}] = knownWordIDs
-	return nil
+	return s.MarkPlacementContext(context.Background(), studentID, bookID, knownWordIDs)
 }
 
 // PlacementDraft 读取摸底草稿（已勾选词 ID；无草稿返回 nil）。
@@ -417,7 +394,7 @@ func (s *Service) PlacementDraft(studentID, bookID int64) []int64 {
 
 type placementKey struct{ studentID, bookID int64 }
 
-// 草稿 Repo 扩展接口（可选）：SQLite 版实现（内存版走 map）。
+// 草稿读取兼容接口：SQLite 与 MemRepo 均实现；保存走原子能力接口。
 type draftRepo interface {
 	SavePlacementDraft(studentID, bookID int64, knownIDs []int64) error
 	LoadPlacementDraft(studentID, bookID int64) ([]int64, error)

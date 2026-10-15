@@ -1,0 +1,110 @@
+{
+  "status": "historical attempts retained; final deterministic acceptance passed",
+  "node": {
+    "file": ".test-artifacts/interaction-node-build-r2.log",
+    "passed": 60,
+    "failed": 0,
+    "build_exit": 0,
+    "lint_exit": 0,
+    "lint_warnings": 0
+  },
+  "browser_batches": [
+    {
+      "report": ".test-artifacts/interaction-ui-green-r1.json",
+      "passed": 6,
+      "scope": "earlier six cases; before later production changes"
+    },
+    {
+      "report": ".test-artifacts/interaction-green-r2.json",
+      "passed": 13,
+      "failed": 3,
+      "classification": [
+        "media error-text mismatch",
+        "Books loading icon changes exact accessible name",
+        "notification entry named notification, not mark-all"
+      ]
+    },
+    {
+      "log": ".test-artifacts/interaction-green-r3.log",
+      "status": "stopped by root to serialize resource-heavy verification; no final JSON",
+      "observations": [
+        "browser randomUUID disabled correctly; legacy test helper still called it",
+        "Chinese report close accessible name mismatch",
+        "Admin selected value and dropdown text made broad selector ambiguous",
+        "clock installation occurred after heartbeat timer setup",
+        "1000-word import and enable exceed interactive budget; exact trace measured separately",
+        "media native fallback succeeded: second ACK was valid, fixture must explicitly inject native engine failure",
+        "later owned backend startup exceeded unchanged 30s readiness gate; no UI assertions executed"
+      ]
+    },
+    {
+      "log": ".test-artifacts/interaction-green-r4.log",
+      "status": "stopped for independent backend D-drive HTTP measurement; no final JSON",
+      "passed_logged": 9,
+      "failed_logged": 1,
+      "scope": "first ten interaction-boundaries cases only",
+      "failure": "1000-word real setup exceeded unchanged 180s total test budget; no simultaneous heavy Go test during this batch"
+    },
+    {
+      "report": ".test-artifacts/interaction-green-r5.json",
+      "stats": {
+        "startTime": "2026-10-15T03:04:17.439Z",
+        "duration": 862261.6780000001,
+        "expected": 26,
+        "skipped": 0,
+        "unexpected": 3,
+        "flaky": 0
+      },
+      "server_sha256": "a7924bdbf163266df444f84d2ee459f62c28f77e42700e65210d958a7add25dd",
+      "classification": [
+        "report journey preparation: third TTS segment exceeds unchanged 15s; owned server logs show 15545ms event-to-tool delay; IX16 instrumentation pending",
+        "1000-word import/enable succeeded; first placement page POST never completed before 180s total test limit; IX15 differential atomic save pending",
+        "notification fixture had no unread item; corrected by real feedback submission before unread precondition; product not changed"
+      ],
+      "passed_atomic_fault_paths": [
+        "real import trigger at word501 rolls back all earlier chunks and manual retry imports1000",
+        "real enable trigger at word501 leaves zero cards and manual retry creates1000"
+      ]
+    },
+    {
+      "report": ".test-artifacts/interaction-placement-targeted.json",
+      "stats": {
+        "startTime": "2026-10-15T03:33:31.436Z",
+        "duration": 69206.641,
+        "expected": 4,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "server_sha256": "5686ce420d5c2c10a6bcbc8e93d687104e5a956547092b9b2a63ee7638a10bfe",
+      "classification": "First batch four passed; log assertion initially included settlement memory.append outside IX16 callAgentTool scope. Root-approved exact classroom.* scope, required play_tts, seven integer nonnegative fields then single regression passed."
+    },
+    {
+      "report": ".test-artifacts/interaction-tool-timing-targeted.json",
+      "stats": {
+        "startTime": "2026-10-15T03:36:13.896Z",
+        "duration": 16152.657,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "server_sha256": "5686ce420d5c2c10a6bcbc8e93d687104e5a956547092b9b2a63ee7638a10bfe",
+      "classification": "First batch four passed; log assertion initially included settlement memory.append outside IX16 callAgentTool scope. Root-approved exact classroom.* scope, required play_tts, seven integer nonnegative fields then single regression passed."
+    }
+  ],
+  "large_book": {
+    "trace": "web/.test-artifacts/closure-1792030554657-6328/browser/interaction-boundaries-IX0-6f408-t-affecting-another-student/trace.zip",
+    "import_1000_ms": 99483.6,
+    "publish_ms": 501.9,
+    "enable_large_interrupted_ms": 74916.0,
+    "import_two_ms": 1092.9,
+    "enable_small_ms": 980.0,
+    "placement_small_ms": 9736.6,
+    "conditions": "r3 concurrent Go race; r4 reproduced total timeout without heavy Go tests; D-drive independent old-binary HTTP baseline separately confirms import 109906ms and enable unfinished at 110515ms budget. Do not equate C-drive direct-Service measurements with D-drive HTTP.",
+    "correction": "Earlier inference from unflushed server log that import alone exceeded 140s was incorrect; authoritative trace separates completed import and interrupted enable."
+  },
+  "next": "No further tests required for unchanged frozen production tree; parent performs documentation closure and local commit.",
+  "real_media_report": "review/interaction-real-tts-cache-20261015.json",
+  "final_report": "review/interaction-browser-final116-20261015.json"
+}

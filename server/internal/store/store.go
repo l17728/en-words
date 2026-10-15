@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"enwords/internal/wordbook"
@@ -191,7 +192,14 @@ func Open(dbPath string) (*gorm.DB, error) {
 	if dbPath == "" {
 		dbPath = filepath.Join("data", "enwords.db")
 	}
-	d, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{
+	// Driver applies these on every physical connection, including replacements
+	// after failed transaction cleanup; one-off PRAGMA calls are insufficient.
+	separator := "?"
+	if strings.Contains(dbPath, "?") {
+		separator = "&"
+	}
+	dsn := dbPath + separator + "_pragma=busy_timeout%285000%29&_pragma=foreign_keys%281%29"
+	d, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {
@@ -362,6 +370,33 @@ func (r *WordbookRepo) ListEntries(bookID int64, page, size int) ([]*wordbook.En
 		out = append(out, entryFrom(&ws[i]))
 	}
 	return out, total, nil
+}
+
+// EntriesByIDs bounds returned rows to the classroom batch and scopes every query.
+func (r *WordbookRepo) EntriesByIDs(bookID int64, ids []int64) ([]*wordbook.Entry, error) {
+	out := make([]*wordbook.Entry, 0, len(ids))
+	unique := make([]int64, 0, len(ids))
+	seen := make(map[int64]bool, len(ids))
+	for _, id := range ids {
+		if id > 0 && !seen[id] {
+			seen[id] = true
+			unique = append(unique, id)
+		}
+	}
+	for start := 0; start < len(unique); start += 500 {
+		end := start + 500
+		if end > len(unique) {
+			end = len(unique)
+		}
+		var rows []WordEntry
+		if err := r.db.Where("book_id = ? AND id IN ?", bookID, unique[start:end]).Find(&rows).Error; err != nil {
+			return nil, err
+		}
+		for i := range rows {
+			out = append(out, entryFrom(&rows[i]))
+		}
+	}
+	return out, nil
 }
 
 // SelfInc 自增 ID 序列（内存版由 repo 维护；SQLite 用 MAX(id)+1 简化）。
