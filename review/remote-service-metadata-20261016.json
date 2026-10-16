@@ -1,0 +1,51 @@
+{
+  "scope": "metadata_only_three_GETs",
+  "requests": [
+    {
+      "route": "/health",
+      "attempts": 1,
+      "status": 200,
+      "content_type": "application/json",
+      "model_ids": [],
+      "service_metadata": {},
+      "capabilities": {},
+      "audio_or_thinking_field_names": [],
+      "thinking_booleans": {},
+      "default_generation_field_names": [],
+      "duration_ms": 801
+    },
+    {
+      "route": "/props",
+      "attempts": 1,
+      "status": 404,
+      "content_type": "application/json",
+      "duration_ms": 765
+    },
+    {
+      "route": "/v1/models",
+      "attempts": 1,
+      "status": 200,
+      "content_type": "application/json",
+      "model_ids": [
+        "claude-sonnet-4-5",
+        "minicpm-o",
+        "qwen-omni"
+      ],
+      "service_metadata": {},
+      "capabilities": {},
+      "audio_or_thinking_field_names": [],
+      "thinking_booleans": {},
+      "default_generation_field_names": [],
+      "duration_ms": 1770
+    }
+  ],
+  "deadline_seconds_each": 5,
+  "max_response_bytes": 1048576,
+  "retries": 0,
+  "model_requests": 0,
+  "raw_body_recorded": false,
+  "raw_headers_recorded": false,
+  "model_paths_recorded": false,
+  "service_changes": false,
+  "alias_is_capability_evidence": false
+}

@@ -1,0 +1,67 @@
+{
+  "status": "frozen_before_remote_audio_outputs",
+  "scope": "synthetic_exploratory_not_human_quality_gate",
+  "cases": [
+    {
+      "id": "TTS-ZH-01",
+      "file": "review/local-tts-quality-20261014-utf8-fixed.json.TTS-ZH-01.wav",
+      "sha256": "e4e8c1d665979a3df07c22aebd6b44f114235e1712227e149828bc0f11080968",
+      "gold": "苹果",
+      "source": "independent_local_tts",
+      "human": "clear_correct_complete",
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width": 2,
+      "duration_ms": 523
+    },
+    {
+      "id": "TTS-ZH-05",
+      "file": "review/local-tts-quality-20261014-utf8-fixed.json.TTS-ZH-05.wav",
+      "sha256": "390be4ec8ea76265739d03f2bac9944794b71d8b85de5a1572ebe45df9a563b4",
+      "gold": "苹果是一种水果。",
+      "source": "independent_local_tts",
+      "human": "clear_correct_complete",
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width": 2,
+      "duration_ms": 1440
+    },
+    {
+      "id": "ASR-EN-01",
+      "file": "review/audio-fixtures/en/01.wav",
+      "sha256": "4c7d98e368f9d06f1b0d9b64979ec032254a341025b3cec7f489cf03bdc1585f",
+      "gold": "apple",
+      "source": "independent_zira",
+      "human": "pending",
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width": 2,
+      "duration_ms": 1260
+    },
+    {
+      "id": "SILENCE-01",
+      "file": ".test-artifacts/remote-audio-initial/silence.wav",
+      "sha256": "643f8a8dc8bd9c19225afffad2becfec5426180b3749cb208abdf1a6c8354efc",
+      "gold": "",
+      "source": "digital_silence",
+      "human": "not_applicable",
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width": 2,
+      "duration_ms": 1000
+    }
+  ],
+  "aliases": [
+    "qwen-omni",
+    "minicpm-o"
+  ],
+  "request_schema": "OpenAI Chat Completions input_audio data base64 wav",
+  "deadline_seconds": 8,
+  "max_tokens": 1024,
+  "prompt": "Transcribe only the spoken words in the attached audio, in the original language. Do not explain. If there is no speech, return an empty string.",
+  "sources": [
+    "https://developers.openai.com/api/docs/guides/audio-chat-completions",
+    "https://github.com/OpenBMB/MiniCPM-o-Demo/blob/main/docs/en/deployment.md",
+    "https://github.com/QwenLM/Qwen3-Omni"
+  ]
+}

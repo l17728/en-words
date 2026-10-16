@@ -1,0 +1,82 @@
+{
+  "path": "/root/llm-api-connection.md",
+  "bytes": 2199,
+  "sha256": "0af7650c2c40bb35e9817ec4fd38a88b57367f28f740f801cd32d7cb3b3d6c13",
+  "mtime_utc": "2026-10-15T07:12:53.097332+00:00",
+  "api_paths": [
+    "/v1/chat/completions",
+    "/v1/models"
+  ],
+  "endpoints_without_credentials_or_query": [
+    {
+      "scheme": "http",
+      "host": "124.156.193.122",
+      "port": 8001,
+      "path": ""
+    },
+    {
+      "scheme": "http",
+      "host": "124.156.193.122",
+      "port": 8001,
+      "path": "/v1"
+    },
+    {
+      "scheme": "http",
+      "host": "124.156.193.122",
+      "port": 8001,
+      "path": "/v1/chat/completions"
+    },
+    {
+      "scheme": "http",
+      "host": "124.156.193.122",
+      "port": 8001,
+      "path": "/v1/chat/completions"
+    },
+    {
+      "scheme": "http",
+      "host": "124.156.193.122",
+      "port": 8001,
+      "path": ""
+    },
+    {
+      "scheme": "http",
+      "host": "124.156.193.122",
+      "port": 8001,
+      "path": "/v1/messages"
+    },
+    {
+      "scheme": "http",
+      "host": "124.156.193.122",
+      "port": 8001,
+      "path": "/v1/messages"
+    },
+    {
+      "scheme": "http",
+      "host": "124.156.193.122",
+      "port": 8001,
+      "path": "/v1/models"
+    }
+  ],
+  "model_alias_examples": [
+    "claude-sonnet-4-5",
+    "qwen-omni"
+  ],
+  "model_name_tokens_in_document": [
+    "Claude",
+    "claude-sonnet-4-5",
+    "minicpm-o",
+    "qwen-omni"
+  ],
+  "parameter_names_mentioned": [
+    "max_tokens"
+  ],
+  "selected_sanitized_contract_evidence": [
+    "## 当前模型名称",
+    "模型列表测试："
+  ],
+  "related_document_or_source_paths": [],
+  "claims_are_documented_not_runtime_verified": true,
+  "model_requests": 0,
+  "service_changes": false,
+  "credentials_recorded": false
+}

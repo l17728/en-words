@@ -50,6 +50,7 @@ func (a *App) Router() *gin.Engine {
 	// ---- 学生/管理员共用（需登录）----
 	authed := v.Group("", a.authMW())
 	a.registerProviderRoutes(authed)
+	a.registerDuplexPreflight(authed)
 	authed.POST("/auth/change_password", func(c *gin.Context) {
 		var in struct{ OldPassword, NewPassword string }
 		_ = c.ShouldBindJSON(&in)

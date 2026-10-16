@@ -1,0 +1,52 @@
+{
+  "scope": "top_level_markdown_names_and_relevant_keyword_presence_only",
+  "markdown_names": [
+    "ai-full-duplex-design.md",
+    "llm-api-connection.md"
+  ],
+  "relevant_documents": [
+    {
+      "name": "ai-full-duplex-design.md",
+      "keyword_presence_only": {
+        "input_audio": false,
+        "audio_url": false,
+        "pcm16": false,
+        "sample_rate": false,
+        "response.cancel": true,
+        "input_audio_buffer.append": false,
+        "response.audio.delta": false,
+        "transcript.final": true,
+        "session.update": false,
+        "websocket": true,
+        "realtime": false
+      },
+      "versioned_implementation_contract_verified": false
+    },
+    {
+      "name": "llm-api-connection.md",
+      "keyword_presence_only": {
+        "input_audio": false,
+        "audio_url": false,
+        "pcm16": false,
+        "sample_rate": false,
+        "response.cancel": false,
+        "input_audio_buffer.append": false,
+        "response.audio.delta": false,
+        "transcript.final": false,
+        "session.update": false,
+        "websocket": false,
+        "realtime": false
+      },
+      "versioned_implementation_contract_verified": false
+    }
+  ],
+  "audio_capability": "unknown",
+  "required_evidence": [
+    "authenticated_transport_and_endpoint",
+    "model_revision",
+    "audio_chunk_format_and_sample_rate",
+    "stream_order_and_backpressure",
+    "cancel_ack_and_final_events",
+    "real_protocol_example"
+  ]
+}

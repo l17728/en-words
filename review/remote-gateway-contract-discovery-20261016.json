@@ -1,0 +1,31 @@
+{
+  "model_requests": 0,
+  "service_changes": false,
+  "configuration_raw_recorded": false,
+  "port8001_servers": [
+    {
+      "file": "/etc/nginx/sites-enabled/gpu-api-proxy",
+      "route_paths": [
+        "/"
+      ],
+      "upstreams": [
+        {
+          "scheme": "http",
+          "host": "1.92.241.129",
+          "port": 8001
+        }
+      ],
+      "proxy_pass_present": true,
+      "server_block_has_proxy_set_body": false,
+      "server_block_has_content_type_override": false,
+      "server_block_has_body_filter_or_lua": false,
+      "server_block_disables_request_body": false
+    }
+  ],
+  "body_observation_scope": "matched server blocks only; inherited directives and upstream processing not established",
+  "openapi": {
+    "status": 404,
+    "schema_available": false
+  },
+  "openapi_get_attempts": 1
+}

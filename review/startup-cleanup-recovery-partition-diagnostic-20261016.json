@@ -1,0 +1,74 @@
+{
+  "status": "incomplete",
+  "production_unchanged": true,
+  "test_inputs_unchanged": true,
+  "evidence_unchanged": true,
+  "source_sha256": "00fbaba5ce4a2daa39f200021c853727b24a177c4657b6724391db7a96daf63e",
+  "server_sha256": "9496f4e18cf648541896f187ba43ab057e5691adb5f7eb10d27a021069c28063",
+  "harness_sha256": "64788d2f58ccb529173e2d307802b2bfc97a6c1d9fe781960140e2196d0c3d41",
+  "reports": [
+    {
+      "path": ".test-artifacts\\startup-cleanup-recovery-remaining21-20261016\\batch1.json",
+      "sha256": "64f8a5572b94362bea1661b3a7ebd5a68fa8e313228bb48a955d4ea38b4db926",
+      "stats": {
+        "startTime": "2026-10-16T05:00:25.347Z",
+        "duration": 220711.80299999999,
+        "expected": 7,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "path": ".test-artifacts\\startup-cleanup-recovery-remaining21-20261016\\batch2.json",
+      "sha256": "1b4c84d09b6a7d62614ee29e25ab5b3cf84840a59e277521026c68b28f2da872",
+      "stats": {
+        "startTime": "2026-10-16T05:04:14.808Z",
+        "duration": 335705.56299999997,
+        "expected": 4,
+        "skipped": 0,
+        "unexpected": 3,
+        "flaky": 0
+      }
+    }
+  ],
+  "batch3": "not_run",
+  "node": {
+    "passed": 76,
+    "failed": 0,
+    "log": ".test-artifacts/recovery-stage-boundaries-20261016/node-final.log"
+  },
+  "partition_python": {
+    "passed": 6,
+    "failed": 0
+  },
+  "failures": [
+    {
+      "case": "SUB02 fallback",
+      "line": 750,
+      "classification": "real classroom transition latency exceeds unchanged 15-second expectation",
+      "stage": "start_repeat",
+      "transaction_ms": 21678,
+      "finalize_ms": 21678,
+      "root_cause": "not yet identified; not evidence of TTS fallback failure",
+      "artifact": "web/.test-artifacts/closure-1792127091876-18588"
+    },
+    {
+      "cases": [
+        "SUB03 phase",
+        "SUB03 pause"
+      ],
+      "line": 815,
+      "classification": "held playback fixture invokes expired A utterance before snapshot fault",
+      "evidence": "phase trace: speak249258.547, timeout252534.190, injected onstart252959.105; B held playback also timed out",
+      "product_caption_failure_proven": false,
+      "artifact": "web/.test-artifacts/closure-1792127269951-2008"
+    }
+  ],
+  "cleanup": {
+    "runner_exit": 1,
+    "candidate_process_count_after": 0,
+    "listeners_15174_18081_after": 0
+  },
+  "acceptance_141_passed": false
+}

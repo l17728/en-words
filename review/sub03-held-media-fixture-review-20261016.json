@@ -1,0 +1,21 @@
+{
+  "status": "saved_independent_review_passed_not_tested",
+  "scope": "SUB03 parameterized body only",
+  "test_sha256": "cfeb83263be7b93932e8c955145e67ab064c3848b9e019fd00fb12242233c801",
+  "changes": [
+    "A real new speak microtask starts caption; active object/debug/caption atomic capture",
+    "B held media browser clock pauses after first onstart, resumes before release and in finally",
+    "Node real-time 15-second bounded barrier unchanged; A watchdog and 500ms cancellation assertion unchanged"
+  ],
+  "unchanged": [
+    "SUB02 assertion including final 15-second transition gate",
+    "SUB04 body",
+    "production source"
+  ],
+  "prior_attempt": "review/startup-cleanup-recovery-partition-diagnostic-20261016.json",
+  "independent_review": {
+    "reviewer": "architecture_review",
+    "new_blockers": 0,
+    "scope": "actual saved SUB03 body; no execution"
+  }
+}

@@ -97,7 +97,7 @@ func (r *Room) HandleClientVoiceSubmissionContext(ctx context.Context, e ClientE
 		r.activateDeliveryLocked()
 		command, payload = cmd, body
 	} else {
-		command, out = r.handleVoiceLocked(sanitizeText(text))
+		command, out = r.handleVoiceInputLocked(text, sanitizeText(text))
 	}
 	if r.retired {
 		return "", "", nil

@@ -564,6 +564,12 @@ func (r *Room) HandleVoiceText(text string) (string, []Msg) {
 	return r.handleVoiceLocked(text)
 }
 func (r *Room) handleVoiceLocked(text string) (string, []Msg) {
+	return r.handleVoiceInputLocked(text, text)
+}
+
+// Control and repetition inspect intact input. Only legacy quiz submission uses
+// the separately sanitized answer; stripping text must never grant permission.
+func (r *Room) handleVoiceInputLocked(text, answerText string) (string, []Msg) {
 	if r.retired || r.machine.Paused() {
 		return "", nil
 	}
@@ -588,7 +594,7 @@ func (r *Room) handleVoiceLocked(text string) (string, []Msg) {
 			return cmd, r.applyCommand(cmd)
 		}
 	}
-	// 跟读判读：转写匹配当前词（判分器 L1 归一化）→ 老师确认听到，进下一词
+	// 跟读仅匹配目标词文本，不调用释义判分或L2；不代表声学发音质量通过。
 	if ph == classroom.PhaseRepeating {
 		if r.pendingJudge != nil {
 			return "", nil
@@ -599,14 +605,26 @@ func (r *Room) handleVoiceLocked(text string) (string, []Msg) {
 				w = r.words[it.WordID]
 			}
 		}
-		if j, valid := r.evaluateLocked(w, text); valid && (j == judge.JudgmentCorrect || j == judge.JudgmentNear) {
+		started := time.Now()
+		result := "no_match"
+		canceled := r.inputContext != nil && r.inputContext.Err() != nil
+		if canceled {
+			result = "canceled"
+		} else {
+			result = judge.EvaluateRepeat(w.Word, text)
+		}
+		r.app.Log.InfoCtx(r.traceContext(), "classroom", "repeat_evaluated", map[string]any{
+			"lesson_id": r.lessonID, "word_id": w.ID, "purpose": "repeat", "source": "target_match",
+			"result": result, "duration_ms": time.Since(started).Milliseconds(),
+		})
+		if result == "matched" {
 			r.app.Log.InfoCtx(r.traceContext(), "classroom", "repeat_verified", map[string]any{
-				"lesson_id": r.lessonID, "word": w.Word, "answer_length": len([]rune(text))})
+				"lesson_id": r.lessonID, "word_id": w.ID, "answer_length": len([]rune(text))})
 			return "repeat_read", r.handleEventLocked(classroom.Event{Type: classroom.EvRepeatDone})
 		}
-		return "", nil // 没读对：继续听（超时兜底推进）
+		return "", nil // 未确认目标词：继续听（原超时策略不变）
 	}
-	return "", r.handleEventLocked(classroom.Event{Type: classroom.EvAnswerSubmitted, Text: text})
+	return "", r.handleEventLocked(classroom.Event{Type: classroom.EvAnswerSubmitted, Text: answerText})
 }
 
 func (r *Room) applyCommand(cmd string) []Msg {

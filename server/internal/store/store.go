@@ -6,16 +6,11 @@ package store
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"enwords/internal/wordbook"
 
-	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 // ---- 实体（GORM 模型；列名 snake_case 自动映射） ----
@@ -188,52 +183,6 @@ type PlacementDraft struct {
 }
 
 // Open 打开/初始化 SQLite（WAL+busy_timeout，SDD §9 配置）。
-func Open(dbPath string) (*gorm.DB, error) {
-	if dbPath == "" {
-		dbPath = filepath.Join("data", "enwords.db")
-	}
-	// Driver applies these on every physical connection, including replacements
-	// after failed transaction cleanup; one-off PRAGMA calls are insufficient.
-	separator := "?"
-	if strings.Contains(dbPath, "?") {
-		separator = "&"
-	}
-	dsn := dbPath + separator + "_pragma=busy_timeout%285000%29&_pragma=foreign_keys%281%29"
-	d, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("store: open %s: %w", dbPath, err)
-	}
-	// §9 SQLite 配置（写连接=1 由 GORM 连接池 max=1 近似）
-	d.Exec("PRAGMA journal_mode=WAL")
-	d.Exec("PRAGMA busy_timeout=5000")
-	d.Exec("PRAGMA foreign_keys=ON")
-	sqlDB, _ := d.DB()
-	if sqlDB != nil {
-		sqlDB.SetMaxOpenConns(1) // 单写者（SDD §9）
-	}
-	// 自动迁移
-	if err := d.AutoMigrate(
-		&OverdueTask{},
-		&FeedbackTask{}, &FeedbackIntent{}, &FeedbackTodo{}, &FeedbackNotice{}, &ConfigRevision{},
-		&RuntimeRecord{}, &DurableMemory{},
-		&User{}, &WordBook{}, &WordEntry{}, &MemoryCard{}, &Lesson{},
-		&ClassroomEvent{}, &WsTicket{}, &ConfigGlobal{}, &ConfigOverride{},
-		&Feedback{}, &Notification{}, &AgentMemory{}, &AuditLog{}, &PlacementDraft{},
-	); err != nil {
-		return nil, fmt.Errorf("store: migrate: %w", err)
-	}
-	// R6 修复：旧库的 idx_book_norm 是单列唯一（跨库同词冲突真凶）——强制重建为复合 (book_id, norm_key)
-	if err := installConfigRevisionTriggers(d); err != nil {
-		return nil, err
-	}
-	d.Exec("DROP INDEX IF EXISTS idx_book_norm")
-	if err := d.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_book_norm ON word_entries(book_id, norm_key)").Error; err != nil {
-		return nil, fmt.Errorf("store: fix idx_book_norm: %w", err)
-	}
-	return d, nil
-}
 
 // MeaningsJSON 辅助：[]string ↔ JSON。
 func ToJSON(v any) string {

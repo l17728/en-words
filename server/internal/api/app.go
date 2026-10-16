@@ -46,6 +46,7 @@ type App struct {
 	completionTasks   map[int64]*lessonCompletion
 	StartupError      error
 	Local             *localmodel.Client
+	DuplexPreflight   bool // Explicit isolated device preflight only; never enables teaching.
 	Auth              *auth.Service
 	Books             *wordbook.Service
 	Cfg               *config.Store

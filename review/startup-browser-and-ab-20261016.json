@@ -1,0 +1,513 @@
+{
+  "status": "historical_candidate_complete12_and_fixed_AB_passed; superseded_by_cleanup_candidate_pending_complete14_and127",
+  "production_sha256": "5ad902ba2e06917cb9d3003c42e3cfb12bfbafbf1b97090f349309d99dbe458f",
+  "unchanged": true,
+  "test_inputs": [
+    {
+      "path": "web/e2e/startup-acceptance.spec.ts",
+      "sha256": "b724b5d9fa5555c1e8e34a0d84ca91eaf207b5932d80fa0f2928c44bd26fdee5"
+    },
+    {
+      "path": "web/e2e/startup-owned.ts",
+      "sha256": "e35207881e7ddf1a85b416b4035c1dd049a3ab568358cebbda89671f725d5fb5"
+    },
+    {
+      "path": "web/playwright.startup.config.ts",
+      "sha256": "c0e226d7510cffe8a57a01d9dc6dbeda9a6cb3021ff68f96af0b329e6647e8aa"
+    },
+    {
+      "path": "review/run_startup_ab.py",
+      "sha256": "b713815407f52122bc7c53b2ce35303026a173c3d813d51c377ebe7431b1aeec"
+    },
+    {
+      "path": "review/observe_owned_io.py",
+      "sha256": "a75c210035a1fb412e6b0c3d190be8a8cc4acda97f57df1c090ef93d71902cd3"
+    }
+  ],
+  "server_sha256": "e06b8c0883cf41a569350a00642c4645e5132cdd091aa22d225e4b8b95552785",
+  "startup_harness_sha256": "ea5c3401d7d4578d5de55c2dd0ab3ee54ed8f837deb8777150155a12ff4740ff",
+  "startup_suite": {
+    "stats": {
+      "startTime": "2026-10-16T02:17:33.063Z",
+      "duration": 189374.94999999998,
+      "expected": 12,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "ids": [
+      "7cff55e2261629ec6cba-057f879fbe6b48cad03d:",
+      "7cff55e2261629ec6cba-3902920477cd58ec32ab:",
+      "7cff55e2261629ec6cba-74b17a05fe61d4263c53:",
+      "7cff55e2261629ec6cba-4435a4f6b5855dbbec20:",
+      "7cff55e2261629ec6cba-08a70eabf90ac0e56606:",
+      "7cff55e2261629ec6cba-f60d46257fb63ee2db23:",
+      "7cff55e2261629ec6cba-6e765eb63eb3a588241f:",
+      "7cff55e2261629ec6cba-7cfeb8b47cb0718c8efb:",
+      "7cff55e2261629ec6cba-43164c7e1f8df2da0cdb:",
+      "7cff55e2261629ec6cba-ac546bf93a7a2f67a5f6:",
+      "7cff55e2261629ec6cba-d5adb51a832f9f8d7f75:",
+      "7cff55e2261629ec6cba-df8626ba82690a33107a:"
+    ],
+    "actual_each_once_no_retry": true,
+    "report": ".test-artifacts\\startup-acceptance-r2-20261016\\results.json",
+    "sha256": "e014d03ee983c35d5ddedee76399a1cabe52b4d1d4a1139753143cceb981bec3"
+  },
+  "old_red": {
+    "report": ".test-artifacts\\startup-baseline-20261016\\st08-old-r2-results.json",
+    "scope": "dual-stack blocker returns503 on both families; old main logs server_started before actual listen_failed; exact no-server_started assertion failed",
+    "old_binary_sha256": "282bd570550cf3e29d3b6c68f9987f4a89e02dd3dd75a6ce3cb81d122c27472f"
+  },
+  "preserved_diagnostics": [
+    {
+      "path": ".test-artifacts\\startup-baseline-20261016\\st08-old-results.json",
+      "classification": "IPv4-only blocker did not exclude IPv6 wildcard listener; exit-timeout is not accepted false-ready product red"
+    },
+    {
+      "path": ".test-artifacts\\startup-acceptance-20261016\\run.log",
+      "classification": "incomplete interrupted diagnostic: retry accessible-name spacing and reload book selection fixture defects; no cases reused as final"
+    }
+  ],
+  "AB": {
+    "order": [
+      "A1",
+      "B1",
+      "B2",
+      "A2",
+      "A3",
+      "B3"
+    ],
+    "binary_sha256": {
+      "A": "282bd570550cf3e29d3b6c68f9987f4a89e02dd3dd75a6ce3cb81d122c27472f",
+      "B": "e06b8c0883cf41a569350a00642c4645e5132cdd091aa22d225e4b8b95552785"
+    },
+    "sources": {
+      "A": "3e763da3d99fd5d301dff1b4bc4eadb57d58815af0097f8833ea8c345ea40306",
+      "B": "5ad902ba2e06917cb9d3003c42e3cfb12bfbafbf1b97090f349309d99dbe458f"
+    },
+    "script_sha256": "b713815407f52122bc7c53b2ce35303026a173c3d813d51c377ebe7431b1aeec",
+    "readiness_gate_ms": 30000,
+    "stop_gate_ms": 15000,
+    "samples": [
+      {
+        "label": "A1",
+        "status": "ready",
+        "binary_sha256": "282bd570550cf3e29d3b6c68f9987f4a89e02dd3dd75a6ce3cb81d122c27472f",
+        "command": [
+          "D:\\en-words\\.test-artifacts\\startup-baseline-20261016\\old-server.exe",
+          "-testmode",
+          "-providers",
+          "mock",
+          "-port",
+          "18083",
+          "-db",
+          "D:\\en-words\\.test-artifacts\\startup-ab-20261016\\A1\\fresh.db"
+        ],
+        "pid": 9576,
+        "ready_ms": 3655.9999999881256,
+        "observed_ms": 3655.9999999881256,
+        "right_censored": false,
+        "cleanup_ms": 31.000000017229468,
+        "returncode": 1,
+        "termination": "owned process terminate; not claimed graceful application shutdown",
+        "observer_returncode": 0
+      },
+      {
+        "label": "B1",
+        "status": "ready",
+        "binary_sha256": "e06b8c0883cf41a569350a00642c4645e5132cdd091aa22d225e4b8b95552785",
+        "command": [
+          "D:\\en-words\\.test-artifacts\\startup-atomic-server-20261016.exe",
+          "-testmode",
+          "-providers",
+          "mock",
+          "-port",
+          "18083",
+          "-db",
+          "D:\\en-words\\.test-artifacts\\startup-ab-20261016\\B1\\fresh.db"
+        ],
+        "pid": 17964,
+        "ready_ms": 1515.9999999741558,
+        "observed_ms": 1515.9999999741558,
+        "right_censored": false,
+        "cleanup_ms": 16.00000000325963,
+        "returncode": 1,
+        "termination": "owned process terminate; not claimed graceful application shutdown",
+        "observer_returncode": 0
+      },
+      {
+        "label": "B2",
+        "status": "ready",
+        "binary_sha256": "e06b8c0883cf41a569350a00642c4645e5132cdd091aa22d225e4b8b95552785",
+        "command": [
+          "D:\\en-words\\.test-artifacts\\startup-atomic-server-20261016.exe",
+          "-testmode",
+          "-providers",
+          "mock",
+          "-port",
+          "18083",
+          "-db",
+          "D:\\en-words\\.test-artifacts\\startup-ab-20261016\\B2\\fresh.db"
+        ],
+        "pid": 20176,
+        "ready_ms": 1312.999999994645,
+        "observed_ms": 1312.999999994645,
+        "right_censored": false,
+        "cleanup_ms": 93.99999998277053,
+        "returncode": 1,
+        "termination": "owned process terminate; not claimed graceful application shutdown",
+        "observer_returncode": 0
+      },
+      {
+        "label": "A2",
+        "status": "ready",
+        "binary_sha256": "282bd570550cf3e29d3b6c68f9987f4a89e02dd3dd75a6ce3cb81d122c27472f",
+        "command": [
+          "D:\\en-words\\.test-artifacts\\startup-baseline-20261016\\old-server.exe",
+          "-testmode",
+          "-providers",
+          "mock",
+          "-port",
+          "18083",
+          "-db",
+          "D:\\en-words\\.test-artifacts\\startup-ab-20261016\\A2\\fresh.db"
+        ],
+        "pid": 16420,
+        "ready_ms": 2781.0000000172295,
+        "observed_ms": 2781.0000000172295,
+        "right_censored": false,
+        "cleanup_ms": 31.000000017229468,
+        "returncode": 1,
+        "termination": "owned process terminate; not claimed graceful application shutdown",
+        "observer_returncode": 0
+      },
+      {
+        "label": "A3",
+        "status": "ready",
+        "binary_sha256": "282bd570550cf3e29d3b6c68f9987f4a89e02dd3dd75a6ce3cb81d122c27472f",
+        "command": [
+          "D:\\en-words\\.test-artifacts\\startup-baseline-20261016\\old-server.exe",
+          "-testmode",
+          "-providers",
+          "mock",
+          "-port",
+          "18083",
+          "-db",
+          "D:\\en-words\\.test-artifacts\\startup-ab-20261016\\A3\\fresh.db"
+        ],
+        "pid": 8648,
+        "ready_ms": 4390.00000001397,
+        "observed_ms": 4390.00000001397,
+        "right_censored": false,
+        "cleanup_ms": 32.00000000651926,
+        "returncode": 1,
+        "termination": "owned process terminate; not claimed graceful application shutdown",
+        "observer_returncode": 0
+      },
+      {
+        "label": "B3",
+        "status": "ready",
+        "binary_sha256": "e06b8c0883cf41a569350a00642c4645e5132cdd091aa22d225e4b8b95552785",
+        "command": [
+          "D:\\en-words\\.test-artifacts\\startup-atomic-server-20261016.exe",
+          "-testmode",
+          "-providers",
+          "mock",
+          "-port",
+          "18083",
+          "-db",
+          "D:\\en-words\\.test-artifacts\\startup-ab-20261016\\B3\\fresh.db"
+        ],
+        "pid": 14108,
+        "ready_ms": 1187.999999994645,
+        "observed_ms": 1187.999999994645,
+        "right_censored": false,
+        "cleanup_ms": 30.999999988125637,
+        "returncode": 1,
+        "termination": "owned process terminate; not claimed graceful application shutdown",
+        "observer_returncode": 0
+      }
+    ],
+    "scope": "fresh D-disk mock/testmode without production AutoSeed; three pairs, no reliable p95",
+    "pairs": [
+      {
+        "pair": 1,
+        "schema_equal": true,
+        "new_minus_old_ms": -2140.00000001397
+      },
+      {
+        "pair": 2,
+        "schema_equal": true,
+        "new_minus_old_ms": -1468.0000000225846
+      },
+      {
+        "pair": 3,
+        "schema_equal": true,
+        "new_minus_old_ms": -3202.000000019325
+      }
+    ],
+    "A": {
+      "n": 3,
+      "ready": 3,
+      "median_completed_ms": 3655.9999999881256,
+      "max_completed_ms": 4390.00000001397,
+      "note": "completed-only summaries; failed/right-censored samples remain above"
+    },
+    "B": {
+      "n": 3,
+      "ready": 3,
+      "median_completed_ms": 1312.999999994645,
+      "max_completed_ms": 1515.9999999741558,
+      "note": "completed-only summaries; failed/right-censored samples remain above"
+    },
+    "binary_unchanged": true
+  },
+  "AB_report_sha256": "f211bda03cbc24084beef58310b125efef28ab041e4d942d52b2340b953c2388",
+  "stage_observations": {
+    "A1": [],
+    "B1": [
+      {
+        "stage": "open",
+        "duration_ms": 82,
+        "outcome": null
+      },
+      {
+        "stage": "pragmas",
+        "duration_ms": 128,
+        "outcome": null
+      },
+      {
+        "stage": "schema_probe",
+        "duration_ms": 1,
+        "outcome": null
+      },
+      {
+        "stage": "schema_probe",
+        "duration_ms": 0,
+        "outcome": null
+      },
+      {
+        "stage": "triggers",
+        "duration_ms": 22,
+        "outcome": null
+      },
+      {
+        "stage": "index",
+        "duration_ms": 1,
+        "outcome": null
+      },
+      {
+        "stage": "finalize",
+        "duration_ms": 137,
+        "outcome": "committed"
+      },
+      {
+        "stage": "fresh_schema",
+        "duration_ms": 186,
+        "outcome": null
+      },
+      {
+        "stage": "app_restore",
+        "duration_ms": 86,
+        "outcome": null
+      },
+      {
+        "stage": "listen",
+        "duration_ms": 2,
+        "outcome": null
+      }
+    ],
+    "B2": [
+      {
+        "stage": "open",
+        "duration_ms": 63,
+        "outcome": null
+      },
+      {
+        "stage": "pragmas",
+        "duration_ms": 291,
+        "outcome": null
+      },
+      {
+        "stage": "schema_probe",
+        "duration_ms": 2,
+        "outcome": null
+      },
+      {
+        "stage": "schema_probe",
+        "duration_ms": 0,
+        "outcome": null
+      },
+      {
+        "stage": "triggers",
+        "duration_ms": 1,
+        "outcome": null
+      },
+      {
+        "stage": "index",
+        "duration_ms": 0,
+        "outcome": null
+      },
+      {
+        "stage": "finalize",
+        "duration_ms": 136,
+        "outcome": "committed"
+      },
+      {
+        "stage": "fresh_schema",
+        "duration_ms": 162,
+        "outcome": null
+      },
+      {
+        "stage": "app_restore",
+        "duration_ms": 70,
+        "outcome": null
+      },
+      {
+        "stage": "listen",
+        "duration_ms": 10,
+        "outcome": null
+      }
+    ],
+    "A2": [],
+    "A3": [],
+    "B3": [
+      {
+        "stage": "open",
+        "duration_ms": 53,
+        "outcome": null
+      },
+      {
+        "stage": "pragmas",
+        "duration_ms": 159,
+        "outcome": null
+      },
+      {
+        "stage": "schema_probe",
+        "duration_ms": 3,
+        "outcome": null
+      },
+      {
+        "stage": "schema_probe",
+        "duration_ms": 0,
+        "outcome": null
+      },
+      {
+        "stage": "triggers",
+        "duration_ms": 1,
+        "outcome": null
+      },
+      {
+        "stage": "index",
+        "duration_ms": 0,
+        "outcome": null
+      },
+      {
+        "stage": "finalize",
+        "duration_ms": 78,
+        "outcome": "committed"
+      },
+      {
+        "stage": "fresh_schema",
+        "duration_ms": 94,
+        "outcome": null
+      },
+      {
+        "stage": "app_restore",
+        "duration_ms": 132,
+        "outcome": null
+      },
+      {
+        "stage": "listen",
+        "duration_ms": 2,
+        "outcome": null
+      }
+    ]
+  },
+  "io_observations": {
+    "A1": {
+      "n": 6,
+      "process_status": {
+        "missing_or_unknown": 6
+      },
+      "query_error": {
+        "sample_timeout": 6
+      },
+      "valid_disk_samples": 0,
+      "raw": ".test-artifacts\\startup-ab-20261016\\A1\\io.jsonl"
+    },
+    "B1": {
+      "n": 6,
+      "process_status": {
+        "missing_or_unknown": 6
+      },
+      "query_error": {
+        "sample_timeout": 6
+      },
+      "valid_disk_samples": 0,
+      "raw": ".test-artifacts\\startup-ab-20261016\\B1\\io.jsonl"
+    },
+    "B2": {
+      "n": 6,
+      "process_status": {
+        "missing_or_unknown": 6
+      },
+      "query_error": {
+        "sample_timeout": 6
+      },
+      "valid_disk_samples": 0,
+      "raw": ".test-artifacts\\startup-ab-20261016\\B2\\io.jsonl"
+    },
+    "A2": {
+      "n": 6,
+      "process_status": {
+        "missing_or_unknown": 6
+      },
+      "query_error": {
+        "sample_timeout": 6
+      },
+      "valid_disk_samples": 0,
+      "raw": ".test-artifacts\\startup-ab-20261016\\A2\\io.jsonl"
+    },
+    "A3": {
+      "n": 5,
+      "process_status": {
+        "missing_or_unknown": 5
+      },
+      "query_error": {
+        "sample_timeout": 5
+      },
+      "valid_disk_samples": 0,
+      "raw": ".test-artifacts\\startup-ab-20261016\\A3\\io.jsonl"
+    },
+    "B3": {
+      "n": 6,
+      "process_status": {
+        "missing_or_unknown": 6
+      },
+      "query_error": {
+        "sample_timeout": 6
+      },
+      "valid_disk_samples": 0,
+      "raw": ".test-artifacts\\startup-ab-20261016\\B3\\io.jsonl"
+    }
+  },
+  "boundaries": [
+    "fresh D disk mock/testmode without production AutoSeed; same observer protocol each sample",
+    "3 pairs are not a p95 or broad SLA; all six samples retained without retries",
+    "schema compare includes SQL/columns/ordered indexes/FKs/triggers; no durability changes",
+    "unknown/timeout IO samples cannot identify fsync, scheduling or antivirus cause",
+    "prior classroom COMMIT 22.6s and acoustic/model gaps are not closed by startup measurements"
+  ],
+  "offline_tools": {
+    "observer_unit_pass": 6,
+    "AB_metadata_unit_pass": 4,
+    "metadata_initial_failure": "2 Windows temporary database cleanup errors fixed with explicit connection close; not a product result"
+  },
+  "followup": {
+    "scope": "ownedRuntimeCleanup.Close production wiring and ST09 normal/timeout",
+    "planned_unique_browser_cases": 141,
+    "reuse_old12_as_new_candidate_pass": false,
+    "repeat_AB_for_cleanup_only_change": false
+  }
+}

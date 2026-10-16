@@ -14,8 +14,8 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-SUITES = ["recovery", "overdue", "feedback", "legacy", "journey", "closure", "firstuse", "playback", "interaction"]
-EXPECTED = dict(zip(SUITES, [41, 1, 26, 9, 1, 6, 1, 1, 30]), media=1)
+SUITES = ["recovery", "overdue", "feedback", "legacy", "journey", "closure", "firstuse", "playback", "interaction", "duplex", "repeat"]
+EXPECTED = dict(zip(SUITES, [42, 1, 26, 9, 1, 6, 1, 1, 30, 7, 3]), media=1)
 
 
 def sha(path):
@@ -33,6 +33,54 @@ def sources():
         digest.update(path.read_bytes())
         rows.append({"path": relative, "sha256": sha(path)})
     return {"sha256": digest.hexdigest(), "files": rows}
+
+
+def cases(data):
+    found = []
+    def walk(suites):
+        for suite in suites:
+            for spec in suite.get("specs", []):
+                for test in spec.get("tests", []):
+                    found.append((spec["id"] + ":" + test.get("projectId", ""), test))
+            walk(suite.get("suites", []))
+    walk(data.get("suites", []))
+    return found
+
+
+def validate_shards(expected_ids, reports):
+    if len(expected_ids) != len(set(expected_ids)):
+        raise RuntimeError("Duplicate discovery test IDs")
+    actual = []
+    for data in reports:
+        stats = data["stats"]
+        if any(stats[key] for key in ("skipped", "unexpected", "flaky")):
+            raise RuntimeError("Shard contains skipped, failed or flaky cases")
+        for key, test in cases(data):
+            results = test.get("results", [])
+            if test.get("status") != "expected" or len(results) != 1 or results[0].get("status") != "passed" or results[0].get("retry", 0) != 0:
+                raise RuntimeError("Expected case did not pass exactly once: " + key)
+            actual.append(key)
+    if len(actual) != len(set(actual)) or set(actual) != set(expected_ids):
+        raise RuntimeError("Shard test ID union is missing, duplicated or unexpected")
+    return actual
+
+
+def wait_owned(process, timeout, stop_tree):
+    try:
+        return process.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        stop_tree(process.pid)
+        process.wait(timeout=15)
+        raise
+
+
+def stop_owned_tree(pid):
+    if os.name == "nt":
+        # PID comes only from the Popen this runner just created.
+        subprocess.run(["taskkill.exe", "/PID", str(pid), "/T", "/F"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
+    else:
+        import signal
+        os.killpg(pid, signal.SIGKILL)
 
 
 def main():
@@ -72,9 +120,10 @@ def main():
 
     def run(name, command, cwd=ROOT, timeout=900):
         with (output / f"{name}.log").open("w", encoding="utf-8") as log:
-            result = subprocess.run(command, cwd=cwd, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=timeout)
-        print(f"{name}: exit {result.returncode}", flush=True)
-        return result.returncode
+            process = subprocess.Popen(command, cwd=cwd, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=os.name != "nt")
+            code = wait_owned(process, timeout, stop_owned_tree)
+        print(f"{name}: exit {code}", flush=True)
+        return code
 
     try:
         code = run("node-unit", [args.node, "--experimental-strip-types", "--test", *map(str, sorted((ROOT / "web/tests").glob("*.test.ts")))])
@@ -85,21 +134,41 @@ def main():
             if suite == "media":
                 env.update(E2E_EN_AUDIO=str(args.english_audio.resolve()), E2E_ZH_AUDIO=str(args.chinese_audio.resolve()))
                 manifest["media"] = {"english_sha256": sha(args.english_audio), "chinese_sha256": sha(args.chinese_audio), "human_listening": "pending"}
-            report = output / f"{suite}-results.json"
-            # Playwright resolveOutputFile uses this env value before config outputFile.
-            env["PLAYWRIGHT_JSON_OUTPUT_FILE"] = str(report)
             config = "playwright.config.ts" if suite == "legacy" else f"playwright.{suite}.config.ts"
-            # Every formal config builds TypeScript/Vite before starting its owned preview server.
-            code = run(suite, [args.node, str(ROOT / "web/node_modules/@playwright/test/cli.js"), "test", "--config", config], ROOT / "web")
-            reports = []
-            if report.is_file():
-                data = json.loads(report.read_text(encoding="utf-8"))
-                reports.append({"path": str(report), "stats": data["stats"]})
-            manifest["suites"].append({"suite": suite, "exit": code, "reports": reports})
-            (output / "summary.json").write_text(json.dumps(manifest["suites"], indent=2), encoding="utf-8")
-            if code: return code
-            if not reports: raise RuntimeError(f"{suite}: no JSON report produced")
-            if len(reports) != 1 or any(r["stats"]["expected"] != EXPECTED[suite] or any(r["stats"][key] for key in ("skipped", "unexpected", "flaky")) for r in reports): raise RuntimeError(f"{suite}: missing, skipped, failed or flaky cases")
+            command = [args.node, str(ROOT / "web/node_modules/@playwright/test/cli.js"), "test", "--config", config]
+            reports, data_reports = [], []
+            expected_ids = None
+            shards = 2 if suite == "recovery" else 1
+            if shards == 2:
+                discovery = output / f"{suite}-discovery.json"
+                env["PLAYWRIGHT_JSON_OUTPUT_FILE"] = str(discovery)
+                code = run(f"{suite}-list", command + ["--fully-parallel", "--list", "--reporter=json"], ROOT / "web")
+                if code: return code
+                expected_ids = [key for key, _ in cases(json.loads(discovery.read_text(encoding="utf-8")))]
+                if len(expected_ids) != EXPECTED[suite] or len(set(expected_ids)) != len(expected_ids):
+                    raise RuntimeError("Discovery count/IDs differ from the full recovery contract")
+            entry = {"suite": suite, "exit": 0, "reports": reports, "expected_ids": expected_ids}
+            manifest["suites"].append(entry)
+            for shard in range(1, shards + 1):
+                name = suite if shards == 1 else f"{suite}-shard{shard}"
+                report = output / f"{name}-results.json"
+                env["PLAYWRIGHT_JSON_OUTPUT_FILE"] = str(report)
+                # Fully parallel enables test-level sharding; workers=1 preserves exclusive owned ports.
+                extra = ["--fully-parallel", "--workers=1", f"--shard={shard}/{shards}"] if shards > 1 else []
+                code = run(name, command + extra, ROOT / "web")
+                entry["exit"] = code
+                if report.is_file():
+                    data = json.loads(report.read_text(encoding="utf-8")); data_reports.append(data)
+                    reports.append({"path": str(report), "stats": data["stats"], "test_ids": [key for key, _ in cases(data)]})
+                (output / "summary.json").write_text(json.dumps(manifest["suites"], indent=2), encoding="utf-8")
+                if code: return code
+                if not report.is_file(): raise RuntimeError(f"{name}: no JSON report produced")
+                if data["stats"]["expected"] != EXPECTED[suite] // shards or any(data["stats"][key] for key in ("skipped", "unexpected", "flaky")):
+                    raise RuntimeError(f"{name}: missing, skipped, failed or flaky cases")
+                if sources()["sha256"] != baseline["sha256"] or sha(args.server) != manifest["server_sha256"] or sha(args.harness) != manifest["harness_sha256"]:
+                    raise RuntimeError("Source/binaries changed between acceptance groups")
+            if expected_ids is not None:
+                entry["verified_ids"] = validate_shards(expected_ids, data_reports)
             if sources()["sha256"] != baseline["sha256"]: raise RuntimeError("Production source changed during acceptance")
         return 0
     finally:

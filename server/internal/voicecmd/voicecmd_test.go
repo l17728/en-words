@@ -15,8 +15,7 @@ func TestClassroomCommands(t *testing.T) {
 		want string
 	}{
 		{"下一个", CmdNext},
-		{"下一下", CmdNext},       // 编辑距离容错
-		{"继续", CmdNext},        // 同义词
+		{"继续", CmdNext}, // 同义词
 		{"跳过这个词", CmdSkip},
 		{"跳过", CmdSkip},
 		{"重听一遍", CmdReplay},
@@ -72,7 +71,7 @@ func TestNormalization(t *testing.T) { // 全半角/标点/空白容错
 	assert.Equal(t, CmdNext, got)
 	// 大小写不敏感（英文触发词场景预留）
 	_, ok = p.Match("嗯嗯下一个啊")
-	assert.True(t, ok, "容忍语气词前后缀")
+	assert.False(t, ok, "控制不再猜删语气词；请重说完整命令")
 }
 
 func TestNoMatch(t *testing.T) {

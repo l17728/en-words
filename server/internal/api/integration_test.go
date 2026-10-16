@@ -323,7 +323,7 @@ func TestIT05_VoiceDualChannel(t *testing.T) {
 	require.NoError(t, err)
 
 	// 语音指令"下一个"=点击单词（L1）
-	cmd, _ := room.HandleVoiceText("嗯嗯下一个啊")
+	cmd, _ := room.HandleVoiceText("下一个！")
 	assert.Equal(t, "next", cmd)
 	assert.Equal(t, classroom.PhaseTTSSeg, room.Machine().Phase())
 

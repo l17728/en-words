@@ -10,6 +10,7 @@ import ClassroomPage from './pages/Classroom'
 import StatsPage from './pages/Stats'
 import AdminPage from './pages/Admin'
 import SettingsPage from './pages/Settings'
+import VoicePreflight from './pages/VoicePreflight'
 
 export default function App() {
   const token = useAuthStore((s) => s.token)
@@ -26,6 +27,7 @@ export default function App() {
             <Route path="/books" element={<BooksPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/placement/:bookId" element={<PlacementPage />} />
+            <Route path="/classroom/:lessonId/voice-preflight" element={<VoicePreflight />} />
             <Route path="/classroom/:lessonId" element={<ClassroomPage />} />
             <Route path="/stats" element={<StatsPage />} />
             <Route path="/settings" element={<SettingsPage />} />

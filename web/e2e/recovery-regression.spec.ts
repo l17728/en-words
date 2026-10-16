@@ -284,10 +284,16 @@ test('REC04 two students and administrator stay isolated while one network disco
     await Promise.all([login(pa, a.username), login(pb, b.username)])
     let sever: (() => void) | undefined
     await pa.routeWebSocket('**/ws/classroom?*', socket => { const upstream = socket.connectToServer(); sever = () => { upstream.close(); socket.close() } })
+    const enteredA = pa.waitForResponse(response => response.url().endsWith(`/classroom/lessons/${aid}/enter`) && response.request().method() === 'POST', { timeout: 30_000 })
+    const enteredB = pb.waitForResponse(response => response.url().endsWith(`/classroom/lessons/${bid}/enter`) && response.request().method() === 'POST', { timeout: 30_000 })
     await Promise.all([pa.goto(`/classroom/${aid}`), pb.goto(`/classroom/${bid}`)])
+    for (const response of await Promise.all([enteredA, enteredB])) expect((await response.json()).code).toBe(0)
     await expect(pa.getByText('已连接', { exact: true })).toBeVisible()
     await contexts[0].setOffline(true); sever?.()
     await expect(pa.getByText('重连中…', { exact: true })).toBeVisible()
+    for (let segment = 1; segment <= 4; segment++) {
+      await expect.poll(() => pb.evaluate(() => (window as any).__media.completed.length)).toBeGreaterThanOrEqual(segment)
+    }
     await expect(pb.getByText('轮到你读了！大声一点没关系', { exact: true })).toBeVisible()
     await expect.poll(() => pb.evaluate(() => !!(window as any).__media.recognition)).toBe(true)
     await pb.evaluate(() => (window as any).__media.recognition.onresult({ results: [[{ transcript: 'cat' }]] }))
@@ -305,8 +311,15 @@ for (const mode of ['no_voice', 'error', 'throw', 'timeout']) {
     const f = await fixture(request, mode); const id = await scheduled(request, f)
     await media(page, mode); await login(page, f.username)
     const sent: any[] = []
-    page.on('websocket', ws => ws.on('framesent', ({ payload }) => { try { sent.push(JSON.parse(String(payload))) } catch {} }))
+    let playbackScheduled = false
+    page.on('websocket', ws => {
+      ws.on('framesent', ({ payload }) => { try { sent.push(JSON.parse(String(payload))) } catch {} })
+      ws.on('framereceived', ({ payload }) => { try { if (JSON.parse(String(payload)).action?.type === 'play_tts') playbackScheduled = true } catch {} })
+    })
+    const entered = page.waitForResponse(response => response.url().endsWith(`/classroom/lessons/${id}/enter`) && response.request().method() === 'POST', { timeout: 30_000 })
     await page.goto(`/classroom/${id}?e2e=1`)
+    expect((await (await entered).json()).code).toBe(0)
+    await expect.poll(() => playbackScheduled).toBe(true)
     await expect(page.getByText('语音播放失败，请先看屏幕文字；老师会稍后继续。', { exact: true })).toBeVisible()
     await expect(page.getByRole('status', { name: '当前朗读字幕' })).toHaveText('')
     expect(sent.filter(f => f.event === 'tts_finished')).toHaveLength(0)
@@ -318,15 +331,31 @@ for (const mode of ['no_voice', 'error', 'throw', 'timeout']) {
 
 test('old recognizer delayed onend cannot restart after reconnect installs a new listener', async ({ page, request, server }) => {
   const f = await fixture(request, 'recognizer-end'); const id = await scheduled(request, f)
-  await media(page); await login(page, f.username); await page.goto(`/classroom/${id}`)
-  await expect.poll(() => page.evaluate(() => !!(window as any).__media.recognition)).toBe(true)
-  await page.evaluate(() => { (window as any).__oldRecognition = (window as any).__media.recognition })
+  let repeatActions = 0
+  page.on('websocket', socket => socket.on('framereceived', ({ payload }) => { if (JSON.parse(String(payload)).action?.type === 'start_repeat') repeatActions++ }))
+  await media(page); await login(page, f.username)
+  const entered = page.waitForResponse(r => r.url().endsWith(`/classroom/lessons/${id}/enter`) && r.request().method() === 'POST', { timeout: 30_000 })
+  await page.goto(`/classroom/${id}`); expect((await (await entered).json()).code).toBe(0)
+  for (let segment = 1; segment <= 4; segment++) await expect.poll(() => page.evaluate(() => (window as any).__media.completed.length)).toBeGreaterThanOrEqual(segment)
+  await expect.poll(() => repeatActions).toBeGreaterThan(0)
+  await expect(page.getByText('轮到你读了！大声一点没关系', { exact: true })).toBeVisible()
+  await expect.poll(() => page.evaluate(() => {
+    const w = window as any, current = w.__media.recognition
+    if (!current || current.starts < 1) return false
+    w.__oldRecognition = current; return true
+  })).toBe(true)
+  await expect(page.getByText('🎙 跟读：大声读出这个词～', { exact: true })).toBeVisible()
+  const priorRepeatActions = repeatActions
   await server.restart()
-  await expect.poll(() => page.evaluate(() => !!(window as any).__media.recognition && (window as any).__media.recognition !== (window as any).__oldRecognition)).toBe(true)
+  await expect.poll(() => repeatActions).toBeGreaterThan(priorRepeatActions)
+  await expect.poll(() => page.evaluate(() => !!(window as any).__media.recognition && (window as any).__media.recognition !== (window as any).__oldRecognition && (window as any).__media.recognition.starts > 0)).toBe(true)
+  await expect(page.getByText('🎙 跟读：大声读出这个词～', { exact: true })).toBeVisible()
+  const newStarts = await page.evaluate(() => { const w = window as any; w.__newRecognition = w.__media.recognition; return w.__newRecognition.starts })
   const before = await page.evaluate(() => (window as any).__oldRecognition.starts)
   await page.evaluate(() => (window as any).__oldRecognition.onend())
   expect(await page.evaluate(() => (window as any).__oldRecognition.starts)).toBe(before)
-  expect(await page.evaluate(() => (window as any).__media.recognition !== (window as any).__oldRecognition)).toBe(true)
+  expect(await page.evaluate(() => !!(window as any).__media.recognition && (window as any).__media.recognition === (window as any).__newRecognition && (window as any).__media.recognition !== (window as any).__oldRecognition)).toBe(true)
+  expect(await page.evaluate(() => (window as any).__newRecognition.starts)).toBe(newStarts)
 })
 
 test('G09 delayed microphone grant after account change releases tracks without upload', async ({ page, request, context }) => {
@@ -344,7 +373,14 @@ test('G09 delayed microphone grant after account change releases tracks without 
   await page.route('**/api/v1/providers', route => route.fulfill({ json: { code: 0, data: { local: true, asr: true, tts_zh: false, tts_en: false } } }))
   const uploads: string[] = []
   page.on('request', r => { if (r.url().endsWith('/transcribe')) uploads.push(r.url()) })
-  await login(page, a.username); await page.goto(`/classroom/${id}`)
+  let repeatActions = 0
+  page.on('websocket', socket => socket.on('framereceived', ({ payload }) => { if (JSON.parse(String(payload)).action?.type === 'start_repeat') repeatActions++ }))
+  await login(page, a.username)
+  const entered = page.waitForResponse(r => r.url().endsWith(`/classroom/lessons/${id}/enter`) && r.request().method() === 'POST', { timeout: 30_000 })
+  await page.goto(`/classroom/${id}`); expect((await (await entered).json()).code).toBe(0)
+  for (let segment = 1; segment <= 4; segment++) await expect.poll(() => page.evaluate(() => (window as any).__media.completed.length)).toBeGreaterThanOrEqual(segment)
+  await expect.poll(() => repeatActions).toBeGreaterThan(0)
+  await expect(page.getByText('轮到你读了！大声一点没关系', { exact: true })).toBeVisible()
   await expect.poll(() => page.evaluate(() => (window as any).__mic.requested)).toBe(true)
   const second = await context.newPage()
   try {
@@ -602,8 +638,14 @@ test.describe('JD28 semantic routing rejects target tokens without answer meanin
     try {
       await login(other, b.username); await other.getByRole('button', { name: `查看 ${b.book.Name} 的课程` }).click()
       await expect(other.getByText(`下一节课 · ${b.book.Name}`, { exact: true })).toBeVisible()
-      await media(page); await login(page, f.username); await page.goto(`/classroom/${id}?e2e=1`)
+      await media(page); await login(page, f.username)
+      const entered = page.waitForResponse(response => response.url().endsWith(`/classroom/lessons/${id}/enter`) && response.request().method() === 'POST', { timeout: 30_000 })
+      await page.goto(`/classroom/${id}?e2e=1`)
+      expect((await (await entered).json()).code).toBe(0)
       for (const [attempt, answer] of [misleading, '这是一只海豚。'].entries()) {
+        for (let segment = 1; segment <= 4; segment++) {
+          await expect.poll(() => page.evaluate(() => (window as any).__media.completed.length)).toBeGreaterThanOrEqual(attempt * 4 + segment)
+        }
         await expect(page.getByText('轮到你读了！大声一点没关系', { exact: true })).toBeVisible()
         await postClassroom(page, `/classroom/lessons/${id}/voice`, { text: 'dolphin' })
         const input = page.getByLabel('答案输入框'); await expect(input).toBeEnabled()
@@ -617,7 +659,16 @@ test.describe('JD28 semantic routing rejects target tokens without answer meanin
       expect(decisions.filter(event => event.source === 'l2').map(event => ({ result: event.result, reason: event.reason }))).toEqual([
         { result: 'wrong', reason: 'model_verdict' }, { result: 'correct', reason: 'model_verdict' },
       ])
-      expect(decisions.filter(event => event.source === 'l1' && event.result === 'correct')).toHaveLength(2)
+      expect(decisions).toHaveLength(2)
+      expect(decisions.every(event => event.source === 'l2')).toBe(true)
+      const repeats = events.filter(event => event.event === 'repeat_evaluated' && event.trace_id === `lesson-${id}`)
+      expect(repeats).toHaveLength(2)
+      for (const event of repeats) {
+        expect(event).toMatchObject({ module: 'classroom', result: 'matched', purpose: 'repeat', source: 'target_match', lesson_id: id, trace_id: `lesson-${id}` })
+        expect(event.word_id).toBeGreaterThan(0)
+        expect(Number.isInteger(event.duration_ms)).toBe(true); expect(event.duration_ms).toBeGreaterThanOrEqual(0)
+        for (const field of ['text', 'word', 'meaning', 'answer', 'student_answer']) expect(event).not.toHaveProperty(field)
+      }
       expect(JSON.stringify(decisions)).not.toContain(misleading)
       expect(quantityResources(server.db, b.student.user_id)).toEqual(beforeB)
       await other.reload(); await other.getByRole('button', { name: `查看 ${b.book.Name} 的课程` }).click()
@@ -701,13 +752,14 @@ for (const outcome of ['ended', 'fallback']) test(`SUB02 platform ${outcome} sho
   await expect(caption).toHaveText('')
 })
 
-for (const recovery of ['phase', 'pause']) test(`SUB03 ${recovery} snapshot cancels old playback and captions without affecting another student`, async ({ page, request, browser, baseURL }) => {
+for (const recovery of ['phase', 'pause']) test(`SUB03 ${recovery} snapshot cancels old playback and captions without affecting another student`, async ({ page, request, browser, baseURL }, testInfo) => {
   const f = await fixture(request, 'caption-snapshot'); const id = await scheduled(request, f)
-  let publish: (() => void) | undefined
+  const aEpochs = new Set<string>(); let publish: (() => void) | undefined
   await page.routeWebSocket('**/ws/classroom?*', socket => {
     const upstream = socket.connectToServer(); let last: any
     upstream.onMessage(message => {
-      const frame = JSON.parse(String(message)); if (frame.context && typeof frame.seq === 'number') last = frame
+      const frame = JSON.parse(String(message))
+      if (frame.context && typeof frame.seq === 'number') { last = frame; aEpochs.add(frame.context.epoch) }
       socket.send(message)
     })
     socket.onMessage(message => upstream.send(message))
@@ -716,27 +768,90 @@ for (const recovery of ['phase', 'pause']) test(`SUB03 ${recovery} snapshot canc
   })
   const b = await fixture(request, `snapshot-other-${recovery}`, [{ word: 'bird', meanings: ['鸟'] }]); const bid = await scheduled(request, b)
   const second = await browser.newContext({ baseURL }); const other = await second.newPage()
+  let release = () => {}; let timer: ReturnType<typeof setTimeout> | undefined
+  let bound: any; let delivered: any; let expired = false; let buffered = 0; let bytes = 0; let released = false
+  const errors: string[] = []
   try {
-  await media(other, 'hold'); await other.clock.install(); await login(other, b.username); await other.goto(`/classroom/${bid}?e2e=1`)
-  await expect.poll(() => other.evaluate(() => (window as any).__media.utterances.length)).toBe(1)
-  await other.evaluate(() => (window as any).__media.utterances[0].onstart())
-  // Freeze only B's declared held-media clock, so its watchdog cannot expire while A logs in.
-  await other.clock.pauseAt(new Date())
-  const bCanceled = await other.evaluate(() => (window as any).__media.canceled)
-  await media(page, 'hold'); await login(page, f.username); await page.goto(`/classroom/${id}?e2e=1`)
-  const caption = page.getByRole('status', { name: '当前朗读字幕' })
-  await expect.poll(() => page.evaluate(() => (window as any).__media.utterances.length)).toBe(1)
-  await page.evaluate(() => (window as any).__media.utterances[0].onstart())
-  await expect(caption).toContainText('cat')
-  // Declared recovery protocol fixture: state advances before the corresponding business action.
-  const canceled = await page.evaluate(() => (window as any).__media.canceled)
-  publish!(); await expect(caption).toHaveText('', { timeout: 500 })
-  expect(await page.evaluate(() => (window as any).__media.canceled)).toBeGreaterThan(canceled)
-  await page.evaluate(() => (window as any).__media.utterances[0].onstart())
-  await expect(caption).toHaveText('')
-  await expect(other.getByRole('status', { name: '当前朗读字幕' })).toContainText('bird')
-  expect(await other.evaluate(() => (window as any).__media.canceled)).toBe(bCanceled)
-  } finally { await second.close() }
+    // Complete both login flows before observing either student's held playback.
+    await media(page, 'hold'); await login(page, f.username)
+    // Install after the media init script has run, before the SPA enters class.
+    await page.evaluate(() => {
+      const w = window as any; const synth = window.speechSynthesis
+      const speak = synth.speak.bind(synth)
+      synth.speak = utterance => {
+        speak(utterance)
+        w.__snapshotCurrentUtterance = utterance
+        queueMicrotask(() => {
+          if (w.__snapshotCurrentUtterance === utterance) utterance.onstart?.(new Event('start') as SpeechSynthesisEvent)
+        })
+      }
+    })
+    await media(other, 'hold'); await other.clock.install(); await login(other, b.username)
+    await page.evaluate(id => { window.history.pushState({}, '', `/classroom/${id}?e2e=1`); window.dispatchEvent(new PopStateEvent('popstate')) }, id)
+    await expect.poll(() => page.evaluate(() => (window as any).__media.utterances.length)).toBeGreaterThan(0)
+    await other.routeWebSocket('**/ws/classroom?*', socket => {
+      const upstream = socket.connectToServer(); const queue: (string | Buffer)[] = []
+      release = () => { released = true; clearTimeout(timer); for (const message of queue.splice(0)) socket.send(message) }
+      upstream.onMessage(message => {
+        const frame = JSON.parse(String(message)); const c = frame.context
+        const business = frame.type !== 'heartbeat_ack' && typeof frame.seq === 'number'
+        const valid = c && typeof c.epoch === 'string' && c.epoch.length > 0 && typeof c.turn === 'string' && c.turn.length > 0
+        if (business && bound && (!valid || c.epoch !== bound.epoch || aEpochs.has(c.epoch) || (frame.lesson_id !== undefined && frame.lesson_id !== bid))) {
+          errors.push('unexpected_connection_context'); socket.send(message); return
+        }
+        if (!bound && frame.type === 'ui_action' && frame.action?.type === 'play_tts' && valid) {
+          if (aEpochs.has(c.epoch) || (frame.lesson_id !== undefined && frame.lesson_id !== bid)) { errors.push('invalid_initial_context'); socket.send(message); return }
+          bound = { ...c }; delivered = { ...c }
+          timer = setTimeout(() => { expired = true; release() }, 15000)
+        }
+        if (!released && bound && business && valid && (queue.length > 0 || c.turn !== bound.turn)) {
+          bytes += Buffer.byteLength(message); buffered++
+          if (buffered > 128 || bytes > 131072) { errors.push('barrier_overflow'); release(); socket.send(message); return }
+          queue.push(message); return
+        }
+        if (business && valid) delivered = { ...c }
+        socket.send(message)
+      })
+      socket.onMessage(message => upstream.send(message))
+    })
+    await other.goto(`/classroom/${bid}?e2e=1`)
+    await expect.poll(() => other.evaluate(() => (window as any).__media.utterances.length)).toBe(1)
+    expect(bound).toBeDefined(); expect(aEpochs.has(bound.epoch)).toBe(false); expect(errors).toEqual([])
+    await other.evaluate(() => (window as any).__media.utterances[0].onstart())
+    await other.clock.pauseAt(new Date())
+    const bCaption = other.getByRole('status', { name: '当前朗读字幕' })
+    await expect(bCaption).toContainText('bird')
+    const observed = { ...delivered }; const bCanceled = await other.evaluate(() => (window as any).__media.canceled)
+    // Bind only a live segment started by a real new speak call, never revive a failed one.
+    await expect.poll(() => page.evaluate(() => {
+      const w = window as any; const current = w.__snapshotCurrentUtterance
+      const debug = w.__ttsDebug?.at(-1)
+      const visible = document.querySelector('[aria-label="\u5f53\u524d\u6717\u8bfb\u5b57\u5e55"]')?.textContent
+      if (!current || current !== w.__media.utterances.at(-1) || debug?.status !== 'started' || !visible) return false
+      w.__snapshotUtterance = current
+      return true
+    })).toBe(true)
+    const caption = page.getByRole('status', { name: '\u5f53\u524d\u6717\u8bfb\u5b57\u5e55' })
+    const canceled = await page.evaluate(() => (window as any).__media.canceled)
+    publish!(); await expect(caption).toHaveText('', { timeout: 500 })
+    expect(await page.evaluate(() => (window as any).__media.canceled)).toBeGreaterThan(canceled)
+    await page.evaluate(() => (window as any).__snapshotUtterance.onstart())
+    await expect(caption).toHaveText('')
+    await expect(bCaption).toContainText('bird')
+    expect(await other.evaluate(() => (window as any).__media.canceled)).toBe(bCanceled)
+    expect(delivered).toEqual(observed); expect(errors).toEqual([]); expect(expired).toBe(false)
+    await expect.poll(() => buffered).toBeGreaterThan(0)
+    expect(expired).toBe(false); await other.clock.resume(); release()
+    // Actual client application of the released successor, not merely socket.send evidence.
+    await expect.poll(() => other.evaluate(() => (window as any).__media.canceled)).toBeGreaterThan(bCanceled)
+    await expect.poll(() => other.evaluate(() => (window as any).__media.utterances.length)).toBeGreaterThan(1)
+    expect(errors).toEqual([])
+  } finally {
+    await other.clock.resume().catch(() => {})
+    release(); clearTimeout(timer)
+    await testInfo.attach('bounded-client-isolation', { body: JSON.stringify({ lesson: bid, bound, delivered, buffered, bytes, expired, errors, scope: 'authorized connection plus epoch; no per-frame owner field' }), contentType: 'application/json' })
+    await second.close()
+  }
 })
 
 test('SUB04 disconnect and account replacement clear active captions and reject delayed prior media', async ({ page, request, server, context }) => {
@@ -761,4 +876,25 @@ test('SUB04 disconnect and account replacement clear active captions and reject 
     await expect(caption).toHaveCount(0)
     await expect(page.getByText('cat', { exact: true })).toHaveCount(0)
   } finally { await second.close() }
+})
+
+
+test('REC13 externally signal-exited owned backend restarts and restores the student classroom', async ({ page, request, server }) => {
+  const f = await fixture(request, 'signal-exit', [{ word: 'cat', meanings: ['猫'] }])
+  const id = await scheduled(request, f)
+  await media(page); await login(page, f.username); await page.goto(`/classroom/${id}`)
+  await expect(page.getByText('轮到你读了！大声一点没关系', { exact: true })).toBeVisible()
+  await server.terminate() // Exit has already occurred before restart invokes stop again.
+  await expect(page.getByText('已连接', { exact: true })).toHaveCount(0)
+  await server.restart()
+  expect(server.pids).toHaveLength(2)
+  expect(server.pids[0]).not.toBe(server.pids[1])
+  await expect(page.getByText('已连接', { exact: true })).toBeVisible()
+  await expect.poll(() => page.evaluate(() => !!(window as any).__media.recognition)).toBe(true)
+  await page.evaluate(() => (window as any).__media.recognition.onresult({ results: [[{ transcript: 'cat' }]] }))
+  await expect(page.getByLabel('答案输入框')).toBeEnabled()
+  await page.getByLabel('答案输入框').fill('猫')
+  await page.getByRole('button', { name: /^回\s*答$/ }).click()
+  await expect(page.getByText('下课啦！叮当老师的小结')).toBeVisible()
+  await expect(page.getByText(/首答率 100%/)).toBeVisible()
 })

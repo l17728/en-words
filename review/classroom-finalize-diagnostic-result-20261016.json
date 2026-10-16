@@ -1,0 +1,92 @@
+{
+  "scope": "single diagnostic SUB02, not acceptance or original failure closure",
+  "execution": {
+    "exit": 0,
+    "elapsed_seconds": 55.82799999997951,
+    "production_unchanged": true,
+    "diagnostic_complete": true,
+    "sample_count": 0
+  },
+  "binary_sha256": "690c6cb9389bacc1b32ed572cd48314da444e45bb48d9febc16760c954a69c6c",
+  "diagnostic_sources": {
+    "cmd/server/main.go": "b08c1434c7e0e34a784a7548fae9023c3275b04d92370a407974cd66f0142366",
+    "internal/api/agenttransaction.go": "79d79e4efd454b421e5bc55a5351589744f202bb03db401b6dc4b1cc4e485d20",
+    "internal/api/finalize_diagnostic.go": "d148e615c50f791e0b68cf1b9dc91d474f61e40554c9aebaf630ffad10736d93",
+    "internal/api/finalize_diagnostic_test.go": "5487b55e5362b41dee70eda6c0a8eec43cd5c184dcab15eeec6bc5dfc055adae"
+  },
+  "pragmas": {
+    "busy_timeout": 5000,
+    "journal_mode": "wal",
+    "synchronous": 2,
+    "wal_autocheckpoint": 1000
+  },
+  "stop_reason": "tool_call_finished",
+  "sample_count": 0,
+  "tool_events": [
+    {
+      "ts": "2026-10-16T13:22:12.935+0800",
+      "tool": "classroom.say",
+      "transaction_ms": 82,
+      "finalize_ms": 81,
+      "begin_wait_ms": 0,
+      "audit_write_ms": 0,
+      "lock_wait_ms": 0,
+      "config_load_ms": 0,
+      "transaction_outcome": "committed"
+    },
+    {
+      "ts": "2026-10-16T13:22:13.122+0800",
+      "tool": "classroom.show_word",
+      "transaction_ms": 79,
+      "finalize_ms": 76,
+      "begin_wait_ms": 1,
+      "audit_write_ms": 0,
+      "lock_wait_ms": 0,
+      "config_load_ms": 0,
+      "transaction_outcome": "committed"
+    },
+    {
+      "ts": "2026-10-16T13:22:13.873+0800",
+      "tool": "classroom.play_tts",
+      "transaction_ms": 27,
+      "finalize_ms": 27,
+      "begin_wait_ms": 0,
+      "audit_write_ms": 0,
+      "lock_wait_ms": 0,
+      "config_load_ms": 0,
+      "transaction_outcome": "committed"
+    },
+    {
+      "ts": "2026-10-16T13:22:14.103+0800",
+      "tool": "classroom.play_tts",
+      "transaction_ms": 90,
+      "finalize_ms": 72,
+      "begin_wait_ms": 0,
+      "audit_write_ms": 1,
+      "lock_wait_ms": 0,
+      "config_load_ms": 0,
+      "transaction_outcome": "committed"
+    },
+    {
+      "ts": "2026-10-16T13:22:17.032+0800",
+      "tool": "classroom.start_repeat",
+      "transaction_ms": 70,
+      "finalize_ms": 70,
+      "begin_wait_ms": 0,
+      "audit_write_ms": 0,
+      "lock_wait_ms": 0,
+      "config_load_ms": 0,
+      "transaction_outcome": "committed"
+    }
+  ],
+  "dist_unchanged": true,
+  "evidence_sha256": {
+    ".test-artifacts\\finalize-diagnostic-20261016\\browser\\recovery-regression-SUB02--6d947-nd-invalidates-old-attempts\\server.log": "76db1801ce0e8dee6877ac1a090a643b709ff1b3b2c392c10e02500f660e72be",
+    ".test-artifacts\\finalize-diagnostic-20261016\\results.json": "698d9953cd18feff6cee163c1b791e7e52d3f121db3ed29d5510a376bf541827",
+    ".test-artifacts\\finalize-diagnostic-20261016\\owned-samples.json": "1cc7a5816e988c4a8913131a3c4d5160579f0830b52285da7db1d3bd8c6d3b17",
+    ".test-artifacts\\finalize-diagnostic-20261016\\execution-inputs.json": "21ce30fb22a808e62ee736bf2c89629e13781476fe8b311aeeb2d00c5834bd1a",
+    ".test-artifacts\\finalize-diagnostic-20261016\\build-summary.json": "026fce5ea2ae3704447caa758236c944afb3b03d9e3902adb0d5b5e2aa7e6711",
+    ".test-artifacts\\finalize-diagnostic-20261016\\helper-tests.log": "4ec3dd3dd9911ad6c56c6b627fe583cd33ae1d358995e6b377b603a8d630b4c9",
+    ".test-artifacts\\finalize-diagnostic-20261016\\sub02.log": "38669a29c39eabab2c19e0124fd3d6c672634b14b8b339c55efa8056523566ab"
+  }
+}

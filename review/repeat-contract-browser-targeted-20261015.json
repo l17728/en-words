@@ -1,0 +1,143 @@
+{
+  "status": "targeted_pass_not_full127",
+  "stats": {
+    "startTime": "2026-10-15T13:35:21.450Z",
+    "duration": 232498.625,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "baseline": {
+    "server_sha256": "282bd570550cf3e29d3b6c68f9987f4a89e02dd3dd75a6ce3cb81d122c27472f",
+    "test_sha256": "2ba1d5e3fc152fe30d41088f77e9c5cc2a828f504b5df8a13f9bf03bd6c94b26",
+    "dist_manifest": "D:\\en-words\\.test-artifacts\\repeat-contract-red-r2-20261015\\dist.json",
+    "dist_unchanged": true
+  },
+  "test_after_sha256": "2ba1d5e3fc152fe30d41088f77e9c5cc2a828f504b5df8a13f9bf03bd6c94b26",
+  "frontend_inputs_unchanged": true,
+  "dist_unchanged": true,
+  "rows": [
+    {
+      "name": "RP01 repeated target alone advances; meaning and wrong word never invoke L2; quiz and another student remain correct",
+      "duration_ms": 80778,
+      "repeat_ms": [
+        0,
+        0,
+        30,
+        0,
+        0
+      ],
+      "repeat_results": [
+        "no_match",
+        "no_match",
+        "no_match",
+        "matched",
+        "matched"
+      ],
+      "voice_http_ms": [
+        1,
+        1,
+        32,
+        1685,
+        3638
+      ],
+      "voice_events_request_correlated": 5,
+      "provider_calls": 0,
+      "log": "D:\\en-words\\web\\.test-artifacts\\closure-1792071327027-19952\\browser\\repeat-contract-RP01-repea-98dd9-ther-student-remain-correct\\server.log",
+      "exits": [
+        {
+          "pid": 6864,
+          "exitCode": null,
+          "signalCode": "SIGTERM"
+        }
+      ]
+    },
+    {
+      "name": "RP02 negated and questioned controls never skip; an exact skip advances only its owner",
+      "duration_ms": 49332,
+      "repeat_ms": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "repeat_results": [
+        "no_match",
+        "no_match",
+        "no_match",
+        "no_match",
+        "no_match",
+        "no_match"
+      ],
+      "voice_http_ms": [
+        0,
+        1,
+        45,
+        3,
+        1,
+        0,
+        722
+      ],
+      "voice_events_request_correlated": 7,
+      "provider_calls": 0,
+      "log": "D:\\en-words\\web\\.test-artifacts\\closure-1792071327027-19952\\browser\\repeat-contract-RP02-negat-802c2-kip-advances-only-its-owner\\server.log",
+      "exits": [
+        {
+          "pid": 17696,
+          "exitCode": null,
+          "signalCode": "SIGTERM"
+        }
+      ]
+    },
+    {
+      "name": "RP03 Unicode targets and internal apostrophes accept whole words; unsupported targets require explicit skip",
+      "duration_ms": 90933,
+      "repeat_ms": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "repeat_results": [
+        "no_match",
+        "matched",
+        "no_match",
+        "matched",
+        "matched",
+        "unsupported_target"
+      ],
+      "voice_http_ms": [
+        0,
+        526,
+        6,
+        917,
+        700,
+        4,
+        4267
+      ],
+      "voice_events_request_correlated": 7,
+      "provider_calls": 0,
+      "log": "D:\\en-words\\web\\.test-artifacts\\closure-1792071327027-19952\\browser\\repeat-contract-RP03-Unico-eb784-rgets-require-explicit-skip\\server.log",
+      "exits": [
+        {
+          "pid": 13204,
+          "exitCode": null,
+          "signalCode": "SIGTERM"
+        }
+      ]
+    }
+  ],
+  "timing_scope": "repeat ms matcher computation; HTTP ms entire voice request; sub-ms recorded0 not zero duration; no acoustic or overall SLO claim",
+  "red_artifacts": [
+    ".test-artifacts/repeat-contract-red-r2-20261015",
+    ".test-artifacts/repeat-unicode-red-20261015"
+  ],
+  "infra_attempt": ".test-artifacts/repeat-contract-red-20261015",
+  "full_regression": "127 pending after serial full Go",
+  "production_source_after_sha256": "3e763da3d99fd5d301dff1b4bc4eadb57d58815af0097f8833ea8c345ea40306"
+}

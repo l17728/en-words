@@ -745,7 +745,9 @@ GET  /agent/tools                      # 该 Agent 可见工具清单（给 LLM 
           首页/课程表/统计/开始学习(L3 导航)
           （"我读完了"口令已随 2026-08-25"老师听学生读完"定案移除——
             跟读推进只认听读判读，不认口令/按钮）
-  匹配: 归一化(去标点/全半角) + 编辑距离≤1 容错("下一下"→下一个) + 前缀触发(反馈类)
+  控制匹配(38): NFC/小写/空白折叠，仅单末尾句号/感叹号可去，整句词表匹配。
+      问号/连续混合标点/引用/否定保留；无前缀/编辑距离/语气词猜删。
+      “下一个！”有效；“下一下/嗯嗯下一个啊”不命中。反馈前缀与正文捕获独立不变。
   优先级: 反馈触发 > 教学指令 > 跟读判读 > 测试作答
           (quiz 阶段指令仅"跳过"生效; repeating 阶段指令仅"跳过"生效, 其余转写交听读判读)
 产出: VoiceCommand{Type, Payload} → 注入课堂事件总线(等价对应 UI 按钮点击) → UI 按钮高亮回执(L4)
@@ -758,9 +760,9 @@ GET  /agent/tools                      # 该 Agent 可见工具清单（给 LLM 
 实现: MockTTS(返回标记文本，前端转 Web Speech API 本地朗读)
       DashScopeTTS(Omni 非实时 qwen3.5-omni-plus 单段合成+播放队列编排, D-17 定案; cosyvoice 已砍, 见05)
 播放: 前端串行队列按课程冻结配置播放（en×ttsEnRepeat 后 zh×ttsZhRepeat，三类间隔见14）
-兜底: Web Speech API 的 voices 异步加载/onend 不可靠 → 前端按字数估时+1s 看门狗
-      强制视为完成；Web Speech 完全不可用 → 静音计时+视觉动画，tts_finished 照常
-      上报，流程不阻塞（评审发现 FE-03，P0）
+失败: Web Speech无声/错误/看门狗触发取消时显示失败，不发送成功tts_finished。
+      仅真实onend/平台ended成功ACK；服务端原超时策略可记tts_skipped推进（17/18）。
+      历史FE-03“静音计时视完成”已撤销，不能用视觉流程通过冒充真实发声。
 选声: voice 显式选择·严格本地优先（精确 lang 本地→同语言族本地→任意本地→
       浏览器默认兜底），u.lang 与选中 voice 对齐——2026-08-26 无声 BUG：默认
       选声可命中 Google 在线语音（国内不可达→speak 静默挂起，看门狗推进=
@@ -775,14 +777,17 @@ GET  /agent/tools                      # 该 Agent 可见工具清单（给 LLM 
    不发 TTS（nudge 提醒同样仅文字）——杜绝老师语音被学生麦克风拾音
 1. 学生跟读开口 → 浏览器 Web Speech（en-US）/ Omni InputTranscript 持续识别
 2. 转写文本 → HandleVoiceText 跟读判读分支：
-   Judge(当前词, meanings, 转写) ∈ {correct, near} → 老师确认"听到了" → repeat_done → 下一词
-   不匹配 → 继续听（不推进、不报错）
+   EvaluateRepeat(当前目标词/词组, 原始完整转写) == "matched" → repeat_done → 下一词
+   不使用meanings/同义或LLM；不匹配继续听，unsupported_target仅固定原因日志，保原skip/timeout。
+   目标支持NFC Latin、词内撇号/连字符及目标侧占位骨架；复杂目标限制详38。
 3. 总超时（timeoutRepeatS）兜底：nudge_repeat 温和提醒（"再试一次，大声读出来～"）
    → 仍超时 → 计为完成自动推进（不阻塞课堂）
 4. 学生也可说"跳过"（跟读相位唯一放行指令）
-输出: repeat_done 事件（不录音、不上传——只上传判定结果）
+输出: 服务端匹配成功才生成repeat_done；输入为原始转写。
+      本机ASR模式实际上传PCM WAV，Web Speech路径上传文本，不能笼统声称不录音/不上传。
 注: 前端 VAD 能量门限方案（RMS 基线+动态门限+TRAILING 判定）已废弃——
-    能量只能证明"发了声"不能证明"读的是这个词"；判读走 ASR 转写+判分器 L1。
+    能量不能证明目标词；当前跟读为ASR转写+RepeatMatch，不是发音质量/真人来源验证。
+    设备预检能量仪表/未来双工声学VAD不在此课堂链路中（32–35）。
 ```
 
 ### 12.4 ASR + LLM 判分（测试作答）
@@ -854,6 +859,7 @@ feedbackStore / adminStore —— classroomStore 只由 WS 与本地回执写入
 
 - **trace_id 贯穿**：REST 入口/WS 帧/Agent 决策轮/工具执行/判分/排课——同一请求链路同 ID。
 - **必记事件清单**：登录、工具调用(全量)、状态机每次迁移、TTS/ASR 调用、判分输入输出、配置变更、排课计算（含选词依据）、反馈处理、逾期重排、WS 连接/断开/重连、错误（含堆栈）。
+- 跟读专用事件（38）：`classroom/repeat_evaluated`沿用课堂trace，记录lesson_id、word_id、purpose=repeat、source=target_match、result及duration_ms；result为matched/no_match/unsupported_target/canceled。成功另记`repeat_verified`的ID及answer_length，不记录词面、学生原文或模型正文；此事件仅证明文本匹配，不能代替声学验收。
 - classroom_events 表存课堂事件流（与日志互补：面向回放与 E2E 断言）。
 
 ### 14.2 排障路径示例
@@ -1009,3 +1015,16 @@ L1 不再以任意英文 token 或泛编辑距离放行；英文含义与同义�
 三段原始manifest已独立核验生产SHA `ea3283a7f342a97310d19ff29981c9110bd4d4db05799e2091a8e127ef11a7c3`、server `5686ce420d5c2c10a6bcbc8e93d687104e5a956547092b9b2a63ee7638a10bfe`、harness `0b47afff2d672fd7a86ad1d1ff8b87243cca5ae4fe126a0cd9f53b62ac43fc07` 一致且unchanged=true。证据汇总为 `review/interaction-browser-final116-20261015.json`，完整阶段说明为 `review/interaction-final-acceptance-20261015.md`；Go源SHA与上述前后端生产指纹范围不同，不混为同一hash。
 
 阶段完成不等于所有历史任务完成：IX16仅分阶段观测，历史15.545秒长尾未宣称消除；SQLitebusy和单连接等待、摸底草稿与排课部分成功边界保留；真实文本/ASR质量未过不被mock回归替代。共享模型未在本轮切换，AGENTS未修改。
+
+## 2026-10-15 全双工基础扩展
+
+新增合同以[33-全双工课堂SDD.md](33-全双工课堂SDD.md)为准，实施与验收状态见35。`GET /api/v1/classroom/lessons/:id/duplex-capabilities`仅学生本人课次可读，鉴权沿现有响应包装合同；返回预检开关、固定能力状态和限制，不泄露远端配置。`ENWORDS_DUPLEX_PILOT=1`只开启本机设备预检；当前`native_duplex`和`automatic_teaching`始终为false。
+
+新增协议、严格文本客户端及持久提交组件尚未接管Room；原课堂输入及教学策略不变。不能将组件测试等同于课堂事务、流式音频或声学验收。新课堂事件、持久回执、模式互斥和事务后发布按33设计另行接线评审。
+
+## 2026-10-15 简单语音确认首片（docs38，主审批准、验收待回收）
+
+本次只落旧课堂 RepeatMatch 与精确控制：跟读仅整体目标词/词组规则，不使用中文释义/同义或LLM；quiz现有整体英文短答、中文释义、同义与L2评分保持。所有控制命令NFC/小写/空白折叠后整句匹配，单末尾句号/感叹号可去，问号/连续混合标点/否定/引用保留；不再前缀、编辑距离或猜删语气词。“下一个！”保留，“下一下/嗯嗯下一个啊”改为不匹配。反馈正文捕获及各相位许可不变。
+
+完整决策、兼容变化、日志和单测/E2E矩阵见38§6–7：锁定中文释义不能冒充跟读、重复目标可通过、零LLM、否定/问句不skip、quiz不退化及多用户隔离；同lesson trace区分repeat规则来源与quiz。当前仅设计准入，产品实现与同树全量待验，不以旧树结果代替。36统一提交、37新库迁移及真人声学质量不在本片实施范围。
+首片不新增意图澄清：否定/问句只保证不误执行控制；repeating未匹配留当前，quiz非命令仍按普通答案规则，可能wrong并消耗机会，不承诺保机会或完全不推进。

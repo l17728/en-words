@@ -1,0 +1,246 @@
+{
+  "scope": "isolated component targeted tests, not production integration",
+  "files": [
+    {
+      "draft": "pilot-v2-schema-module.go.draft",
+      "destination": "pilot_schema.go",
+      "draft_sha256_initial": "387f7859d2887c336144e1670bcb2bbce45c022a9011bf962a2d623b1c0cf3a7",
+      "draft_sha256_current": "387f7859d2887c336144e1670bcb2bbce45c022a9011bf962a2d623b1c0cf3a7",
+      "draft_unchanged": true,
+      "isolated_sha256": "2c8608ceed5c589bc1d75afe84580994f3c7cf0d71f5aa37d93b8884f78966b8",
+      "source_equals_private_transform": true
+    },
+    {
+      "draft": "pilot-v2-schema-verifier.go.draft",
+      "destination": "pilot_schema_verifier.go",
+      "draft_sha256_initial": "0ffc8c512e3c309f307723e44d827bc8c5b1549d64e50f4a0c7b0ff38655e6cf",
+      "draft_sha256_current": "0ffc8c512e3c309f307723e44d827bc8c5b1549d64e50f4a0c7b0ff38655e6cf",
+      "draft_unchanged": true,
+      "isolated_sha256": "ffa5e1082f1f1303442d00f15ef0ace8d21beae440669d6b4154ac87b6e04494",
+      "source_equals_private_transform": true
+    },
+    {
+      "draft": "pilot-legacy-runtime-audit.go.draft",
+      "destination": "pilot_legacy_audit.go",
+      "draft_sha256_initial": "c8853c61514453ddcb29fa877b7eb14c6c1215c3947a5a70ed05a0ac24aa7e93",
+      "draft_sha256_current": "c8853c61514453ddcb29fa877b7eb14c6c1215c3947a5a70ed05a0ac24aa7e93",
+      "draft_unchanged": true,
+      "isolated_sha256": "17a3e7408739725a7fe830eefdcd0cb19a0d630b6a840e1f99a401d3a0d72423",
+      "source_equals_private_transform": true
+    },
+    {
+      "draft": "pilot-legacy-bridge.go.draft",
+      "destination": "pilot_legacy_bridge.go",
+      "draft_sha256_initial": "45bda73f536ea143bdff37afaa2cbd1b56501bd052bed10265f149b79438ffd9",
+      "draft_sha256_current": "45bda73f536ea143bdff37afaa2cbd1b56501bd052bed10265f149b79438ffd9",
+      "draft_unchanged": true,
+      "isolated_sha256": "22a3057f89159cc9e4a44097ac2957a4828d6d3b7143ce69a8731557ba1b5804",
+      "source_equals_private_transform": true
+    },
+    {
+      "draft": "pilot-scope-row.go.draft",
+      "destination": "pilot_scope.go",
+      "draft_sha256_initial": "7cc2abb0bafe6b0c2ca1525058edb7ac52f0028453b875a583f8133080bb92c5",
+      "draft_sha256_current": "7cc2abb0bafe6b0c2ca1525058edb7ac52f0028453b875a583f8133080bb92c5",
+      "draft_unchanged": true,
+      "isolated_sha256": "a79b568d53090328f5fc19dff50a84ff7d9d5f8d5348912dcdb36a14bbe22c8f",
+      "source_equals_private_transform": true
+    },
+    {
+      "draft": "pilot-created-baseline.go.draft",
+      "destination": "pilot_created_codec.go",
+      "draft_sha256_initial": "1f6d9b542a67d06f8c3ace2efa26b962462119e531b449888d131066c2b6b456",
+      "draft_sha256_current": "1f6d9b542a67d06f8c3ace2efa26b962462119e531b449888d131066c2b6b456",
+      "draft_unchanged": true,
+      "isolated_sha256": "86fec648e5e092e542604825dcd181902b2366944945a9e42af3d1127f35dfe6",
+      "source_equals_private_transform": true
+    },
+    {
+      "draft": "pilot-creation-plan.go.draft",
+      "destination": "pilot_creation_plan.go",
+      "draft_sha256_initial": "9a76f0c09578a5e6f3b12d3394605051ec2f486064b928cf346ffeb7a43cfa68",
+      "draft_sha256_current": "9a76f0c09578a5e6f3b12d3394605051ec2f486064b928cf346ffeb7a43cfa68",
+      "draft_unchanged": true,
+      "isolated_sha256": "e569ac6c2e5c657a4bd65dafd6a91acd0fdfe994ece64ac484ba5445005697c8",
+      "source_equals_private_transform": true
+    },
+    {
+      "draft": "pilot-identity.go.draft",
+      "destination": "pilot_identity.go",
+      "draft_sha256_initial": "4d6b81b5b6cde70949c3d5fb24805c0aa317ba5f31a103d5656dcd0b89577984",
+      "draft_sha256_current": "4d6b81b5b6cde70949c3d5fb24805c0aa317ba5f31a103d5656dcd0b89577984",
+      "draft_unchanged": true,
+      "isolated_sha256": "525a425d0a5221615b58594f2f586f88ddae45547ee0c3f8a6f64f2e74a77a06",
+      "source_equals_private_transform": true
+    },
+    {
+      "draft": "pilot-created-audit.go.draft",
+      "destination": "pilot_created_audit.go",
+      "draft_sha256_initial": "0f986244b7e7d19102961cf0c1d89b5cc07c4165e5c6836cfa38c897ff7132ba",
+      "draft_sha256_current": "0f986244b7e7d19102961cf0c1d89b5cc07c4165e5c6836cfa38c897ff7132ba",
+      "draft_unchanged": true,
+      "isolated_sha256": "5a5b0a577eb951c21f9563214aaeccbd115118eb490474e54b485621fd38ce36",
+      "source_equals_private_transform": true
+    },
+    {
+      "draft": "pilot-component-store.go.draft",
+      "destination": "pilot_store.go",
+      "draft_sha256_initial": "e4d9a33bc7be04a4b05cf2f793bae9353cfd805c9f7f2e3e24237a6990e03d2b",
+      "draft_sha256_current": "e4d9a33bc7be04a4b05cf2f793bae9353cfd805c9f7f2e3e24237a6990e03d2b",
+      "draft_unchanged": true,
+      "isolated_sha256": "ac8daef4e66cb7940e181e04e2b4f2c0c25d0a4e5520f7cf02be211659558cef",
+      "source_equals_private_transform": true
+    },
+    {
+      "draft": "pilot-legacy-bridge_test.go.draft",
+      "destination": "pilot_legacy_bridge_test.go",
+      "draft_sha256_initial": "f247448908f29f470aa22776b009ee9004448ca531c69e5a9acd60449788d738",
+      "draft_sha256_current": "f247448908f29f470aa22776b009ee9004448ca531c69e5a9acd60449788d738",
+      "draft_unchanged": true,
+      "isolated_sha256": "e2d235e5f354de44ea59bdd82b35a88506b6f5441359cdc3681978c163d6c539",
+      "source_equals_private_transform": true
+    },
+    {
+      "draft": "pilot-v2-schema-verifier_test.go.draft",
+      "destination": "pilot_schema_verifier_test.go",
+      "draft_sha256_initial": "33e3fef57bf9822ce2b79b17d8e93c784ab696feb6f46abbff3044e710001813",
+      "draft_sha256_current": "33e3fef57bf9822ce2b79b17d8e93c784ab696feb6f46abbff3044e710001813",
+      "draft_unchanged": true,
+      "isolated_sha256": "7be05028fdb7e0077bd617db02f786bcbd0eddccff72236cc9025bb0d6983705",
+      "source_equals_private_transform": true
+    },
+    {
+      "draft": "pilot-created-baseline_test.go.draft",
+      "destination": "pilot_created_codec_test.go",
+      "draft_sha256_initial": "8761bc689ecab5f5a5aaf2fd63bd172ab3ba1d5380a62e8caaea5f49539e7756",
+      "draft_sha256_current": "8761bc689ecab5f5a5aaf2fd63bd172ab3ba1d5380a62e8caaea5f49539e7756",
+      "draft_unchanged": true,
+      "isolated_sha256": "932f24491e7eace6e1c9f4947b98b6c2ec1c559c919231f5d5c7a6c99bc70f66",
+      "source_equals_private_transform": true
+    },
+    {
+      "draft": "pilot-identity_test.go.draft",
+      "destination": "pilot_identity_test.go",
+      "draft_sha256_initial": "248c9cf8b420098a29aa8c5f01dca2bee7337bcccb3b21873776ffcae4d92a09",
+      "draft_sha256_current": "248c9cf8b420098a29aa8c5f01dca2bee7337bcccb3b21873776ffcae4d92a09",
+      "draft_unchanged": true,
+      "isolated_sha256": "6028900b044aae95abb4fbc73852cee2bf83a0e16a9017298e5f6e35fe334bf1",
+      "source_equals_private_transform": true
+    },
+    {
+      "draft": "pilot-schema-matrix_test.go.draft",
+      "destination": "pilot_schema_matrix_test.go",
+      "draft_sha256_initial": "d2c5628e431978854a11e7acd200d671b0785046b76cec43ed40ff577ee7bd80",
+      "draft_sha256_current": "d2c5628e431978854a11e7acd200d671b0785046b76cec43ed40ff577ee7bd80",
+      "draft_unchanged": true,
+      "isolated_sha256": "e434cc22c177daa9853fb13a9a5bf2c4a18288a37049a9ad757b697bd57d4488",
+      "source_equals_private_transform": true
+    },
+    {
+      "draft": "pilot-created-audit_test.go.draft",
+      "destination": "pilot_created_audit_test.go",
+      "draft_sha256_initial": "b5a9b8dd37f36137833b1dc26908ddb37715fc46f9adf87dce3439c4bf608135",
+      "draft_sha256_current": "b5a9b8dd37f36137833b1dc26908ddb37715fc46f9adf87dce3439c4bf608135",
+      "draft_unchanged": true,
+      "isolated_sha256": "f6bdd537e976e84e8c9c95eed117fa6089e4da73dfc854fed7429831be0f466e",
+      "source_equals_private_transform": true
+    }
+  ],
+  "source_transform": "exact package declaration; replace three constructors/inspect/migrate names with private names",
+  "isolated_go_tree_sha256": "be4bffeaec39fadb6b31288773d38eabf0c464b91f80f7615739f6a0796bb782",
+  "production_unchanged": true,
+  "test_regex": "TestPilot",
+  "declared_new_tests": [
+    "TestPilotCreatedAuditRejectsActiveAndLegacyAttachedStatesDraft",
+    "TestPilotCreatedAuditRejectsFKValidFutureFactsDraft",
+    "TestPilotCreatedAuditRejectsFingerprintAndNonceDamageDraft",
+    "TestPilotCreatedAuditScopeBijectionDraft",
+    "TestPilotCreatedAuditUsesHistoricalFreezeNotCurrentAvailabilityDraft",
+    "TestPilotCreatedBaselineStrictDraft",
+    "TestPilotCreationAndNonceReplayFreezeDraft",
+    "TestPilotCreationCommitFailurePublishesNoReceiptDraft",
+    "TestPilotCreationObserverClassificationAndPrivacyDraft",
+    "TestPilotCreationRejectsOwnerAndConfigABADraft",
+    "TestPilotCreationReplayRejectsCorruptCheckpointDraft",
+    "TestPilotCreationReplayRejectsFrozenIdentityDamageDraft",
+    "TestPilotCreationReplayRejectsScopeDamageDraft",
+    "TestPilotCreationTwoPoolsDraft",
+    "TestPilotGuardFinishedTransactionNeverAuthorizesDraft",
+    "TestPilotGuardSavepointMustReestablishReservationDraft",
+    "TestPilotLegacyBridgeDurabilityIdempotencyAndCorruption",
+    "TestPilotLegacyBridgeFailedCommitPublishesNoPermission",
+    "TestPilotLegacyBridgeStrictCodec",
+    "TestPilotPersistedPlanRejectsAmbiguityAndInvalidDataDraft",
+    "TestPilotSchemaConcurrentTwoPoolsPrivateMigrationDraft",
+    "TestPilotSchemaCorruptionNeverFallsBackLegacyDraft",
+    "TestPilotSchemaCreatedDataAuditOnNewFacadeDraft",
+    "TestPilotSchemaDefaultOpenUnchangedAndCompleteMigrationDraft",
+    "TestPilotSchemaPermanentScopeTriggersRejectEveryReplacementDraft",
+    "TestPilotSchemaRealDeferredCommitFailureLeavesOriginalDatabaseDraft",
+    "TestPilotSchemaStartupCompatibilityAndExplicitMigrationGateDraft",
+    "TestPilotSchemaUppercaseObjectsCannotHideFromInspectionDraft",
+    "TestPilotSchemaWarmUppercaseG1FactsRejectedWithoutCookieChangeDraft",
+    "TestPilotVerifierRejectsAnotherPoolEvenForSameDatabaseDraft",
+    "TestPilotVerifierUncommittedCookieProofIsNotPublishedDraft"
+  ],
+  "passed_top_tests": [
+    "TestPilotCreatedAuditRejectsActiveAndLegacyAttachedStatesDraft",
+    "TestPilotCreatedAuditRejectsFKValidFutureFactsDraft",
+    "TestPilotCreatedAuditRejectsFingerprintAndNonceDamageDraft",
+    "TestPilotCreatedAuditScopeBijectionDraft",
+    "TestPilotCreatedAuditUsesHistoricalFreezeNotCurrentAvailabilityDraft",
+    "TestPilotCreatedBaselineStrictDraft",
+    "TestPilotCreationAndNonceReplayFreezeDraft",
+    "TestPilotCreationCommitFailurePublishesNoReceiptDraft",
+    "TestPilotCreationObserverClassificationAndPrivacyDraft",
+    "TestPilotCreationRejectsOwnerAndConfigABADraft",
+    "TestPilotCreationReplayRejectsCorruptCheckpointDraft",
+    "TestPilotCreationReplayRejectsFrozenIdentityDamageDraft",
+    "TestPilotCreationReplayRejectsScopeDamageDraft",
+    "TestPilotCreationTwoPoolsDraft",
+    "TestPilotGuardFinishedTransactionNeverAuthorizesDraft",
+    "TestPilotGuardSavepointMustReestablishReservationDraft",
+    "TestPilotLegacyBridgeDurabilityIdempotencyAndCorruption",
+    "TestPilotLegacyBridgeFailedCommitPublishesNoPermission",
+    "TestPilotLegacyBridgeStrictCodec",
+    "TestPilotPersistedPlanRejectsAmbiguityAndInvalidDataDraft",
+    "TestPilotSchemaConcurrentTwoPoolsPrivateMigrationDraft",
+    "TestPilotSchemaCorruptionNeverFallsBackLegacyDraft",
+    "TestPilotSchemaCreatedDataAuditOnNewFacadeDraft",
+    "TestPilotSchemaDefaultOpenUnchangedAndCompleteMigrationDraft",
+    "TestPilotSchemaPermanentScopeTriggersRejectEveryReplacementDraft",
+    "TestPilotSchemaRealDeferredCommitFailureLeavesOriginalDatabaseDraft",
+    "TestPilotSchemaStartupCompatibilityAndExplicitMigrationGateDraft",
+    "TestPilotSchemaUppercaseObjectsCannotHideFromInspectionDraft",
+    "TestPilotSchemaWarmUppercaseG1FactsRejectedWithoutCookieChangeDraft",
+    "TestPilotVerifierRejectsAnotherPoolEvenForSameDatabaseDraft",
+    "TestPilotVerifierUncommittedCookieProofIsNotPublishedDraft"
+  ],
+  "declared_tests_all_selected_and_passed": true,
+  "new_test_count": 31,
+  "r2_summary": {
+    "exit": 0,
+    "elapsed_seconds": 322.906,
+    "tests": {
+      "run": 216,
+      "output": 432,
+      "pass": 216
+    },
+    "top_level": {
+      "run": 31,
+      "output": 62,
+      "pass": 31
+    },
+    "failures": [],
+    "production_unchanged": true
+  },
+  "package_test_elapsed_seconds": [
+    46.176
+  ],
+  "r1_summary_sha256": "c59a8b19382d124af0e01327f9f7eed0778173c1398725a4f7dd285e8adf4631",
+  "r1_jsonl_sha256": "2d734cbff4f3b9193be22aa93a9370731459b8841d003a1e7fa0fed04beb53a2",
+  "r2_summary_sha256": "691633b17347a2ba85d9fd1253ad94c6919b98a3d413ec4bd9b1c0954820bc8c",
+  "r2_jsonl_sha256": "f02773e70ee201c3537f304b8c3864b91c5c2a1cb58758907867883c9668ebef",
+  "integrator_sha256": "0894670473ff66b055b8938de6e43c17ffeea8e8a89f28fdef51f8d3ff2885f7",
+  "integrator_tests_sha256": "93fc0c6e3ee470850373aefa8bf2d0597be8adb7041614ba11334b99d37b73b3"
+}

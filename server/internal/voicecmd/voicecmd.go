@@ -1,5 +1,5 @@
 // Package voicecmd 实现全程语音操作的确定性指令解析（D-14 / 01 FR-L / 02 §12.1）：
-// 词表匹配 + 归一化 + 编辑距离容错 + 反馈前缀捕获；不经 LLM，误识别率低、可单测。
+// 完整词表匹配 + 安全归一化 + 独立反馈前缀捕获；不经 LLM，误识别率低、可单测。
 package voicecmd
 
 import (
@@ -7,6 +7,8 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"golang.org/x/text/unicode/norm"
 )
 
 // 指令集（01 FR-L1/L3）。
@@ -66,64 +68,36 @@ func New(t Table) *Parser {
 	return &Parser{table: t, cmds: cmds}
 }
 
-// normalize 归一化：去空白/标点（中英）、容忍首尾语气词。
-func normalize(s string) string {
-	var b strings.Builder
-	for _, r := range s {
-		if r == ' ' || r == '\t' || r == '！' || r == '。' || r == '，' || r == '？' ||
-			r == '!' || r == '.' || r == ',' || r == '?' {
-			continue
-		}
-		b.WriteRune(r)
+// normalizeControl preserves negation, questions, quotations and internal punctuation.
+// This is a command grammar, not the duplex transcript-agreement normalization.
+func normalizeControl(s string) string {
+	if !utf8.ValidString(s) || utf8.RuneCountInString(s) > 2048 {
+		return ""
 	}
-	out := b.String()
-	// 首尾语气词剥离（循环两层：嗯嗯/啊啊）
-	for pass := 0; pass < 2; pass++ {
-		for _, p := range []string{"嗯", "啊", "哦", "呃", "呀", "诶"} {
-			out = strings.TrimPrefix(out, p)
-			out = strings.TrimSuffix(out, p)
+	s = strings.Join(strings.Fields(strings.ToLower(norm.NFC.String(s))), " ")
+	runes := []rune(s)
+	if len(runes) > 0 && strings.ContainsRune(".。!！", runes[len(runes)-1]) {
+		before := strings.TrimSpace(string(runes[:len(runes)-1]))
+		prior := []rune(before)
+		if len(prior) == 0 || !unicode.IsPunct(prior[len(prior)-1]) {
+			s = before
 		}
 	}
-	return out
+	return s
 }
 
-// Match 教学指令匹配：精确触发词 → 触发词前缀（长词优先）→ 编辑距离 ≤1 容错。
-// 遍历按 cmds 固定序（确定性）。返回 (指令, 是否命中)。
+// Match grants control only for a complete explicitly configured command.
 func (p *Parser) Match(text string) (string, bool) {
-	n := normalize(text)
+	n := normalizeControl(text)
 	if n == "" {
 		return "", false
 	}
-	// 1) 精确/前缀（长触发词优先，避免"跳过这个词"被"跳过"截胡歧义）
-	bestCmd, bestLen := "", 0
 	for _, cmd := range p.cmds {
 		if cmd == CmdFeedback {
 			continue
 		}
-		for _, w := range p.table[cmd] {
-			wn := normalize(w)
-			if wn == "" {
-				continue
-			}
-			if n == wn {
-				return cmd, true
-			}
-			if strings.HasPrefix(n, wn) && len(wn) > bestLen {
-				bestCmd, bestLen = cmd, len(wn)
-			}
-		}
-	}
-	if bestCmd != "" {
-		return bestCmd, true
-	}
-	// 2) 编辑距离 ≤1 容错（"下一下"→"下一个"）
-	for _, cmd := range p.cmds {
-		if cmd == CmdFeedback {
-			continue
-		}
-		for _, w := range p.table[cmd] {
-			wn := normalize(w)
-			if len([]rune(wn)) >= 2 && editDistanceLE1(n, wn) {
+		for _, word := range p.table[cmd] {
+			if n == normalizeControl(word) {
 				return cmd, true
 			}
 		}
@@ -171,43 +145,4 @@ func (p *Parser) MatchFeedback(text string) (string, string, bool) {
 // AllowedInQuiz 测试作答阶段指令白名单（02 §12.1：仅跳过与反馈生效）。
 func (p *Parser) AllowedInQuiz(cmd string) bool {
 	return cmd == CmdSkip || cmd == CmdFeedback
-}
-
-// editDistanceLE1 编辑距离 ≤1（中文短词容错）。
-func editDistanceLE1(a, b string) bool {
-	ra, rb := []rune(a), []rune(b)
-	if len(ra) != len(rb) {
-		// 长度不等：仅允许差 1 且为插入/删除
-		long, short := ra, rb
-		if len(short) > len(long) {
-			long, short = short, long
-		}
-		if len(long)-len(short) != 1 {
-			return false
-		}
-		i, j, skipped := 0, 0, false
-		for i < len(long) && j < len(short) {
-			if long[i] == short[j] {
-				i++
-				j++
-				continue
-			}
-			if skipped {
-				return false
-			}
-			skipped = true
-			i++
-		}
-		return true
-	}
-	diff := 0
-	for i := range ra {
-		if ra[i] != rb[i] {
-			diff++
-			if diff > 1 {
-				return false
-			}
-		}
-	}
-	return diff <= 1
 }
