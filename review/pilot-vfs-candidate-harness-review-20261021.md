@@ -41,3 +41,18 @@ The Linux workflow was pushed at commit `7136cc8401f3b68799d34aad1d82867c33976bb
 4. Complete the later private VFS, RunRoot/logger transactional closure, API/UI, and isolated multi-user Playwright/real-classroom gates in their documented sequence.
 
 5. Restore GitHub Actions billing/limits or provide an authorized Linux runner, then rerun the pushed workflow and update this record from its artifacts.
+
+## Evidence-permission follow-up (2026-10-21)
+
+The artifact runner now rejects a symlink at the supplied directory leaf, pins the newly created directory with a no-follow FD, verifies the path still identifies the same inode after the subprocess, and uses FD-relative reads, enumeration, and exclusive writes for all post-run evidence. Entries must be singly-linked regular files and are restricted to `0600`; the directory is `0700`. A detected path swap or unsafe entry emits a failed JSON record on runner stdout and does not write through the supplied path.
+
+Exact-snapshot test-design review: **PASS**. The Linux-only tests cover leaf symlink rejection, entry symlink, FIFO, directory, hardlink, injected entry symlink, whole-directory replacement during subprocess, output modes, hashes, and refusal to overwrite prior evidence. The test reviewer verified hashes and test design but did not execute Linux tests. Current hashes:
+
+| File | SHA-256 |
+|---|---|
+| `docs/56-pinned-sqlite-golden-harness-delta.md` | `C035EBD2C9EBFA8DC21BAE758022BA5A0421FA140B1B553B7947CD3B458D8775` |
+| `review/run_pilot_vfs_candidate.py` | `DC857AC2A9CB16D6A91ED54FFAF28E1DA0FC848D27E807244532A241CB31CDF9` |
+| `review/test_pilot_vfs_candidate_runner.py` | `A65F097DDBB323EC97C1DD26553A2B8C87C86E2F7D712B299D575CDA3A82B51A` |
+| .github/workflows/pilot-control-cgo.yml | 3217A6BD5D80AF23AAF71A7298FD8274A05B2AC71F802445C19AD5335BABB5EE |
+
+Windows Python compilation passes. The portable lock-trace validator passes; six POSIX/Linux tests are skipped on Windows, so they still require Linux execution. This hardening does not change the acceptance boundary: callback candidates only; lock traces remain uncorrelated and runtime/VFS goldens remain NOT RUN.
