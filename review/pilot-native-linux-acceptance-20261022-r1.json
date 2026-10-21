@@ -1,0 +1,118 @@
+{
+  "source_before": "a622c5e6ede3720dc70b5a3aff15c9b24a5fdc5d257ca08d62384d864275e6d3",
+  "source_after": "a622c5e6ede3720dc70b5a3aff15c9b24a5fdc5d257ca08d62384d864275e6d3",
+  "source_unchanged": true,
+  "go_before": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+  "go_after": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+  "env": {
+    "GOROOT": "/tmp/enwords-pilot-linux-acceptance-20261022/go",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOPATH": "/root/go",
+    "GOCACHE": "/tmp/enwords-pilot-linux-acceptance-20261022/acceptance-native-r1/cache",
+    "GOTMPDIR": "/tmp/enwords-pilot-linux-acceptance-20261022/acceptance-native-r1/tmp",
+    "TMPDIR": "/tmp/enwords-pilot-linux-acceptance-20261022/acceptance-native-r1/work",
+    "CGO_ENABLED": "1",
+    "CC": "/usr/bin/gcc"
+  },
+  "cwd": "/tmp/enwords-pilot-linux-acceptance-20261022/server",
+  "results": [
+    {
+      "stage": "control-test",
+      "command": [
+        "/tmp/enwords-pilot-linux-acceptance-20261022/go/bin/go",
+        "test",
+        "-count=1",
+        "-json",
+        "-timeout=180s",
+        "./internal/pilotcontrol"
+      ],
+      "exit": 0,
+      "elapsed_s": 44.0396620798856,
+      "stop_reason": null,
+      "disk_before": 2478051328,
+      "disk_min": 2284085248,
+      "disk_after": 2359783424
+    },
+    {
+      "stage": "supervisor-test",
+      "command": [
+        "/tmp/enwords-pilot-linux-acceptance-20261022/go/bin/go",
+        "test",
+        "-count=1",
+        "-json",
+        "-tags=pilot_e2e",
+        "-timeout=180s",
+        "./internal/pilotsupervisor"
+      ],
+      "exit": 1,
+      "elapsed_s": 42.04211728833616,
+      "stop_reason": null,
+      "disk_before": 2359779328,
+      "disk_min": 2183188480,
+      "disk_after": 2294738944
+    }
+  ],
+  "scope": "isolated committed branch uploaded by parent; native Linux amd64 Go1.27.3 CGO",
+  "counts": {
+    "control-test": {
+      "pass": 23,
+      "top_pass": 23
+    },
+    "supervisor-test": {
+      "pass": 644,
+      "top_pass": 199,
+      "fail": 23,
+      "top_fail": 3
+    }
+  },
+  "failures": [
+    "TestHostLoggerServiceRegistrationChannelAndUnregister",
+    "TestCreateRunRootLinuxOnOwnedExt4Anchor",
+    "TestVerifiedRoot/ROOT-01",
+    "TestVerifiedRoot/ROOT-08/structured_log_fields",
+    "TestVerifiedRoot/ROOT-11/posix_readonly_fd",
+    "TestVerifiedRoot/ROOT-02/extra_entry_open_root",
+    "TestVerifiedRoot/ROOT-02/extra_entry_open_directory",
+    "TestVerifiedRoot/ROOT-02/extra_entry_open_member",
+    "TestVerifiedRoot/ROOT-02/case_variant",
+    "TestVerifiedRoot/ROOT-02/symlink",
+    "TestVerifiedRoot/ROOT-03/hardlink",
+    "TestVerifiedRoot/ROOT-03/wrong_type",
+    "TestVerifiedRoot/ROOT-03/wrong_mode",
+    "TestVerifiedRoot/ROOT-13/stable_nameset",
+    "TestVerifiedRoot/ROOT-14/unknown_enum",
+    "TestVerifiedRoot/ROOT-14/missing_member",
+    "TestVerifiedRoot/ROOT-14/closed_member",
+    "TestVerifiedRoot/ROOT-07/close_unknown",
+    "TestVerifiedRoot/ROOT-07/binding_close_unknown_stops_root_close",
+    "TestVerifiedRoot/ROOT-07/close_drain_observes_unknown_close",
+    "TestVerifiedRoot/ROOT-07/child_close_drain_observes_unknown_close",
+    "TestVerifiedRoot/ROOT-15/queued_operation_stops_after_poison",
+    "TestVerifiedRoot"
+  ],
+  "classification": "BLOCKED_ENVIRONMENT_PRECONDITIONS",
+  "root_causes": [
+    "Host Logger service fixture uses current euid/egid; running as root sets 0 and production newHostLoggerService rejects UID/GID 0 at logger_service_linux.go:119.",
+    "PILOT_FS_TEST_ROOT not set; RunRoot and VerifiedRoot tests explicitly reject missing dedicated ext4/XFS fixture root."
+  ],
+  "not_run": [
+    "control-race",
+    "supervisor-race",
+    "control-vet",
+    "supervisor-vet"
+  ],
+  "logs_sha256": {
+    "control-test.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "control-test.stdout": "8ebb1d61dc8399558a132ea6dcf01f54e5ba1d1ac62cc32c88af026c5c6610fd",
+    "driver-exit.json": "bfdedf06596faa2042b0fedd9653ec1023d2e96ed56dc40b607985bc8438c1d5",
+    "driver.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driver.stdout": "15732d5d6609e1afec4c6234527e3fcb23c3127bd2e81bed18669abd7c260d89",
+    "results.json": "24eab832c30d083a3e3d10c2f86fed83e1cf73f6bb6cca8c2c42f82ca88e7612",
+    "source-after.json": "b3ccb954373174bd589f10553938f40d7fbd2cba0b087ff8a90c25fb28eeb4c2",
+    "source-before.json": "b3ccb954373174bd589f10553938f40d7fbd2cba0b087ff8a90c25fb28eeb4c2",
+    "summary.json": "3a0e0c9bf8560b00fcbc2f24035df809340c6402a09fe1ec959a6be9adf59af5",
+    "supervisor-test.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "supervisor-test.stdout": "181383585c88e87a32317966cb73c9ea4aaddc7e37e606c6de0b112a2afddfb5"
+  }
+}
