@@ -1,0 +1,26 @@
+{
+  "review_id": "pilot-catalog-sdd-security-review-20261019-r5",
+  "date": "2026-10-19",
+  "artifact": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "scope": ["§42", "§108", "§109 bootstrap/startup", "§109.2", "§109.3", "§109.4"],
+  "review_type": "read-only design security review",
+  "decision": "PASS",
+  "blockers": [],
+  "findings": [],
+  "acceptance_clarifications": [
+    "For an existing catalog, hold the global catalog lock across complete-chain validation and startup file Sync; release before any case lock/authorization.",
+    "Define absent-catalog artifact scan to include case directories and per-case lock objects, while excluding the expected persistent catalog.bootstrap.lock."
+  ],
+  "checks": {
+    "startup_mutex_and_bootstrap_lock_stability": "PASS_BY_DESIGN",
+    "startup_catalog_and_parent_sync_before_case_authorization": "PASS_BY_DESIGN",
+    "absent_catalog_with_residual_case_artifacts": "FAIL_CLOSED_BY_DESIGN",
+    "initial_provisioning_before_case_artifacts": "PASS_BY_DESIGN",
+    "provisioning_recovery_restriction_and_shared_lock_identity": "PASS_BY_DESIGN",
+    "lock_order_deadlock": "NONE_IDENTIFIED",
+    "authorization_bypass_or_case_id_reuse": "NONE_IDENTIFIED"
+  },
+  "tests_run": false,
+  "code_changed": false,
+  "limitations": "PASS applies to design text only; bootstrap mutex, catalog synchronization, artifact scanning, and platform durability were not executed or verified."
+}

@@ -1,0 +1,17 @@
+{
+  "review":"pilot-start-kernel-sdd-architecture-review4",
+  "date":"2026-10-16",
+  "source":"docs/41-试点课堂Start持久迁移内核SDD.md",
+  "source_sha256":"0a26c33db1ee14a72b486cd2cda8aa53073d6f32e5240fee1bd7e9a768022b12",
+  "status":"blocked_pending_contract_closure",
+  "blocker_count":2,
+  "prior_audit_count_p3":"closed",
+  "approved":["D15 two Registry tools and two audits", "Initial State codec fields", "Explicit active room_facts and outbox ownership", "Existing DDL timestamps and pending lease constraints", "Fixed Agent-owned T01 API proposal", "Current authorization and frozen creation content", "Test-only artifact boundaries"],
+  "blockers":[
+    {"id":"START4-01","severity":"P2","section":"4","finding":"Per-lesson created lifecycle dispatch invokes a whole-database created-only auditor, rejecting valid mixed A-active/B-created state","evidence":"server/internal/store/pilot_created_audit.go:110-160","required":"Split global integrity checks from per-lesson immutable creation and lifecycle checks; test mixed lifecycle cold audit, nonce replay and B Start"},
+    {"id":"START4-02","severity":"P2","section":"3","finding":"Bundle exactly-once generation, execution timing, request cancellation and lost in-memory bundle recovery lack one executable ownership contract","evidence":"docs41 transaction step5 and immutable bundle retry rules; server/internal/api/agenttools.go:81","required":"Fix first execution point and private command-bound bundle ownership; distinguish request context from task/budget; receipt replay must not regenerate tools; explicitly define uncommitted bundle loss and same-command concurrency"}
+  ],
+  "nonblocking":["Meanings belong to frozen effect context/outbox, not index-only tool args or summary audit", "Mapping version is protocol-defined, not a new persisted audit column", "Do not classify unrelated legacy audits as pilot orphan rows"],
+  "execution":{"tests":false,"builds":false,"services":false,"product_changes":false,"documents_changed":false,"reports_written":true},
+  "report":"review/pilot-start-kernel-sdd-architecture-review4-20261016.md"
+}

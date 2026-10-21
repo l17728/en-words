@@ -1,0 +1,24 @@
+{
+  "review": "pilot-start-kernel-sdd-backend-review13",
+  "date": "2026-10-16",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "scope": "read-only backend review of BE12-1/2 closure, modernc SQLite VFS cross-platform contract, and new blockers",
+  "code_modified": false,
+  "docs_modified": false,
+  "tests_run": false,
+  "verdict": "PASS_WITH_IMPLEMENTATION_GATES",
+  "findings": [],
+  "checks": {
+    "verified_handle_consumed_by_sqlite_vfs": "PASS",
+    "path_or_dsn_reopen_prohibited": "PASS",
+    "cleanup_catalog_preflight_and_fail_closed": "PASS",
+    "quarantine_durability_and_permanent_tombstone": "PASS",
+    "cross_platform_vfs_contract": "PASS_WITH_IMPLEMENTATION_GATE",
+    "new_design_blockers": "NONE"
+  },
+  "implementation_gates": [
+    "Implement and verify modernc VFS over the exact OpenVerified handle; do not accept path/DSN identity fallback.",
+    "Verify WAL/SHM/journal, locking, and shared-memory callbacks use the verified directory object on Windows and POSIX.",
+    "Fault-inject catalog initialization, atomic replace, sync failure, crash recovery, and fixed lock ordering."
+  ]
+}

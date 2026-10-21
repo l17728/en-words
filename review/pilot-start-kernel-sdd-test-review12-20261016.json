@@ -1,0 +1,31 @@
+﻿{
+  "review": "pilot-start-kernel-sdd-test-review12",
+  "date": "2026-10-16",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "domain": "test design and acceptance contract",
+  "verdict": "BLOCK",
+  "tests_run": false,
+  "review11_findings": [
+    {"topic": "ACL/file identity before every receipt lookup", "status": "CLOSED", "sections": [42, 47, 52, 93]},
+    {"topic": "cleanup failure durable quarantine and no reuse", "status": "CLOSED", "sections": [42, 93, 96]}
+  ],
+  "findings": [
+    {
+      "id": "P2-1",
+      "severity": "P2",
+      "status": "open",
+      "title": "Loopback security negative matrix omits declared request gates",
+      "sections": [74, 96],
+      "evidence": "§96 mandates Sec-Fetch-Site=same-origin, Bearer-only auth, no cookie auth, OPTIONS write preflight rejection, no wildcard listener, and no token in URL/storage. Its explicit test list covers cross-origin, fake Host, no Origin/CSRF, content type, and GET only.",
+      "required_change": "Add independent tests for cross-site Sec-Fetch-Site with otherwise-valid headers, cookie-only and missing/invalid Bearer, OPTIONS/CORS behavior, listener bound address 127.0.0.1 only, and CSRF token absent from URL/browser storage. Each rejection must occur before Coordinator/Planner/Registry; retain valid same-origin control."
+    }
+  ],
+  "reviewed_areas": {
+    "receipt_degraded_recovery": "PASS",
+    "receipt_acl_and_file_identity": "PASS",
+    "cleanup_quarantine": "PASS",
+    "permit_once_and_binding": "PASS",
+    "ACL_key_negative_matrix": "PASS",
+    "loopback_request_security_matrix": "GAP"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "review_id": "pilot-start-kernel-sdd-security-review5-20261016",
+  "date": "2026-10-16",
+  "reviewer_domain": "security",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_type": "read-only design review",
+  "compared_against": "review/pilot-start-kernel-sdd-security-review4-20261016.json",
+  "focus": [
+    "Windows reparse-point rejection",
+    "StartReceipt fingerprint exposure",
+    "panic rollback and redaction",
+    "T-01 nickname and frozen meanings",
+    "pilot audit mapping"
+  ],
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "approved_for_narrow_test_only_design_no_security_design_blocker",
+  "summary": "All round-4 conditions are explicitly addressed. The new T-01 and classroom.show_word contracts bind personal greeting and word/meaning content to verified test identity and frozen lesson data; persisted audit arguments remain allowlisted. The database SHA-256 fingerprint is not a confidentiality mechanism, but API/log exposure is explicitly prohibited.",
+  "round4_dispositions": [
+    {
+      "finding_id": "PSK-SEC4-01",
+      "disposition": "closed",
+      "evidence": "§5 canonicalizes harness/DB paths, checks every component for FILE_ATTRIBUTE_REPARSE_POINT, rejects symlink/junction/mount point/other reparse points, and verifies final containment before SQLite open."
+    },
+    {
+      "finding_id": "PSK-SEC4-02",
+      "disposition": "closed_for_api_and_logs",
+      "evidence": "§4 public StartReceipt excludes request_fingerprint and candidate summary; §6 E2E asserts no fingerprint in API response; logs exclude fingerprint. The database retains SHA-256 as integrity/idempotency metadata, not confidentiality."
+    },
+    {
+      "finding_id": "PSK-SEC4-03",
+      "disposition": "closed_in_test_plan",
+      "evidence": "§6 injects panic sentinels in both handlers and checks rollback/no new rows, discarded task-local audit, connection rollback/isolation, and fixed redacted HTTP/log output with no panic value or stack."
+    }
+  ],
+  "new_surface_review": {
+    "T01_nickname": "approved",
+    "show_word_frozen_content": "approved",
+    "task_local_audit_and_args_allowlist": "approved",
+    "outbox_bounds_and_order": "approved",
+    "principal_task_scope_and_expiry": "approved"
+  },
+  "remaining_blocker_count": 0,
+  "remaining_conditions": [
+    "Preserve the no-fingerprint API/log contract in implementation; SHA-256 is not redaction, anonymization or encryption.",
+    "Protect direct access to the isolated temporary SQLite database; low-entropy candidate values remain guessable from a stored digest by anyone who can read the database."
+  ],
+  "limitations": [
+    "No tests, build-artifact inspection, path manipulation, panic injection, database access checks, or runtime authorization checks were performed.",
+    "Approval is limited to this isolated test-only Start design and does not establish implementation correctness, production readiness, or classroom readiness."
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "review":"pilot-catalog-sdd-architecture-review",
+  "date":"2026-10-19",
+  "source":"docs/41-试点课堂Start持久迁移内核SDD.md",
+  "source_sha256":"20da1d695556bf451a2533cd6325343c55fee59d99f201db66ba7a4b874c21c4",
+  "scope":["109","42","56","108"],
+  "status":"BLOCKED",
+  "blocker_count":2,
+  "blockers":[
+    {"id":"CAT-01","severity":"P2","finding":"Single-Start catalog dispositions and exclusive whole-case operation lock conflict with existing same-case multi-lesson concurrency and new-command-after-terminal behavior","required":"Define a case-session authorization/settlement boundary or explicitly narrow to one Start per case and update affected acceptance claims"},
+    {"id":"CAT-02","severity":"P2","finding":"cleanup_quarantined denies all opens but interrupted cleanup has no authorized restart path to reach deleted","required":"Define cleanup-only supervisor authorization with safe remaining-object opens, no SQLite/receipt/child, and idempotent continuation to deleted; or explicitly require manual repair"}
+  ],
+  "approved":["Catalog as global persistent authorization source", "Strict framed canonical format and CRC non-authenticity boundary", "Case-before-catalog nested lock order with optimistic read released first", "Durable quarantine before deletion and permanent deleted tombstones", "Complete valid frame restart authority independent of prior acknowledgement"],
+  "nonblocking":["Reconcile old Sync-uncertainty startup wording with complete-frame restart rule", "Serialize concurrent first initialization before classifying empty file", "Avoid nested acquisition of non-reentrant case locks via held authorization context", "Precheck projected journal limits; full-chain validation is bounded O(N)", "Keep case lock identity stable across directory deletion"],
+  "execution":{"tests":false,"builds":false,"services":false,"spec_or_source_edits":false},
+  "report":"review/pilot-catalog-sdd-architecture-review-20261019.md"
+}

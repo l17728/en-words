@@ -1,0 +1,30 @@
+﻿{
+  "review_id": "pilot-start-kernel-sdd-backend-review4-20261016",
+  "reviewer_domain": "backend_sqlite_persistence",
+  "reviewed_document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "reviewed_at": "2026-10-16",
+  "mode": "read_only_no_tests",
+  "overall": "BLOCK",
+  "summary": "BE3-1..10 在文档层均已闭环；新发现 Store/API 跨 package unexported 调用不可实现，以及 TeacherInput 引用了当前不存在的 LessonOrdinal 字段。",
+  "previous_findings": [
+    {"id":"BE3-1","status":"CLOSED","evidence":"Registry Result=ok; queued/pending are separated across receipt/outbox."},
+    {"id":"BE3-2","status":"CLOSED_DOCUMENT_CONTRACT","evidence":"One auditPilotLifecycleTx dispatch is specified across listed facades."},
+    {"id":"BE3-3","status":"CLOSED_DOCUMENT_CONTRACT","evidence":"pilot-audit-map/v1 explicitly maps the raw Registry Args while preserving raw audit result/timing."},
+    {"id":"BE3-4","status":"CLOSED_DOCUMENT_CONTRACT","evidence":"Isolated App, task, private contexts, local Registry auditor and two bounded calls are specified."},
+    {"id":"BE3-5","status":"CLOSED_DOCUMENT_CONTRACT","evidence":"v2 DDL is unchanged; strict active verifier is required."},
+    {"id":"BE3-6","status":"CLOSED","evidence":"Receipt lookup precedes CAS and unknown commit remains pending_unknown without rollback inference."},
+    {"id":"BE3-7","status":"CLOSED","evidence":"Outbox kind and typed normalized payloads distinguish Registry input from output."},
+    {"id":"BE3-8","status":"CLOSED_DOCUMENT_CONTRACT","evidence":"Per-file build tag and production package graph exclusion checks are specified."},
+    {"id":"BE3-9","status":"CLOSED","evidence":"Post-commit response drop checks committed rows independently; pre-commit no-record claim requires proven rollback."},
+    {"id":"BE3-10","status":"CLOSED","evidence":"State codec fields and v2 row mapping are frozen."}
+  ],
+  "findings": [
+    {"id":"BE4-1","status":"BLOCK","priority":"P1","title":"API package cannot call suggested unexported Store methods or construct Store opaque actor","recommendation":"Freeze a compilable cross-package API with non-forgeable opaque capability creation/verification in Store; or move orchestration into one package. Avoid any/SQL callbacks/public arbitrary fields."},
+    {"id":"BE4-2","status":"BLOCK","priority":"P1","title":"TeacherInput.LessonOrdinal does not exist in current code","recommendation":"Remove the nonexistent field and gate Decide using verified server-side ordinal, or explicitly design the type extension and all call-site defaults/regressions."},
+    {"id":"BE4-3","status":"APPROVE_WITH_CLARIFICATION","priority":"P2","title":"Audit map schema_version meaning ambiguous","recommendation":"Define whether it versions the tool argument schema or remove it as redundant with pilot-audit-map/v1; document upgrade rules."},
+    {"id":"BE4-4","status":"APPROVE_WITH_CLARIFICATION","priority":"P2","title":"Trusted nickname snapshot source/normalization is underspecified","recommendation":"Name the authoritative account field and define one normalization/freeze point consistently used by middleware, Store replay validation and greeting fingerprint."}
+  ],
+  "implementation_authorized": false,
+  "tests_run": false,
+  "code_modified": false
+}

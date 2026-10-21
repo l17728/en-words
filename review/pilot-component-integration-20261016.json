@@ -1,0 +1,119 @@
+{
+  "status": "integrated_private_unreachable_component_full_acceptance_pending",
+  "source_report_sha256": "56f3bac5595d672e742e30353eedc706fc34488f0cb3241117666da64ee06858",
+  "integration_note": "One test file differs from isolated copy only in newline bytes before gofmt; all 16 normalized source texts match.",
+  "files": [
+    {
+      "path": "server/internal/store/pilot_schema.go",
+      "before_gofmt_sha256": "2c8608ceed5c589bc1d75afe84580994f3c7cf0d71f5aa37d93b8884f78966b8",
+      "isolated_sha256": "2c8608ceed5c589bc1d75afe84580994f3c7cf0d71f5aa37d93b8884f78966b8",
+      "normalized_text_equal": true,
+      "sha256": "ec813f74f173f05b7998e255cab0235966ab6345ec3c0a1add723ddec06ac4d4"
+    },
+    {
+      "path": "server/internal/store/pilot_schema_verifier.go",
+      "before_gofmt_sha256": "ffa5e1082f1f1303442d00f15ef0ace8d21beae440669d6b4154ac87b6e04494",
+      "isolated_sha256": "ffa5e1082f1f1303442d00f15ef0ace8d21beae440669d6b4154ac87b6e04494",
+      "normalized_text_equal": true,
+      "sha256": "3290fa6f1d95c349e75858a0e3f3e8515620a064871ff5375b3de864372e2be3"
+    },
+    {
+      "path": "server/internal/store/pilot_legacy_audit.go",
+      "before_gofmt_sha256": "17a3e7408739725a7fe830eefdcd0cb19a0d630b6a840e1f99a401d3a0d72423",
+      "isolated_sha256": "17a3e7408739725a7fe830eefdcd0cb19a0d630b6a840e1f99a401d3a0d72423",
+      "normalized_text_equal": true,
+      "sha256": "217d628f97692f7b82f2f87dc8104912216736e5a5a2a15654f09cab8d7bcb74"
+    },
+    {
+      "path": "server/internal/store/pilot_legacy_bridge.go",
+      "before_gofmt_sha256": "22a3057f89159cc9e4a44097ac2957a4828d6d3b7143ce69a8731557ba1b5804",
+      "isolated_sha256": "22a3057f89159cc9e4a44097ac2957a4828d6d3b7143ce69a8731557ba1b5804",
+      "normalized_text_equal": true,
+      "sha256": "621eb712dd48e3706eced5b98a91c542ac344fa18b4bef2aac65e29e578c3d8b"
+    },
+    {
+      "path": "server/internal/store/pilot_scope.go",
+      "before_gofmt_sha256": "a79b568d53090328f5fc19dff50a84ff7d9d5f8d5348912dcdb36a14bbe22c8f",
+      "isolated_sha256": "a79b568d53090328f5fc19dff50a84ff7d9d5f8d5348912dcdb36a14bbe22c8f",
+      "normalized_text_equal": true,
+      "sha256": "a79b568d53090328f5fc19dff50a84ff7d9d5f8d5348912dcdb36a14bbe22c8f"
+    },
+    {
+      "path": "server/internal/store/pilot_created_codec.go",
+      "before_gofmt_sha256": "86fec648e5e092e542604825dcd181902b2366944945a9e42af3d1127f35dfe6",
+      "isolated_sha256": "86fec648e5e092e542604825dcd181902b2366944945a9e42af3d1127f35dfe6",
+      "normalized_text_equal": true,
+      "sha256": "fe1c6acc198ce5b8c39e08b6a5896d0ecc4afdd0be6be87a713f23e9f4b23d9e"
+    },
+    {
+      "path": "server/internal/store/pilot_creation_plan.go",
+      "before_gofmt_sha256": "e569ac6c2e5c657a4bd65dafd6a91acd0fdfe994ece64ac484ba5445005697c8",
+      "isolated_sha256": "e569ac6c2e5c657a4bd65dafd6a91acd0fdfe994ece64ac484ba5445005697c8",
+      "normalized_text_equal": true,
+      "sha256": "3ece04e9483b71a6f743a40d51f07c46d3877f1bf11b31a06d617a33960cac85"
+    },
+    {
+      "path": "server/internal/store/pilot_identity.go",
+      "before_gofmt_sha256": "525a425d0a5221615b58594f2f586f88ddae45547ee0c3f8a6f64f2e74a77a06",
+      "isolated_sha256": "525a425d0a5221615b58594f2f586f88ddae45547ee0c3f8a6f64f2e74a77a06",
+      "normalized_text_equal": true,
+      "sha256": "18e8c665f8642a219aa0945630784d3b504577adeeb65bcf4eb84d23667f65d9"
+    },
+    {
+      "path": "server/internal/store/pilot_created_audit.go",
+      "before_gofmt_sha256": "5a5b0a577eb951c21f9563214aaeccbd115118eb490474e54b485621fd38ce36",
+      "isolated_sha256": "5a5b0a577eb951c21f9563214aaeccbd115118eb490474e54b485621fd38ce36",
+      "normalized_text_equal": true,
+      "sha256": "fe38a0708102b1c4280121eb039e3f86d8f3c2dbe2cc9497d55d2f293a5cdd6e"
+    },
+    {
+      "path": "server/internal/store/pilot_store.go",
+      "before_gofmt_sha256": "ac8daef4e66cb7940e181e04e2b4f2c0c25d0a4e5520f7cf02be211659558cef",
+      "isolated_sha256": "ac8daef4e66cb7940e181e04e2b4f2c0c25d0a4e5520f7cf02be211659558cef",
+      "normalized_text_equal": true,
+      "sha256": "dc215bc5a280d2aaa26886bc20b7281b154d4ef0879eaacbab5e79c509ad7520"
+    },
+    {
+      "path": "server/internal/store/pilot_legacy_bridge_test.go",
+      "before_gofmt_sha256": "e10b26e2b38d0bf256a7284b4bebc9ac59102046025b7290f1056d2deafa4a29",
+      "isolated_sha256": "e2d235e5f354de44ea59bdd82b35a88506b6f5441359cdc3681978c163d6c539",
+      "normalized_text_equal": true,
+      "sha256": "d7f6dadf180bfdeb216885c814c1e1c58bd2e4c0e6222208a01781bc5d39f922"
+    },
+    {
+      "path": "server/internal/store/pilot_schema_verifier_test.go",
+      "before_gofmt_sha256": "7be05028fdb7e0077bd617db02f786bcbd0eddccff72236cc9025bb0d6983705",
+      "isolated_sha256": "7be05028fdb7e0077bd617db02f786bcbd0eddccff72236cc9025bb0d6983705",
+      "normalized_text_equal": true,
+      "sha256": "78ceb3e70d866131372dac76c2e75e2a6066e9cf15a2465c3c6c60be96faf28f"
+    },
+    {
+      "path": "server/internal/store/pilot_created_codec_test.go",
+      "before_gofmt_sha256": "932f24491e7eace6e1c9f4947b98b6c2ec1c559c919231f5d5c7a6c99bc70f66",
+      "isolated_sha256": "932f24491e7eace6e1c9f4947b98b6c2ec1c559c919231f5d5c7a6c99bc70f66",
+      "normalized_text_equal": true,
+      "sha256": "c47b5dcdce42f9dce51b7d4699f99c0b911bcab2023ffb6fefe83060470f143f"
+    },
+    {
+      "path": "server/internal/store/pilot_identity_test.go",
+      "before_gofmt_sha256": "6028900b044aae95abb4fbc73852cee2bf83a0e16a9017298e5f6e35fe334bf1",
+      "isolated_sha256": "6028900b044aae95abb4fbc73852cee2bf83a0e16a9017298e5f6e35fe334bf1",
+      "normalized_text_equal": true,
+      "sha256": "f4cd79e242ff9326841c053842f841792e77452cc0873cd65485b4f2c07fbf12"
+    },
+    {
+      "path": "server/internal/store/pilot_schema_matrix_test.go",
+      "before_gofmt_sha256": "e434cc22c177daa9853fb13a9a5bf2c4a18288a37049a9ad757b697bd57d4488",
+      "isolated_sha256": "e434cc22c177daa9853fb13a9a5bf2c4a18288a37049a9ad757b697bd57d4488",
+      "normalized_text_equal": true,
+      "sha256": "4143bca6c82d24746692163119af9ed3c92d20df57c7fd51d172e2f3632bf1e6"
+    },
+    {
+      "path": "server/internal/store/pilot_created_audit_test.go",
+      "before_gofmt_sha256": "f6bdd537e976e84e8c9c95eed117fa6089e4da73dfc854fed7429831be0f466e",
+      "isolated_sha256": "f6bdd537e976e84e8c9c95eed117fa6089e4da73dfc854fed7429831be0f466e",
+      "normalized_text_equal": true,
+      "sha256": "1c6d1a62a6c4b5f5aa645ac7e3942961de0818d644706cdbc83825c0b2c6a5dc"
+    }
+  ]
+}

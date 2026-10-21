@@ -1,0 +1,106 @@
+{
+  "review_id": "pilot-start-kernel-code-security-review-20261017",
+  "date": "2026-10-17",
+  "reviewer_domain": "security",
+  "target": [
+    "server/internal/store/pilot_start_sidecar.go",
+    "docs/41-试点课堂Start持久迁移内核SDD.md §108"
+  ],
+  "review_type": "read-only code and design security review",
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "blocked_pending_durable_cap_quarantine_and_supervisor_open_windows_gates",
+  "summary": "Create and recovery are separate: recovery does not create and rejects missing/empty files; creation uses exclusive-create. JSONL size and parser checks largely match §108. However, a would-exceed append only sets an in-memory degraded flag, so a restart with a still-valid below-cap chain can reopen healthy unless the supervisor durably quarantines the case. The helper separately Lstats and opens by path rather than consuming the §3 verified handle; its check does not detect same-path replacement/file-ID mismatch or hard links. Windows mode checks are permissive by design and Windows parent-directory Sync is a no-op, both explicitly delegated to supervisor integration gates that are not present in this reviewed source. These are blockers to integration/security claims, not assertions that production code is reachable (the file is pilot_e2e build-tagged).",
+  "findings": [
+    {
+      "finding_id": "PSK-SC-108-01",
+      "severity": "P1",
+      "status": "blocking",
+      "title": "Capacity-triggered degraded state is not restart-persistent",
+      "locations": [
+        "server/internal/store/pilot_start_sidecar.go:176-179",
+        "server/internal/store/pilot_start_sidecar.go:262-267",
+        "docs/41-试点课堂Start持久迁移内核SDD.md:114"
+      ],
+      "evidence": "A projected over-limit append sets only the in-memory s.degraded flag and writes no durable marker. Replay marks degraded only if the current sidecar size is already at least 1 MiB. If the existing valid file is smaller than the cap, restart can reopen it as healthy.",
+      "risk": "After a capacity rejection and process crash before cleanup, the supervisor may accept another command on the same case, contrary to §108 whole-case quarantine/cleanup semantics.",
+      "required_action": "Persist case quarantine/degraded state in the catalog before releasing the lifecycle lock; fail closed if persistence fails. Add cap-boundary restart tests for crashes before/after quarantine and assert no new command or chain recreation.",
+      "disposition": "block"
+    },
+    {
+      "finding_id": "PSK-SC-108-02",
+      "severity": "P1",
+      "status": "integration_blocker",
+      "title": "Path-based Lstat/open does not implement verified-handle identity checks",
+      "locations": [
+        "server/internal/store/pilot_start_sidecar.go:81-103",
+        "docs/41-试点课堂Start持久迁移内核SDD.md:42"
+      ],
+      "evidence": "The helper Lstats a pathname and separately calls os.OpenFile, then checks only regular-file type and mode on the resulting handle. It does not pass/consume an OpenVerified handle, compare pre-open and opened file identity, use a no-follow open, or reject hardlinks itself.",
+      "risk": "A pathname or symlink swap between Lstat and OpenFile is not detected by this helper. The declared protected-parent/trusted-account model limits external exploitability, but the helper does not itself satisfy §3's verified-handle contract.",
+      "required_action": "Bind create/reopen to a supervisor-verified directory/file handle or equivalent atomic open and retain the case lock. Otherwise narrow the guarantee and enforce protected parent ACL/identity before every call. Never describe Lstat as atomic authorization.",
+      "disposition": "block_integration_until_verified_open_contract"
+    },
+    {
+      "finding_id": "PSK-SC-108-03",
+      "severity": "P1",
+      "status": "integration_gate",
+      "title": "Windows DACL is not checked by the helper",
+      "locations": [
+        "server/internal/store/pilot_start_sidecar.go:123-127",
+        "docs/41-试点课堂Start持久迁移内核SDD.md:114"
+      ],
+      "evidence": "pilotSidecarModePrivate returns true for all Windows FileInfo values. The source comment delegates effective ACL validation to OpenVerified/supervisor; no such supervisor is included in the reviewed file set.",
+      "required_action": "Before each create/reopen, supervisor must verify owner-only DACL, inheritance, owner, link/reparse and file identity on the verified handle; do not claim Windows protection until integrated.",
+      "disposition": "mandatory_integration_gate"
+    },
+    {
+      "finding_id": "PSK-SC-108-04",
+      "severity": "P1",
+      "status": "integration_gate",
+      "title": "Windows parent-directory durability is not implemented by this helper",
+      "locations": [
+        "server/internal/store/pilot_start_sidecar.go:130-143",
+        "docs/41-试点课堂Start持久迁移内核SDD.md:114"
+      ],
+      "evidence": "syncPilotSidecarParent returns nil on Windows without a directory-handle durability operation. The code comment and §108 correctly identify this as supervisor work.",
+      "required_action": "Implement and validate a supervisor-provided Windows parent-directory durability operation before claiming durable first-time creation.",
+      "disposition": "mandatory_integration_gate"
+    },
+    {
+      "finding_id": "PSK-SC-108-05",
+      "severity": "P2",
+      "status": "caller_contract_gate",
+      "title": "New-case-only creation is a comment/caller convention rather than an unforgeable API precondition",
+      "locations": [
+        "server/internal/store/pilot_start_sidecar.go:71-75",
+        "server/internal/store/pilot_start_sidecar.go:92-120",
+        "docs/41-试点课堂Start持久迁移内核SDD.md:114"
+      ],
+      "evidence": "createPilotStartSidecar accepts only path and key. O_EXCL protects an existing sidecar but cannot distinguish first initialization from an existing case whose sidecar was removed; in the latter case create succeeds and replay accepts the new empty chain.",
+      "risk": "A recovery caller that falls back to create can silently reset a missing sidecar chain, violating fail-closed recovery.",
+      "required_action": "Restrict creation to a supervisor operation carrying an opaque verified-new-case capability/handle; recovery code must call open only and must never fall back to create.",
+      "disposition": "require_caller_enforcement_or_capability_api"
+    }
+  ],
+  "control_dispositions": {
+    "create_reopen_split": "correct for correct callers: create uses O_EXCL; recovery open does not create and rejects missing/empty files",
+    "lstat_open_toctou": "not atomically closed by helper; external exposure constrained only if protected parent and trusted-account model are enforced by supervisor",
+    "windows_mode_permissiveness": "explicitly delegated; mandatory DACL integration gate remains open",
+    "parent_directory_sync": "POSIX sync attempted; Windows is a no-op requiring supervisor durability integration",
+    "jsonl_size_and_parser": "1 MiB total and 8 KiB line checks match; malformed/oversize replay fails closed; projected-cap failure needs durable quarantine across restart",
+    "new_case_authorization": "caller-convention only; must be supervisor-enforced or represented by an opaque capability"
+  },
+  "remaining_blocker_count": 4,
+  "remaining_conditions": [
+    "Make capacity-triggered quarantine durable before releasing the case lifecycle lock and verify restart refusal.",
+    "Use an OpenVerified handle/atomic supervisor open consistent with §3; enforce hardlink and file-identity checks.",
+    "Complete Windows DACL verification and parent-directory durability in supervisor integration.",
+    "Ensure only verified-new-case initialization can call create; no recovery fallback from open to create."
+  ],
+  "limitations": [
+    "No tests or runtime validation were run.",
+    "No ACL, path race, hardlink, directory Sync, or process restart experiment was performed.",
+    "The file is pilot_e2e build-tagged; this review does not claim the code is in production builds or routes."
+  ]
+}

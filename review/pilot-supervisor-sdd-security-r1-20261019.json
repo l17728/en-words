@@ -1,0 +1,22 @@
+{
+  "review": "pilot-supervisor-sdd-security-r1",
+  "date": "2026-10-19",
+  "document": "docs/42-Pilot隔离运行监督器SDD.md",
+  "document_sha256": "8A651B4D5193C2DD047BEAE85379C631FA617FF74230A6298D6DB495E980FC51",
+  "scope": ["§2", "§3", "§7-§9", "§10-§12"],
+  "mode": "read-only design review; no tests run",
+  "verdict": "BLOCKED",
+  "blocking": ["SEC-SUP-01", "SEC-SUP-02", "SEC-SUP-03", "SEC-SUP-04"],
+  "findings": [
+    {"id":"SEC-SUP-01","severity":"P1","clauses":["§2.2","§9"],"title":"st_dev checks do not reject same-device bind mounts","recommendation":"Use RESOLVE_NO_XDEV where available; define and test a mount-boundary-aware fallback (e.g. statx mount IDs) and fail closed when it cannot prove containment."},
+    {"id":"SEC-SUP-02","severity":"P1","clauses":["§7.57-§7.63","§9.87"],"title":"catalog/global lock identity and lifecycle are underspecified","recommendation":"Specify one permanent lock object/name, creation-vs-lock ordering, stable identity validation and complete allowlist; test first-start and restart races across processes."},
+    {"id":"SEC-SUP-03","severity":"P1","clauses":["§2.6","§8.81","§9.95"],"title":"PRAGMA database_list path is not an OS file identity proof","recommendation":"Either obtain and compare the actual SQLite VFS file identity, or explicitly downgrade the guarantee to the trusted-private-directory threat model and reconcile §2.6/§20 promises."},
+    {"id":"SEC-SUP-04","severity":"P1","clauses":["§2.3-§2.7","§2.13","§2.21","§8","§9"],"title":"Passing the case HMAC key to a child conflicts with its untrusted boundary","recommendation":"Keep key in supervisor and expose narrow MAC operations, or explicitly place the child in the trusted computing base and define process/handle/key lifetime and sidecar trust consequences."},
+    {"id":"SEC-SUP-05","severity":"P2","clauses":["§4.38","§8.67"],"title":"Unlocked catalog snapshot conflicts with lock-required replay reads","recommendation":"Make all authoritative reads occur under catalog lock; if pre-read remains, it must be non-authoritative and never poison on a partial concurrent append."},
+    {"id":"SEC-SUP-06","severity":"P2","clauses":["§2.3","§3.6","§8.78","§9.87","§9.89"],"title":"Windows reparse traversal and handle-safe cleanup deletion need a precise protocol","recommendation":"Specify parent-handle-relative traversal and handle-bound delete with fresh file ID/reparse validation, including the close-to-delete replacement window and DACL inheritance."},
+    {"id":"SEC-SUP-07","severity":"P2","clauses":["§3.6","§8.78","§9.87"],"title":"SQLite cleanup sidecars are absent from the exact member allowlist","recommendation":"List WAL/SHM/journal exact names and delete only relative to verified case directory handles; reject unknown files rather than globbing."},
+    {"id":"SEC-SUP-08","severity":"P2","clauses":["§2.7","§4.40","§11.122"],"title":"Case-hash logging key and diagnostic log protection are unspecified","recommendation":"Define an independent supervisor-only pseudonym key, separate from case HMAC keys, and specify log ACL/mode, rotation, and access."}
+  ],
+  "passes": ["Fail-closed direction for unsupported filesystem semantics", "Poison on uncertain Sync/write outcome", "Quarantine before cleanup and tombstone after deletion", "Stable error categories and data-redaction intent"],
+  "limitations": ["No code review", "No tests executed", "No approval for production integration or a real classroom pilot"]
+}

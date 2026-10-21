@@ -1,0 +1,26 @@
+{
+  "review": "pilot-start-kernel-sdd-backend-review16",
+  "date": "2026-10-16",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "scope": "read-only backend review of modernc path-based SQLite under narrowed threat model, auxiliary files, and cleanup catalog tail recovery",
+  "code_modified": false,
+  "docs_modified": false,
+  "tests_run": false,
+  "verdict": "PASS_WITH_IMPLEMENTATION_GATES",
+  "findings": [],
+  "checks": {
+    "modernc_path_open_under_stated_threat_model": "PASS",
+    "post_open_first_sql_identity_diagnostic": "PASS_WITH_IMPLEMENTATION_GATE",
+    "wal_shm_journal_path_and_restart_contract": "PASS_WITH_IMPLEMENTATION_GATE",
+    "cleanup_quarantine_zero_byte_append_failure": "PASS",
+    "cleanup_quarantine_partial_tail_or_sync_unknown": "PASS",
+    "new_sqlite_driver_or_writable_vfs_required": false
+  },
+  "implementation_gates": [
+    "Verify case ACL/mode and actual DB/WAL/SHM/journal permissions on Windows and POSIX against an untrusted second account.",
+    "Prove no automatic ping or hidden SQL precedes the connection hook PRAGMA; treat it as post-open diagnostics only.",
+    "Exercise existing auxiliary-file reopen after child restart and missing-file creation under restricted directory permissions.",
+    "Fault-inject zero-byte append failure, partial catalog tail, uncertain Sync, cleanup deletion failure, and tombstone crash recovery."
+  ],
+  "threat_model_note": "Same-account supervisor and administrator attacks are excluded. If same-account path races enter scope, revisit the driver/VFS conclusion."
+}

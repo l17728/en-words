@@ -1,0 +1,16 @@
+{
+  "review":"pilot-start-kernel-sdd-architecture-review7",
+  "date":"2026-10-16",
+  "source":"docs/41-试点课堂Start持久迁移内核SDD.md",
+  "source_sha256":"79b025ccc3b4195282f8be2875078213214bb4386dc1b39f3feabe36953f7ee4",
+  "status":"BLOCK",
+  "blocker_count":2,
+  "closed":["START6-01 pre-plan fingerprint dependency", "START6-02 lesson-scoped single-flight", "START6-03 sidecar/raw-audit field separation and corrupted-sidecar precedence"],
+  "blockers":[
+    {"id":"START7-01","severity":"P2","location":"section3 sidecar event enum and terminal recovery","finding":"Writer rejection reasons lack mappings into strict result_class; committed sidecar without DB receipt has no explicit recovery branch","required":"Freeze rejection mapping and event field rules; committed-without-receipt must be integrity failure"},
+    {"id":"START7-02","severity":"P2","location":"section4 active verifier","finding":"Required byte equality between say payload and receipt result is impossible because receipt has only result/audit_trace_id/outbox_count","required":"Compare say text to room_facts.teacher_text; compare receipt identities/count/fingerprint separately; optionally reconstruct canonical fingerprint from existing frozen facts and typed effects"}
+  ],
+  "nonblocking_sync":["Supervisor owns case cleanup across child restarts", "OS lifecycle lock differs from short append mutex", "Coordinator single-flight contention and independent DB writer contention need separate barriers", "Pure handler panic recovery is outside SQL transaction", "Cache admission precedes Planner; hash chain does not prove absence of valid-prefix truncation"],
+  "execution":{"tests":false,"builds":false,"services":false,"spec_or_source_edits":false},
+  "report":"review/pilot-start-kernel-sdd-architecture-review7-20261016.md"
+}

@@ -1,0 +1,29 @@
+{
+  "review": "pilot-start-catalog-fault-tests-backend-review",
+  "date": "2026-10-19",
+  "scope": [
+    "server/internal/store/pilot_start_catalog.go",
+    "server/internal/store/pilot_start_catalog_test.go"
+  ],
+  "tests_run": false,
+  "verdict": "PASS_STATIC_REVIEW",
+  "findings": [
+    {
+      "id": "CATALOG-FAULT-TEST-P2-1",
+      "priority": "P2",
+      "status": "CLOSED",
+      "title": "Poison-window test naming matches fake lock hook timing",
+      "location": "server/internal/store/pilot_start_catalog_test.go:265-275,852-904",
+      "detail": "The fake lock's beforeGate hook fires before its internal gate.Lock. Tests titled as detecting poison after lock acquisition actually inject poison inside the Lock call before that fake gate is acquired. The production function still returns successfully from Lock and reaches its second health check, so the tested precheck-to-postcheck window is valid, but the name implies a more precise interleaving than the fixture provides.",
+      "resolution": "Renamed all four subtests to say poison during lock acquisition; wording now matches the beforeGate hook timing."
+    }
+  ],
+  "behavioral_blockers": [],
+  "checks": {
+    "stat_seek_write_and_short_write_injection": "PASS_STATIC",
+    "read_and_short_read_injection": "PASS_STATIC",
+    "create_open_snapshot_transition_error_semantics": "PASS_STATIC",
+    "poison_publication_and_unlock_window": "PASS_STATIC",
+    "parameter_and_nil_health_expectations": "PASS_STATIC"
+  }
+}

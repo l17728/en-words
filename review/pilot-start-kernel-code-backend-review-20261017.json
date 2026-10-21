@@ -1,0 +1,71 @@
+{
+  "review": "pilot-start-kernel-code-backend-review-20261017",
+  "date": "2026-10-17",
+  "target": [
+    "server/internal/agent/pilot_start.go",
+    "server/internal/agent/pilot_start_test.go",
+    "server/internal/scripts/pilot_exact.go",
+    "server/internal/store/pilot_start_sidecar.go",
+    "server/internal/store/pilot_start_sidecar_test.go"
+  ],
+  "reference": "docs/41-试点课堂Start持久迁移内核SDD.md §§24,44-46,94",
+  "scope_note": "Implementation is not yet wired to Coordinator or HTTP harness; integration contracts are reported as gates.",
+  "code_modified": false,
+  "tests_run": false,
+  "verdict": "BLOCK",
+  "findings": [
+    {
+      "id": "BE-CODE-1",
+      "severity": "P1",
+      "status": "open",
+      "file": "server/internal/store/pilot_start_sidecar.go",
+      "lines": "66-98,143-221",
+      "title": "Missing or empty sidecar is silently treated as a new chain during reopen",
+      "recommendation": "Split first-time exclusive creation from reopen-existing; missing/empty sidecar during restart/recovery must fail closed. Sync the parent directory on first creation and inject the verified handle/identity."
+    },
+    {
+      "id": "BE-CODE-2",
+      "severity": "P1",
+      "status": "open",
+      "file": "server/internal/store/pilot_start_sidecar.go",
+      "lines": "260-292,304-336",
+      "title": "Commit result attempt number is not consistently checked and attempt 2 terminal_failed is rejected",
+      "recommendation": "Track the active commit attempt and require exact result attempt_no; permit terminal_failed after attempt 2 when valid. Add Append/replay tests for valid and mismatched outcomes."
+    },
+    {
+      "id": "BE-CODE-3",
+      "severity": "P2",
+      "status": "open",
+      "file": "server/internal/store/pilot_start_sidecar.go",
+      "lines": "224-245",
+      "title": "terminal_failed may omit already-established plan_hmac and bundle_hmac",
+      "recommendation": "Require every event after plan_ready/bundle_ready, including terminal_failed, to carry the same known HMAC; permit null only before those values exist."
+    },
+    {
+      "id": "BE-CODE-4",
+      "severity": "P2",
+      "status": "open",
+      "file": "server/internal/store/pilot_start_sidecar.go",
+      "lines": "21,108-145",
+      "title": "Append can grow JSONL beyond the replay limit and report success for an unreopenable file",
+      "recommendation": "Enforce total-size limit before writing and define a durable terminal/seal policy for exhausted capacity."
+    },
+    {
+      "id": "BE-CODE-5",
+      "severity": "P1_INTEGRATION_GATE",
+      "status": "not_yet_wired",
+      "file": "server/internal/store/pilot_start_sidecar.go",
+      "lines": "50-64,66-98,108-145",
+      "title": "Single-writer OS lifecycle lock and OpenVerified handle/ACL boundary are external and not yet integrated",
+      "recommendation": "Before Coordinator/harness integration, prove a supervisor-owned cross-process case lock spans child lifetime, or add sidecar OS locking; pass verified handles/identity rather than reopening by path. Verify Windows ACLs outside the current permissive helper."
+    }
+  ],
+  "checks": {
+    "exact_op1_and_fallback_path": "PASS_WITH_TEST_GAPS",
+    "canonical_hmac_replay_and_basic_phase_validation": "PASS_WITH_GAPS",
+    "missing_sidecar_restart_behavior": "BLOCK",
+    "commit_attempt_result_binding": "BLOCK",
+    "complete_lifecycle_golden_and_io_fault_coverage": "INCOMPLETE",
+    "coordinator_http_harness_integration": "NOT_IN_SCOPE_NOT_YET_WIRED"
+  }
+}

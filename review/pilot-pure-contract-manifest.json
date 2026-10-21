@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "name": "pilot-pure-contract-model",
+  "source_sdd_sha256": "A22495470EA02FBC591EB09EE5045AC15278E9F489F061F542648F8E0803B97D",
+  "package": "./internal/pilotsupervisor",
+  "build_tags": [
+    "pilot_e2e"
+  ],
+  "targets": [
+    "windows/amd64",
+    "linux/amd64"
+  ],
+  "required_tests": {
+    "TestPilotLedgerTransitionFunction": [
+      "prepared-to-prepared",
+      "prepared-to-executing",
+      "prepared-to-completed",
+      "prepared-to-abandoned",
+      "prepared-to-indeterminate",
+      "prepared-to-unknown",
+      "executing-to-prepared",
+      "executing-to-executing",
+      "executing-to-completed",
+      "executing-to-abandoned",
+      "executing-to-indeterminate",
+      "executing-to-unknown",
+      "completed-to-prepared",
+      "completed-to-executing",
+      "completed-to-completed",
+      "completed-to-abandoned",
+      "completed-to-indeterminate",
+      "completed-to-unknown",
+      "abandoned-to-prepared",
+      "abandoned-to-executing",
+      "abandoned-to-completed",
+      "abandoned-to-abandoned",
+      "abandoned-to-indeterminate",
+      "abandoned-to-unknown",
+      "indeterminate-to-prepared",
+      "indeterminate-to-executing",
+      "indeterminate-to-completed",
+      "indeterminate-to-abandoned",
+      "indeterminate-to-indeterminate",
+      "indeterminate-to-unknown",
+      "unknown-to-prepared",
+      "unknown-to-executing",
+      "unknown-to-completed",
+      "unknown-to-abandoned",
+      "unknown-to-indeterminate",
+      "unknown-to-unknown",
+      "wrong-evidence-categories"
+    ],
+    "TestPilotCleanupAnchorContract": [
+      "valid-same-principal",
+      "missing-receipt",
+      "missing-source-identity",
+      "missing-object-identity",
+      "missing-anchor-principal",
+      "cross-principal"
+    ],
+    "TestPilotCleanupOwnerClaimContract": [],
+    "TestPilotCleanupRecoveryContract": [
+      "first-present-matching-anchor",
+      "first-absent-is-indeterminate",
+      "first-unknown-is-indeterminate",
+      "first-replacement-is-indeterminate",
+      "durable-witness-same-object-still-present",
+      "durable-witness-and-absent-recover-completed",
+      "durable-witness-but-replaced-object",
+      "durable-witness-but-unknown",
+      "witness-anchor-drift",
+      "witness-from-different-operation",
+      "witness-from-different-run",
+      "witness-from-different-owner-generation",
+      "intent-principal-drift",
+      "prepared-intent-cannot-plan"
+    ]
+  },
+  "source_sdd_path": "docs/43-Pilot授权幂等与父进程身份绑定SDD.md",
+  "import_path": "enwords/internal/pilotsupervisor",
+  "parent_only_tests": [
+    "TestPilotCleanupOwnerClaimContract"
+  ],
+  "cgo_enabled": 0,
+  "goamd64": "v1"
+}

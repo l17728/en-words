@@ -1,0 +1,50 @@
+{
+  "review": "pilot-supervisor-sdd-architecture-20261019",
+  "date": "2026-10-19",
+  "source": "docs/42-Pilot隔离运行监督器SDD.md",
+  "source_sha256": "D5E6EA5BB8C35EEB874080D3742EAD2C3DBA6B7A55A4D35F642EBADD120FBFD5",
+  "comparison_source": "docs/41-试点课堂Start持久迁移内核SDD.md §109.1-109.4",
+  "status": "BLOCKED",
+  "blocking_count": 2,
+  "findings": [
+    {
+      "id": "SUP-SDD-01",
+      "severity": "P1",
+      "location": "docs/42 §3 CreateCase and §4; docs/41 §109.1-109.2",
+      "problem": "CreateCase says to acquire the case lock before durably appending provisioning, while the first catalog bootstrap contract requires the initial provisioning frame and catalog/parent Sync before creating the stable case lock. OpenPilotSupervisor also omits a bootstrap exclusion spanning CREATE_NEW through the initial durable frame, leaving concurrent openers able to inspect an intermediate catalog or forcing an impossible lock order.",
+      "required": "Specify separate first-catalog bootstrap and subsequent-case creation protocols. Bootstrap uses the §109 permanent bootstrap-lock exception; openers cannot inspect intermediate state. Subsequent cases use a stable case lock before the case->catalog append. After uncertain bootstrap Sync, revalidate and successfully Sync catalog and parent before creating any lock/case artifact.",
+      "acceptance": "Named-barrier tests cover concurrent opener during CREATE_NEW-to-first-frame, bootstrap parent-Sync failure/restart, and later case creation lock order; assert no case lock/member is created before durable provisioning."
+    },
+    {
+      "id": "SUP-SDD-02",
+      "severity": "P1",
+      "location": "docs/42 §4; docs/41 §109.2-109.3",
+      "problem": "Restart recovery only describes provisioning->ready. It omits recovery of open_recovery_required through independent receipt/sidecar verification and disposition, and cleanup-resume for cleanup_quarantined after partial deletion. These are required states in §109 and cannot safely be treated as ready or ordinary open.",
+      "required": "Add a per-state recovery matrix for all §109 states, specifying allowed file opens, legal transitions, capability, and unknown-outcome behavior. open_recovery_required must not replay Planner/Registry; cleanup-resume must use the stable case lock, never open DB/sidecar/key, and append deleted only after member and directory verification/sync.",
+      "acceptance": "Crash/restart tests at every relevant state boundary assert the exact allowed opens/transitions, zero planner/registry calls during recovery, and cleanup resume without DB/sidecar/key opens."
+    },
+    {
+      "id": "SUP-SDD-03",
+      "severity": "P2",
+      "location": "docs/42 §2 invariant 4 and §3 CleanupCase; docs/41 §109.3",
+      "problem": "The stable case lock's location and identity lifecycle are unspecified. If cleanup deletes/recreates a lock stored in the removable case directory, waiters may hold the old OS object while new processes lock a replacement, breaking same-case serialization.",
+      "required": "Specify a protected lock root outside the removable case directory, stable per-case naming and identity verification, and a never-unlink/recreate rule across cleanup and restart. Cleanup-resume must reacquire the same lock identity.",
+      "acceptance": "Cross-process cleanup/restart barriers prove all contenders serialize on the same file identity even after the case directory is absent."
+    },
+    {
+      "id": "SUP-SDD-04",
+      "severity": "P2",
+      "location": "docs/42 §3 OpenCase and CaseHandle.Close; docs/41 §109.2",
+      "problem": "OpenCase does not distinguish ready Start access from committed receipt-first reads, terminal_failed status/recovery, and quarantined receipt-first recovery/cleanup. A generic CaseHandle could expose DB/sidecar/key for a restricted state. Close also assigns catalog-handle closure to CaseHandle although catalog is Supervisor-shared, so closing one case may invalidate other concurrent cases.",
+      "required": "Define least-capability typed handles or operations per catalog state and reject before DB open. Make catalog/root/bootstrap handles Supervisor-owned; CaseHandle closes only case-scoped resources and its case lock, while Supervisor.Close closes shared handles.",
+      "acceptance": "State matrix tests prove forbidden capabilities cause zero DB/sidecar/key opens; two parallel case handles remain usable when one closes, and shared catalog closes only at Supervisor.Close."
+    }
+  ],
+  "passed": [
+    "The document maintains the pilot_e2e-only boundary and does not connect production routes, models, audio, or classroom execution.",
+    "It rejects caller-supplied paths, DSNs, case IDs, and keys as authority and requires fail-closed behavior.",
+    "The case->catalog two-phase revalidation principle matches the normal case-operation lock order in docs/41, subject to the bootstrap exception in SUP-SDD-01.",
+    "Linux and Windows runtime acceptance and browser E2E are correctly identified as separate gates."
+  ],
+  "execution": "Read-only architecture design review. No product code changed; no tests or builds run."
+}

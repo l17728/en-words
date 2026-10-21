@@ -1,0 +1,57 @@
+{
+  "review_id": "pilot-start-kernel-sdd-security-review6-20261016",
+  "date": "2026-10-16",
+  "reviewer_domain": "security",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_type": "read-only design review",
+  "compared_against": "review/pilot-start-kernel-sdd-security-review5-20261016.json",
+  "focus": [
+    "privacy minimization and HMAC/log handling",
+    "profile data and retained test artifacts",
+    "case downgrade and recovery authorization",
+    "production route/build isolation",
+    "sidecar and HMAC-key filesystem permissions and delivery",
+    "receipt replay when sidecar is damaged"
+  ],
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "blocked_pending_security_design_clarifications",
+  "summary": "Application authorization, receipt replay, no-rerun recovery, privacy allowlists, and test-only build isolation are specified well. The SDD does not define enforceable filesystem ACL/mode and key-delivery controls for the case directory, SQLite, sidecar, and HMAC key, and retained crash artifacts have no access/retention policy. HMAC and DB receipt integrity claims depend on these missing controls.",
+  "findings": [
+    {
+      "finding_id": "PSK-SEC6-01",
+      "severity": "P1",
+      "status": "open_blocker",
+      "title": "Case storage and HMAC key protection are underspecified",
+      "evidence": "§3 says the supervisor creates the case directory and HMAC key; §5 calls it private and uses an OS-exclusive lifecycle lock; §5/§6 refer to private runtime parameters. No restrictive OS ACL/mode, owner validation, atomic exclusive key creation, or protected key-transfer/no-argv-env rule is specified. The damaged-sidecar receipt-first path verifies DB lifecycle but the stored fingerprint is unkeyed SHA-256.",
+      "risk": "A local principal able to replace the key and sidecar can forge the HMAC chain; a principal able to write the DB can alter lifecycle rows and recompute an unkeyed fingerprint. The lifecycle lock does not prevent either access.",
+      "required_revision": "Specify and verify owner-only directory/file permissions on each supported OS; reject unexpected owners/ACL entries; use exclusive restrictive key creation; pass the key through a protected inherited handle/pipe rather than argv/environment; prohibit logging it; define the trusted-local-principal boundary and, if needed, authenticate receipt recovery with a keyed commitment. Add permission/key-exposure negative acceptance cases."
+    },
+    {
+      "finding_id": "PSK-SEC6-02",
+      "severity": "P2",
+      "status": "open_condition",
+      "title": "Retained failed-case data has no retention/access rule",
+      "evidence": "§5 preserves failed/crashed artifacts; SQLite/outbox contains synthetic nickname, greeting, and word/meaning content, while the SDD does not specify artifact reader authorization, retention duration, or cleanup triggers.",
+      "risk": "Local profile/content data and guessable digest inputs may remain available longer or to more users than necessary, especially after crashes or quarantine.",
+      "required_revision": "Limit artifact access to the supervisor, define cleanup/retention for success, terminal failure, and quarantined cases, and remove DB/WAL/SHM, sidecar, and key together. Keep the slice synthetic-only."
+    }
+  ],
+  "control_dispositions": {
+    "principal_and_receipt_replay": "acceptable_in_test_only_scope; replay requires current active owner and DB lifecycle validation, does not run Planner/Registry; task expiry is required for new commands",
+    "damaged_sidecar_with_receipt": "fail_closed_and_quarantine behavior specified; authenticity depends on unresolved local storage protection finding PSK-SEC6-01",
+    "privacy_and_log_minimization": "specified; DB fingerprint is not confidentiality and content remains guessable to DB readers",
+    "production_route_build_isolation": "specified via pilot_e2e build tags and separate harness; artifact exclusion not runtime-verified",
+    "supervisor_destroy_recreate_authority": "not explicit; bind to supervisor-only access and retention policy under PSK-SEC6-02"
+  },
+  "remaining_blocker_count": 1,
+  "remaining_conditions": [
+    "Close PSK-SEC6-01 before approving the SDD security boundary.",
+    "Resolve PSK-SEC6-02 before retaining case artifacts outside the active test run."
+  ],
+  "limitations": [
+    "No tests or runtime validation were run.",
+    "No build artifact, filesystem ACL/mode, key transfer, DB, or recovery path was inspected.",
+    "This review does not approve implementation, production deployment, real student data, or classroom readiness."
+  ]
+}

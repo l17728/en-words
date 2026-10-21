@@ -1,0 +1,25 @@
+{
+  "review": "pilot-start-kernel-sdd-backend-review18",
+  "date": "2026-10-16",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "scope": "read-only review of BE17-1 closure, catalog locking, reader consistency, and sync failure behavior",
+  "code_modified": false,
+  "docs_modified": false,
+  "tests_run": false,
+  "verdict": "PASS_WITH_IMPLEMENTATION_GATES",
+  "findings": [],
+  "checks": {
+    "case_catalog_two_phase_authorization": "PASS",
+    "stale_snapshot_open_cleanup_race_case": "PASS",
+    "cross_process_windows_posix_lock_feasibility": "PASS_WITH_IMPLEMENTATION_GATE",
+    "catalog_reader_consistency_and_different_case_parallelism": "PASS",
+    "sync_failure_and_restart_chain_semantics": "PASS",
+    "new_design_blockers": "NONE"
+  },
+  "implementation_gates": [
+    "Use OS-visible file locks for both case and catalog locks, with fixed lock ranges and crash-release behavior on supported local filesystems.",
+    "Run the same-case cleanup/open race with two OS processes and assert stale opener performs zero DB opens after quarantine/tombstone Sync.",
+    "Verify different-case business work runs concurrently while catalog generation/append remains serialized and restart chain verifies.",
+    "Fault-inject zero-byte, partial-frame, flush/sync uncertainty and process exit; preserve fail-closed recovery semantics."
+  ]
+}

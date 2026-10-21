@@ -1,0 +1,16 @@
+{
+  "document": "docs/42-Pilot隔离运行监督器SDD.md",
+  "sha256": "0D915174617EC8FE65AA42D2A2495554DD8FC7D03038404860AC65EAEE355650",
+  "domain": "backend",
+  "decision": "PASS",
+  "closed_findings": ["B42-01", "B42-02"],
+  "blockers": [],
+  "review_mode": "read_only_static",
+  "source_unchanged": true,
+  "tests_run": false,
+  "nonblocking_notes": [
+    "Replace ambiguous section references 28 and docs41 43 with explicit headings/formula references.",
+    "Clarify section10 no-catalog-member case-lock summary applies to subsequent cases; section7 first-case frame-before-lock contract takes precedence."
+  ],
+  "report": "review/pilot-supervisor-sdd-backend-review-r2-20261019.md"
+}

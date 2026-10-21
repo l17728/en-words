@@ -1,0 +1,78 @@
+{
+  "review_id": "pilot-start-kernel-sdd-security-review-20261016",
+  "date": "2026-10-16",
+  "reviewer_domain": "security",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "references": [
+    "docs/33-全双工课堂SDD.md",
+    "docs/36-全双工课堂统一提交接线设计.md §§9-10, 15-17",
+    "server/internal/auth/auth.go",
+    "server/internal/tools/registry.go",
+    "server/internal/store/pilot_identity.go"
+  ],
+  "review_type": "read-only design review",
+  "focus": [
+    "principal authorization",
+    "test harness isolation",
+    "command replay and commit-unknown handling",
+    "data exposure"
+  ],
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "not_approved_for_implementation",
+  "summary": "The narrow Start transaction and closed production route boundary are appropriate, but invocation/read authorization, mechanical test-harness isolation, and commit-unknown recovery semantics need explicit fail-closed contracts.",
+  "findings": [
+    {
+      "id": "PSK-SEC-01",
+      "severity": "P1",
+      "blocker": true,
+      "title": "Principal authority and receipt-read authorization are not concretely specified",
+      "location": "docs/41 §3; proposed commitPilotStart and lookupPilotStartReceipt signatures",
+      "risk": "A caller-controlled owner value or opaque-but-constructible type could be mistaken for authority; receipt lookups/replays could expose another owner's command or permit an unauthorized internal lesson.start.",
+      "required_revision": "Define verifiable actor/role/task/scope/owner claims, current account and revocation checks, internal-only caller gate, and how middleware/internal process capability reaches the store. Revalidate on new commit, replay and lookup; avoid cross-owner existence disclosure; distinguish classroom auth_generation from task authorization."
+    },
+    {
+      "id": "PSK-SEC-02",
+      "severity": "P1",
+      "blocker": true,
+      "title": "Test-only harness isolation is not mechanically enforced",
+      "location": "docs/41 §§2, 5-6",
+      "risk": "A runtime test flag or fixture principal could accidentally expose Start or receipt routes in a production binary or against a production database.",
+      "required_revision": "Use a separate test-only build artifact or omit HTTP harness and use route mocks plus Go integration tests. Ensure fixture principal and routes are absent from production artifact. If HTTP remains, require temporary isolated DB path, loopback ephemeral port, no production credentials, hard failure on path/config overlap, and negative tests proving production cannot activate fixture auth."
+    },
+    {
+      "id": "PSK-SEC-03",
+      "severity": "P1",
+      "blocker": true,
+      "title": "Receipt not-found behavior after COMMIT uncertainty is undefined",
+      "location": "docs/41 §3; §6 cases 2-3",
+      "risk": "A missing receipt during an in-flight or unresolved request could be misread as rollback, causing a new command, duplicate database effects, or a false success/failure claim.",
+      "required_revision": "Define pending/unknown as the safe result. A not_found read alone must not prove rollback or permit a new command ID/effect. Any retry must reuse the same ID/fingerprint and serialize through the writer transaction plus durable receipt/state CAS and unique key. Authenticate lookups, bound query behavior, and provide explicit recovery for persistent unknown outcomes."
+    },
+    {
+      "id": "PSK-SEC-04",
+      "severity": "P2",
+      "blocker": false,
+      "title": "Replay fingerprint omits explicit transition and authorization-generation binding",
+      "location": "docs/41 §3",
+      "risk": "If a replay returns a receipt before checking current authorization generation/expected state, an old command may be replayed with changed concurrency claims or reveal a stored result to a stale caller.",
+      "required_revision": "Bind transition kind and expected checkpoint/auth generation into fingerprint or specify equivalent replay semantics; require current authorization before every replay; enforce unique lesson/command key and compare fingerprint atomically without exposing stored payload."
+    },
+    {
+      "id": "PSK-SEC-05",
+      "severity": "P2",
+      "blocker": false,
+      "title": "Log hashes and persisted audit/outbox fields need allowlists",
+      "location": "docs/41 §§3-4, 6",
+      "risk": "An unkeyed hash of low-entropy student IDs is enumerable; loosely defined audit/outbox payloads may persist prompts, model text, student text or arbitrary tool arguments.",
+      "required_revision": "Use keyed HMAC identifiers or omit stable IDs; define allowlisted fields, size limits, retention and access controls for logs, audit, receipt and outbox; exclude prompts, raw model/Teacher output, student text, credentials and arbitrary tool arguments; test serialized storage and logs for leakage."
+    }
+  ],
+  "blocker_count": 3,
+  "residual_issue_count": 5,
+  "limitations": [
+    "This review evaluates the new SDD independently and does not inherit the prior draft's findings.",
+    "No code was changed and no tests, runtime experiments, build artifact inspection, or deployment checks were performed.",
+    "This design review does not establish implementation correctness, harness isolation in practice, or classroom readiness."
+  ]
+}

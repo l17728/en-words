@@ -1,0 +1,40 @@
+{
+  "review": "pilot-start-kernel-code-backend-review6-20261017",
+  "date": "2026-10-17",
+  "target": [
+    "server/internal/agent/pilot_start.go",
+    "server/internal/agent/pilot_start_test.go",
+    "server/internal/scripts/pilot_exact.go",
+    "server/internal/store/pilot_start_sidecar.go",
+    "server/internal/store/pilot_start_sidecar_test.go"
+  ],
+  "reference": "docs/41-试点课堂Start持久迁移内核SDD.md §§24,44-46,94,108",
+  "code_modified": false,
+  "tests_run_by_reviewer": false,
+  "validation_evidence": {
+    "source": "parent-provided r12 targeted validation result",
+    "targeted_packages": "three packages green",
+    "coverage": {
+      "replay_percent": 98.3,
+      "continuity_percent": 100,
+      "schema_percent": 94.4,
+      "phase_percent": 100
+    }
+  },
+  "scope_note": "Coordinator/HTTP harness, cross-process OS lock, OpenVerified, Windows ACL/directory durability, SQLite receipt recovery, and cleanup remain integration gates.",
+  "verdict": "PASS",
+  "findings": [],
+  "resolved": [
+    "Replay final Seek failure is normalized to errPilotStartSidecar.",
+    "Replay fault tests cover initial Seek, Read, Stat, final Seek, event validation, phase transition, and continuity failures.",
+    "R4 unresolved-tool and terminal_failed result-class fixes remain covered.",
+    "Zero/partial write and file/parent Sync fault tests remain present."
+  ],
+  "checks": {
+    "replay_seek_error_normalization": "PASS",
+    "replay_fault_branch_coverage": "PASS",
+    "terminal_failure_state_machine": "PASS",
+    "durable_io_failure_injection": "PASS_AT_FILE_LAYER",
+    "cross_process_lock_and_verified_open": "NOT_YET_INTEGRATED"
+  }
+}

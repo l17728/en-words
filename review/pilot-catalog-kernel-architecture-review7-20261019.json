@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-19",
+  "status": "PASS",
+  "blocking_count": 0,
+  "scope": "Read-only review of appended argument, file-operation and platform-handle failure tests.",
+  "test_file": "server/internal/store/pilot_start_catalog_test.go",
+  "test_sha256": "098e0d4b9b1c8d8bce81521398a07568507d9abfbaa71d03bd819c8acb1c4005",
+  "final_name_recheck": "Confirmed all four open/create/snapshot/transition cases say 'during lock acquisition' (lines 845, 860, 882, 895). Their synchronous beforeGate = health.poison injection and expected poisoned rejection remain consistent with the reviewed behavior; no new blocker. Read-only recheck, no test execution.",
+  "closed": [
+    "The two unused health declarations in missing-file/missing-lock subtests were replaced with blanks; the identified static compile blocker is closed."
+  ],
+  "checks": [
+    "Each injected open/Snapshot/Transition storage failure starts from a successfully created real temporary-file journal, avoiding rejection of an invalid initial fixture as a false fault-path pass.",
+    "Create faults use an initially empty regular file; directory/nonempty/invalid-handle rejection is tested separately.",
+    "Read injection is one-shot and short-read injection resets its byte counter on SeekStart. It distinguishes actual read failure/early EOF from frame corruption.",
+    "Read/write/seek/stat/Sync/lock/unlock failures expect fixed integrity errors and shared poison where required; invalid inputs and deliberate nil journal internals do not falsely assert persistence failure.",
+    "Unlock or Sync failure after a complete write does not assert that no frame exists. This preserves the SDD's uncertain outcome and complete-frame recovery semantics.",
+    "Map-ordered subtests use independent files, locks and health domains and are not parallelized; no outcome dependence on their iteration order was found.",
+    "The beforeGate poison callback is a synchronous fault seam for the post-lock guard, not evidence of an additional real concurrent schedule. Existing dedicated concurrency tests remain separate."
+  ],
+  "nonblocking_limitations": [
+    "The generic Transition stat/seek injections fail during initial replay; they do not specifically prove the later second Stat or append SeekEnd failure paths. Do not attribute those exact branches to these tests without coverage evidence.",
+    "New fault tests primarily assert returned category and poison; they do not independently count every I/O stage or establish full supervisor zero-side-effect authorization.",
+    "Earlier notes about in-process barrier timeout coverage and incomplete forced-child termination remain unchanged."
+  ],
+  "execution": "No tests, builds, services or code edits performed. PASS is review approval, not executed regression or coverage acceptance."
+}

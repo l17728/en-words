@@ -1,0 +1,47 @@
+﻿{
+  "review": "pilot-start-kernel-sdd-test-review9",
+  "date": "2026-10-16",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "domain": "test design and acceptance contract",
+  "verdict": "BLOCK",
+  "tests_run": false,
+  "prior_review8_p1": {
+    "status": "CLOSED_AT_SPECIFICATION_LEVEL",
+    "evidence_sections": [47, 51],
+    "note": "Receipt-first recovery now explicitly validates the complete DB lifecycle, replays a valid receipt despite a damaged post-COMMIT sidecar tail, marks the case sidecar_degraded, and blocks further writes. The explicit test matrix still lacks that full branch."
+  },
+  "findings": [
+    {
+      "id": "P2-1",
+      "severity": "P2",
+      "status": "open",
+      "title": "No explicit restart test for receipt-present damaged-sidecar degraded recovery",
+      "sections": [47, 51, 93, 96],
+      "required_test": "After verifying a committed DB transaction, corrupt/truncate the terminal sidecar tail; restart; assert authorized replay of the exact receipt after full DB lifecycle verification, sidecar_degraded state, and rejection of a fresh command with zero Planner/ExecuteTool/Registry calls. Also assert damaged sidecar plus unavailable receipt returns recovery_integrity_error."
+    },
+    {
+      "id": "P2-2",
+      "severity": "P2",
+      "status": "open",
+      "title": "Filesystem ACL/path and key provisioning security negatives are specified but not assigned tests",
+      "sections": [42, 93],
+      "required_test": "Enumerate wrong owner, inherited/extra ACE, weak POSIX mode/umask, symlink/reparse/hard-link/directory swap, pre-existing/replaced key, deterministic/cross-case key reuse, and no argv/environment/log/file leakage. Each case must fail before Prepare/Registry and cannot be reused."
+    },
+    {
+      "id": "P2-3",
+      "severity": "P2",
+      "status": "open",
+      "title": "Opaque PilotToolPermit reuse and semantic-binding negatives lack direct assertions",
+      "sections": [26],
+      "required_test": "Attempt permit replay and mismatches for command, plan HMAC, attempt ID, effect index, and tool name; assert no Registry call, tool_result, or bundle. Preserve durable tool_started-before-handler barrier test."
+    }
+  ],
+  "reviewed_areas": {
+    "review8_receipt_sidecar_precedence": "PASS_SPECIFICATION_TEST_GAP_RECORDED",
+    "plan_ready_tool_started_tool_result_crash_matrix": "PASS",
+    "ExecuteTool_permit_contract": "CONTRACT_PASS_TEST_GAP_RECORDED",
+    "event_state_and_result_enum": "PASS",
+    "ACL_key_negative_tests": "TEST_GAP_RECORDED",
+    "retention_and_cleanup": "PASS"
+  }
+}

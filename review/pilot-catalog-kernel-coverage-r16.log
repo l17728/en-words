@@ -1,0 +1,5 @@
+Command: go test -timeout=210s -tags pilot_e2e ./internal/store -run PilotCatalog -count=1 -coverprofile=../review/pilot-catalog-kernel-coverage-r16.out
+GOCACHE=D:\en-words\.test-tools\gocache
+GOMODCACHE=D:\en-words\.test-tools\gomodcache
+
+ok  	enwords/internal/store	22.767s	coverage: 10.8% of statements

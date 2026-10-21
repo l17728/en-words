@@ -1,0 +1,56 @@
+{
+  "review_id": "pilot-start-kernel-sdd-security-review13-20261016",
+  "date": "2026-10-16",
+  "reviewer_domain": "security",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_type": "read-only design review",
+  "compared_against": "review/pilot-start-kernel-sdd-security-review12-20261016.json",
+  "focus": [
+    "catalog HMAC finding closure",
+    "OpenVerified handle and SQLite identity binding",
+    "catalog ACL/identity/format fail-closed behavior",
+    "cleanup quarantine and tombstones",
+    "CSRF and key boundaries",
+    "same-account threat model"
+  ],
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "blocked_pending_sqlite_identity_check_ordering",
+  "summary": "The catalog-HMAC inconsistency is closed by removing the undefined HMAC test; catalog corruption, quarantine, tombstones, CSRF, key, and threat-boundary controls are coherent. The SQLite contract remains internally inconsistent: it requires PRAGMA database_list before first SQL even though the PRAGMA is SQL, and SQLite is opened by path rather than consuming the verified handle in the VFS.",
+  "round12_dispositions": [
+    {
+      "finding_id": "PSK-SEC12-01",
+      "disposition": "closed",
+      "evidence": "§6 negative cases now cover catalog ACL/owner, malformed format, file-ID, write, and Sync failures; the undefined catalog-HMAC assertion is removed."
+    }
+  ],
+  "findings": [
+    {
+      "finding_id": "PSK-SEC13-01",
+      "severity": "P1",
+      "status": "open_blocker",
+      "title": "SQLite file identity verification is not pre-SQL as written",
+      "evidence": "§3 opens SQLite by canonical path in mode=rw and says a connection hook checks PRAGMA database_list and OS file ID before the first SQL. PRAGMA database_list is itself SQL, and a path-opened connection is not directly consuming the verified OpenVerified handle through VFS.",
+      "risk": "The required no-access-before-file-identity-check invariant is not precisely implementable as written; an implementation could execute SQL or read DB content before validating that the SQLite connection uses the authorized object.",
+      "required_revision": "Use the verified handle directly in the pilot VFS and expose its OS file ID before any database operation, or specify a VFS-level post-open/pre-SQL identity callback with a guarantee of no page/schema read or write before comparison. Do not use PRAGMA as a pre-SQL check; keep fail closed where the modernc API cannot provide the guarantee."
+    }
+  ],
+  "control_dispositions": {
+    "catalog_hmac_mismatch": "closed; undefined MAC negative case removed",
+    "catalog_acl_identity_format_sync": "specified global fail-closed controls",
+    "quarantine_tombstone_lifecycle": "ordered and durable in design",
+    "sqlite_handle_vfs_identity_binding": "underspecified/inconsistent; open P1",
+    "csrf_loopback": "coherent in design",
+    "per_case_key_and_delivery": "coherent in design",
+    "same_account_boundary": "explicit; receipt-first claim limited accordingly"
+  },
+  "remaining_blocker_count": 1,
+  "remaining_conditions": [
+    "Resolve PSK-SEC13-01 before implementing the SQLite open/identity boundary."
+  ],
+  "limitations": [
+    "No tests or runtime validation were run.",
+    "No SQLite/VFS API, ACL, catalog, browser request, key, DB, or recovery path was inspected at runtime.",
+    "This review does not approve implementation, production deployment, real student data, or classroom readiness."
+  ]
+}

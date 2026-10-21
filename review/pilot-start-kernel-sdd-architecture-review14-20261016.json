@@ -1,0 +1,24 @@
+﻿{
+  "review": "architecture-14",
+  "date": "2026-10-16",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "verdict": "BLOCK",
+  "tests_run": false,
+  "findings": [
+    {
+      "id": "A14-01",
+      "severity": "P1",
+      "status": "open",
+      "sections": ["§42", "§97"],
+      "title": "规范正文未冻结双阶段 open 授权顺序",
+      "detail": "§97明确了旧快照、cleanup竞争及在case锁后catalog锁下重读的验收，但§42仍只描述先查catalog再OpenVerified，没有要求释放初筛锁、取得case锁、持catalog锁重读最新状态、释放catalog锁后才OpenVerified/DB open。按正文直接实现可能在等待锁后复用过期快照。",
+      "required_change": "把双阶段顺序提升为§42规范性流程；旧快照仅初筛，取得case锁后必须在catalog锁下重读当前状态并放锁，然后才OpenVerified/DB；拒绝时断言OpenVerified/DB/SQL/receipt访问计数为0。"
+    }
+  ],
+  "checks": {
+    "global_catalog_generation_lock": "PASS",
+    "case_then_catalog_lock_order": "PASS",
+    "same_case_open_cleanup_race_test": "PRESENT_BUT_NORMATIVE_SEQUENCE_MISSING",
+    "receipt_first_and_quarantine_tombstone": "NO_NEW_BLOCK"
+  }
+}

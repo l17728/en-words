@@ -1,0 +1,65 @@
+{
+  "review_id": "pilot-supervisor-sdd-test-r3-20261019",
+  "reviewed_document": "docs/42-Pilot隔离运行监督器SDD.md",
+  "sha256": "cb31daa57f701a40e0251cbcf388fd728f507b43d59483cefc4053949f508037",
+  "review_type": "read-only test-domain re-review",
+  "date": "2026-10-19",
+  "verdict": "BLOCKED",
+  "p1_count": 0,
+  "open_p2_count": 2,
+  "tests_executed": false,
+  "prior_findings": [
+    {
+      "id": "F1",
+      "status": "OPEN",
+      "severity": "P2",
+      "note": "Section 13 greatly expands per-member crash/fault cases, but FI-CLOSE-01 groups all handle closes and does not specify per-syscall post-error handle validity, retry safety, remaining close sequence, lock ownership, or restart oracle. Provisioning/directory Sync cases still permit multiple outcomes without tying a unique result to each injected cut."
+    },
+    {
+      "id": "F2",
+      "status": "OPEN",
+      "severity": "P2",
+      "note": "DB/sidecar/key/provisioning cases retain conditional outcomes such as safe quarantine versus io_uncertain instead of a fixed expected result for each create/ACL/short/full-write/Sync/identity seam. Phase-tagged counters are needed to separate failed-call effects from permitted restart recovery."
+    },
+    {
+      "id": "F3",
+      "status": "CLOSED",
+      "severity": "P2",
+      "note": "Named C1-C5 IPC schedules, lock-holder crash, bounded waits, linearization and zero-effect assertions remain present."
+    },
+    {
+      "id": "F4",
+      "status": "CLOSED",
+      "severity": "P2",
+      "note": "Native Linux and NTFS Windows execution, concrete assertions, artifacts, and fail-on-skip requirements remain present."
+    },
+    {
+      "id": "F5",
+      "status": "CLOSED",
+      "severity": "P2",
+      "note": "E2E-PILOT-01..07 preserve the future loopback/browser mapping and do not treat supervisor acceptance as classroom acceptance."
+    },
+    {
+      "id": "F6",
+      "status": "CLOSED",
+      "severity": "P2",
+      "note": "Coverage thresholds/profiles, adapter platform coverage, structured event schema, cross-process trace, and negative secret/path scans remain specified."
+    },
+    {
+      "id": "R2-N1",
+      "status": "CLOSED",
+      "severity": "P2",
+      "note": "ID width is consistently 16-byte/128-bit with 32 lowercase hex encoding in §§2, 7, and 13."
+    },
+    {
+      "id": "R2-N2",
+      "status": "CLOSED",
+      "severity": "P2",
+      "note": "SQLite path-only verification and its trusted-directory/same-account-excluded boundary are consistent in §§2.6, 9, and FI-OPEN-03."
+    }
+  ],
+  "files_written": [
+    "review/pilot-supervisor-sdd-test-r3-20261019.md",
+    "review/pilot-supervisor-sdd-test-r3-20261019.json"
+  ]
+}

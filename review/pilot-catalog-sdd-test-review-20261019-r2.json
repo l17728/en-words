@@ -1,0 +1,76 @@
+{
+  "review": "pilot-catalog-sdd-test-review-20261019-r2",
+  "date": "2026-10-19",
+  "document": "docs/41-????Start??????SDD.md",
+  "sections": [
+    "?109.3 Case scope and cleanup restart",
+    "?109.4 Acceptance additions"
+  ],
+  "domain": "test design and acceptance matrix",
+  "verdict": "BLOCKED",
+  "tests_run": false,
+  "scope": "Read-only follow-up to r1. Reviewed determinism, fault injection, recovery oracles, transition/limit vectors, and multi-process tests. No code or SDD changes.",
+  "summary": "The revision closes all four r1 findings: frame-component crash/recovery oracles, differentiated write/Sync outcomes, explicit transition/capacity vectors, and barrier-controlled process races are now specified. One P2 gap remains: the acceptance suite races different case IDs but does not explicitly race two Start requests for the same case, despite the one-Start-per-case and same-case lifecycle-lock contract. Two non-blocking precision improvements are also recommended.",
+  "closed_r1_findings": [
+    {
+      "id": "CAT-TEST-1093-01",
+      "status": "CLOSED",
+      "evidence": "?109.4 table enumerates strict frame prefixes, complete bytes before/during Sync, post-Sync/pre-response, parent Sync failure, lock/read/replay/identity failures, and cleanup deletion boundaries with restart and open-count oracles."
+    },
+    {
+      "id": "CAT-TEST-1093-02",
+      "status": "CLOSED",
+      "evidence": "?109.4 distinguishes zero-byte, partial, and full-frame-plus-Sync-error; requires typed error, poison scope, no retry, no success, and expected open counters; lock/read and parent Sync failures are also named."
+    },
+    {
+      "id": "CAT-TEST-1093-03",
+      "status": "CLOSED",
+      "evidence": "?109.4 pins smallest schema-valid/256/invalid 1/0/257 payloads, exactly 16 MiB vs exceeding append, 65,536 vs next frame, generation overflow, and no byte/generation changes for invalid transitions."
+    },
+    {
+      "id": "CAT-TEST-1093-04",
+      "status": "CLOSED_FOR_CROSS_CASE_GLOBAL_APPEND",
+      "evidence": "?109.4 uses named barriers, no sleeps, controlled lock contention, reader visibility checks, process death while holding the lock, recovery after exit, and Windows/POSIX execution."
+    }
+  ],
+  "findings": [
+    {
+      "id": "CAT-TEST-1094-01",
+      "severity": "P2",
+      "status": "open",
+      "title": "No deterministic race test proves only one same-case Start wins across processes",
+      "evidence": "?109.3 states one Start per case and that same-case HTTP operations serialize under the lifecycle lock (?154). ?109.4 deterministically races two writers only for different case IDs and separately checks second commands, but does not launch two concurrent Start requests for the same ready case.",
+      "risk": "The different-case global catalog lock test can pass while the case lifecycle lock or two-phase recheck is broken. Two processes may both observe ready and both begin Start side effects before either sees open_recovery_required.",
+      "recommendation": "Add a named-barrier child-process case where two same-case Start requests both pass the optimistic read and pause before lifecycle-lock acquisition. Release together; assert exactly one ready?open_recovery_required append and one winner, the loser observes the new state and is rejected before opening DB/sidecar/key or calling Planner, with one contiguous generation and no duplicate side effects. Repeat with both acquisition orders."
+    },
+    {
+      "id": "CAT-TEST-1094-02",
+      "severity": "P3",
+      "status": "open",
+      "title": "First-create parent-Sync success followed by lost response is not a distinct recovery row",
+      "evidence": "?109.4 covers parent Sync failure and generic successful file Sync before response, but the first-created catalog has an additional required parent-directory Sync (?109.1).",
+      "risk": "A test could exercise file Sync only and omit the creation durability linearization point; the protocol's no-response-inference rule should be locked after both required Syncs succeed.",
+      "recommendation": "Add a row that crashes after successful catalog file Sync and successful first-create parent-directory Sync but before response; restart must accept the complete chain and clients must converge by reading state."
+    },
+    {
+      "id": "CAT-TEST-1094-03",
+      "severity": "P3",
+      "status": "open",
+      "title": "Golden-vector identity determinism is implicit",
+      "evidence": "?109.4 requires golden frame bytes/CRC, while ?109.1 case IDs are OS-CSPRNG values; it does not explicitly say golden/test cases inject fixed IDs and generations rather than use production randomness.",
+      "risk": "An implementation could make golden tests flaky or weaken randomness in production to obtain stable bytes.",
+      "recommendation": "State that golden/protocol tests use fixed fixture IDs and explicit generation values via a test-only source, while a separate test checks production IDs are fresh, unique, and CSPRNG-backed."
+    }
+  ],
+  "reviewed_areas": {
+    "frame_crash_boundaries": "PASS: strict prefixes and complete-before/during/after Sync outcomes have explicit restart rules",
+    "fault_injection": "PASS: zero/partial/full writes, Sync, parent Sync, lock/read/replay/identity and cleanup boundaries have typed outcome and no-open assertions",
+    "transition_and_capacity_vectors": "PASS: transition rejection is no-write; numeric limits have max/max+1 vectors",
+    "cross_case_process_race": "PASS: barrier-driven, bounded, reader visibility and process-death recovery checks",
+    "same_case_concurrent_start": "GAP: no two-process duplicate Start winner/loser test",
+    "platform_gates": "ACKNOWLEDGED: Windows/POSIX handle, ACL/mode, identity, parent Sync remain separate gates"
+  },
+  "exit_criteria": [
+    "Add the same-case concurrent Start race and assert one winner plus zero loser side effects."
+  ]
+}

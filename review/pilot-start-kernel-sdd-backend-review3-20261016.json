@@ -1,0 +1,24 @@
+﻿{
+  "review_id": "pilot-start-kernel-sdd-backend-review3-20261016",
+  "reviewer_domain": "backend_sqlite_persistence",
+  "reviewed_document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "reviewed_at": "2026-10-16",
+  "mode": "read_only_no_tests",
+  "overall": "BLOCK",
+  "summary": "事务与隔离主方向正确，但既有 Registry audit 字段合同冲突，现有 created-only verifier 到 active 生命周期的统一分派尚未冻结；不建议进入编码。",
+  "findings": [
+    {"id":"BE3-1","status":"BLOCK","priority":"P1","title":"Audit result conflicts with tools.Registry.Call","recommendation":"Registry success emits Result=ok; keep queued in receipt/outbox or define explicit versioned mapping. Do not claim Registry-native audit says queued."},
+    {"id":"BE3-2","status":"BLOCK","priority":"P1","title":"Missing complete lifecycle verifier dispatch","recommendation":"Enumerate pilot facade entrypoints and route created versus active to one strict verifier; created-only verifier currently rejects any later receipts/outbox."},
+    {"id":"BE3-3","status":"BLOCK","priority":"P1","title":"Audit Args and Registry auditor mapping are inconsistent","recommendation":"Capture original AuditEntry using a Registry constructed with task-local buffer. Keep Args={bytes:N}; validate schema/scope/effect order separately, unless a versioned mapping is explicitly specified."},
+    {"id":"BE3-4","status":"BLOCK","priority":"P1","title":"Isolated effect handler assembly not specified","recommendation":"Specify no-Room test App/task/frozen teacherEffects context and Registry-local buffered auditor; call only say and show_word index 0. Avoid global Registry/auditor."},
+    {"id":"BE3-5","status":"BLOCK","priority":"P1","title":"DDL is compatible but verifier migration remains underspecified","recommendation":"State v2 DDL remains unchanged and active rows are handled by strict active codec/verifier; if schema columns change, require new schema version."},
+    {"id":"BE3-6","status":"APPROVE","priority":"none","title":"Receipt order, unknown commit, active lifecycle constraints","recommendation":"Authorization then receipt lookup before CAS and conservative pending_unknown semantics align with existing keys/checks."},
+    {"id":"BE3-7","status":"APPROVE_WITH_CLARIFICATION","priority":"P2","title":"Freeze outbox effect kind and payload schema","recommendation":"Distinguish tool input {index:0} from show_word handler result/action payload; specify exact kind and payload contract."},
+    {"id":"BE3-8","status":"APPROVE_WITH_CLARIFICATION","priority":"P2","title":"Test harness build boundary","recommendation":"Apply pilot_e2e build tag to all files in harness package; verify default package graph excludes it."},
+    {"id":"BE3-9","status":"APPROVE_WITH_CLARIFICATION","priority":"P2","title":"Fault-injection proof conditions","recommendation":"Prove rollback before pre-COMMIT no-record assertions; post-COMMIT E2E hook must independently verify all rows before dropping response."},
+    {"id":"BE3-10","status":"APPROVE","priority":"none","title":"State codec matches current State fields and DDL capacity","recommendation":"Exact State fields and zero initialization align; existing v2 DDL supports active checkpoint and ordered two-effect outbox without schema changes."}
+  ],
+  "implementation_authorized": false,
+  "tests_run": false,
+  "code_modified": false
+}

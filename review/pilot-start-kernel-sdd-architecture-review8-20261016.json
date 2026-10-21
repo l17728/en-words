@@ -1,0 +1,15 @@
+{
+  "review":"pilot-start-kernel-sdd-architecture-review8",
+  "date":"2026-10-16",
+  "source":"docs/41-试点课堂Start持久迁移内核SDD.md",
+  "source_sha256":"d95c19157b949330814adc00468b8ac270d6ecba653d760499aff1777f8cc9b0",
+  "scope":"Targeted verification of review7 blockers and listed synchronization items",
+  "status":"PASS",
+  "blocker_count":0,
+  "blockers":[],
+  "closed":["START7-01 writer rejection enum and committed-without-receipt integrity branch", "START7-02 separate say content and receipt/fingerprint validation", "Supervisor-owned case cleanup", "OS lifecycle lock versus short append mutex", "Coordinator queue versus independent writer race tests", "Planner panic versus SQL callback panic boundaries", "Atomic cache admission before intent and tools"],
+  "recovery_policy":"Current authorization and full DB lifecycle verification permit receipt-only replay after sidecar tail corruption, while sidecar_degraded forbids all new commands. Without a receipt, corrupted sidecar fails closed.",
+  "execution":{"tests":false,"builds":false,"services":false,"spec_or_source_edits":false},
+  "limits":["Design approval only for isolated Start slice", "Implementation and fault/E2E evidence still required", "No approval of legacy Room integration, media consumer, real model or human audio"],
+  "report":"review/pilot-start-kernel-sdd-architecture-review8-20261016.md"
+}

@@ -1,0 +1,16 @@
+{
+  "review": "pilot-start-kernel-sdd-architecture",
+  "date": "2026-10-16",
+  "status": "scope_supported_implementation_blocked_pending_contract_details",
+  "source": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "report": "review/pilot-start-kernel-sdd-architecture-review-20261016.md",
+  "blockers": [
+    {"id":"START-SDD-01","severity":"P2","section":"1,3,4,7","finding":"started is not an existing DDL lifecycle enum; precise active checkpoint/roomfacts/auth-generation and effect sequence contract is not frozen.","required":"Map semantic started to explicit existing lifecycle/phase/fields; define generation0 or trusted takeover, receipt/audit/outbox identities and no playback permission. Do not silently change DDL."},
+    {"id":"START-SDD-02","severity":"P2","section":"3","finding":"created-only/version/generation checks can reject legitimate command replay unless receipt lookup precedes new-transition CAS.","required":"Authorize current owner first, lookup matching receipt next, and apply created/CAS checks only to a missing receipt; replay returns facts without fresh output authority."},
+    {"id":"START-SDD-03","severity":"P2","section":"6.5","finding":"Rejecting all concurrent live configuration changes conflicts with frozen creation config/words contract.","required":"Use original frozen creation content for Start. Reject revoked owner or changed checkpoint/generation/schema, not unrelated live config changes. Bind stable candidate inputs and creation content fingerprint."},
+    {"id":"START-SDD-04","severity":"P2","section":"3","finding":"Blanket prohibition on transactional tool invocation conflicts with docs33 tx-bound trusted tools/audit; prebuilt audit must not impersonate executed tools.","required":"Separate outside-transaction Teacher planning from allowed pure tx-bound capability validation/execution and atomic audit. Define adapter and exact effect tools; never reuse nested callAgentTool or global services."}
+  ],
+  "compatible_boundaries": ["No default App/Room/Router/Timer integration","No production pilot creation or real model/media route","No answer claims or settlement","Single writer transaction and commit-before-publication","Opaque principal is not authorization"],
+  "nonblocking": ["Choose actual test-only persistence harness, not mocked success, for E2E","not_found alone does not prove rollback","Keep planned/attempted/pass/skip distinct","Keep shared-DB deletion and finished-read-only gaps open"],
+  "execution": "Read-only; no tests, builds, services or production changes. Only these review reports were created."
+}

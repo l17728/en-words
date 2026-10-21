@@ -1,0 +1,53 @@
+{
+  "review_id": "pilot-start-kernel-sdd-security-review9-20261016",
+  "date": "2026-10-16",
+  "reviewer_domain": "security",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_type": "read-only design review",
+  "compared_against": "review/pilot-start-kernel-sdd-security-review8-20261016.json",
+  "focus": [
+    "PSK-SEC8-01 closure: fresh unique per-case key",
+    "protected key delivery and same-case restart recovery",
+    "task_hmac/trace_hmac derivation ordering",
+    "owner-only ACL/mode and trusted-local-account boundary",
+    "case retention and cleanup policy"
+  ],
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "approved_narrow_test_only_security_design",
+  "summary": "The SDD now requires a fresh, independent, unique 256-bit OS-CSPRNG HMAC key per case, prohibits cross-case reuse and fixed runtime keys, and reserves the fixed golden key for compile-time test vectors. Same-case child restart recovers the original key through the protected supervisor path. Previously reviewed ACL/mode, key-delivery, HMAC ordering, threat-boundary, and retention controls remain consistent. No new security blocker was identified in this review.",
+  "finding_dispositions": [
+    {
+      "finding_id": "PSK-SEC8-01",
+      "disposition": "closed",
+      "evidence": "§3 requires a fresh independent unique 256-bit key from OS CSPRNG per case; forbids cross-case reuse, configured fixed values, or runtime golden/test key; says only compile-time test vectors use the fixed key; and specifies same-case supervisor recovery after restart."
+    },
+    {
+      "finding_id": "PSK-SEC7-KEY-DELIVERY",
+      "disposition": "closed_and_retained",
+      "evidence": "§3 and §6 use protected inherited handle/anonymous pipe and prohibit argv, environment, logs, and dumps."
+    },
+    {
+      "finding_id": "PSK-SEC7-01",
+      "disposition": "closed_and_retained",
+      "evidence": "§4 derives tool_started task_hmac from Store-verified capability task ID and trace_hmac from Store decision ID, then cross-checks both against Registry AuditEntry after tool_result."
+    },
+    {
+      "finding_id": "PSK-SEC6-01",
+      "disposition": "closed_and_retained_with_explicit_trusted_account_limit",
+      "evidence": "§3 retains per-open owner-only DACL/POSIX mode validation, protected key creation/delivery, and explicitly limits receipt-first integrity to the trusted local-account boundary."
+    },
+    {
+      "finding_id": "PSK-SEC6-02",
+      "disposition": "closed_and_retained",
+      "evidence": "§3 retains synthetic-only data, supervisor-only pending/degraded access, immediate success cleanup, terminal failure maximum 24 hours, pending/degraded maximum 7 days, grouped cleanup, and no reuse after cleanup failure."
+    }
+  ],
+  "remaining_blocker_count": 0,
+  "remaining_conditions": [],
+  "limitations": [
+    "No tests or runtime validation were run.",
+    "No key-generation, ACL/mode, key-transfer, build-artifact, database, or recovery behavior was inspected at runtime.",
+    "Approval is limited to the written isolated test-only security design; it does not establish implementation correctness, production readiness, or classroom readiness."
+  ]
+}

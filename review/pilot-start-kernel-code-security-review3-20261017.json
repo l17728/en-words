@@ -1,0 +1,48 @@
+{
+  "review_id": "pilot-start-kernel-code-security-review3-20261017",
+  "date": "2026-10-17",
+  "reviewer_domain": "security",
+  "target": [
+    "docs/41-试点课堂Start持久迁移内核SDD.md §108",
+    "server/internal/store/pilot_start_sidecar.go"
+  ],
+  "review_type": "read-only design disposition and source review",
+  "compared_against": "review/pilot-start-kernel-code-security-review2-20261017.json",
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "approved_sdd_disposition_blocked_on_supervisor_and_platform_integration",
+  "summary": "The revised §108 closes the prior crash-after-quarantine-write-failure ambiguity at the policy level: a durable open/recovery-required catalog entry must precede any sidecar append or DB write, and a durable terminal/recovery disposition is required before a case is considered clean. After a crash before quarantine persists, startup still sees the durable unresolved marker and must deny fresh commands; it cannot infer health from the old sidecar. Current source also conforms to the tool_started pending_unknown rule and rejects reserved result classes on terminal_failed. Implementation remains blocked because no supervisor/catalog path enforces these requirements, and verified-open, creation authorization, Windows DACL, and Windows directory durability remain integration gates.",
+  "round2_dispositions": [
+    {
+      "finding_id": "PSK-SC-108-R2-01",
+      "disposition": "closed_in_sdd_policy",
+      "evidence": "§108:114 requires a durable open/recovery-required catalog entry before any sidecar append or DB write, requires durable terminal/recovery disposition before clean status, and mandates startup rejection of unresolved entries before DB/sidecar open. Thus a failed later quarantine append followed by crash still has an earlier durable fail-closed marker, assuming the prescribed ordering is implemented."
+    },
+    {
+      "finding_id": "PSK-SC-108-R2-02",
+      "disposition": "closed_in_current_source_review",
+      "evidence": "pilot_start_sidecar.go validatePilotStartEvent rejects terminal_failed with result_class commit_unknown/rollback_proven (lines 340-342), and nextPilotStartPhase disallows terminal_failed in phases 3 and 5 (tool_started without durable tool_result; lines 366-377,392-396). No tests were run."
+    }
+  ],
+  "control_dispositions": {
+    "durable_open_marker": "required before any sidecar append or DB write; resolves the prior missing-quarantine-marker restart ambiguity if enforced",
+    "quarantine_failure_and_restart": "startup treats still-open/recovery-required case as unresolved; no fresh command based on old sidecar health",
+    "tool_started_without_result": "pending_unknown; terminal_failed transition excluded in source",
+    "reserved_result_classes": "commit_unknown and rollback_proven rejected on terminal_failed in source",
+    "catalog_supervisor": "not present in reviewed server implementation; remains blocking",
+    "verified_handle_and_new_case_create": "not implemented by sidecar helper; supervisor/capability gate remains",
+    "windows_dacl_and_parent_sync": "explicitly delegated but not implemented in reviewed helper; remains blocking integration gate"
+  },
+  "remaining_blocker_count": 4,
+  "remaining_conditions": [
+    "Implement supervisor/catalog state transitions and pre-open startup authorization, including durable open/recovery-required and terminal dispositions.",
+    "Integrate verified file/directory handles and enforce new-case-only creation; do not use recovery fallback to create.",
+    "Implement Windows effective DACL checks and parent-directory durability before Windows security/durability claims.",
+    "Add and run coordinator-level restart/quarantine and Playwright pilot harness acceptance before claiming implementation complete."
+  ],
+  "limitations": [
+    "No tests or runtime validation were run.",
+    "No supervisor, catalog, fault-injection, restart, path-race, ACL, or platform durability behavior was exercised.",
+    "This review approves the written disposition only and does not establish implementation correctness or classroom readiness."
+  ]
+}

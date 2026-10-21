@@ -1,0 +1,27 @@
+{
+  "review": "pilot-supervisor-sdd-architecture-r5-20261019",
+  "date": "2026-10-19",
+  "source": "docs/42-Pilot隔离运行监督器SDD.md",
+  "source_sha256": "EB4CDE3000D7C66AE0A39D060970C180046335120DAAA295682C5B9AB0F25A01",
+  "comparison_source": "docs/41-试点课堂Start持久迁移内核SDD.md §109.2-109.3",
+  "status": "BLOCKED",
+  "blocking_count": 1,
+  "inherited_review": "pilot-supervisor-sdd-architecture-r4-20261019",
+  "findings": [
+    {
+      "id": "SUP-SDD-R5-01",
+      "severity": "P2",
+      "location": "docs/42 §30, §93, §95 and FI-CLOSE-01a/b/d/g",
+      "problem": "The API/§9 permits the original owner to retry a still_open handle in a new context; once a retry confirms closure, the close sequence may advance and release the case/shared lock. The FI rows also permit still_open retries but unconditionally require the case lock to remain held until process exit. This makes successful retry behavior and the test oracle disagree. The unknown branch's bounded child exit/reap rule is consistent and is not the finding.",
+      "required": "Distinguish successful still_open retry (advance close sequence, release locks normally), pending still_open (retain handle and locks, return close_pending for same-owner continuation), and unknown (restart_required; never retry close/unlock; bounded child exit/reap). Apply this to each affected FI row and its restart assertions.",
+      "acceptance": "Close tests prove confirmed retry success releases locks in normal order; unresolved still_open retains locks and is resumable only by its owner; unknown never retries the OS operation and holds locks until child PID exit is confirmed."
+    }
+  ],
+  "passed": [
+    "R4 PASS areas for catalog lock identity/bootstrap, case-lock ordering, state capability and docs/41 alignment remain unchanged.",
+    "FI-DB-01a/b/c distinguish application rw opens from bounded read-only recovery checks.",
+    "FI-CLEAN-01 enumerates legal source states and zero-byte/complete/partial outcomes; absent-directory cleanup verifies and syncs the pinned parent before tombstone.",
+    "Unknown close state consistently requires restart_required and bounded dedicated-child termination/reap; no in-process replacement Supervisor is allowed."
+  ],
+  "execution": "Read-only focused regression review. No files changed; no tests/builds run."
+}

@@ -1,0 +1,2609 @@
+{
+  "schema_version": 1,
+  "source_sdd": "docs/45-pilot-run-root-bootstrap-sdd.md",
+  "source_sdd_sha256": "608571101D1DD2414C941E8F5DBE6370A771724F86DC5E7514A639E898615208",
+  "contract_sources": {
+    "docs/42-Pilot隔离运行监督器SDD.md": "1FDFB5FB07176702AA827A0529464D013BCE68EF9B3508DB590D6A766C70086E",
+    "docs/43-Pilot授权幂等与父进程身份绑定SDD.md": "5F112C797919BE4FEBCE2DECD2C890DF00AD46F5782DB3FE14E07FBB60068A1E",
+    "docs/44-Pilot验证根与成员句柄切片SDD.md": "284D85B8C0A256A4D5785FB22C2F218ED60ECCE7FC811CCFE8B599E86F107E97",
+    "docs/46-pilot-host-logger-queue-sdd.md": "C2AEB82ECF4E203A7709372B7109BBCEA48F822F69B9CA9A38D53C4A18356143",
+    "docs/45-pilot-run-root-bootstrap-sdd.md": "608571101D1DD2414C941E8F5DBE6370A771724F86DC5E7514A639E898615208"
+  },
+  "platform_manifest_sha256": "EA5AE1846AB1CCF15D47DA6EEA4286E96A163DB24EF36DE686B8C94F1B3DC1C6",
+  "build_tags": [
+    "pilot_e2e"
+  ],
+  "parent_test": "TestRunRootBootstrap",
+  "package": "./internal/pilotsupervisor",
+  "discovery": "Every listed case exactly once with terminal PASS, no SKIP; missing Linux/ext4/XFS runner or fixture is BLOCKED, never PASS",
+  "rows": [
+    {
+      "id": "RRB-EPOCH_EMPTY",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/epoch_empty",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_path_invalid",
+      "side_effect_oracle": "zero ledger mutation and zero filesystem syscall",
+      "artifact": ".test-artifacts/pilot-run-root/epoch_empty/"
+    },
+    {
+      "id": "RRB-EPOCH_DOT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/epoch_dot",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_path_invalid",
+      "side_effect_oracle": "zero ledger mutation and zero filesystem syscall",
+      "artifact": ".test-artifacts/pilot-run-root/epoch_dot/"
+    },
+    {
+      "id": "RRB-EPOCH_DOTDOT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/epoch_dotdot",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_path_invalid",
+      "side_effect_oracle": "zero ledger mutation and zero filesystem syscall",
+      "artifact": ".test-artifacts/pilot-run-root/epoch_dotdot/"
+    },
+    {
+      "id": "RRB-EPOCH_SLASH",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/epoch_slash",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_path_invalid",
+      "side_effect_oracle": "zero ledger mutation and zero filesystem syscall",
+      "artifact": ".test-artifacts/pilot-run-root/epoch_slash/"
+    },
+    {
+      "id": "RRB-EPOCH_BACKSLASH",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/epoch_backslash",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_path_invalid",
+      "side_effect_oracle": "zero ledger mutation and zero filesystem syscall",
+      "artifact": ".test-artifacts/pilot-run-root/epoch_backslash/"
+    },
+    {
+      "id": "RRB-EPOCH_NUL",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/epoch_nul",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_path_invalid",
+      "side_effect_oracle": "zero ledger mutation and zero filesystem syscall",
+      "artifact": ".test-artifacts/pilot-run-root/epoch_nul/"
+    },
+    {
+      "id": "RRB-EPOCH_UPPERCASE_HEX",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/epoch_uppercase_hex",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_path_invalid",
+      "side_effect_oracle": "zero ledger mutation and zero filesystem syscall",
+      "artifact": ".test-artifacts/pilot-run-root/epoch_uppercase_hex/"
+    },
+    {
+      "id": "RRB-EPOCH_UNICODE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/epoch_unicode",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_path_invalid",
+      "side_effect_oracle": "zero ledger mutation and zero filesystem syscall",
+      "artifact": ".test-artifacts/pilot-run-root/epoch_unicode/"
+    },
+    {
+      "id": "RRB-EPOCH_WRONG_LENGTH",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/epoch_wrong_length",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_path_invalid",
+      "side_effect_oracle": "zero ledger mutation and zero filesystem syscall",
+      "artifact": ".test-artifacts/pilot-run-root/epoch_wrong_length/"
+    },
+    {
+      "id": "RRB-EPOCH_ALTERNATE_ENCODING",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/epoch_alternate_encoding",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_path_invalid",
+      "side_effect_oracle": "zero ledger mutation and zero filesystem syscall",
+      "artifact": ".test-artifacts/pilot-run-root/epoch_alternate_encoding/"
+    },
+    {
+      "id": "RRB-ANCHOR_WRONG_OWNER",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/anchor_wrong_owner",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_policy_mismatch",
+      "side_effect_oracle": "no sibling path exposure or mutation",
+      "artifact": ".test-artifacts/pilot-run-root/anchor_wrong_owner/"
+    },
+    {
+      "id": "RRB-ANCHOR_WRONG_MODE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/anchor_wrong_mode",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_policy_mismatch",
+      "side_effect_oracle": "no sibling path exposure or mutation",
+      "artifact": ".test-artifacts/pilot-run-root/anchor_wrong_mode/"
+    },
+    {
+      "id": "RRB-ANCHOR_ACL_PRESENT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/anchor_acl_present",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_policy_mismatch",
+      "side_effect_oracle": "no sibling path exposure or mutation",
+      "artifact": ".test-artifacts/pilot-run-root/anchor_acl_present/"
+    },
+    {
+      "id": "RRB-WORKER_CANNOT_LIST_OR_MUTATE_SIBLING",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/worker_cannot_list_or_mutate_sibling",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "permission_denied",
+      "side_effect_oracle": "no sibling path exposure or mutation",
+      "artifact": ".test-artifacts/pilot-run-root/worker_cannot_list_or_mutate_sibling/"
+    },
+    {
+      "id": "RRB-WORKER_TRAVERSE_KNOWN_EPOCH",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/worker_traverse_known_epoch",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "accept",
+      "expected_error": null,
+      "side_effect_oracle": "known child open succeeds; sibling enumeration remains denied",
+      "artifact": ".test-artifacts/pilot-run-root/worker_traverse_known_epoch/"
+    },
+    {
+      "id": "RRB-NAMESPACE_MOUNT_INVENTORY",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/namespace_mount_inventory",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "containment_denied",
+      "side_effect_oracle": "no host path becomes visible or mutable",
+      "artifact": ".test-artifacts/pilot-run-root/namespace_mount_inventory/"
+    },
+    {
+      "id": "RRB-NAMESPACE_FD_INVENTORY",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/namespace_fd_inventory",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "containment_denied",
+      "side_effect_oracle": "no host path becomes visible or mutable",
+      "artifact": ".test-artifacts/pilot-run-root/namespace_fd_inventory/"
+    },
+    {
+      "id": "RRB-DOTDOT_ESCAPE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/dotdot_escape",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "containment_denied",
+      "side_effect_oracle": "no host path becomes visible or mutable",
+      "artifact": ".test-artifacts/pilot-run-root/dotdot_escape/"
+    },
+    {
+      "id": "RRB-ABSOLUTE_PATH_ESCAPE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/absolute_path_escape",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "containment_denied",
+      "side_effect_oracle": "no host path becomes visible or mutable",
+      "artifact": ".test-artifacts/pilot-run-root/absolute_path_escape/"
+    },
+    {
+      "id": "RRB-FOREIGN_MOUNT_ESCAPE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/foreign_mount_escape",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "containment_denied",
+      "side_effect_oracle": "no host path becomes visible or mutable",
+      "artifact": ".test-artifacts/pilot-run-root/foreign_mount_escape/"
+    },
+    {
+      "id": "RRB-MOUNT_AFTER_CAPABILITY_DROP",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/mount_after_capability_drop",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "containment_denied",
+      "side_effect_oracle": "no host path becomes visible or mutable",
+      "artifact": ".test-artifacts/pilot-run-root/mount_after_capability_drop/"
+    },
+    {
+      "id": "RRB-STALE_GATEWAY_GENERATION",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/stale_gateway_generation",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_request_conflict",
+      "side_effect_oracle": "zero filesystem syscall",
+      "artifact": ".test-artifacts/pilot-run-root/stale_gateway_generation/"
+    },
+    {
+      "id": "RRB-PID_IDENTITY_CHANGED",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/pid_identity_changed",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_request_conflict",
+      "side_effect_oracle": "zero filesystem syscall",
+      "artifact": ".test-artifacts/pilot-run-root/pid_identity_changed/"
+    },
+    {
+      "id": "RRB-REQUEST_BINDING_CONFLICT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/request_binding_conflict",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_request_conflict",
+      "side_effect_oracle": "zero filesystem syscall",
+      "artifact": ".test-artifacts/pilot-run-root/request_binding_conflict/"
+    },
+    {
+      "id": "RRB-PRINCIPAL_BINDING_CONFLICT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/principal_binding_conflict",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_request_conflict",
+      "side_effect_oracle": "zero filesystem syscall",
+      "artifact": ".test-artifacts/pilot-run-root/principal_binding_conflict/"
+    },
+    {
+      "id": "RRB-DUPLICATE_ACTIVE_JOINS_OWNER",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/duplicate_active_joins_owner",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "coalesce",
+      "expected_error": null,
+      "side_effect_oracle": "at most one mkdirat dispatch for one idempotency key",
+      "artifact": ".test-artifacts/pilot-run-root/duplicate_active_joins_owner/"
+    },
+    {
+      "id": "RRB-DEAD_OWNER",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/dead_owner",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "phase_specific_reject",
+      "expected_error": "verified_io_failed|ipc_result_indeterminate",
+      "side_effect_oracle": "at most one mkdirat dispatch for one idempotency key",
+      "artifact": ".test-artifacts/pilot-run-root/dead_owner/"
+    },
+    {
+      "id": "RRB-PREPARED_RESUME_ONE_OWNER",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/prepared_resume_one_owner",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "complete",
+      "expected_error": null,
+      "side_effect_oracle": "at most one mkdirat dispatch for one idempotency key",
+      "artifact": ".test-artifacts/pilot-run-root/prepared_resume_one_owner/"
+    },
+    {
+      "id": "RRB-EXECUTING_OWNER_NO_REDISPATCH",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/executing_owner_no_redispatch",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "at most one mkdirat dispatch for one idempotency key",
+      "artifact": ".test-artifacts/pilot-run-root/executing_owner_no_redispatch/"
+    },
+    {
+      "id": "RRB-HARD_KILL_AFTER_PREPARED",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/hard_kill_after_prepared",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "recover",
+      "expected_error": "resume_once",
+      "side_effect_oracle": "exact ledger/run-lease state; no duplicate syscall, worker, or catalog",
+      "artifact": ".test-artifacts/pilot-run-root/hard_kill_after_prepared/"
+    },
+    {
+      "id": "RRB-HARD_KILL_AFTER_EXECUTING_BEFORE_MKDIRAT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/hard_kill_after_executing_before_mkdirat",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "recover",
+      "expected_error": "indeterminate",
+      "side_effect_oracle": "exact ledger/run-lease state; no duplicate syscall, worker, or catalog",
+      "artifact": ".test-artifacts/pilot-run-root/hard_kill_after_executing_before_mkdirat/"
+    },
+    {
+      "id": "RRB-HARD_KILL_AFTER_MKDIRAT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/hard_kill_after_mkdirat",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "recover",
+      "expected_error": "indeterminate",
+      "side_effect_oracle": "exact ledger/run-lease state; no duplicate syscall, worker, or catalog",
+      "artifact": ".test-artifacts/pilot-run-root/hard_kill_after_mkdirat/"
+    },
+    {
+      "id": "RRB-HARD_KILL_AFTER_FCHMOD_FCHOWN",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/hard_kill_after_fchmod_fchown",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "recover",
+      "expected_error": "indeterminate",
+      "side_effect_oracle": "exact ledger/run-lease state; no duplicate syscall, worker, or catalog",
+      "artifact": ".test-artifacts/pilot-run-root/hard_kill_after_fchmod_fchown/"
+    },
+    {
+      "id": "RRB-HARD_KILL_AFTER_CHILD_FSYNC",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/hard_kill_after_child_fsync",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "recover",
+      "expected_error": "indeterminate",
+      "side_effect_oracle": "exact ledger/run-lease state; no duplicate syscall, worker, or catalog",
+      "artifact": ".test-artifacts/pilot-run-root/hard_kill_after_child_fsync/"
+    },
+    {
+      "id": "RRB-HARD_KILL_AFTER_ANCHOR_FSYNC",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/hard_kill_after_anchor_fsync",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "recover",
+      "expected_error": "indeterminate",
+      "side_effect_oracle": "exact ledger/run-lease state; no duplicate syscall, worker, or catalog",
+      "artifact": ".test-artifacts/pilot-run-root/hard_kill_after_anchor_fsync/"
+    },
+    {
+      "id": "RRB-HARD_KILL_AFTER_TERMINAL_COMMIT_BEFORE_FINISH_ACK",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/hard_kill_after_terminal_commit_before_finish_ack",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Kill Reaper after atomic terminal ledger+finish-outbox commit and before logger ACK, then restart and replay outbox",
+      "expected_outcome": "recover",
+      "expected_error": "none_until_finish_ack",
+      "side_effect_oracle": "Terminal operation/allocation/run states and active-run lease remain committed; finish outbox is pending; no root capability is returned before recovery; restart ACKs same bytes with fresh nonce, one finish line, one mkdirat, one terminal receipt, then returns cached success.",
+      "artifact": ".test-artifacts/pilot-run-root/hard_kill_after_terminal_commit_before_finish_ack/"
+    },
+    {
+      "id": "RRB-ERRNO_EACCES",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/errno_eacces",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "receipt, terminal state, run lease, and cached response exactly match docs/45 errno table",
+      "artifact": ".test-artifacts/pilot-run-root/errno_eacces/"
+    },
+    {
+      "id": "RRB-ERRNO_EPERM",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/errno_eperm",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "receipt, terminal state, run lease, and cached response exactly match docs/45 errno table",
+      "artifact": ".test-artifacts/pilot-run-root/errno_eperm/"
+    },
+    {
+      "id": "RRB-ERRNO_EROFS",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/errno_erofs",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "receipt, terminal state, run lease, and cached response exactly match docs/45 errno table",
+      "artifact": ".test-artifacts/pilot-run-root/errno_erofs/"
+    },
+    {
+      "id": "RRB-ERRNO_ENOSPC",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/errno_enospc",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "receipt, terminal state, run lease, and cached response exactly match docs/45 errno table",
+      "artifact": ".test-artifacts/pilot-run-root/errno_enospc/"
+    },
+    {
+      "id": "RRB-ERRNO_EDQUOT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/errno_edquot",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "receipt, terminal state, run lease, and cached response exactly match docs/45 errno table",
+      "artifact": ".test-artifacts/pilot-run-root/errno_edquot/"
+    },
+    {
+      "id": "RRB-ERRNO_EMLINK",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/errno_emlink",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "receipt, terminal state, run lease, and cached response exactly match docs/45 errno table",
+      "artifact": ".test-artifacts/pilot-run-root/errno_emlink/"
+    },
+    {
+      "id": "RRB-ERRNO_ENOMEM",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/errno_enomem",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "receipt, terminal state, run lease, and cached response exactly match docs/45 errno table",
+      "artifact": ".test-artifacts/pilot-run-root/errno_enomem/"
+    },
+    {
+      "id": "RRB-ERRNO_ENOENT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/errno_enoent",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_path_invalid",
+      "side_effect_oracle": "receipt, terminal state, run lease, and cached response exactly match docs/45 errno table",
+      "artifact": ".test-artifacts/pilot-run-root/errno_enoent/"
+    },
+    {
+      "id": "RRB-ERRNO_ENOTDIR",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/errno_enotdir",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_path_invalid",
+      "side_effect_oracle": "receipt, terminal state, run lease, and cached response exactly match docs/45 errno table",
+      "artifact": ".test-artifacts/pilot-run-root/errno_enotdir/"
+    },
+    {
+      "id": "RRB-ERRNO_ELOOP",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/errno_eloop",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_path_invalid",
+      "side_effect_oracle": "receipt, terminal state, run lease, and cached response exactly match docs/45 errno table",
+      "artifact": ".test-artifacts/pilot-run-root/errno_eloop/"
+    },
+    {
+      "id": "RRB-ERRNO_EXDEV",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/errno_exdev",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_path_invalid",
+      "side_effect_oracle": "receipt, terminal state, run lease, and cached response exactly match docs/45 errno table",
+      "artifact": ".test-artifacts/pilot-run-root/errno_exdev/"
+    },
+    {
+      "id": "RRB-ERRNO_ENAMETOOLONG",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/errno_enametoolong",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_path_invalid",
+      "side_effect_oracle": "receipt, terminal state, run lease, and cached response exactly match docs/45 errno table",
+      "artifact": ".test-artifacts/pilot-run-root/errno_enametoolong/"
+    },
+    {
+      "id": "RRB-ERRNO_EINVAL",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/errno_einval",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_policy_mismatch",
+      "side_effect_oracle": "receipt, terminal state, run lease, and cached response exactly match docs/45 errno table",
+      "artifact": ".test-artifacts/pilot-run-root/errno_einval/"
+    },
+    {
+      "id": "RRB-ERRNO_EEXIST",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/errno_eexist",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_policy_mismatch",
+      "side_effect_oracle": "receipt, terminal state, run lease, and cached response exactly match docs/45 errno table",
+      "artifact": ".test-artifacts/pilot-run-root/errno_eexist/"
+    },
+    {
+      "id": "RRB-ERRNO_EIO",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/errno_eio",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "receipt, terminal state, run lease, and cached response exactly match docs/45 errno table",
+      "artifact": ".test-artifacts/pilot-run-root/errno_eio/"
+    },
+    {
+      "id": "RRB-ERRNO_EINTR",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/errno_eintr",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "receipt, terminal state, run lease, and cached response exactly match docs/45 errno table",
+      "artifact": ".test-artifacts/pilot-run-root/errno_eintr/"
+    },
+    {
+      "id": "RRB-ERRNO_EFAULT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/errno_efault",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "receipt, terminal state, run lease, and cached response exactly match docs/45 errno table",
+      "artifact": ".test-artifacts/pilot-run-root/errno_efault/"
+    },
+    {
+      "id": "RRB-ERRNO_UNKNOWN",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/errno_unknown",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "receipt, terminal state, run lease, and cached response exactly match docs/45 errno table",
+      "artifact": ".test-artifacts/pilot-run-root/errno_unknown/"
+    },
+    {
+      "id": "RRB-CANCEL_BEFORE_CAS",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/cancel_before_cas",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "operation_canceled",
+      "side_effect_oracle": "durable state and retry behavior match docs/45; never duplicate filesystem effect",
+      "artifact": ".test-artifacts/pilot-run-root/cancel_before_cas/"
+    },
+    {
+      "id": "RRB-CANCEL_AFTER_CAS_BEFORE_SYSCALL",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/cancel_after_cas_before_syscall",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "durable state and retry behavior match docs/45; never duplicate filesystem effect",
+      "artifact": ".test-artifacts/pilot-run-root/cancel_after_cas_before_syscall/"
+    },
+    {
+      "id": "RRB-CANCEL_AFTER_SUCCESSFUL_MKDIR",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/cancel_after_successful_mkdir",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "io_uncertain",
+      "side_effect_oracle": "durable state and retry behavior match docs/45; never duplicate filesystem effect",
+      "artifact": ".test-artifacts/pilot-run-root/cancel_after_successful_mkdir/"
+    },
+    {
+      "id": "RRB-UNSUPPORTED_FS",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/unsupported_fs",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_policy_mismatch",
+      "side_effect_oracle": "Detected supported query but unsupported filesystem; reject before reservation or syscall",
+      "artifact": ".test-artifacts/pilot-run-root/unsupported_fs/"
+    },
+    {
+      "id": "RRB-MOUNT_IDENTITY_MISMATCH",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/mount_identity_mismatch",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_path_invalid",
+      "side_effect_oracle": "Pinned mount/device identity mismatch; reject before reservation or syscall",
+      "artifact": ".test-artifacts/pilot-run-root/mount_identity_mismatch/"
+    },
+    {
+      "id": "RRB-DEVICE_IDENTITY_MISMATCH",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/postcreate_root_device_readback_mismatch",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "mkdirat succeeds; root exists; fstat/statx readback reports device mismatch before receipt commit",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "Root exists; success receipt absent; operation/allocation/run indeterminate and epoch fenced; lease held; reopen/retry/worker/new epoch counts are zero; no repair/unlink.",
+      "artifact": ".test-artifacts/pilot-run-root/postcreate_root_device_readback_mismatch/"
+    },
+    {
+      "id": "RRB-DEFAULT_ACL_PRESENT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/default_acl_present",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "verified_policy_mismatch",
+      "side_effect_oracle": "ACL query succeeds and reports a default ACL; reject before reservation or syscall",
+      "artifact": ".test-artifacts/pilot-run-root/default_acl_present/"
+    },
+    {
+      "id": "RRB-OPENAT2_RESOLUTION_FAILURE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/openat2_resolution_failure",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "side effect count and run fence match docs/45; no worker/catalog/HTTP success",
+      "artifact": ".test-artifacts/pilot-run-root/openat2_resolution_failure/"
+    },
+    {
+      "id": "RRB-FCHMOD_FAILURE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/fchmod_failure",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "side effect count and run fence match docs/45; no worker/catalog/HTTP success",
+      "artifact": ".test-artifacts/pilot-run-root/fchmod_failure/"
+    },
+    {
+      "id": "RRB-FCHOWN_FAILURE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/fchown_failure",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "side effect count and run fence match docs/45; no worker/catalog/HTTP success",
+      "artifact": ".test-artifacts/pilot-run-root/fchown_failure/"
+    },
+    {
+      "id": "RRB-CHILD_FSYNC_FAILURE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/child_fsync_failure",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "side effect count and run fence match docs/45; no worker/catalog/HTTP success",
+      "artifact": ".test-artifacts/pilot-run-root/child_fsync_failure/"
+    },
+    {
+      "id": "RRB-ANCHOR_FSYNC_FAILURE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/anchor_fsync_failure",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "side effect count and run fence match docs/45; no worker/catalog/HTTP success",
+      "artifact": ".test-artifacts/pilot-run-root/anchor_fsync_failure/"
+    },
+    {
+      "id": "RRB-RECEIPT_COMMIT_FAILURE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/receipt_commit_failure",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "side effect count and run fence match docs/45; no worker/catalog/HTTP success",
+      "artifact": ".test-artifacts/pilot-run-root/receipt_commit_failure/"
+    },
+    {
+      "id": "RRB-CLOSE_UNKNOWN",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/close_unknown",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "side effect count and run fence match docs/45; no worker/catalog/HTTP success",
+      "artifact": ".test-artifacts/pilot-run-root/close_unknown/"
+    },
+    {
+      "id": "RRB-RESTART_COMPLETED_IDENTITY_MISMATCH",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/restart_completed_identity_mismatch",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Dedicated ext4/XFS mount namespace; protected control ledger; separate Reaper and worker credentials",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "side effect count and run fence match docs/45; no worker/catalog/HTTP success",
+      "artifact": ".test-artifacts/pilot-run-root/restart_completed_identity_mismatch/"
+    },
+    {
+      "id": "RRB-HOST_LOGGER_FTRUNCATE_DENIED",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/host_logger_ftruncate_denied",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host with separate trusted logger",
+      "fixture": "connected SOCK_SEQPACKET logger channel; previous valid event persisted",
+      "expected_outcome": "reject",
+      "expected_error": "permission_denied",
+      "side_effect_oracle": "No prior audit event can be truncated or rewritten.",
+      "artifact": ".test-artifacts/pilot-run-root/host_logger_ftruncate_denied/"
+    },
+    {
+      "id": "RRB-HOST_LOGGER_REJECTS_MALFORMED_FRAME",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/host_logger_rejects_malformed_frame",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host with separate trusted logger",
+      "fixture": "connected SOCK_SEQPACKET logger channel; previous valid event persisted",
+      "expected_outcome": "reject",
+      "expected_error": "schema_invalid",
+      "side_effect_oracle": "Malformed frame is rejected and no audit event is appended.",
+      "artifact": ".test-artifacts/pilot-run-root/host_logger_rejects_malformed_frame/"
+    },
+    {
+      "id": "RRB-EPOCH_REUSE_DIFFERENT_REQUEST_ID",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/epoch_reuse_different_request_id",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "durable run_epoch_allocations tombstone after deterministic no-effect failure",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_request_conflict",
+      "side_effect_oracle": "No second mkdirat; permanent epoch tombstone remains after lease release; next attempt must use fresh epoch.",
+      "artifact": ".test-artifacts/pilot-run-root/epoch_reuse_different_request_id/"
+    },
+    {
+      "id": "RRB-SOURCE_VECTORS_ACCEPT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/source_vectors_accept",
+      "goos": [
+        "linux/amd64",
+        "windows/amd64"
+      ],
+      "runner": "deterministic unit test; no OS fixture",
+      "fixture": "fixed docs/43 ?8.1 canonical CBOR vector and one-field mutations",
+      "expected_outcome": "accept",
+      "expected_error": null,
+      "side_effect_oracle": "No filesystem, worker, catalog, or HTTP side effects.",
+      "artifact": ".test-artifacts/pilot-run-root/source_vectors_accept/"
+    },
+    {
+      "id": "RRB-SOURCE_VECTORS_MUTATION_REJECT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/source_vectors_mutation_reject",
+      "goos": [
+        "linux/amd64",
+        "windows/amd64"
+      ],
+      "runner": "deterministic unit test; no OS fixture",
+      "fixture": "fixed docs/43 ?8.1 canonical CBOR vector and one-field mutations",
+      "expected_outcome": "reject",
+      "expected_error": "digest_or_schema_mismatch",
+      "side_effect_oracle": "No filesystem, worker, catalog, or HTTP side effects.",
+      "artifact": ".test-artifacts/pilot-run-root/source_vectors_mutation_reject/"
+    },
+    {
+      "id": "RRB-RESERVATION_ATOMIC_COMMIT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/reservation_atomic_commit",
+      "goos": [
+        "linux/amd64",
+        "windows/amd64"
+      ],
+      "runner": "ledger/VFS fault-injection test; native durability acceptance additionally requires Linux ext4/XFS",
+      "fixture": "PilotControl ledger with transaction crash injection and durable run epoch tombstone",
+      "expected_outcome": "accept",
+      "expected_error": null,
+      "side_effect_oracle": "Kill after durable COMMIT: all four mutually bound rows recover as prepared/held; zero filesystem syscall; no API response was delivered.",
+      "artifact": ".test-artifacts/pilot-run-root/reservation_atomic_commit/",
+      "runner_exit": "killed_at_injected_transaction_barrier",
+      "expected_api_response": "none_process_terminated"
+    },
+    {
+      "id": "RRB-RESERVATION_RESTART_AFTER_COMMIT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/reservation_restart_after_commit",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS ledger crash-injection runner",
+      "fixture": "PilotControl ledger with transaction crash injection and durable run epoch tombstone",
+      "expected_outcome": "resume_once",
+      "expected_error": null,
+      "side_effect_oracle": "After durable COMMIT, all four mutually bound rows recover prepared/held; exactly one competing recovery owner wins CAS; exactly one mkdirat dispatch occurs; zero worker starts before durable receipt; caller receives no API response from the killed process.",
+      "artifact": ".test-artifacts/pilot-run-root/reservation_restart_after_commit/",
+      "runner_exit": "killed_at_injected_transaction_barrier",
+      "expected_api_response": "none_process_terminated"
+    },
+    {
+      "id": "RRB-LEASE_RELEASE_TERMINAL_GATE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/lease_release_terminal_gate",
+      "goos": [
+        "linux/amd64",
+        "windows/amd64"
+      ],
+      "runner": "ledger/VFS fault-injection test; native durability acceptance additionally requires Linux ext4/XFS",
+      "fixture": "PilotControl ledger with transaction crash injection and durable run epoch tombstone",
+      "expected_outcome": "reject",
+      "expected_error": "held_until_terminal",
+      "side_effect_oracle": "Receipt alone cannot release lease; one durable run-terminal transaction commits fence, no-worker proof, cleanup_state=not_required, and abandoned terminal.",
+      "artifact": ".test-artifacts/pilot-run-root/lease_release_terminal_gate/"
+    },
+    {
+      "id": "RRB-CANCEL_AFTER_PREPARED_BEFORE_CAS",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/cancel_after_prepared_before_cas",
+      "goos": [
+        "linux/amd64",
+        "windows/amd64"
+      ],
+      "runner": "ledger/VFS fault-injection test; native durability acceptance additionally requires Linux ext4/XFS",
+      "fixture": "fully committed prepared reservation and run lease; cancel before executing CAS",
+      "expected_outcome": "prepared_held",
+      "expected_error": "operation_canceled",
+      "side_effect_oracle": "No mkdirat; keep all bound rows intact; same-key retry may claim exactly once and continue.",
+      "artifact": ".test-artifacts/pilot-run-root/cancel_after_prepared_before_cas/"
+    },
+    {
+      "id": "RRB-EEXIST_OPERATION_VS_RUN_TERMINAL",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/eexist_operation_vs_run_terminal",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "fake ledger test plus native ext4/XFS EEXIST fixture",
+      "fixture": "existing unknown target must remain unopened; durable collision receipt",
+      "expected_outcome": "operation_abandoned_run_indeterminate",
+      "expected_error": "verified_policy_mismatch",
+      "side_effect_oracle": "operation=abandoned from collision receipt; allocation/run terminal=indeterminate; cleanup=indeterminate; lease held; explicitly assert target_opened=false and open/stat/query count=0; worker count=0; no new epoch",
+      "artifact": ".test-artifacts/pilot-run-root/eexist_operation_vs_run_terminal/"
+    },
+    {
+      "id": "RRB-RESERVATION_AFTER_EPOCH_INSERT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/reservation_after_epoch_insert",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Inject crash after allocation row insert; reopen ledger and inspect all four relations",
+      "expected_outcome": "reject",
+      "expected_error": null,
+      "side_effect_oracle": "Kill before COMMIT: transaction rollback leaves zero allocation, lease, operation, and business-index rows; zero filesystem syscall; no API response was delivered.",
+      "artifact": ".test-artifacts/pilot-run-root/reservation_after_epoch_insert/",
+      "runner_exit": "killed_at_injected_transaction_barrier",
+      "expected_api_response": "none_process_terminated"
+    },
+    {
+      "id": "RRB-RESERVATION_AFTER_LEASE_INSERT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/reservation_after_lease_insert",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Inject crash after lease insert; reopen ledger and inspect all four relations",
+      "expected_outcome": "reject",
+      "expected_error": null,
+      "side_effect_oracle": "Kill before COMMIT: transaction rollback leaves zero allocation, lease, operation, and business-index rows; zero filesystem syscall; no API response was delivered.",
+      "artifact": ".test-artifacts/pilot-run-root/reservation_after_lease_insert/",
+      "runner_exit": "killed_at_injected_transaction_barrier",
+      "expected_api_response": "none_process_terminated"
+    },
+    {
+      "id": "RRB-RESERVATION_AFTER_OPERATION_INSERT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/reservation_after_operation_insert",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Inject crash after prepared operation insert; reopen ledger and inspect all four relations",
+      "expected_outcome": "reject",
+      "expected_error": null,
+      "side_effect_oracle": "Kill before COMMIT: transaction rollback leaves zero allocation, lease, operation, and business-index rows; zero filesystem syscall; no API response was delivered.",
+      "artifact": ".test-artifacts/pilot-run-root/reservation_after_operation_insert/",
+      "runner_exit": "killed_at_injected_transaction_barrier",
+      "expected_api_response": "none_process_terminated"
+    },
+    {
+      "id": "RRB-RESERVATION_AFTER_BUSINESS_INDEX_INSERT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/reservation_after_business_index_insert",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Inject crash after business index/tombstone insert; reopen ledger and inspect all four relations",
+      "expected_outcome": "reject",
+      "expected_error": null,
+      "side_effect_oracle": "Kill before COMMIT: transaction rollback leaves zero allocation, lease, operation, and business-index rows; zero filesystem syscall; no API response was delivered.",
+      "artifact": ".test-artifacts/pilot-run-root/reservation_after_business_index_insert/",
+      "runner_exit": "killed_at_injected_transaction_barrier",
+      "expected_api_response": "none_process_terminated"
+    },
+    {
+      "id": "RRB-RESERVATION_BEFORE_COMMIT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/reservation_before_commit",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Inject crash immediately before COMMIT; reopen ledger and inspect all four relations",
+      "expected_outcome": "reject",
+      "expected_error": null,
+      "side_effect_oracle": "Kill before COMMIT: transaction rollback leaves zero allocation, lease, operation, and business-index rows; zero filesystem syscall; no API response was delivered.",
+      "artifact": ".test-artifacts/pilot-run-root/reservation_before_commit/",
+      "runner_exit": "killed_at_injected_transaction_barrier",
+      "expected_api_response": "none_process_terminated"
+    },
+    {
+      "id": "RRB-RESERVATION_AFTER_COMMIT_BEFORE_ACK",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/reservation_after_commit_before_ack",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Inject crash after durable COMMIT before caller acknowledgement; reopen ledger and inspect all four relations",
+      "expected_outcome": "reject",
+      "expected_error": null,
+      "side_effect_oracle": "Kill after durable COMMIT before ACK: all four mutually bound rows recover as prepared/held; zero filesystem syscall; no API response was delivered.",
+      "artifact": ".test-artifacts/pilot-run-root/reservation_after_commit_before_ack/",
+      "runner_exit": "killed_at_injected_transaction_barrier",
+      "expected_api_response": "none_process_terminated"
+    },
+    {
+      "id": "RRB-ABSENCE_QUERY_ERROR",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/absence_query_error",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "mkdir returns deterministic non-EEXIST error; no-follow absence query fails",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "operation/allocation/run indeterminate; lease held; no terminal receipt; no new epoch",
+      "artifact": ".test-artifacts/pilot-run-root/absence_query_error/"
+    },
+    {
+      "id": "RRB-ABSENCE_TARGET_PRESENT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/absence_target_present",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "mkdir returns deterministic non-EEXIST error; no-follow query finds target present",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "operation/allocation/run indeterminate; lease held; no terminal receipt; no new epoch; target not opened or followed",
+      "artifact": ".test-artifacts/pilot-run-root/absence_target_present/"
+    },
+    {
+      "id": "RRB-ABSENCE_SYMLINK",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/absence_symlink",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "mkdir returns deterministic non-EEXIST error; no-follow query finds a symlink at target",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "operation/allocation/run indeterminate; lease held; no terminal receipt; no new epoch; symlink not followed or opened",
+      "artifact": ".test-artifacts/pilot-run-root/absence_symlink/"
+    },
+    {
+      "id": "RRB-ACL_QUERY_FAILURE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/acl_query_failure",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Pinned FD ACL xattr query fails with a stable I/O error",
+      "expected_outcome": "reject",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "zero prepared operation, lease, and filesystem syscall; preserve diagnostic trace without identity or secret leakage",
+      "artifact": ".test-artifacts/pilot-run-root/acl_query_failure/"
+    },
+    {
+      "id": "RRB-MOUNT_QUERY_FAILURE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/mount_identity_query_failure",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Pinned FD mount/device identity query fails or is unclassifiable",
+      "expected_outcome": "reject",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "zero prepared operation, lease, and filesystem syscall; preserve diagnostic trace without identity or secret leakage",
+      "artifact": ".test-artifacts/pilot-run-root/mount_identity_query_failure/"
+    },
+    {
+      "id": "RRB-FS_QUERY_FAILURE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/filesystem_type_query_failure",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Pinned run-root anchor fstatfs or equivalent filesystem-type capability query fails with I/O error",
+      "expected_outcome": "reject",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "zero prepared operation, lease, and filesystem syscall; emit bounded diagnostic event with no secrets or full identity",
+      "artifact": ".test-artifacts/pilot-run-root/filesystem_type_query_failure/"
+    },
+    {
+      "id": "RRB-POSTCREATE_ROOT_MOUNT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/postcreate_root_mount_readback_mismatch",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "mkdirat succeeds; root exists; statx readback reports mount ID mismatch before receipt commit",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "Root exists; success receipt absent; operation/allocation/run indeterminate and epoch fenced; lease held; reopen/retry/worker/new epoch counts are zero; no repair/unlink.",
+      "artifact": ".test-artifacts/pilot-run-root/postcreate_root_mount_readback_mismatch/"
+    },
+    {
+      "id": "RRB-POSTCREATE_ROOT_IDENTITY",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/postcreate_root_identity_readback_mismatch",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "mkdirat succeeds; root exists; pinned inode identity differs before receipt commit",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "Root exists; success receipt absent; operation/allocation/run indeterminate and epoch fenced; lease held; reopen/retry/worker/new epoch counts are zero; no repair/unlink.",
+      "artifact": ".test-artifacts/pilot-run-root/postcreate_root_identity_readback_mismatch/"
+    },
+    {
+      "id": "RRB-POSTCREATE_WORKER_UID",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/postcreate_worker_uid_readback_mismatch",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "mkdirat and fchown succeed; root exists; fstat reports unexpected worker UID before receipt commit",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "Root exists; success receipt absent; operation/allocation/run indeterminate and epoch fenced; lease held; reopen/retry/worker/new epoch counts are zero; no repair/unlink.",
+      "artifact": ".test-artifacts/pilot-run-root/postcreate_worker_uid_readback_mismatch/"
+    },
+    {
+      "id": "RRB-POSTCREATE_WORKER_GID",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/postcreate_worker_gid_readback_mismatch",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "mkdirat and fchown succeed; root exists; fstat reports unexpected worker GID before receipt commit",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "Root exists; success receipt absent; operation/allocation/run indeterminate and epoch fenced; lease held; reopen/retry/worker/new epoch counts are zero; no repair/unlink.",
+      "artifact": ".test-artifacts/pilot-run-root/postcreate_worker_gid_readback_mismatch/"
+    },
+    {
+      "id": "RRB-POSTCREATE_MODE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/postcreate_mode_readback_mismatch",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "mkdirat and fchmod succeed; root exists; fstat reports mode differs from 0700 before receipt commit",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "Root exists; success receipt absent; operation/allocation/run indeterminate and epoch fenced; lease held; reopen/retry/worker/new epoch counts are zero; no repair/unlink.",
+      "artifact": ".test-artifacts/pilot-run-root/postcreate_mode_readback_mismatch/"
+    },
+    {
+      "id": "RRB-POSTCREATE_ACCESS_ACL",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/postcreate_access_acl_readback_mismatch",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "mkdirat succeeds; root exists; ACL readback reports access ACL before receipt commit",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "Root exists; success receipt absent; operation/allocation/run indeterminate and epoch fenced; lease held; reopen/retry/worker/new epoch counts are zero; no repair/unlink.",
+      "artifact": ".test-artifacts/pilot-run-root/postcreate_access_acl_readback_mismatch/"
+    },
+    {
+      "id": "RRB-POSTCREATE_DEFAULT_ACL",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/postcreate_default_acl_readback_mismatch",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "mkdirat succeeds; root exists; ACL readback reports default ACL before receipt commit",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "Root exists; success receipt absent; operation/allocation/run indeterminate and epoch fenced; lease held; reopen/retry/worker/new epoch counts are zero; no repair/unlink.",
+      "artifact": ".test-artifacts/pilot-run-root/postcreate_default_acl_readback_mismatch/"
+    },
+    {
+      "id": "RRB-PEER_PID_REUSE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/peer_pid_reuse_between_credentials_and_pidfd",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner",
+      "fixture": "Attempt PID exit/reuse between SO_PEERCRED and authorization; assert no pidfd_open is called on peer-supplied numeric PID and only the retained launcher bootstrap pidfd is transferred",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_peer_rejected",
+      "side_effect_oracle": "peer_pidfd_open_call_count=0; bootstrap pidfd identity/liveness is checked; mismatch or signaled pidfd returns ipc_peer_rejected; ledger dispatch/filesystem syscall/worker/new epoch=0.",
+      "artifact": ".test-artifacts/pilot-run-root/peer_pid_reuse_between_credentials_and_pidfd/"
+    },
+    {
+      "id": "RRB-PEER_NAMESPACE_DRIFT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/peer_namespace_or_cgroup_drift",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner",
+      "fixture": "Launcher observes PID namespace or cgroup identity change across pidfd-pinned reads",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_peer_rejected",
+      "side_effect_oracle": "No ledger dispatch or filesystem syscall; reject peer or event; bounded logger state; no secret/full identity in records.",
+      "artifact": ".test-artifacts/pilot-run-root/peer_namespace_or_cgroup_drift/"
+    },
+    {
+      "id": "RRB-PEER_PIDFD_EXIT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/peer_pidfd_exit_before_dispatch",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner",
+      "fixture": "Pinned Gateway pidfd becomes signaled before dispatch CAS/syscall",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_peer_rejected",
+      "side_effect_oracle": "No ledger dispatch or filesystem syscall; reject peer or event; bounded logger state; no secret/full identity in records.",
+      "artifact": ".test-artifacts/pilot-run-root/peer_pidfd_exit_before_dispatch/"
+    },
+    {
+      "id": "RRB-LOGGER_FRAME_LIMIT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_oversized_or_truncated_frame",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner",
+      "fixture": "Send 16 KiB+1 and MSG_TRUNC frames through SOCK_SEQPACKET",
+      "expected_outcome": "reject",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "No ledger dispatch or filesystem syscall; reject peer or event; bounded logger state; no secret/full identity in records.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_oversized_or_truncated_frame/"
+    },
+    {
+      "id": "RRB-LOGGER_RATE_LIMIT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_rate_limit_burst",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner",
+      "fixture": "Exceed 100 frames/second and burst 200 for one run",
+      "expected_outcome": "reject",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "No ledger dispatch or filesystem syscall; reject peer or event; bounded logger state; no secret/full identity in records.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_rate_limit_burst/"
+    },
+    {
+      "id": "RRB-LOGGER_BACKPRESSURE_PRECREATE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_timeout_at_prepared_before_cas",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner",
+      "fixture": "At prepared state before prepared→executing CAS, FakeClock ACK at 1999ms succeeds; ACK exactly at 2000ms times out",
+      "expected_outcome": "held_until_terminal",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "1999ms branch proceeds; 2000ms branch remains prepared with lease held, zero executing CAS and zero filesystem syscall; same-key retry after logger recovery may resume once.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_timeout_at_prepared_before_cas/"
+    },
+    {
+      "id": "RRB-LOGGER_BACKPRESSURE_POSTCREATE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_timeout_after_mkdir",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner",
+      "fixture": "After mkdirat creates the root, FakeClock critical ACK reaches exactly 2000ms timeout before receipt commit",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "Root exists; success receipt absent; operation/allocation/run indeterminate and fenced; lease held; no reopen/retry/worker/new epoch.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_timeout_after_mkdir/"
+    },
+    {
+      "id": "RRB-PEER_BOOTSTRAP_TUPLE_MISMATCH",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/peer_bootstrap_tuple_mismatch",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner",
+      "fixture": "Gateway peer PID/UID/starttime/PID namespace/cgroup differs from launcher-pinned bootstrap record",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_peer_rejected",
+      "side_effect_oracle": "zero ledger dispatch and filesystem syscall; no worker; no new epoch; audit records only bounded non-sensitive identity reference",
+      "artifact": ".test-artifacts/pilot-run-root/peer_bootstrap_tuple_mismatch/"
+    },
+    {
+      "id": "RRB-PEER_INHERITED_ENDPOINT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/peer_inherited_endpoint_rejected",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner",
+      "fixture": "A child process attempts to use an inherited Gateway IPC endpoint",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_peer_rejected",
+      "side_effect_oracle": "zero ledger dispatch and filesystem syscall; no worker; no new epoch; audit records only bounded non-sensitive identity reference",
+      "artifact": ".test-artifacts/pilot-run-root/peer_inherited_endpoint_rejected/"
+    },
+    {
+      "id": "RRB-LOGGER_QUEUE_CAPACITY_PRE_CAS",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_queue_capacity_pre_cas",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with FakeClock and bounded logger",
+      "fixture": "Fill the encoded-frame queue and waiter/byte limit, then inject run_root_dispatch_intent at the pre-CAS boundary.",
+      "expected_outcome": "reject",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "Capacity rejection produces no ACK and no state growth. Keep reservation prepared, perform zero filesystem effects, and require logger restart plus strict index validation before same-record retry.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_queue_capacity_pre_cas/",
+      "implementation_status": "blocked_until_runroot_caller_integration"
+    },
+    {
+      "id": "RRB-LOGGER_QUEUE_CAPACITY_POST_CAS",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_queue_capacity_post_cas",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with FakeClock and bounded logger",
+      "fixture": "Fill the encoded-frame queue and waiter/byte limit, then inject run_root_dispatch_committed after CAS and before mkdirat.",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "Capacity rejection produces no ACK and no state growth. Preserve indeterminate state, fence epoch and lease, withhold capability, and never call mkdirat or retry the filesystem effect.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_queue_capacity_post_cas/",
+      "implementation_status": "blocked_until_runroot_caller_integration"
+    },
+    {
+      "id": "RRB-LOGGER_ACTIVE_RUN_LIMIT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_active_run_capacity",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with FakeClock and bounded logger",
+      "fixture": "Create 16 concurrent run contexts then request a 17th",
+      "expected_outcome": "reject",
+      "expected_error": "ipc_registry_full",
+      "side_effect_oracle": "At exact capacity/limit the next event/run is rejected; before mkdir zero filesystem effect. Queue memory <=64 MiB, active runs <=16; sensitive fields absent from logger output.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_active_run_capacity/"
+    },
+    {
+      "id": "RRB-LOGGER_GLOBAL_RATE_LIMIT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_global_rate_limit",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with FakeClock and bounded logger",
+      "fixture": "Across 16 runs exceed global 1600 frames/second and burst 3200 while waiter/byte capacity remains available.",
+      "expected_outcome": "reject",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "Every valid frame beyond global rate capacity receives only its exact correlated rejected ACK while waiter/byte capacity remains available and is not appended; each nonempty run bucket debits independently; store stays healthy and no accepted durability receipt is fabricated. All runs obey the same 1,600-frame/sec budget.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_global_rate_limit/"
+    },
+    {
+      "id": "RRB-LOGGER_RATE_LIMIT_POSTCREATE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_rate_limit_after_mkdir",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with FakeClock and bounded logger",
+      "fixture": "Exhaust per-run or global critical-event tokens after mkdirat but before receipt",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "Root exists; success receipt absent; operation/allocation/run indeterminate and epoch fenced; lease held; no reopen/retry/worker/new epoch.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_rate_limit_after_mkdir/"
+    },
+    {
+      "id": "RRB-LOGGER_FRAME_LIMIT_POSTCREATE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_oversized_critical_frame_after_mkdir",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with FakeClock and bounded logger",
+      "fixture": "Inject an oversized critical event frame after mkdirat but before receipt",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "Root exists; success receipt absent; operation/allocation/run indeterminate and epoch fenced; lease held; no reopen/retry/worker/new epoch.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_oversized_critical_frame_after_mkdir/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_EXECUTING",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_timeout_after_executing_before_mkdir",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with FakeClock",
+      "fixture": "After durable prepared→executing CAS, critical dispatch_committed ACK reaches exactly 2000ms timeout before mkdirat",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "executing CAS is durable; mkdirat count=0; operation/allocation/run indeterminate and epoch fenced; lease held; no retry/reopen/worker/new epoch.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_timeout_after_executing_before_mkdir/"
+    },
+    {
+      "id": "RRB-LOGGER_RUNROOT_EVENTS_ACCEPT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_runroot_event_allowlist",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with strict logger schema",
+      "fixture": "Strict docs/42 logger accepts module=pilot_host_reaper with event=run_root_dispatch_intent and run_root_dispatch_committed; ACK echoes exact trace_id/process_id/operation_id/event tuple",
+      "expected_outcome": "accept",
+      "expected_error": null,
+      "side_effect_oracle": "Allowed events require exact ACK tuple match before the stage-specific CAS/syscall; unknown event/field yields zero dispatch and no filesystem effect.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_runroot_event_allowlist/"
+    },
+    {
+      "id": "RRB-LOGGER_UNKNOWN_EVENT_REJECT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_unknown_event_reject",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with strict logger schema",
+      "fixture": "Strict docs/42 logger rejects unlisted module, event, or extra schema field; positive run-root events are accepted only under pilot_host_reaper",
+      "expected_outcome": "reject",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "Allowed events require exact ACK tuple match before the stage-specific CAS/syscall; unknown event/field yields zero dispatch and no filesystem effect.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_unknown_event_reject/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_INTENT_TRACE_ID",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_intent_bad_trace_id",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with strict logger ACK peer",
+      "fixture": "Valid ACK followed by a mutation of trace_id in the ACK tuple before prepared→executing CAS",
+      "expected_outcome": "held_until_terminal",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "ACK rejected; operation remains prepared and lease held; executing CAS count=0; mkdirat count=0; no completion event or fabricated receipt; same-key resume only after logger channel recovery.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_intent_bad_trace_id/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_INTENT_PROCESS_ID",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_intent_bad_process_id",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with strict logger ACK peer",
+      "fixture": "Valid ACK followed by a mutation of process_id in the ACK tuple before prepared→executing CAS",
+      "expected_outcome": "held_until_terminal",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "ACK rejected; operation remains prepared and lease held; executing CAS count=0; mkdirat count=0; no completion event or fabricated receipt; same-key resume only after logger channel recovery.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_intent_bad_process_id/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_INTENT_OPERATION_ID",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_intent_bad_operation_id",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with strict logger ACK peer",
+      "fixture": "Valid ACK followed by a mutation of operation_id in the ACK tuple before prepared→executing CAS",
+      "expected_outcome": "held_until_terminal",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "ACK rejected; operation remains prepared and lease held; executing CAS count=0; mkdirat count=0; no completion event or fabricated receipt; same-key resume only after logger channel recovery.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_intent_bad_operation_id/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_INTENT_EVENT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_intent_bad_event",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with strict logger ACK peer",
+      "fixture": "Valid ACK followed by a mutation of event in the ACK tuple before prepared→executing CAS",
+      "expected_outcome": "held_until_terminal",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "ACK rejected; operation remains prepared and lease held; executing CAS count=0; mkdirat count=0; no completion event or fabricated receipt; same-key resume only after logger channel recovery.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_intent_bad_event/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_INTENT_DUPLICATE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_intent_bad_duplicate",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with strict logger ACK peer",
+      "fixture": "After intent ACK is accepted, queue a duplicate before the committed-event ACK read",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "The duplicate intent ACK cannot match the committed event fresh nonce; executing CAS is durable, committed ACK fails closed, mkdirat=0, epoch fenced and lease held.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_intent_bad_duplicate/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_COMMITTED_TRACE_ID",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_committed_bad_trace_id",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with strict logger ACK peer",
+      "fixture": "Valid ACK followed by a mutation of trace_id in the ACK tuple before mkdirat",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "Executing CAS is durable; mutated/duplicate ACK is rejected; mkdirat count=0; operation/allocation/run indeterminate and fenced; lease held; no reopen/retry/worker/new epoch.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_committed_bad_trace_id/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_COMMITTED_PROCESS_ID",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_committed_bad_process_id",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with strict logger ACK peer",
+      "fixture": "Valid ACK followed by a mutation of process_id in the ACK tuple before mkdirat",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "Executing CAS is durable; mutated/duplicate ACK is rejected; mkdirat count=0; operation/allocation/run indeterminate and fenced; lease held; no reopen/retry/worker/new epoch.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_committed_bad_process_id/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_COMMITTED_OPERATION_ID",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_committed_bad_operation_id",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with strict logger ACK peer",
+      "fixture": "Valid ACK followed by a mutation of operation_id in the ACK tuple before mkdirat",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "Executing CAS is durable; mutated/duplicate ACK is rejected; mkdirat count=0; operation/allocation/run indeterminate and fenced; lease held; no reopen/retry/worker/new epoch.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_committed_bad_operation_id/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_COMMITTED_EVENT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_committed_bad_event",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with strict logger ACK peer",
+      "fixture": "Valid ACK followed by a mutation of event in the ACK tuple before mkdirat",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "Executing CAS is durable; mutated/duplicate ACK is rejected; mkdirat count=0; operation/allocation/run indeterminate and fenced; lease held; no reopen/retry/worker/new epoch.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_committed_bad_event/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_COMMITTED_DUPLICATE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_committed_bad_duplicate",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with strict logger ACK peer",
+      "fixture": "After committed ACK is accepted, queue a duplicate so finish-outbox delivery first receives this stale ACK, then retry outbox on a fresh channel",
+      "expected_outcome": "completed_after_outbox_resume",
+      "expected_error": "verified_io_failed_then_success",
+      "side_effect_oracle": "Exactly one mkdirat and terminal receipt; stale ACK withholds root capability and leaves finish outbox pending; fresh-channel replay deduplicates finish log, then returns cached success without a second syscall.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_committed_bad_duplicate/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_STALE_SAME_TUPLE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_stale_same_tuple_nonce",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with strict logger ACK peer",
+      "fixture": "Deliver an old ACK with matching trace/process/operation/event but a prior delivery nonce and event digest",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "Stale ACK is rejected; post-CAS mkdirat count=0; epoch fenced and lease held.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_stale_same_tuple_nonce/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_EVENT_DIGEST_MISMATCH",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_event_digest_mismatch",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with strict logger ACK peer",
+      "fixture": "ACK echoes the current tuple and nonce but a different canonical event SHA-256",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "Digest mismatch is rejected; post-CAS mkdirat count=0; epoch fenced and lease held.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_event_digest_mismatch/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_RIGHTS_CLEANUP",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_scm_rights_closed_before_reject",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with strict logger ACK peer",
+      "fixture": "ACK record includes one or more SCM_RIGHTS descriptors, including a truncated ancillary-data variant",
+      "expected_outcome": "indeterminate",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "Reject MSG_CTRUNC/any ancillary data after closing all received FDs; descriptor count returns to baseline; no mkdirat after executing CAS.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_scm_rights_cleanup/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_ENVELOPE_GOLDEN",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_envelope_and_exact_ack_golden",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with strict logger ACK peer",
+      "fixture": "Capture one valid event envelope and return a matching ACK",
+      "expected_outcome": "accepted",
+      "expected_error": null,
+      "side_effect_oracle": "Envelope has exactly four ordered fields; ACK has exactly eight ordered fields; nonce/digest formats and canonical event SHA-256 match byte-for-byte; valid ACK permits only the specified next transition.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_envelope_golden/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_STRICT_PARSER",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_strict_parser_reject_matrix",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with strict logger ACK peer",
+      "fixture": "Table-driven ACK mutations: missing/duplicate/unknown/reordered fields, wrong version, invalid UTF-8, trailing bytes, length prefix, malformed nonce/digest, unknown status, rejected status",
+      "expected_outcome": "phase_specific_reject",
+      "expected_error": "verified_io_failed|ipc_result_indeterminate",
+      "side_effect_oracle": "All malformed records reject; intent phase remains prepared with no CAS/syscall; committed phase remains fenced with mkdirat count=0.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_strict_parser/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_CONTEXT_CANCEL",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_context_cancel_phase_matrix",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with strict logger ACK peer",
+      "fixture": "Cancel context while polling for ACK once before and once after the executing CAS",
+      "expected_outcome": "phase_specific",
+      "expected_error": "verified_io_failed|ipc_result_indeterminate",
+      "side_effect_oracle": "Before CAS reservation stays prepared with zero mkdirat; after CAS run is fenced/indeterminate with zero mkdirat and lease retained.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_context_cancel/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_EXTRA_QUEUED",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_extra_queued_ack_not_reused",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with strict logger ACK peer",
+      "fixture": "Queue an extra ACK for the prior event, then issue a new event with a fresh nonce",
+      "expected_outcome": "reject_stale_ack",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "One send consumes one record only; queued prior ACK cannot authorize next transition; no syscall follows the stale ACK.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_extra_queued/",
+      "implementation_status": "not_implemented_listener_ack_demultiplexing"
+    },
+    {
+      "id": "RRB-LOGGER_INTENT_RESUME_DEDUP",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_store_durable_dedup_and_restart",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with durable host logger",
+      "fixture": "Logger appends the intent event then drops ACK; after logger recovery, prepared operation resumes with persisted event bytes and a fresh delivery nonce",
+      "expected_outcome": "accepted",
+      "expected_error": null,
+      "side_effect_oracle": "Identical persisted intent replay with a fresh delivery nonce is ACKed without a second JSONL append, including after logger restart; this store test does not assert execution CAS count.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_intent_resume_dedup/"
+    },
+    {
+      "id": "RRB-LOGGER_IDEMPOTENCY_DIGEST_CONFLICT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_same_operation_event_different_digest_rejected",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with durable host logger",
+      "fixture": "Resend the same (operation_id,event) with changed canonical event bytes and a fresh nonce",
+      "expected_outcome": "reject",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "Logger rejects digest conflict without append; operation remains prepared; no executing CAS or filesystem syscall.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_idempotency_digest_conflict/"
+    },
+    {
+      "id": "RRB-LOGGER_BARRIER_DISTINCT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_distinct_barriers_not_deduplicated",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with durable host logger",
+      "fixture": "Append two barrier events for one operation with different allowed barrier_name values",
+      "expected_outcome": "accepted",
+      "expected_error": null,
+      "side_effect_oracle": "Both distinct barrier records are appended; deduplication applies only to explicitly replayable run_root_dispatch_intent and bootstrap.finish events.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_distinct_barriers/"
+    },
+    {
+      "id": "RRB-HARD_KILL_BEFORE_TERMINAL_COMMIT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/hard_kill_before_terminal_tx_commit",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS dedicated pilot host",
+      "fixture": "Kill Reaper after anchor fsync and immediately before atomic operation/allocation/run-terminal+outbox transaction",
+      "expected_outcome": "recover",
+      "expected_error": "ipc_result_indeterminate",
+      "side_effect_oracle": "No terminal receipt/outbox commit exists; operation/allocation/run remain indeterminate/fenced with lease held; no root capability, no retry/reopen/worker/catalog, and no second mkdirat.",
+      "artifact": ".test-artifacts/pilot-run-root/hard_kill_before_terminal_tx_commit/"
+    },
+    {
+      "id": "RRB-LOGGER_STARTUP_INDEX_REBUILD",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_startup_index_rebuild_fail_closed_matrix",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with durable host logger",
+      "fixture": "Restart logger with one valid intent record, then separately with torn JSONL, duplicate dedup key, and conflicting digest",
+      "expected_outcome": "valid_rebuild_or_fail_closed",
+      "expected_error": "none|verified_io_failed",
+      "side_effect_oracle": "Valid log rebuilds dedup index and ACKs exact replay without append; torn/duplicate/conflicting logs prevent logger startup, ACK, or append.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_startup_index_rebuild/"
+    },
+    {
+      "id": "RRB-FINISH_ACK_BEFORE_OUTBOX_MARK_CRASH",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/hard_kill_after_finish_ack_before_outbox_ack_mark",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux ext4/XFS isolated namespace runner with durable host logger",
+      "fixture": "Logger durably appends and ACKs bootstrap.finish; kill Reaper before pending-to-acknowledged outbox update is durable",
+      "expected_outcome": "recover_and_return_cached_success",
+      "expected_error": null,
+      "side_effect_oracle": "Restart sees pending outbox, sends same bytes with fresh nonce; logger deduplicates without a second line; acknowledged marker is persisted before root capability; mkdirat and terminal receipt remain exactly one.",
+      "artifact": ".test-artifacts/pilot-run-root/finish_ack_before_outbox_mark_crash/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_SOCKET_SINGLE_FLIGHT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_socket_single_flight",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with connected Unix SOCK_SEQPACKET",
+      "fixture": "Use a real AF_UNIX SOCK_SEQPACKET socketpair; logger peer validates envelope and sends exact ACK",
+      "expected_outcome": "accepted",
+      "expected_error": null,
+      "side_effect_oracle": "Exactly one packet sent and one correlated ACK consumed; matching tuple/nonce/digest accepted; no pipelining or retry.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_socket_single_flight/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_TRANSPORT_CANCEL",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_transport_cancel_poisons",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with connected Unix SOCK_SEQPACKET",
+      "fixture": "Peer receives event and withholds ACK until caller context deadline",
+      "expected_outcome": "timeout_and_poison",
+      "expected_error": "ipc_timeout",
+      "side_effect_oracle": "Client returns within context deadline; no ACK is fabricated; ambiguous channel cannot be reused or retried internally.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_transport_cancel/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_CTRUNC_FD_CLEANUP",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_ctrunc_rights_closed_before_reject",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with connected Unix SOCK_SEQPACKET",
+      "fixture": "ACK contains multiple SCM_RIGHTS FDs while receiver control buffer is deliberately truncated",
+      "expected_outcome": "reject_and_close",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "MSG_CTRUNC and ancillary data rejected; every installed FD closed before return; process fd count returns to baseline.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_ctrunc_fd_cleanup/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_REJECT_STREAM",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_rejects_stream_socket",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host",
+      "fixture": "Attempt to construct host logger client over AF_UNIX SOCK_STREAM",
+      "expected_outcome": "reject",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "Only connected SOCK_SEQPACKET accepted; stream socket rejected before sending any record.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_reject_stream/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_CONTEXT_CANCEL_UNIT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_context_cancel_is_preserved",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with connected Unix SOCK_SEQPACKET",
+      "fixture": "Cancel caller context before dispatch and attempt reuse of the channel",
+      "expected_outcome": "cancel_and_poison",
+      "expected_error": "ipc_cancelled",
+      "side_effect_oracle": "Caller cancellation remains distinguishable from malformed/unavailable logger; channel is poisoned and no retry occurs.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_context_cancel_unit/"
+    },
+    {
+      "id": "RRB-LOGGER_ACK_PEER_CREDENTIALS",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_ack_rejects_unexpected_peer_credentials",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with connected Unix SOCK_SEQPACKET",
+      "fixture": "Construct client with expected launcher PID, UID, or GID different from connected peer SO_PEERCRED",
+      "expected_outcome": "reject_before_send",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "Client refuses peer PID/UID/GID mismatch before sending any event; caller IPC cannot override expected host-logger identity.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_ack_peer_credentials/"
+    },
+    {
+      "id": "RRB-LOGGER_STORE_BOUNDED_STATE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_store_bounded_state_limits",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with protected JSONL file",
+      "fixture": "Register 16 concurrent launcher-authenticated run contexts, reject a 17th, release one completed context, then admit a replacement; separately fill the dedup-key ceiling.",
+      "expected_outcome": "reject_without_state_growth",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "The 17th active context is rejected without growth; releasing a trusted completed context frees exactly one bucket and permits a new context; dedup-key ceiling rejects without log append or index growth.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_store_bounded_state/"
+    },
+    {
+      "id": "RRB-LOGGER_STORE_REJECT_READONLY_FD",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_store_rejects_read_only_log_fd",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host",
+      "fixture": "Open a protected regular JSONL file O_RDONLY and attempt logger store startup",
+      "expected_outcome": "reject_at_startup",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "Store startup refuses the descriptor before reporting readiness; no request can be accepted and fail later at Write.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_store_reject_readonly_fd/"
+    },
+    {
+      "id": "RRB-LOGGER_STORE_REJECT_NONAPPEND_FD",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_store_rejects_nonappend_log_fd",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host",
+      "fixture": "Open a mode-0600 protected regular file O_RDWR without O_APPEND and attempt store startup",
+      "expected_outcome": "reject_at_startup",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "Logger refuses writable but non-append log FD before readiness; an offset race cannot redirect future records.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_store_reject_nonappend_fd/"
+    },
+    {
+      "id": "RRB-LOGGER_STORE_EVENT_PROCESS_BINDING",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_store_binds_event_process_id_to_context",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with registered launcher-authenticated run context",
+      "fixture": "Send a canonical event whose process_id differs from the event identity registered for the context",
+      "expected_outcome": "reject_before_append",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "Event identity mismatch is rejected and the JSONL byte sequence is unchanged.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_store_event_process_binding/"
+    },
+    {
+      "id": "RRB-LOGGER_STORE_SERVE_TIMEOUT",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_store_serve_timeout_without_packet",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with connected Unix SOCK_SEQPACKET",
+      "fixture": "Registered peer remains connected but sends no record until the serving context deadline",
+      "expected_outcome": "bounded_timeout",
+      "expected_error": "ipc_timeout",
+      "side_effect_oracle": "serveOnePacket returns by the monotonic deadline without an unbounded blocking read or log side effect.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_store_serve_timeout/"
+    },
+    {
+      "id": "RRB-LOGGER_STORE_ZERO_PAYLOAD_RIGHTS",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_store_zero_payload_rights_closed",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with connected Unix SOCK_SEQPACKET",
+      "fixture": "Send an ancillary-only zero-payload record containing SCM_RIGHTS to serveOnePacket",
+      "expected_outcome": "reject_and_close",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "Ancillary FD is closed before zero-length rejection; process FD count returns to baseline.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_store_zero_payload_rights/"
+    },
+    {
+      "id": "RRB-LOGGER_INTENT_CAS_EXACTLY_ONCE",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_intent_resume_executes_cas_once",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with durable ledger and host logger service",
+      "fixture": "Persist prepared intent, lose first logger ACK, restart logger and Reaper, then resume same idempotency key with a fresh delivery nonce",
+      "expected_outcome": "one_execution_cas",
+      "expected_error": "",
+      "side_effect_oracle": "Exactly one prepared-to-executing CAS and no duplicate intent append; no filesystem dispatch until the matching ACK.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_intent_cas_exactly_once/",
+      "implementation_status": "not_implemented_create_run_root_outbox_orchestration"
+    },
+    {
+      "id": "RRB-LOGGER_CONTEXT_RELEASE_ACTIVE_HANDLER",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_store_context_release_requires_idle_handler",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with connected Unix SOCK_SEQPACKET",
+      "fixture": "Active silent handler holds a registered context; attempt release, duplicate handler, then release and reuse after handler deadline.",
+      "expected_outcome": "reject_then_release",
+      "expected_error": "ipc_registry_busy",
+      "side_effect_oracle": "Release and parallel serve are rejected while active; context ID is reusable only after handler exits.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_context_lifecycle/",
+      "implementation_status": "implemented_native_ext4_xfs_verified_2026-10-20"
+    },
+    {
+      "id": "RRB-LOGGER_SYNC_STALL_FAIL_CLOSED",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_sync_stall_fail_closed_recovery",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with injectable logger persistence and restart control",
+      "fixture": "Block durable file Sync beyond the ACK deadline, then unblock or restart the logger and retry the persisted deduplicated event.",
+      "expected_outcome": "bounded_timeout_then_fail_closed",
+      "expected_error": "ipc_timeout",
+      "side_effect_oracle": "Handler returns by the end-to-end deadline; store stops admitting writes while sync is stuck; recovery preserves at most one canonical event and never fabricates an ACK.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_sync_stall_recovery/",
+      "implementation_status": "implemented_native_ext4_xfs_verified_2026-10-20"
+    },
+    {
+      "id": "RRB-LOGGER_QUEUE_FRAME_LIMITS",
+      "parent": "TestHostLoggerQueue",
+      "test_name": "TestHostLoggerQueue/capacity_boundaries",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with injectable writer, clock, socket, and cleanup operations",
+      "fixture": "Exact full-frame per-run and global limits, including in-flight work; test-only reduced limits exercise boundaries without changing production constants.",
+      "expected_outcome": "bounded_rejection",
+      "expected_error": "queue_full",
+      "side_effect_oracle": "The over-limit frame receives no accepted ACK, is not appended, and allocates no job or waiter.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_queue/capacity_boundaries/",
+      "implementation_status": "implemented_native_ext4_xfs_verified_2026-10-20"
+    },
+    {
+      "id": "RRB-LOGGER_QUEUE_ROUND_ROBIN",
+      "parent": "TestHostLoggerQueue",
+      "test_name": "TestHostLoggerQueue/round_robin_progress",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with injectable writer, clock, socket, and cleanup operations",
+      "fixture": "At least two registered runs; one run is saturated while global capacity remains.",
+      "expected_outcome": "fair_progress",
+      "expected_error": "none",
+      "side_effect_oracle": "The saturated run cannot consume another run quota; the other run progresses in FIFO order.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_queue/round_robin_progress/",
+      "implementation_status": "implemented_native_ext4_xfs_verified_2026-10-20"
+    },
+    {
+      "id": "RRB-LOGGER_QUEUE_PENDING_DEDUP_ACKS",
+      "parent": "TestHostLoggerQueue",
+      "test_name": "TestHostLoggerQueue/pending_dedup_waiter_ack_correlation",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with injectable writer, clock, socket, and cleanup operations",
+      "fixture": "Two identical in-flight canonical events have different delivery nonces; a conflicting payload uses the same dedup key.",
+      "expected_outcome": "one_append_individual_acks",
+      "expected_error": "none",
+      "side_effect_oracle": "One durable append; every live waiter gets an ACK with its own nonce and tuple; conflicting payload is rejected.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_queue/pending_dedup_waiter_ack_correlation/",
+      "implementation_status": "implemented_native_ext4_xfs_verified_2026-10-20"
+    },
+    {
+      "id": "RRB-LOGGER_QUEUE_JOB_WAITER_CAPS",
+      "parent": "TestHostLoggerQueue",
+      "test_name": "TestHostLoggerQueue/job_waiter_caps_before_allocation",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with injectable writer, clock, socket, and cleanup operations",
+      "fixture": "Fill pending job and waiter counts to injected test limits.",
+      "expected_outcome": "bounded_rejection",
+      "expected_error": "queue_full",
+      "side_effect_oracle": "Next job/waiter is rejected before allocation; counters and byte limits stay unchanged.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_queue/job_waiter_caps_before_allocation/",
+      "implementation_status": "implemented_native_ext4_xfs_verified_2026-10-20"
+    },
+    {
+      "id": "RRB-LOGGER_QUEUE_TIMEOUT_PHASES",
+      "parent": "TestHostLoggerQueue",
+      "test_name": "TestHostLoggerQueue/timeout_phase_matrix",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with injectable writer, clock, socket, and cleanup operations",
+      "fixture": "Drive timeout at pre-admission, queued, in-flight write/Sync, and post-Sync ACK stages with barriers.",
+      "expected_outcome": "phase_specific_timeout",
+      "expected_error": "ipc_timeout",
+      "side_effect_oracle": "Only in-flight ambiguous file I/O poisons the shared store; phase outcomes match docs/45.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_queue/timeout_phase_matrix/",
+      "implementation_status": "implemented_native_ext4_xfs_verified_2026-10-20"
+    },
+    {
+      "id": "RRB-LOGGER_QUEUE_RECEIVE_TIMEOUT_ISOLATION",
+      "parent": "TestHostLoggerQueue",
+      "test_name": "TestHostLoggerQueue/silent_receive_timeout_is_run_local",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with injectable writer, clock, socket, and cleanup operations",
+      "fixture": "One run handler times out before receiving a packet while another run submits a valid event.",
+      "expected_outcome": "run_isolated_timeout",
+      "expected_error": "ipc_timeout",
+      "side_effect_oracle": "No job/file effect for the silent run; healthy run can durably append and ACK.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_queue/silent_receive_timeout_is_run_local/",
+      "implementation_status": "implemented_native_ext4_xfs_verified_2026-10-20"
+    },
+    {
+      "id": "RRB-LOGGER_QUEUE_POSTSYNC_ACK_FAILURE",
+      "parent": "TestHostLoggerQueue",
+      "test_name": "TestHostLoggerQueue/post_sync_ack_send_failure_is_local",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with injectable writer, clock, socket, and cleanup operations",
+      "fixture": "Persist event then inject one waiter socket send error; submit on another registered run and replay an eligible dedup event.",
+      "expected_outcome": "durable_local_channel_failure",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "Store remains healthy; no fabricated ACK; unrelated run continues; only phase-approved exact dedup replay can be acknowledged.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_queue/post_sync_ack_send_failure_is_local/",
+      "implementation_status": "implemented_native_ext4_xfs_verified_2026-10-20"
+    },
+    {
+      "id": "RRB-LOGGER_QUEUE_RETAINED_FRAME_ON_CANCEL",
+      "parent": "TestHostLoggerQueue",
+      "test_name": "TestHostLoggerQueue/inflight_cancel_retains_frame_charge",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with injectable writer, clock, socket, and cleanup operations",
+      "fixture": "Dequeue a job, block Sync, cancel its only waiter, then try another frame at the reduced capacity boundary.",
+      "expected_outcome": "retained_charge_until_writer_done",
+      "expected_error": "queue_full",
+      "side_effect_oracle": "Full frame charge remains until writer completes; canceled waiter gets no ACK; charge then releases.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_queue/inflight_cancel_retains_frame_charge/",
+      "implementation_status": "implemented_native_ext4_xfs_verified_2026-10-20"
+    },
+    {
+      "id": "RRB-LOGGER_QUEUE_TORN_TAIL_QUARANTINE",
+      "parent": "TestHostLoggerQueue",
+      "test_name": "TestHostLoggerQueue/restart_torn_tail_fails_closed",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with injectable writer, clock, socket, and cleanup operations",
+      "fixture": "Crash after partial JSONL append; reopen strict store.",
+      "expected_outcome": "quarantine_required",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "Store rejects startup and requires reviewed/manual quarantine; no automatic replay or repair.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_queue/restart_torn_tail_fails_closed/",
+      "implementation_status": "implemented_native_ext4_xfs_verified_2026-10-20"
+    },
+    {
+      "id": "RRB-LOGGER_CLOSE_GRACE_DRAIN",
+      "parent": "TestHostLoggerQueue",
+      "test_name": "TestHostLoggerQueue/close_grace_drains_accepted_jobs",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with injectable writer, clock, socket, and cleanup operations",
+      "fixture": "Close while a queued accepted job and handler are released before the fake deadline.",
+      "expected_outcome": "bounded_graceful_close",
+      "expected_error": "none",
+      "side_effect_oracle": "Job Syncs before ACK; one cleanup owner unlocks/closes; Close completes within grace.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_queue/close_grace_drains_accepted_jobs/",
+      "implementation_status": "implemented_native_ext4_xfs_verified_2026-10-20"
+    },
+    {
+      "id": "RRB-LOGGER_CLOSE_BLOCKED_UNLOCK",
+      "parent": "TestHostLoggerQueue",
+      "test_name": "TestHostLoggerQueue/close_blocked_unlock_is_bounded",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with injectable writer, clock, socket, and cleanup operations",
+      "fixture": "Inject blocked unlock syscall, advance fake clock to the two-second deadline, then call Close again.",
+      "expected_outcome": "restart_required",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "Caller returns by deadline; unlock called once; admission remains closed; cleanup completion is shared.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_queue/close_blocked_unlock_is_bounded/",
+      "implementation_status": "implemented_native_ext4_xfs_verified_2026-10-20"
+    },
+    {
+      "id": "RRB-LOGGER_CLOSE_BLOCKED_CLOSE",
+      "parent": "TestHostLoggerQueue",
+      "test_name": "TestHostLoggerQueue/close_blocked_close_is_bounded",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with injectable writer, clock, socket, and cleanup operations",
+      "fixture": "Allow unlock then block close syscall, advance fake clock to deadline, then call Close again.",
+      "expected_outcome": "restart_required_fd_unknown",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "Caller returns by deadline; close called once; FD state remains unknown; admission remains closed.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_queue/close_blocked_close_is_bounded/",
+      "implementation_status": "implemented_native_ext4_xfs_verified_2026-10-20"
+    },
+    {
+      "id": "RRB-LOGGER_QUEUE_PRODUCTION_WAITER_CEILING",
+      "parent": "TestHostLoggerQueue",
+      "test_name": "TestHostLoggerQueue/production_waiter_ceiling",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with 16 registered contexts and injectable sockets",
+      "fixture": "Hold one production packet handler and waiter for each registered context; attempt one additional waiter.",
+      "expected_outcome": "bounded_rejection",
+      "expected_error": "ipc_registry_full",
+      "side_effect_oracle": "The 17th waiter is rejected before allocation; exactly 16 handlers/waiters remain, within 4 MiB/run and 64 MiB/global limits.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_queue/production_waiter_ceiling/",
+      "implementation_status": "implemented_native_ext4_xfs_verified_2026-10-20"
+    },
+    {
+      "id": "RRB-LOGGER_REPLAY_RATE_LIMIT",
+      "parent": "TestHostLoggerQueue",
+      "test_name": "TestHostLoggerQueue/replay_and_duplicate_rate_limits_before_dedup",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with fake clock, authenticated run contexts, and protected JSONL",
+      "fixture": "Run both asymmetric states (global=0/run>0 and run=0/global>0) with the other bucket nonempty; then saturate waiter and byte capacity separately and send a valid over-budget frame. Also test durable exact replays, identical pending retries, conflicting same-key frames, malformed authenticated frame, and silent receive timeout.",
+      "expected_outcome": "rejected_before_append",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "Each nonempty global/per-run bucket independently debits once per received authenticated frame, even when the other bucket is empty; exhausted buckets remain zero. With waiter/byte capacity available, valid over-budget frames receive exact correlated rejected ACK; when capacity is saturated they receive no ACK and allocate no state. Assert no append, no poison, bounded counters, malformed no ACK, and silent timeout no debit.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_queue/replay_and_duplicate_rate_limits_before_dedup/",
+      "implementation_status": "implemented_native_ext4_xfs_verified_2026-10-20"
+    },
+    {
+      "id": "RRB-LOGGER_PERSISTENT_STORE_LIMITS",
+      "parent": "TestHostLoggerQueue",
+      "test_name": "TestHostLoggerQueue/persistent_store_byte_and_record_caps",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with injectable protected JSONL file and reduced test-only store limits",
+      "fixture": "Reach exact byte and record limits independently; enqueue concurrent unique appends; cancel one queued job before disk write at a reduced test cap; reopen files over either limit.",
+      "expected_outcome": "bounded_reject_without_truncation",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "Admission reservations never exceed configured bytes/records; cancellation releases unpersisted reservations so a replacement can queue; further append is rejected without changing the file; restart rejects oversized/over-recorded evidence without truncation; no dedup key is lost.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_queue/persistent_store_byte_and_record_caps/",
+      "implementation_status": "implemented_native_ext4_xfs_verified_2026-10-20"
+    },
+    {
+      "id": "RRB-LOGGER_STORE_FULL_FINISH_OUTBOX",
+      "parent": "TestRunRootBootstrap",
+      "test_name": "TestRunRootBootstrap/logger_store_full_finish_outbox_recovery",
+      "goos": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "runner": "native Linux isolated host with integrated RunRoot ledger, bounded logger, and audited recovery fixture",
+      "fixture": "Fill JSONL store to the configured byte or record cap before terminal commit; commit terminal state and durable finish outbox, restart after exact delivery is rejected by store-full, then recover storage while preserving every dedup key and replay the outbox.",
+      "expected_outcome": "terminal_preserved_capability_withheld_then_cached_success",
+      "expected_error": "verified_io_failed",
+      "side_effect_oracle": "At full capacity, terminal state and exact finish outbox remain atomically committed/pending, capability is withheld, and no second create occurs; after audited recovery, the exact finish bytes append once, dedup state remains valid, and retry returns cached success.",
+      "artifact": ".test-artifacts/pilot-run-root/logger_store_full_finish_outbox_recovery/",
+      "implementation_status": "blocked_until_runroot_integration"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "review_id": "pilot-start-kernel-sdd-security-review11-20261016",
+  "date": "2026-10-16",
+  "reviewer_domain": "security",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_type": "read-only design review",
+  "compared_against": "review/pilot-start-kernel-sdd-security-review10-20261016.json",
+  "focus": [
+    "PSK-SEC10-01 loopback CSRF and authentication closure",
+    "PSK-SEC10-02 request trace privacy closure",
+    "ACL/OpenVerified before DB/receipt access",
+    "same-account boundary and degraded recovery",
+    "key lifecycle, protocol privacy, and artifact retention"
+  ],
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "approved_narrow_test_only_security_design",
+  "summary": "The loopback browser harness now requires same-origin POST JSON with exact Host/Origin, Sec-Fetch-Site, per-case in-memory CSRF token and Bearer auth, no cookies, and no CORS, with negative browser cases rejected before Coordinator. The log field is now a fresh random request_trace_id explicitly independent from decision_id and Registry TraceID. OpenVerified now precedes every receipt/DB/sidecar/key access path. No new security blocker was found in this read-only review.",
+  "round10_dispositions": [
+    {
+      "finding_id": "PSK-SEC10-01",
+      "disposition": "closed_in_design",
+      "evidence": "§6 requires loopback-only binding, exact Host/Origin, Sec-Fetch-Site same-origin, POST JSON, in-memory per-case X-Pilot-CSRF and Bearer auth; prohibits cookie auth, GET/form, missing Origin, and CORS; token is excluded from URL/storage/log. Cross-origin/forged Host/missing token/wrong content type/GET E2E cases assert pre-Coordinator rejection and zero Planner/Registry calls."
+    },
+    {
+      "finding_id": "PSK-SEC10-02",
+      "disposition": "closed_in_design",
+      "evidence": "§7 uses random per-request request_trace_id and explicitly defines it as independent, non-derivable, and non-reusable relative to decision_id and Registry TraceID."
+    }
+  ],
+  "control_dispositions": {
+    "acl_before_db_and_receipt": "specified for coordinator start, all receipt paths including hits, and each actual file open; failures stop before query/planner",
+    "owner_only_filesystem_controls": "specified; runtime enforcement not verified",
+    "per_case_key_and_delivery": "fresh independent unique 256-bit OS-CSPRNG key; protected same-case restart recovery and inherited handle/pipe delivery specified",
+    "same_account_threat_boundary": "explicitly excluded; receipt-first limited to structural consistency within trusted local-account boundary",
+    "degraded_sidecar_receipt_recovery": "authorized replay, case quarantine across restart, and fail-closed unavailable receipt behavior specified",
+    "artifact_retention_cleanup": "24-hour terminal failure, 7-day pending/degraded, supervisor-only, grouped deletion and persistent cleanup quarantine specified",
+    "protocol_privacy": "request trace is distinct from decision/Registry trace; raw sensitive identifiers/content and tokens excluded from ordinary logs"
+  },
+  "remaining_blocker_count": 0,
+  "remaining_conditions": [],
+  "limitations": [
+    "No tests or runtime validation were run.",
+    "No browser request checks, ACL/key checks, build artifacts, database, or recovery flow were inspected at runtime.",
+    "Approval is limited to the written isolated test-only security design; it does not establish implementation correctness, production readiness, or classroom readiness."
+  ]
+}

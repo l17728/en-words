@@ -1,0 +1,51 @@
+{
+  "review": "pilot-supervisor-sdd-backend",
+  "date": "2026-10-19",
+  "scope": "docs/42-Pilot隔离运行监督器SDD.md backend implementability and consistency with docs/41 pilot_e2e journal",
+  "mode": "read-only; no long tests",
+  "result": "blocked",
+  "blocking_findings": 1,
+  "findings": [
+    {
+      "severity": "P1",
+      "section": "docs/42 §2.1; docs/41 §109.1",
+      "title": "Case ID width conflicts with catalog protocol",
+      "detail": "SDD 42 requires 256-bit IDs (64 lowercase hex characters); docs/41 and current journal accept 16 bytes / 32 lowercase hex characters. A supervisor-generated ID cannot be persisted without a protocol revision.",
+      "required_action": "Use the frozen 128-bit journal ID format or separately version and review the journal protocol before implementation."
+    },
+    {
+      "severity": "P2",
+      "section": "docs/42 §§2.5, 3, 4",
+      "title": "Context cancellation and bounded lock waits lack a contract",
+      "detail": "Public methods accept context and operations are required to be bounded, but the OS lock API and timeout behavior are unspecified. Existing pilotCatalogLock.Lock is context-free and its POSIX/Windows implementations block.",
+      "required_action": "Specify nonblocking lock acquisition with deadline/interrupt semantics, timeout errors, and poisoning behavior for uncertain unlock/sync outcomes."
+    },
+    {
+      "severity": "P2",
+      "section": "docs/42 §§2.2-2.3, 3",
+      "title": "Verified filesystem handle adapter is not shaped as an implementable interface",
+      "detail": "The document names platform primitives but does not define the narrow root/relative-open/identity/sync/delete/close interfaces, capability probing, or supported OS matrix.",
+      "required_action": "Specify internal handle APIs and Linux/Windows capability matrix; keep case operations relative to verified handles."
+    },
+    {
+      "severity": "P2",
+      "section": "docs/42 §3",
+      "title": "Supervisor and CaseHandle resource ownership under concurrent Close is ambiguous",
+      "detail": "CaseHandle.Close appears to close catalog-related handles while Supervisor.Close also owns closing all cases and supervisor resources. Concurrent close/use and partial-close ownership are undefined.",
+      "required_action": "Assign root/catalog/global lock to Supervisor and case lock/DB/sidecar/key to CaseHandle; define operation draining, close ordering, idempotency and poison semantics."
+    },
+    {
+      "severity": "P2",
+      "section": "docs/42 §2.6",
+      "title": "SQLite driver open is not bound to the preverified OS handle",
+      "detail": "The SDD specifies mode=rw and post-open PRAGMA database_list validation but does not describe how the selected driver opens the file. The repository currently uses github.com/glebarez/sqlite, so path validation alone cannot establish that SQLite opened the already-verified file object.",
+      "required_action": "Specify exact DSN and connection-pool settings, validation order, file identity acquisition, and document the trusted-directory limitation unless a verified driver/VFS handle-binding path is proven."
+    }
+  ],
+  "positive_checks": [
+    "pilot_e2e-only boundary and staged exclusion from production routes are clear",
+    "append-only durability and fail-closed behavior align with docs/41 journal invariants",
+    "structured logging restrictions are actionable",
+    "Linux and Windows runtime acceptance is correctly required rather than cross-compilation alone"
+  ]
+}

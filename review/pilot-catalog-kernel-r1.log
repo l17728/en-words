@@ -1,0 +1,13 @@
+Command: go test -tags pilot_e2e ./internal/store -run PilotCatalog -count=1
+GOCACHE=D:\en-words\.test-tools\gocache
+GOMODCACHE=D:\en-words\.test-tools\gomodcache
+go.exe : # enwords/internal/store [enwords/internal/store.test]
+所在位置 行:2 字符: 501
++ ... ver'; try { & $go test -tags pilot_e2e ./internal/store -run PilotCat ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (# enwords/inter...nal/store.test]:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+internal\store\pilot_start_catalog.go:13:2: "os" imported and not used
+FAIL	enwords/internal/store [build failed]
+FAIL

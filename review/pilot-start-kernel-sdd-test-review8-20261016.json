@@ -1,0 +1,27 @@
+﻿{
+  "review": "pilot-start-kernel-sdd-test-review8",
+  "date": "2026-10-16",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "domain": "testing and acceptance contract",
+  "verdict": "BLOCK",
+  "tests_run": false,
+  "findings": [
+    {
+      "id": "P1-1",
+      "severity": "P1",
+      "status": "open",
+      "title": "Recovery precedence conflicts when COMMIT succeeds but terminal sidecar append is partial or corrupt",
+      "sections": [43, 44, 48],
+      "evidence": "Sections 43-44 require full sidecar validation and fail closed on malformed/truncated bytes even if a receipt exists. Sections 43 and 48 say a committed receipt recovers the result when the committed event append/Sync fails. A failed append can leave a truncated/invalid JSONL row, so the same restart fixture satisfies both incompatible outcomes.",
+      "required_change": "Specify separate outcomes for an intact prior sidecar with append/Sync failure versus partial/corrupt terminal bytes, define recovery precedence and a trustworthy proof boundary, and add a deterministic restart injection test after COMMIT with a partial terminal event."
+    }
+  ],
+  "prior_findings": [
+    {"topic": "two-stage planning_fingerprint and final bundle_hmac", "status": "PASS"},
+    {"topic": "sidecar canonicalization, enums, and global append concurrency", "status": "PASS"},
+    {"topic": "typed codec, audit/outbox cardinality, and cross-link verifier", "status": "PASS"},
+    {"topic": "commit-after-response-drop E2E proof", "status": "PASS"},
+    {"topic": "failure/restart/log/privacy test matrix", "status": "PASS_WITH_P1_DEPENDENCY"}
+  ],
+  "new_p2_gaps": []
+}

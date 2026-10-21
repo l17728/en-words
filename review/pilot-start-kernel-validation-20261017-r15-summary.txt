@@ -1,0 +1,4 @@
+﻿production-test: exit 1; log pilot-start-kernel-validation-20261017-r15-production-test.log
+production-vet: exit 1; log pilot-start-kernel-validation-20261017-r15-production-vet.log
+tagged-test: exit 1; log pilot-start-kernel-validation-20261017-r15-tagged-test.log
+tagged-vet: exit 0; log pilot-start-kernel-validation-20261017-r15-tagged-vet.log

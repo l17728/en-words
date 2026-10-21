@@ -1,0 +1,70 @@
+{
+  "review_id": "pilot-start-kernel-sdd-security-review3-20261016",
+  "date": "2026-10-16",
+  "reviewer_domain": "security",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_type": "read-only design review",
+  "compared_against": "review/pilot-start-kernel-sdd-security-review2-20261016.json",
+  "focus": [
+    "classroom.show_word actor and task scope",
+    "task-local audit",
+    "tool argument persistence allowlist",
+    "panic rollback",
+    "regressions against prior security review"
+  ],
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "approved_for_narrow_test_only_slice_with_nonblocking_conditions",
+  "summary": "Adding classroom.show_word does not reopen the prior P1 risks. Principal binding, test artifact isolation, replay and commit-unknown contracts remain intact. Two new P2 implementation details should be made explicit: validate the shown word against this lesson's frozen facts and enforce task capability expiry; sanitize panic output after rollback.",
+  "round2_dispositions": [
+    {"finding_id": "PSK-SEC-01", "disposition": "approved_no_regression"},
+    {"finding_id": "PSK-SEC-02", "disposition": "approved_no_regression"},
+    {"finding_id": "PSK-SEC-03", "disposition": "approved_no_regression"},
+    {"finding_id": "PSK-SEC-04", "disposition": "approved_no_regression"},
+    {"finding_id": "PSK-SEC-05", "disposition": "approved_with_follow_up_no_regression"},
+    {"finding_id": "PSK-SEC2-01", "disposition": "approved_with_conditions"}
+  ],
+  "findings": [
+    {
+      "id": "PSK-SEC3-01",
+      "severity": "P2",
+      "blocker": false,
+      "title": "Store-side same-lesson validation for show_word payload should be explicit",
+      "location": "docs/41 §3 transaction checks; §4 outbox audit; §6",
+      "risk": "A valid schema and adapter-produced fingerprint do not alone prove the shown word belongs to the frozen facts of the verified lesson.",
+      "required_revision": "Before inserting receipt/outbox, compare show_word word_id and displayed word against the created checkpoint's frozen words for the exact authorized lesson; reject extra payload fields."
+    },
+    {
+      "id": "PSK-SEC3-02",
+      "severity": "P2",
+      "blocker": false,
+      "title": "Task capability expiry and panic log redaction need explicit enforcement",
+      "location": "docs/41 §3 verified actor; §§3, 6 executor rollback",
+      "risk": "A lesson-bound capability may be reused after expiry if task scope checks omit expiry; HTTP panic recovery may log panic values/stacks even after the database rollback succeeds.",
+      "required_revision": "Require now-before-expiry for commit and receipt lookup. After panic unwinding and rollback, recover only at the harness boundary, return a fixed redacted error, and scan panic values/stacks for sentinels; never continue or publish success after panic."
+    },
+    {
+      "id": "PSK-SEC3-03",
+      "severity": "P2",
+      "blocker": false,
+      "title": "Candidate-derived SHA-256 fingerprint remains potentially guessable",
+      "location": "docs/41 §3 canonical fingerprint; §6 persisted receipt allowlist",
+      "risk": "A plain hash of low-entropy words/text can be tested offline if returned in a receipt or leaked from persistence/logs.",
+      "required_revision": "Keep the digest out of browser receipts and ordinary logs; if it crosses trust boundaries, use keyed protection or document owner-only disclosure and that all covered candidate data is non-secret."
+    }
+  ],
+  "execution_capability_review": {
+    "disposition": "approved_with_conditions",
+    "basis": "Executor is typed, test-only, lacks a DB handle, is restricted to classroom.say and classroom.show_word through Registry schema/scope/budget and task-local audit, and the SDD requires bounded pure execution with rollback on error/panic.",
+    "conditions": [
+      "Use one fixed non-configurable test-only implementation; do not select it from requests or runtime configuration.",
+      "Keep effects limited to the exact allowlisted schema and frozen lesson-derived payload.",
+      "On panic, transaction unwinding must rollback first; the harness boundary must emit only a fixed redacted failure and never report success.",
+      "Test that neither task-local audit nor DB/outbox data escapes on errors or panic."
+    ]
+  },
+  "limitations": [
+    "No tests, runtime checks, build checks, artifact inspection, panic injection, authorization execution, or database inspection were performed.",
+    "Approval is limited to the isolated test-only Start design and does not establish implementation correctness or classroom readiness."
+  ]
+}

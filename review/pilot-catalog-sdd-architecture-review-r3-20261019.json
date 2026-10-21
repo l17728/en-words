@@ -1,0 +1,33 @@
+{
+  "review": "pilot-catalog-sdd-architecture-r3",
+  "date": "2026-10-19",
+  "source": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "source_sha256": "27cfde050e04a4f58bf40122326e13ba0750bcb9a31e51b83bd1b5f305b75c5c",
+  "status": "BLOCKED",
+  "blocking_count": 2,
+  "findings": [
+    {
+      "id": "CAT-R3-01",
+      "severity": "P2",
+      "location": "109.1 line 128; 109.4 lines 167, 173",
+      "problem": "CREATE_NEW arbitrates creators but does not serialize a concurrent opener with the interval before the first frame/global lock is established. Another supervisor can open the just-created empty file, acquire its catalog lock first and classify an in-progress valid bootstrap as corruption. The bootstrap exception does not define exclusion covering this interval.",
+      "required": "Specify one concrete initialization exclusion protocol shared by creators and existing-file openers, covering exclusive creation through first-frame file/parent Sync or failure. It must not require the not-yet-authorized case lock or invert catalog/case lock ordering. After creator death, an empty/partial surviving catalog remains corruption; while initialization is live, readers wait with a bound rather than inspecting its intermediate bytes.",
+      "acceptance": "Named barrier after CREATE_NEW before first frame; a second supervisor cannot inspect/poison the intermediate file. Release yields the complete provisioning record; creator death yields the specified empty/partial recovery failure."
+    },
+      {
+      "id": "CAT-R3-02",
+      "severity": "P2",
+      "location": "109.1 line 128; 109.2 line 150; recovery oracle lines 168, 172",
+      "problem": "Recovery after initial file/parent Sync failure currently validates surviving complete bytes and then permits provisioning recovery, including creation of the case lock. Surviving readable bytes do not prove the initial directory entry has been made durable. This leaves the stated no-case-artifact-before-durable-catalog invariant unproven.",
+      "required": "Before creating the stable case lock or any case member during bootstrap recovery, explicitly revalidate and Sync the catalog file and protected parent under initialization exclusion. Any failure leaves the supervisor poisoned and creates no case artifacts. Reading complete bytes establishes the recovered state, not the missing durability barrier.",
+      "acceptance": "Inject first parent Sync failure with a complete surviving frame, then restart and fail the recovery Sync: zero new lock/case members. Successful recovery Sync permits provisioning-only processing, never Start/Planner/Registry."
+    }
+  ],
+  "passed": [
+    "Bootstrap now writes the initial provisioning frame before normal case artifacts; an existing empty catalog is not accepted.",
+    "Provisioning-only recovery cannot invoke Planner/Registry or Start; incomplete members transition to quarantine before cleanup.",
+    "External stable case locks and same-case second authorization remain consistent with cleanup resume.",
+    "The previous framing-boundary note is addressed by separating framing/parser and semantic journal vectors."
+  ],
+  "execution": "Read-only design review; no tests, builds, services or implementation changes."
+}

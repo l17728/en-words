@@ -1,0 +1,28 @@
+{
+  "review":"pilot-supervisor-backend-r5",
+  "date":"2026-10-19",
+  "documents":[
+    {"path":"docs/41-试点课堂Start持久迁移内核SDD.md","sha256":"EDCCD7B52ACE3300912796B69730B7B91D6C47542D959B9471798D173E10BE34"},
+    {"path":"docs/42-Pilot隔离运行监督器SDD.md","sha256":"EC5CB5D5F1F7AA175CD0B571FB3CEA53CC5B08B1951FA87F8CBA60B344F168B4"}
+  ],
+  "scope":"Backend design close-out of R4 P2 and review of template generation, readonly schema/data SQL execution and counters, catalog write uncertainty, error mapping, logging, close/reap, and docs/41 §112 compatibility.",
+  "mode":"read-only static review; source references inspected; no code changes or tests",
+  "result":"pass",
+  "prior_findings":[
+    {"id":"R4-P2-template-resync-before-ready","status":"closed_design","evidence":"§8 and FI-DB-01a now require verified identity+digest, exactly one DB-handle Sync and case-directory Sync, then directory revalidation before ready; any uncertainty poisons with io_uncertain."},
+    {"id":"R3-P1-close-state-unimplementable","status":"closed_design","evidence":"Production close tuple is closed,nil or unknown,error; os.File/DB close errors require unknown/restart_required; still_open is fake-only with explicit proof; parent harness terminates and confirms exact PID exit before restart."},
+    {"id":"R3-P1-provisioning-db-counter-contradiction","status":"closed_design","evidence":"A complete embedded database template is created offline from startupModels plus pilotV2Objects and marker; runtime copy uses verified CREATE_NEW handles without SQLite connections or SQL. Separate byte-copy/open/recovery counters are defined."},
+    {"id":"R3-P2-catalog-fault-oracles-under-specified","status":"closed_design","evidence":"FI-CAT-02a/02b/02c distinguish write-before/short/full-frame-error, file Sync, and initial parent Sync, with current poison and fresh-replay byte-chain outcomes."},
+    {"id":"R3-P2-context-error-mapping","status":"closed_design","evidence":"context.Canceled maps operation_canceled; deadline/internal cap maps lock_timeout; FI repeats mapping."},
+    {"id":"R3-P2-log-lifecycle","status":"closed_design","evidence":"§9.2 and FI-LOG specify bootstrap repair only for empty bootstrap inventory, durable append/reservation, cap, and strict fail-closed behavior after catalog/case artifacts exist."}
+  ],
+  "blocking_findings":0,
+  "findings":[],
+  "notes":[
+    "The template is technically viable with the inspected repository interfaces: startup.go startupModels supplies the base schema (including runtime_records/lessons); pilot_schema.go pilotV2Objects and its marker are incremental. The SDD now requires the offline generator to combine these plus the startup trigger/index definitions, embed a data-free template, and pin both raw template SHA and canonical schema digest. It no longer claims pilotV2Objects alone can create a blank database.",
+    "The read-only SQL order is explicit: open mode=ro, first PRAGMA database_list and compare canonical path, then PRAGMA query_only=ON, then only schema-validation SQL and (only for open_recovery_required/committed) separately classified R-* recovery-data SQL. Provisioning recovery copies/checksums/resyncs the embedded bytes without opening SQLite. Counters separate db_template_bytes, db_open_ro_recovery, db_schema_validation_sql, db_recovery_data_sql, and db_application_sql; bounds are coherent.",
+    "Schema validation has executable checks for user_version=2, exact marker bytes/count, sqlite_master manifest canonicalization/hash, and bounded table/index/FK PRAGMAs. R-* selects fixed projections/parameters and row cardinality/oracles delegated to docs/41 §70; no recovery SQL executes application writes or Planner/Registry.",
+    "Catalog uncertain-write outcomes are now sufficient for fresh-process replay; context error codes and log lifecycle/failure semantics are aligned. Close/reap behavior remains conservative. docs/41 §112 canonical-path-only and in-process HMAC key corrections are accurately reflected in docs/42; no driver-handle binding is claimed.",
+    "This is a design PASS only. No supervisor implementation, tests, platform execution, or pilot acceptance is implied."
+  ]
+}

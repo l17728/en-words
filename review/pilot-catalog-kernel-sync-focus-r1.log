@@ -1,0 +1,12 @@
+Command: go test -v -timeout=90s -tags pilot_e2e ./internal/store -run 'PilotCatalog(Waiter|Persistence|Concurrent)' -count=1
+GOCACHE=D:\en-words\.test-tools\gocache
+GOMODCACHE=D:\en-words\.test-tools\gomodcache
+
+=== RUN   TestPilotCatalogConcurrentJournalsKeepOneGlobalGenerationChain
+--- PASS: TestPilotCatalogConcurrentJournalsKeepOneGlobalGenerationChain (0.34s)
+=== RUN   TestPilotCatalogPersistenceFailurePoisonsAllSupervisorHandles
+--- PASS: TestPilotCatalogPersistenceFailurePoisonsAllSupervisorHandles (0.16s)
+=== RUN   TestPilotCatalogWaiterRechecksSharedPoisonAfterGlobalLock
+--- PASS: TestPilotCatalogWaiterRechecksSharedPoisonAfterGlobalLock (0.17s)
+PASS
+ok  	enwords/internal/store	6.326s

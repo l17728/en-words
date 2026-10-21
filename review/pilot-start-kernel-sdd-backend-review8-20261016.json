@@ -1,0 +1,40 @@
+﻿{
+  "review": "pilot-start-kernel-sdd-backend-review8",
+  "date": "2026-10-16",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "scope": "read-only targeted verification of BE7 and BE6, sidecar, retries, mixed audits",
+  "code_modified": false,
+  "docs_modified": false,
+  "tests_run": false,
+  "verdict": "BLOCK",
+  "be7_status": {
+    "BE7-1": "PARTIAL_BLOCKED_BY_BE8-1",
+    "BE7-2": "PASS_WITH_CLARIFICATION",
+    "BE7-3": "PASS",
+    "BE7-4": "PARTIAL_BLOCKED_BY_BE8-3",
+    "BE7-5": "PASS"
+  },
+  "be6_status": {
+    "BE6-1": "PASS",
+    "BE6-2": "PASS",
+    "BE6-3": "PASS",
+    "BE6-4": "PASS",
+    "BE6-5": "PASS_WITH_IMPLEMENTATION_CONDITION",
+    "BE6-6": "PASS",
+    "BE6-7": "PASS",
+    "BE6-8": "PASS",
+    "BE6-9": "PASS",
+    "BE6-10": "PASS_WITH_ALLOWLIST_FIX",
+    "BE6-11": "PASS"
+  },
+  "findings": [
+    {"id":"BE8-1","severity":"P1","status":"open","title":"Sidecar result_class enum omits deterministic writer rejection classes","recommendation":"Add not_supported, schema_invalid, and unauthorized with fixed golden mappings, or define lossless one-to-one categories."},
+    {"id":"BE8-2","severity":"P1","status":"open","title":"Persisted audit Args allowlist omits pilot_marker","recommendation":"Synchronize the audit map and persistence/log allowlists and include the marker in size validation."},
+    {"id":"BE8-3","severity":"P1","status":"open","title":"say payload cannot be byte-compared with fixed receipt result_json","recommendation":"Compare say.text to room_facts.teacher_text and validate receipt decision/outbox metadata separately."}
+  ],
+  "required_before_design_pass": [
+    "Resolve the sidecar result_class enum/category mismatch.",
+    "Add pilot_marker consistently to the persisted Args allowlist and audit tests.",
+    "Replace the impossible receipt-text byte comparison with authoritative room_facts/bundle comparison."
+  ]
+}

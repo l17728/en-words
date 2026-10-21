@@ -1,0 +1,35 @@
+{
+  "manifest_version": 1,
+  "status": "DESIGN_ONLY_NOT_IMPLEMENTED",
+  "sqlite_binding_candidate": {
+    "module": "github.com/mattn/go-sqlite3",
+    "database_scope": "isolated Pilot v3 ledger only; leave the existing application GORM SQLite driver unchanged",
+    "authorizer_installation": "sqlite3.SQLiteDriver.ConnectHook calls SQLiteConn.RegisterAuthorizer for every physical connection before pool admission",
+    "build_requirement": "CGO_ENABLED=1 with a supported C compiler; Linux CI/reference-host validation is mandatory",
+    "release_gate": "pin an exact driver version and verify the pinned API, license, Windows distribution, all physical pool connections, capability clearing, and performance before implementation"
+  },
+  "capability_isolation": "The sole SQLite writer is serialized. Capabilities are unexported typed method scopes, cannot be selected by callers, and are cleared in a defer/finally path. Statements are prepared and executed only inside the scope; no raw SQL API or prepared statement cache crosses capabilities. Authorization checks run before any write transaction; commit barriers revalidate the full method-specific tuple.",
+  "capabilities": {
+    "ConsumeBootstrap": ["pilot_control_generations:INSERT", "pilot_bootstrap_handoffs:INSERT", "pilot_run_lifecycle:INSERT"],
+    "ConsumeRecoveryControl": ["pilot_control_generations:INSERT"],
+    "ResolvePrincipal": ["pilot_principal_aliases:INSERT"],
+    "AdvanceLauncherJournalAnchor": ["pilot_launcher_journal_anchor:UPDATE"],
+    "PublishAuthorizationFence": ["pilot_authorization_state:INSERT,UPDATE", "pilot_session_fences:INSERT,UPDATE", "pilot_fixture_grants:INSERT,UPDATE", "pilot_authz_update_receipts:INSERT"],
+    "CommitLifecycleBoundary": ["pilot_run_lifecycle:UPDATE"],
+    "PrepareWithHandoff": ["run_epoch_allocations:INSERT", "run_root_operations:INSERT", "pilot_run_lease:UPDATE", "pilot_run_lifecycle:UPDATE", "run_root_event_outbox:INSERT"],
+    "Claim": ["run_epoch_allocations:UPDATE", "run_root_operations:UPDATE"],
+    "FinishWithOutbox": ["run_epoch_allocations:UPDATE", "run_root_operations:UPDATE", "pilot_operation_evidence_receipts:INSERT", "pilot_root_run_state:INSERT,UPDATE", "run_root_event_outbox:INSERT"],
+    "AuthorizeOutboxSend": ["run_root_event_outbox:UPDATE"],
+    "AcknowledgeOutbox": ["run_root_event_outbox:UPDATE", "pilot_run_lifecycle:UPDATE"],
+    "BeginRunTermination": ["pilot_run_lifecycle:UPDATE", "run_root_operations:INSERT,UPDATE", "pilot_root_run_state:UPDATE"],
+    "CancelPreparedRunRoot": ["run_root_operations:UPDATE", "run_epoch_allocations:UPDATE", "pilot_prepared_cancel_receipts:INSERT", "run_root_event_outbox:UPDATE"],
+    "CommitUnregister": ["pilot_run_lifecycle:UPDATE"],
+    "RecordContainmentEvidence": ["pilot_run_containment_evidence:INSERT", "pilot_run_lifecycle:UPDATE", "pilot_root_run_state:UPDATE"],
+    "CommitRunCleanupDisposition": ["pilot_run_cleanup_dispositions:INSERT", "pilot_root_run_state:UPDATE"],
+    "FinalizeRunTerminal": ["run_root_operations:UPDATE", "run_epoch_allocations:UPDATE", "pilot_operation_evidence_receipts:INSERT", "pilot_run_lifecycle:UPDATE", "pilot_root_run_state:UPDATE", "pilot_run_lease:UPDATE"],
+    "FinalizePreparedCancellation": ["run_root_operations:UPDATE", "run_epoch_allocations:UPDATE", "pilot_operation_evidence_receipts:INSERT", "pilot_run_lifecycle:UPDATE", "pilot_run_lease:UPDATE"],
+    "FinalizeNoRootAbort": ["run_root_operations:UPDATE", "pilot_operation_evidence_receipts:INSERT", "pilot_run_lifecycle:UPDATE"],
+    "pilot_allocation_capacity_after_insert": ["pilot_business_capacity_counts:INSERT,UPDATE", "pilot_capacity_alert_events:INSERT"]
+  },
+  "unscoped_policy": "All DML to listed tables is denied outside the exact capability. Direct DML to capacity counters and alert events is always denied; only the named SQLite trigger source is accepted. ATTACH/DETACH, TEMP objects, schema DDL, ANALYZE/REINDEX after initialization, and mutating PRAGMAs are denied on every application connection."
+}

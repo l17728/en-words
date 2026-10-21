@@ -1,0 +1,132 @@
+{
+  "exit": 0,
+  "elapsed_seconds": 61.12,
+  "source_sha256": "b2bac383acace0b1c957cf607f0a785d6e8196f85a78740a145d6eb06a6c5ba2",
+  "source_unchanged": true,
+  "ten_production_files_match_integration": true,
+  "tests": {
+    "run": 297,
+    "output": 595,
+    "pass": 296,
+    "skip": 1
+  },
+  "top": {
+    "run": 63,
+    "output": 127,
+    "pass": 62,
+    "skip": 1
+  },
+  "failures": [],
+  "files": {
+    "enwords/internal/store/atomic_connection.go": {
+      "hit": 28,
+      "total": 34,
+      "percent": 82.35
+    },
+    "enwords/internal/store/auth_store.go": {
+      "hit": 13,
+      "total": 16,
+      "percent": 81.25
+    },
+    "enwords/internal/store/duplex_repository.go": {
+      "hit": 69,
+      "total": 74,
+      "percent": 93.24
+    },
+    "enwords/internal/store/feedback.go": {
+      "hit": 21,
+      "total": 21,
+      "percent": 100.0
+    },
+    "enwords/internal/store/import_atomic.go": {
+      "hit": 0,
+      "total": 43,
+      "percent": 0.0
+    },
+    "enwords/internal/store/pilot_created_audit.go": {
+      "hit": 78,
+      "total": 91,
+      "percent": 85.71
+    },
+    "enwords/internal/store/pilot_created_codec.go": {
+      "hit": 44,
+      "total": 47,
+      "percent": 93.62
+    },
+    "enwords/internal/store/pilot_creation_plan.go": {
+      "hit": 49,
+      "total": 67,
+      "percent": 73.13
+    },
+    "enwords/internal/store/pilot_identity.go": {
+      "hit": 171,
+      "total": 224,
+      "percent": 76.34
+    },
+    "enwords/internal/store/pilot_legacy_audit.go": {
+      "hit": 165,
+      "total": 190,
+      "percent": 86.84
+    },
+    "enwords/internal/store/pilot_legacy_bridge.go": {
+      "hit": 57,
+      "total": 61,
+      "percent": 93.44
+    },
+    "enwords/internal/store/pilot_schema.go": {
+      "hit": 259,
+      "total": 331,
+      "percent": 78.25
+    },
+    "enwords/internal/store/pilot_schema_verifier.go": {
+      "hit": 91,
+      "total": 122,
+      "percent": 74.59
+    },
+    "enwords/internal/store/pilot_scope.go": {
+      "hit": 23,
+      "total": 28,
+      "percent": 82.14
+    },
+    "enwords/internal/store/pilot_store.go": {
+      "hit": 8,
+      "total": 9,
+      "percent": 88.89
+    },
+    "enwords/internal/store/placement_atomic.go": {
+      "hit": 0,
+      "total": 37,
+      "percent": 0.0
+    },
+    "enwords/internal/store/runtime.go": {
+      "hit": 44,
+      "total": 50,
+      "percent": 88.0
+    },
+    "enwords/internal/store/scheduler_repo.go": {
+      "hit": 32,
+      "total": 79,
+      "percent": 40.51
+    },
+    "enwords/internal/store/startup.go": {
+      "hit": 131,
+      "total": 137,
+      "percent": 95.62
+    },
+    "enwords/internal/store/store.go": {
+      "hit": 57,
+      "total": 81,
+      "percent": 70.37
+    }
+  },
+  "store": {
+    "hit": 1340,
+    "total": 1742,
+    "percent": 76.92
+  },
+  "component": {
+    "hit": 945,
+    "total": 1170,
+    "percent": 80.77
+  }
+}

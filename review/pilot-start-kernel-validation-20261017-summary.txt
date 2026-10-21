@@ -1,0 +1,4 @@
+﻿go version: exit 0; log pilot-start-kernel-validation-20261017-version.log
+pilot-tags: exit 1; log pilot-start-kernel-validation-20261017-pilot-tags.log
+production-test: exit 1; log pilot-start-kernel-validation-20261017-production-test.log
+production-vet: exit 0; log pilot-start-kernel-validation-20261017-production-vet.log

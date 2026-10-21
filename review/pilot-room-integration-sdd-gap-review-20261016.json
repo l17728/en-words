@@ -1,0 +1,49 @@
+﻿{
+    "review":  "pilot-room-integration-sdd-gap",
+    "date":  "2026-10-16",
+    "mode":  "read_only_no_compile_tests_or_production_changes",
+    "status":  "full_room_integration_blocked_next_slice_proposed",
+    "report":  "review/pilot-room-integration-sdd-gap-review-20261016.md",
+    "blockers_for_live_shared_db":  [
+                                        "DeleteStudentBook runtime ownership/settlement retention and persistent deletion fencing remain undefined and unimplemented.",
+                                        "Legacy scope/mode protection is not wired through direct Go, REST, WS, Timer, tools and final runtime writes; Enter-only checks are insufficient.",
+                                        "Finished reentry must distinguish settled read-only view from mutable recovery and prove zero DML.",
+                                        "Active codecs, trusted transition coordinator, receipt/claim fencing, tx-bound Teacher executor, outbox and completion recovery are not implemented by created-only components.",
+                                        "Legacy MAX+1/Save upsert and swallowed placement DB/JSON errors remain incompatible with safe shared pilot admission."
+                                    ],
+    "current_evidence":  [
+                             "Private PilotStore/schema constructors have no App/HTTP/tool registration. BindPilotSystemPrincipal validates format, not trusted caller authorization.",
+                             "auditPilotCreatedDataTx rejects nonempty future lifecycle tables; first transition requires lifecycle audit and nonce replay changes together.",
+                             "Current Go r5 and12-suite131-execution browser evidence validate existing implemented scope, not future Room wiring."
+                         ],
+    "recommended_slice":  {
+                              "scope":  "Independent SQLite plus opt-in harness; one Teacher-planned transition, strict started checkpoint, same-tx audit/receipt/outbox and commit-after-publication discipline; no network/media execution or ordinary product routes.",
+                              "name":  "trusted created-to-lesson.start persistence kernel",
+                              "design_location":  "Write a new narrow SDD for the start-only slice, referencing docs33 transaction rules and docs36 lifecycle schema. Update docs36 section18 with a slice/dependency/status table rather than rewriting the approved full design or pretending deletion is solved.",
+                              "approval":  "Proposal only, requires parent plus backend/frontend/test/security cross-review before code. No claim that this slice completes a usable classroom.",
+                              "interfaces":  [
+                                                 "commitPilotStart(ctx,principal,expected,plan)",
+                                                 "lookupPilotReceipt(ctx,owner,command)",
+                                                 "strict created/started codec and lifecycle audit dispatch",
+                                                 "trusted detached Teacher start-plan adapter without App registration"
+                                             ],
+                              "excluded":  [
+                                               "Production pilot UI or real Room integration",
+                                               "Legacy DB migration or legacy Lesson conversion",
+                                               "Answers/voice/timer/control/ACK and completion jobs",
+                                               "Deletion/re-enablement, real models and human audio"
+                                           ]
+                          },
+    "required_tests":  [
+                           "Two-pool command/CAS/generation races, real commit failure and restart receipt recovery",
+                           "Strict active codec and original creation nonce replay after start",
+                           "Two-user harness browser start/lost response/query-only recovery and denied cross-owner receipt",
+                           "No default production route/Timer/tool registration"
+                       ],
+    "existing_vs_pending":  {
+                                "existing":  "docs33 transaction/publish/job contracts;docs36 sections15-17 creation/scope/bridge/schema;section18 entrance inventory",
+                                "pending":  "Exact deletion fencing/tombstones, finished read-only classifier/interfaces, active lifecycle codecs, call-site ownership signatures and start-only authorization"
+                            },
+    "alternative":  "If next delivery must be a usable classroom, explicitly review pilot-only process/DB/accounts/router allowlist or complete all shared-DB protection. Independent files alone do not establish security. Alternative is not silently approved here.",
+    "design_consensus":  "Existing cross-reviewed created/scope contracts remain valid; section18 and this new small-slice plan still need implementation-specific multi-domain review."
+}

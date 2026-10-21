@@ -1,0 +1,1319 @@
+{
+  "manifest_version": 1,
+  "source_sdd": "docs/55-pilot-control-pinned-sqlite-vfs-sdd.md",
+  "source_sdd_sha256": "a19cb22a25e2312fc37cc5094886ad421cd284d022f5da6ab39e97b12eb2bdef",
+  "design_amendment": "docs/58-pilot-vfs-eexist-evidence-layer-sdd.md",
+  "design_amendment_sha256": "1b8538da1c5dd342e8c078db42c81dda02ee87c3a4b2246da1fa560c2c96cfe6",
+  "status": "DESIGN_CASES_NOT_EXECUTED",
+  "cases": [
+    {
+      "id": "VFS-FULLPATH-01",
+      "callback": "xFullPathname",
+      "input": {
+        "uri": "file:operations.sqlite?mode=rw&vfs=en_words_pilot_v1"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "name": "operations.sqlite",
+        "use": "opaque_vfs_token_only"
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-FULLPATH-02",
+      "callback": "xFullPathname",
+      "input": {
+        "uri": "file:../operations.sqlite?mode=rw&vfs=en_words_pilot_v1"
+      },
+      "expected_sqlite_rc": "N/A_PRE_SQLITE_PREFLIGHT",
+      "expected_output_or_state": {
+        "output_unchanged": true,
+        "readiness": "not_ready",
+        "error_layer": "PilotControl_URI_preflight",
+        "filesystem_callbacks": 0,
+        "application_sql_dispatch": 0
+      },
+      "injection": "invalid_uri_before_fullpath"
+    },
+    {
+      "id": "VFS-OPEN-MAIN-01",
+      "callback": "xOpen",
+      "input": {
+        "role": "MAIN_DB",
+        "name": "operations.sqlite",
+        "caller_flags": "pinned-main-mask",
+        "existing_identity": "matches_reaper_pin"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "created": false,
+        "identity": "reaper_pinned_identity",
+        "out_flags": "exact_sqlite3451_vfs_flags_golden"
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-OPEN-MAIN-02",
+      "callback": "xOpen",
+      "input": {
+        "role": "MAIN_DB",
+        "caller_flags": "SQLITE_OPEN_CREATE|SQLITE_OPEN_EXCLUSIVE"
+      },
+      "expected_sqlite_rc": "SQLITE_CANTOPEN",
+      "expected_output_or_state": {
+        "created": false,
+        "readiness": "not_ready"
+      },
+      "injection": "forbidden_main_create_flags"
+    },
+    {
+      "id": "VFS-OPEN-SIDECAR-01",
+      "callback": "xOpen",
+      "input": {
+        "role": "WAL",
+        "name": "operations.sqlite-wal",
+        "caller_flags": "READWRITE|CREATE|WAL",
+        "create_result": "EEXIST",
+        "registered_generation": "same_inode",
+        "adapter_create_syscall": "openat2",
+        "adapter_create_flags": "O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC",
+        "adapter_create_resolve": "RESOLVE_BENEATH|RESOLVE_NO_SYMLINKS|RESOLVE_NO_MAGICLINKS|RESOLVE_NO_XDEV",
+        "adapter_create_result": "EEXIST",
+        "eexist_inspect_syscall": "openat2",
+        "eexist_inspect_flags": "O_PATH|O_NOFOLLOW|O_CLOEXEC",
+        "eexist_inspect_resolve": "RESOLVE_BENEATH|RESOLVE_NO_SYMLINKS|RESOLVE_NO_MAGICLINKS|RESOLVE_NO_XDEV",
+        "retry_open_syscall": "openat2",
+        "retry_open_flags": "O_RDWR|O_NOFOLLOW|O_CLOEXEC",
+        "retry_open_resolve": "RESOLVE_BENEATH|RESOLVE_NO_SYMLINKS|RESOLVE_NO_MAGICLINKS|RESOLVE_NO_XDEV",
+        "adapter_create_mode": "0600"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "identity": "registered_generation_inode",
+        "generation_advanced": false,
+        "out_flags": "exact_sqlite3451_vfs_flags_golden",
+        "post_ready_read_dispatch": 1,
+        "namespace_mutated": false,
+        "registered_file_content_unchanged": true,
+        "opath_fd_close_count": 1,
+        "retained_fd": "usable_retry_fd"
+      },
+      "injection": "pause_after_eexist_before_reopen",
+      "barriers": [
+        "eexist.wal.same.after_eexist_before_inspect",
+        "eexist.wal.same.after_opath_before_open",
+        "eexist.wal.same.after_open_before_final_name",
+        "eexist.wal.same.before_publish"
+      ]
+    },
+    {
+      "id": "VFS-OPEN-SIDECAR-03",
+      "callback": "xOpen",
+      "input": {
+        "role": "WAL",
+        "name": "operations.sqlite-wal",
+        "caller_flags": "existing_sidecar_pinned_mask",
+        "entry": "registered_same_inode"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "identity": "registered_generation_inode",
+        "out_flags": "exact_sqlite3451_vfs_flags_golden"
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-OPEN-SIDECAR-04",
+      "callback": "xOpen",
+      "input": {
+        "role": "JOURNAL",
+        "name": "operations.sqlite-journal",
+        "caller_flags": "CREATE|EXCLUSIVE",
+        "create_result": "created"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "identity": "new_registered_generation",
+        "out_flags": "exact_sqlite3451_vfs_flags_golden"
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-OPEN-SIDECAR-02",
+      "callback": "xOpen",
+      "input": {
+        "role": "JOURNAL",
+        "name": "operations.sqlite-journal",
+        "caller_flags": "READWRITE|CREATE|MAIN_JOURNAL",
+        "create_result": "EEXIST",
+        "registered_generation": "different_inode",
+        "adapter_create_syscall": "openat2",
+        "adapter_create_flags": "O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC",
+        "adapter_create_resolve": "RESOLVE_BENEATH|RESOLVE_NO_SYMLINKS|RESOLVE_NO_MAGICLINKS|RESOLVE_NO_XDEV",
+        "adapter_create_result": "EEXIST",
+        "eexist_inspect_syscall": "openat2",
+        "eexist_inspect_flags": "O_PATH|O_NOFOLLOW|O_CLOEXEC",
+        "eexist_inspect_resolve": "RESOLVE_BENEATH|RESOLVE_NO_SYMLINKS|RESOLVE_NO_MAGICLINKS|RESOLVE_NO_XDEV",
+        "retry_open_syscall": "openat2",
+        "retry_open_flags": "O_RDWR|O_NOFOLLOW|O_CLOEXEC",
+        "retry_open_resolve": "RESOLVE_BENEATH|RESOLVE_NO_SYMLINKS|RESOLVE_NO_MAGICLINKS|RESOLVE_NO_XDEV",
+        "adapter_create_mode": "0600"
+      },
+      "expected_sqlite_rc": "SQLITE_CANTOPEN",
+      "expected_output_or_state": {
+        "namespace_mutated": false,
+        "readiness": "fenced",
+        "application_sql_dispatch": 0,
+        "generation_advanced": false,
+        "registered_file_content_unchanged": true
+      },
+      "injection": "identity_mismatch_on_retry_open",
+      "barriers": [
+        "eexist.journal.foreign.after_eexist_before_inspect",
+        "eexist.journal.foreign.after_opath_before_open",
+        "eexist.journal.foreign.after_open_before_final_name"
+      ]
+    },
+    {
+      "id": "VFS-OPEN-ROLE-01",
+      "callback": "xOpen",
+      "input": {
+        "role": "MAIN_DB|WAL"
+      },
+      "expected_sqlite_rc": "SQLITE_CANTOPEN",
+      "expected_output_or_state": {
+        "fd_opened": false
+      },
+      "injection": "invalid_object_role_mask"
+    },
+    {
+      "id": "VFS-ACCESS-01",
+      "callback": "xAccess",
+      "input": {
+        "name": "operations.sqlite-wal",
+        "entry": "registered_regular_file_same_identity"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "exists": true
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-ACCESS-02",
+      "callback": "xAccess",
+      "input": {
+        "name": "operations.sqlite-wal",
+        "entry": "absent"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "exists": false
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-ACCESS-03",
+      "callback": "xAccess",
+      "input": {
+        "name": "operations.sqlite-wal",
+        "entry": "symlink_or_identity_replaced"
+      },
+      "expected_sqlite_rc": "SQLITE_IOERR_ACCESS",
+      "expected_output_or_state": {
+        "store": "fenced",
+        "namespace_mutated": false
+      },
+      "injection": "replace_name_after_open"
+    },
+    {
+      "id": "VFS-READ-01",
+      "callback": "xRead",
+      "input": {
+        "offset": 0,
+        "amount": 4,
+        "file_bytes": "ABCD"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "buffer": "ABCD"
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-READ-02",
+      "callback": "xRead",
+      "input": {
+        "offset": 2,
+        "amount": 4,
+        "file_bytes": "ABCD"
+      },
+      "expected_sqlite_rc": "SQLITE_IOERR_SHORT_READ",
+      "expected_output_or_state": {
+        "buffer": "CD\\u0000\\u0000"
+      },
+      "injection": "read_past_eof"
+    },
+    {
+      "id": "VFS-WRITE-01",
+      "callback": "xWrite",
+      "input": {
+        "offset": 0,
+        "bytes": "payload",
+        "write_result": "complete"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "bytes_written": 7
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-WRITE-02",
+      "callback": "xWrite",
+      "input": {
+        "offset": 0,
+        "bytes": "payload",
+        "write_result": "partial_then_eio"
+      },
+      "expected_sqlite_rc": "SQLITE_IOERR_WRITE",
+      "expected_output_or_state": {
+        "store": "fenced",
+        "success_reported": false
+      },
+      "injection": "fail_after_partial_pwrite"
+    },
+    {
+      "id": "VFS-TRUNCATE-01",
+      "callback": "xTruncate",
+      "input": {
+        "size": 0,
+        "file_identity": "matches_open_fd"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "file_size": 0
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-FILESIZE-01",
+      "callback": "xFileSize",
+      "input": {
+        "file_identity": "matches_open_fd",
+        "size": 4096
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "size": 4096
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-SYNC-01",
+      "callback": "xSync",
+      "input": {
+        "flags": "SQLITE_SYNC_DATAONLY"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "syscall": "fdatasync"
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-SYNC-02",
+      "callback": "xSync",
+      "input": {
+        "flags": "SQLITE_SYNC_NORMAL"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "syscall": "fsync"
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-SYNC-03",
+      "callback": "xSync",
+      "input": {
+        "syscall_result": "EIO"
+      },
+      "expected_sqlite_rc": "SQLITE_IOERR_FSYNC",
+      "expected_output_or_state": {
+        "store": "fenced",
+        "success_reported": false
+      },
+      "injection": "fail_sync"
+    },
+    {
+      "id": "VFS-LOCKSTATE-00",
+      "callback": "xFileControl",
+      "input": {
+        "opcode": "SQLITE_FCNTL_LOCKSTATE",
+        "actual_lock": "NONE"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "lockstate": 0
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-LOCKSTATE-01",
+      "callback": "xFileControl",
+      "input": {
+        "opcode": "SQLITE_FCNTL_LOCKSTATE",
+        "actual_lock": "SHARED"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "lockstate": 1
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-LOCKSTATE-02",
+      "callback": "xFileControl",
+      "input": {
+        "opcode": "SQLITE_FCNTL_LOCKSTATE",
+        "actual_lock": "RESERVED"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "lockstate": 2
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-LOCKSTATE-03",
+      "callback": "xFileControl",
+      "input": {
+        "opcode": "SQLITE_FCNTL_LOCKSTATE",
+        "actual_lock": "PENDING"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "lockstate": 3
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-LOCKSTATE-04",
+      "callback": "xFileControl",
+      "input": {
+        "opcode": "SQLITE_FCNTL_LOCKSTATE",
+        "actual_lock": "EXCLUSIVE"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "lockstate": 4
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-FCNTL-POINTER-01",
+      "callback": "xFileControl",
+      "input": {
+        "opcode": "SQLITE_FCNTL_VFS_POINTER",
+        "expected_vfs": "en_words_pilot_v1"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "pointer": "registered_private_vfs"
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-FCNTL-POINTER-02",
+      "callback": "xFileControl",
+      "input": {
+        "opcode": "SQLITE_FCNTL_VFS_POINTER",
+        "actual_vfs": "default_vfs"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "pointer": "not_registered_private_vfs",
+        "readiness": "not_ready_or_fenced"
+      },
+      "injection": "wrong_vfs_pointer"
+    },
+    {
+      "id": "VFS-FCNTL-UNKNOWN-01",
+      "callback": "xFileControl",
+      "input": {
+        "opcode": "unlisted"
+      },
+      "expected_sqlite_rc": "SQLITE_NOTFOUND",
+      "expected_output_or_state": {
+        "store": "unchanged"
+      },
+      "injection": "unknown_file_control"
+    },
+    {
+      "id": "VFS-DELETE-MISSING-01",
+      "callback": "xDelete",
+      "input": {
+        "name": "operations.sqlite-journal",
+        "entry": "absent"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "generation_changed": false
+      },
+      "injection": "synthetic_callback"
+    },
+    {
+      "id": "VFS-DELETE-EMPTY-01",
+      "callback": "xDelete",
+      "input": {
+        "name": "operations.sqlite-journal",
+        "entry": "unregistered_zero_byte_regular_file",
+        "lock": "RESERVED"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "unlinked": true,
+        "fd_pinned_through_dir_sync": true
+      },
+      "injection": "synthetic_callback"
+    },
+    {
+      "id": "VFS-DELETE-NONEMPTY-01",
+      "callback": "xDelete",
+      "input": {
+        "name": "operations.sqlite-journal",
+        "entry": "unregistered_nonzero_regular_file",
+        "lock": "RESERVED"
+      },
+      "expected_sqlite_rc": "SQLITE_IOERR_DELETE",
+      "expected_output_or_state": {
+        "namespace_mutated": false,
+        "store": "fenced"
+      },
+      "injection": "synthetic_callback"
+    },
+    {
+      "id": "VFS-DELETE-SHM-01",
+      "callback": "xDelete",
+      "input": {
+        "name": "operations.sqlite-shm"
+      },
+      "expected_sqlite_rc": "SQLITE_IOERR_DELETE",
+      "expected_output_or_state": {
+        "namespace_mutated": false
+      },
+      "injection": "synthetic_callback"
+    },
+    {
+      "id": "VFS-DELETE-SYNCDIR-0",
+      "callback": "xDelete",
+      "input": {
+        "name": "operations.sqlite-wal",
+        "entry": "registered_generation",
+        "sync_dir": false
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "unlinked": true,
+        "root_directory_fsync_count": 0
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-DELETE-SYNCDIR-1",
+      "callback": "xDelete",
+      "input": {
+        "name": "operations.sqlite-wal",
+        "entry": "registered_generation",
+        "sync_dir": true
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "unlinked": true,
+        "root_directory_fsync_count": 1,
+        "fsync_after_unlink": true
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-DELETE-DIRFSYNC-ERR",
+      "callback": "xDelete",
+      "input": {
+        "name": "operations.sqlite-wal",
+        "entry": "registered_generation",
+        "sync_dir": true,
+        "directory_fsync_errno": "EIO"
+      },
+      "expected_sqlite_rc": "SQLITE_IOERR_DIR_FSYNC",
+      "expected_output_or_state": {
+        "unlinked": true,
+        "store": "fenced",
+        "success_reported": false
+      },
+      "injection": "fail_root_directory_fsync_after_unlink"
+    },
+    {
+      "id": "VFS-SHM-MAP-01",
+      "callback": "xShmMap",
+      "input": {
+        "region": 0,
+        "region_size": 32768,
+        "create": true,
+        "main_identity": "validated"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "mapping": "shared_retained_fd",
+        "lifecycle_lock": "shared_held"
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-SHM-MAP-02",
+      "callback": "xShmMap",
+      "input": {
+        "region": 4294967295,
+        "region_size": 32768,
+        "create": true
+      },
+      "expected_sqlite_rc": "SQLITE_IOERR_SHMMAP",
+      "expected_output_or_state": {
+        "mapping_created": false
+      },
+      "injection": "overflow_region_offset"
+    },
+    {
+      "id": "VFS-SHM-LOCK-01",
+      "callback": "xShmLock",
+      "input": {
+        "offset": 0,
+        "count": 1,
+        "flags": "LOCK|SHARED"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "lock": "shared"
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-SHM-LOCK-02",
+      "callback": "xShmLock",
+      "input": {
+        "offset": 0,
+        "count": 1,
+        "flags": "LOCK|EXCLUSIVE",
+        "current": "SHARED"
+      },
+      "expected_sqlite_rc": "SQLITE_IOERR_SHMLOCK",
+      "expected_output_or_state": {
+        "lock": "unchanged"
+      },
+      "injection": "forbidden_direct_upgrade"
+    },
+    {
+      "id": "VFS-SHM-BARRIER-01",
+      "callback": "xShmBarrier",
+      "input": {
+        "mapping": "active"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "memory_fence": "issued"
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-SHM-UNMAP-01",
+      "callback": "xShmUnmap",
+      "input": {
+        "delete_flag": true,
+        "local_refs": 0,
+        "other_process_lifecycle_lock": "shared"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "mapping": "unmapped",
+        "shm_file": "retained",
+        "lifecycle_lock": "released"
+      },
+      "injection": "two_process_lifecycle_contention"
+    },
+    {
+      "id": "VFS-LOCK-01",
+      "callback": "xLock",
+      "input": {
+        "transition": "NONE->SHARED",
+        "trace_case": "two_connection_shared_lock"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "lock_state": "SHARED",
+        "byte_ranges": "exact_sqlite3451_unix_lock_trace_golden"
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-LOCK-02",
+      "callback": "xLock",
+      "input": {
+        "transition": "SHARED->RESERVED",
+        "trace_case": "reserve_write_intent"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "lock_state": "RESERVED",
+        "byte_ranges": "exact_sqlite3451_unix_lock_trace_golden"
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-LOCK-03",
+      "callback": "xLock",
+      "input": {
+        "transition": "PENDING->EXCLUSIVE",
+        "trace_case": "other_connection_holds_shared"
+      },
+      "expected_sqlite_rc": "SQLITE_BUSY",
+      "expected_output_or_state": {
+        "lock_state": "rolled_back_to_prior_state",
+        "local_reservations": "match_sqlite3451_unix_lock_trace_golden"
+      },
+      "injection": "hold_shared_lock_in_second_connection"
+    },
+    {
+      "id": "VFS-UNLOCK-01",
+      "callback": "xUnlock",
+      "input": {
+        "transition": "EXCLUSIVE->SHARED",
+        "trace_case": "exclusive_downgrade"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "lock_state": "SHARED",
+        "byte_ranges": "exact_sqlite3451_unix_lock_trace_golden"
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-CHECKRESERVED-01",
+      "callback": "xCheckReservedLock",
+      "input": {
+        "local_or_external_lock": "RESERVED"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "reserved": true
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-CHECKRESERVED-02",
+      "callback": "xCheckReservedLock",
+      "input": {
+        "local_or_external_lock": "NONE"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "reserved": false
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-CLOSE-01",
+      "callback": "xClose",
+      "input": {
+        "handle": "open_fd"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "closed_exactly_once": true,
+        "generation_ref_decremented": true
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-SECTOR-01",
+      "callback": "xSectorSize",
+      "input": {
+        "file": "operations.sqlite"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "sector_size": 4096
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-DEVICE-01",
+      "callback": "xDeviceCharacteristics",
+      "input": {
+        "file": "operations.sqlite"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "characteristics": 0
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-RANDOM-01",
+      "callback": "xRandomness",
+      "input": {
+        "amount": 32
+      },
+      "expected_sqlite_rc": "N/A_CALLBACK_RETURNS_BYTE_COUNT",
+      "expected_output_or_state": {
+        "returned_bytes": 32,
+        "output_length": 32
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-SLEEP-01",
+      "callback": "xSleep",
+      "input": {
+        "requested_microseconds": 1000
+      },
+      "expected_sqlite_rc": "N/A_CALLBACK_RETURNS_ELAPSED_MICROSECONDS",
+      "expected_output_or_state": {
+        "actual_microseconds_at_least": 1000
+      },
+      "injection": "fake_sleeper_advances_exact_duration"
+    },
+    {
+      "id": "VFS-CLOCK-01",
+      "callback": "xCurrentTime",
+      "input": {
+        "clock": "valid_system_clock"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "julian_time": "finite_positive"
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-CLOCK64-01",
+      "callback": "xCurrentTimeInt64",
+      "input": {
+        "clock": "valid_system_clock"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "julian_milliseconds": "finite_positive_int64"
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-ERROR-01",
+      "callback": "xGetLastError",
+      "input": {
+        "message": "bounded diagnostic",
+        "buffer_size": 16
+      },
+      "expected_sqlite_rc": "N/A_CALLBACK_RETURNS_SYSTEM_ERROR_NUMBER",
+      "expected_output_or_state": {
+        "written_length_at_most": 15,
+        "nul_terminated": true,
+        "result_errno": "recorded_errno_or_zero"
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-SYSCALL-AUDIT-01",
+      "callback": "filesystem_syscall_audit",
+      "input": {
+        "operations": [
+          "xOpen_main",
+          "xOpen_wal_create",
+          "xOpen_wal_eexist_reopen",
+          "xOpen_journal_create",
+          "xOpen_journal_existing",
+          "xOpen_journal_eexist_reopen",
+          "xAccess",
+          "xDelete_syncDir_false",
+          "xDelete_syncDir_true",
+          "xDelete_obsolete_zero_byte_journal_openat2",
+          "xShmMap",
+          "identity_error_paths"
+        ],
+        "root_fd": "pinned"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "db_sidecar_open_syscalls": "openat2_only_with_pinned_rootFD_and_required_resolve_flags",
+        "delete_syscalls": "unlinkat_only_with_pinned_rootFD",
+        "metadata_syscalls": "fstat_or_fstatat_relative_to_pinned_rootFD",
+        "cwd_open_count": 0,
+        "absolute_path_open_count": 0,
+        "rename_count": 0,
+        "default_vfs_filesystem_call_count": 0
+      },
+      "injection": "syscall_trace_or_instrumented_syscall_table"
+    },
+    {
+      "id": "VFS-ABI-NULL-01",
+      "callback": "disabled_abi_pointers",
+      "input": {
+        "vfs_version": 2,
+        "io_methods_version": 2
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "xDlOpen": null,
+        "xDlSym": null,
+        "xDlClose": null,
+        "xDlError": null,
+        "xSetSystemCall": null,
+        "xGetSystemCall": null,
+        "xNextSystemCall": null,
+        "xFetch": null,
+        "xUnfetch": null
+      },
+      "injection": "startup_abi_inventory"
+    },
+    {
+      "id": "VFS-OPEN-SIDECAR-05",
+      "callback": "xOpen",
+      "input": {
+        "role": "WAL",
+        "name": "operations.sqlite-wal",
+        "caller_flags": "CREATE|EXCLUSIVE",
+        "create_result": "created"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "identity": "new_registered_generation",
+        "out_flags": "exact_sqlite3451_vfs_flags_golden"
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-OPEN-SIDECAR-06",
+      "callback": "xOpen",
+      "input": {
+        "role": "JOURNAL",
+        "name": "operations.sqlite-journal",
+        "caller_flags": "existing_sidecar_pinned_mask",
+        "entry": "registered_same_inode"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "identity": "registered_generation_inode",
+        "out_flags": "exact_sqlite3451_vfs_flags_golden"
+      },
+      "injection": "none"
+    },
+    {
+      "id": "VFS-OPEN-SIDECAR-07",
+      "callback": "xOpen",
+      "input": {
+        "role": "JOURNAL",
+        "name": "operations.sqlite-journal",
+        "caller_flags": "READWRITE|CREATE|MAIN_JOURNAL",
+        "create_result": "EEXIST",
+        "registered_generation": "same_inode",
+        "adapter_create_syscall": "openat2",
+        "adapter_create_flags": "O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC",
+        "adapter_create_resolve": "RESOLVE_BENEATH|RESOLVE_NO_SYMLINKS|RESOLVE_NO_MAGICLINKS|RESOLVE_NO_XDEV",
+        "adapter_create_result": "EEXIST",
+        "eexist_inspect_syscall": "openat2",
+        "eexist_inspect_flags": "O_PATH|O_NOFOLLOW|O_CLOEXEC",
+        "eexist_inspect_resolve": "RESOLVE_BENEATH|RESOLVE_NO_SYMLINKS|RESOLVE_NO_MAGICLINKS|RESOLVE_NO_XDEV",
+        "retry_open_syscall": "openat2",
+        "retry_open_flags": "O_RDWR|O_NOFOLLOW|O_CLOEXEC",
+        "retry_open_resolve": "RESOLVE_BENEATH|RESOLVE_NO_SYMLINKS|RESOLVE_NO_MAGICLINKS|RESOLVE_NO_XDEV",
+        "adapter_create_mode": "0600"
+      },
+      "expected_sqlite_rc": "SQLITE_OK",
+      "expected_output_or_state": {
+        "identity": "registered_generation_inode",
+        "generation_advanced": false,
+        "out_flags": "exact_sqlite3451_vfs_flags_golden",
+        "post_ready_read_dispatch": 1,
+        "namespace_mutated": false,
+        "registered_file_content_unchanged": true,
+        "opath_fd_close_count": 1,
+        "retained_fd": "usable_retry_fd"
+      },
+      "injection": "pause_after_eexist_before_reopen",
+      "barriers": [
+        "eexist.journal.same.after_eexist_before_inspect",
+        "eexist.journal.same.after_opath_before_open",
+        "eexist.journal.same.after_open_before_final_name",
+        "eexist.journal.same.before_publish"
+      ]
+    },
+    {
+      "id": "VFS-FULLPATH-03",
+      "callback": "xFullPathname",
+      "input": {
+        "uri": "file:operations.sqlite?vfs=en_words_pilot_v1&mode=rw",
+        "negative_vector": "query_reordered"
+      },
+      "expected_sqlite_rc": "N/A_PRE_SQLITE_PREFLIGHT",
+      "expected_output_or_state": {
+        "filesystem_callbacks": 0,
+        "application_sql_dispatch": 0,
+        "readiness": "not_ready",
+        "error_layer": "PilotControl_URI_preflight"
+      },
+      "injection": "invalid_uri_before_fullpath"
+    },
+    {
+      "id": "VFS-FULLPATH-04",
+      "callback": "xFullPathname",
+      "input": {
+        "uri": "file:operations%2esqlite?mode=rw&vfs=en_words_pilot_v1",
+        "negative_vector": "percent_encoded_path"
+      },
+      "expected_sqlite_rc": "N/A_PRE_SQLITE_PREFLIGHT",
+      "expected_output_or_state": {
+        "filesystem_callbacks": 0,
+        "application_sql_dispatch": 0,
+        "readiness": "not_ready",
+        "error_layer": "PilotControl_URI_preflight"
+      },
+      "injection": "invalid_uri_before_fullpath"
+    },
+    {
+      "id": "VFS-FULLPATH-05",
+      "callback": "xFullPathname",
+      "input": {
+        "uri": "file://localhost/operations.sqlite?mode=rw&vfs=en_words_pilot_v1",
+        "negative_vector": "authority_present"
+      },
+      "expected_sqlite_rc": "N/A_PRE_SQLITE_PREFLIGHT",
+      "expected_output_or_state": {
+        "filesystem_callbacks": 0,
+        "application_sql_dispatch": 0,
+        "readiness": "not_ready",
+        "error_layer": "PilotControl_URI_preflight"
+      },
+      "injection": "invalid_uri_before_fullpath"
+    },
+    {
+      "id": "VFS-FULLPATH-06",
+      "callback": "xFullPathname",
+      "input": {
+        "uri": "file:operations.sqlite?mode=rw&vfs=en_words_pilot_v1#fragment",
+        "negative_vector": "fragment_present"
+      },
+      "expected_sqlite_rc": "N/A_PRE_SQLITE_PREFLIGHT",
+      "expected_output_or_state": {
+        "filesystem_callbacks": 0,
+        "application_sql_dispatch": 0,
+        "readiness": "not_ready",
+        "error_layer": "PilotControl_URI_preflight"
+      },
+      "injection": "invalid_uri_before_fullpath"
+    },
+    {
+      "id": "VFS-FULLPATH-07",
+      "callback": "xFullPathname",
+      "input": {
+        "uri": "file:operations.sqlite?mode=rw&vfs=en_words_pilot_v1&immutable=1",
+        "negative_vector": "extra_query_parameter"
+      },
+      "expected_sqlite_rc": "N/A_PRE_SQLITE_PREFLIGHT",
+      "expected_output_or_state": {
+        "filesystem_callbacks": 0,
+        "application_sql_dispatch": 0,
+        "readiness": "not_ready",
+        "error_layer": "PilotControl_URI_preflight"
+      },
+      "injection": "invalid_uri_before_fullpath"
+    },
+    {
+      "id": "VFS-FULLPATH-08",
+      "callback": "xFullPathname",
+      "input": {
+        "uri": "file:operations.sqlite?mode=ro&vfs=en_words_pilot_v1",
+        "negative_vector": "read_only_mode"
+      },
+      "expected_sqlite_rc": "N/A_PRE_SQLITE_PREFLIGHT",
+      "expected_output_or_state": {
+        "filesystem_callbacks": 0,
+        "application_sql_dispatch": 0,
+        "readiness": "not_ready",
+        "error_layer": "PilotControl_URI_preflight"
+      },
+      "injection": "invalid_uri_before_fullpath"
+    },
+    {
+      "id": "VFS-FULLPATH-09",
+      "callback": "xFullPathname",
+      "input": {
+        "uri": "file:operations.sqlite?mode=rw&vfs=unix",
+        "negative_vector": "different_vfs"
+      },
+      "expected_sqlite_rc": "N/A_PRE_SQLITE_PREFLIGHT",
+      "expected_output_or_state": {
+        "filesystem_callbacks": 0,
+        "application_sql_dispatch": 0,
+        "readiness": "not_ready",
+        "error_layer": "PilotControl_URI_preflight"
+      },
+      "injection": "invalid_uri_before_fullpath"
+    },
+    {
+      "id": "VFS-ACL-ROOT-ACCESS-01",
+      "callback": "root_preflight",
+      "input": {
+        "target": "root_directory",
+        "xattr": "system.posix_acl_access",
+        "xattr_result": "present"
+      },
+      "expected_sqlite_rc": "N/A_PRE_SQLITE_PREFLIGHT",
+      "expected_output_or_state": {
+        "error": "ipc_registry_corrupt",
+        "application_sql_dispatch": 0,
+        "readiness": "not_ready",
+        "filesystem_mutation": false,
+        "error_layer": "PilotControl_root_preflight"
+      },
+      "injection": "inject_acl_xattr_read"
+    },
+    {
+      "id": "VFS-ACL-ROOT-DEFAULT-01",
+      "callback": "root_preflight",
+      "input": {
+        "target": "root_directory",
+        "xattr": "system.posix_acl_default",
+        "xattr_result": "present"
+      },
+      "expected_sqlite_rc": "N/A_PRE_SQLITE_PREFLIGHT",
+      "expected_output_or_state": {
+        "error": "ipc_registry_corrupt",
+        "application_sql_dispatch": 0,
+        "readiness": "not_ready",
+        "filesystem_mutation": false,
+        "error_layer": "PilotControl_root_preflight"
+      },
+      "injection": "inject_acl_xattr_read"
+    },
+    {
+      "id": "VFS-ACL-ANCESTOR-ACCESS-01",
+      "callback": "root_preflight",
+      "input": {
+        "target": "trusted_anchor_ancestor",
+        "xattr": "system.posix_acl_access",
+        "xattr_result": "present"
+      },
+      "expected_sqlite_rc": "N/A_PRE_SQLITE_PREFLIGHT",
+      "expected_output_or_state": {
+        "error": "ipc_registry_corrupt",
+        "application_sql_dispatch": 0,
+        "readiness": "not_ready",
+        "filesystem_mutation": false,
+        "error_layer": "PilotControl_root_preflight"
+      },
+      "injection": "inject_acl_xattr_read"
+    },
+    {
+      "id": "VFS-ACL-ANCESTOR-DEFAULT-01",
+      "callback": "root_preflight",
+      "input": {
+        "target": "trusted_anchor_ancestor",
+        "xattr": "system.posix_acl_default",
+        "xattr_result": "present"
+      },
+      "expected_sqlite_rc": "N/A_PRE_SQLITE_PREFLIGHT",
+      "expected_output_or_state": {
+        "error": "ipc_registry_corrupt",
+        "application_sql_dispatch": 0,
+        "readiness": "not_ready",
+        "filesystem_mutation": false,
+        "error_layer": "PilotControl_root_preflight"
+      },
+      "injection": "inject_acl_xattr_read"
+    },
+    {
+      "id": "VFS-ACL-MAIN-ACCESS-01",
+      "callback": "xOpen",
+      "input": {
+        "target": "operations.sqlite",
+        "xattr": "system.posix_acl_access",
+        "xattr_result": "present"
+      },
+      "expected_sqlite_rc": "SQLITE_CANTOPEN",
+      "expected_output_or_state": {
+        "error": "ipc_registry_corrupt",
+        "application_sql_dispatch": 0,
+        "readiness": "not_ready",
+        "filesystem_mutation": false,
+        "error_layer": "SQLite_VFS_xOpen"
+      },
+      "injection": "inject_acl_xattr_read"
+    },
+    {
+      "id": "VFS-ACL-SIDECAR-ACCESS-01",
+      "callback": "xOpen",
+      "input": {
+        "target": "operations.sqlite-wal|operations.sqlite-shm|operations.sqlite-journal",
+        "xattr": "system.posix_acl_access",
+        "xattr_result": "present"
+      },
+      "expected_sqlite_rc": "SQLITE_CANTOPEN",
+      "expected_output_or_state": {
+        "error": "ipc_registry_corrupt",
+        "application_sql_dispatch": 0,
+        "readiness": "not_ready",
+        "filesystem_mutation": false,
+        "error_layer": "SQLite_VFS_xOpen"
+      },
+      "injection": "inject_acl_xattr_read"
+    },
+    {
+      "id": "VFS-ACL-ROOT-QUERY-EACCES-01",
+      "callback": "root_preflight",
+      "input": {
+        "target": "root_directory",
+        "xattr": "system.posix_acl_access|system.posix_acl_default",
+        "xattr_query_result": "EACCES",
+        "xattr_present": null
+      },
+      "expected_sqlite_rc": "N/A_PRE_SQLITE_PREFLIGHT",
+      "expected_output_or_state": {
+        "error": "ipc_registry_corrupt",
+        "error_layer": "PilotControl_root_preflight",
+        "application_sql_dispatch": 0,
+        "readiness": "not_ready",
+        "filesystem_mutation": false
+      },
+      "injection": "inject_acl_xattr_query_error"
+    },
+    {
+      "id": "VFS-ACL-ROOT-QUERY-UNSUPPORTED-01",
+      "callback": "root_preflight",
+      "input": {
+        "target": "root_directory",
+        "xattr": "system.posix_acl_access|system.posix_acl_default",
+        "xattr_query_result": "EOPNOTSUPP",
+        "xattr_present": null
+      },
+      "expected_sqlite_rc": "N/A_PRE_SQLITE_PREFLIGHT",
+      "expected_output_or_state": {
+        "error": "ipc_registry_corrupt",
+        "error_layer": "PilotControl_root_preflight",
+        "application_sql_dispatch": 0,
+        "readiness": "not_ready",
+        "filesystem_mutation": false
+      },
+      "injection": "inject_acl_xattr_query_error"
+    },
+    {
+      "id": "VFS-ACL-ROOT-QUERY-IO-01",
+      "callback": "root_preflight",
+      "input": {
+        "target": "root_directory",
+        "xattr": "system.posix_acl_access|system.posix_acl_default",
+        "xattr_query_result": "EIO",
+        "xattr_present": null
+      },
+      "expected_sqlite_rc": "N/A_PRE_SQLITE_PREFLIGHT",
+      "expected_output_or_state": {
+        "error": "ipc_registry_corrupt",
+        "error_layer": "PilotControl_root_preflight",
+        "application_sql_dispatch": 0,
+        "readiness": "not_ready",
+        "filesystem_mutation": false
+      },
+      "injection": "inject_acl_xattr_query_error"
+    },
+    {
+      "id": "VFS-ACL-ANCESTOR-QUERY-IO-01",
+      "callback": "root_preflight",
+      "input": {
+        "target": "trusted_anchor_ancestor",
+        "xattr": "system.posix_acl_access|system.posix_acl_default",
+        "xattr_query_result": "EIO",
+        "xattr_present": null
+      },
+      "expected_sqlite_rc": "N/A_PRE_SQLITE_PREFLIGHT",
+      "expected_output_or_state": {
+        "error": "ipc_registry_corrupt",
+        "error_layer": "PilotControl_root_preflight",
+        "application_sql_dispatch": 0,
+        "readiness": "not_ready",
+        "filesystem_mutation": false
+      },
+      "injection": "inject_acl_xattr_query_error"
+    },
+    {
+      "id": "VFS-ACL-MAIN-QUERY-EACCES-01",
+      "callback": "xOpen",
+      "input": {
+        "target": "operations.sqlite",
+        "xattr": "system.posix_acl_access|system.posix_acl_default",
+        "xattr_query_result": "EACCES",
+        "xattr_present": null
+      },
+      "expected_sqlite_rc": "SQLITE_CANTOPEN",
+      "expected_output_or_state": {
+        "error": "ipc_registry_corrupt",
+        "error_layer": "SQLite_VFS_xOpen",
+        "application_sql_dispatch": 0,
+        "readiness": "not_ready",
+        "filesystem_mutation": false
+      },
+      "injection": "inject_acl_xattr_query_error"
+    },
+    {
+      "id": "VFS-ACL-SIDECAR-QUERY-UNSUPPORTED-01",
+      "callback": "xOpen",
+      "input": {
+        "target": "operations.sqlite-wal|operations.sqlite-shm|operations.sqlite-journal",
+        "xattr": "system.posix_acl_access|system.posix_acl_default",
+        "xattr_query_result": "EOPNOTSUPP",
+        "xattr_present": null
+      },
+      "expected_sqlite_rc": "SQLITE_CANTOPEN",
+      "expected_output_or_state": {
+        "error": "ipc_registry_corrupt",
+        "error_layer": "SQLite_VFS_xOpen",
+        "application_sql_dispatch": 0,
+        "readiness": "not_ready",
+        "filesystem_mutation": false
+      },
+      "injection": "inject_acl_xattr_query_error"
+    },
+    {
+      "id": "VFS-OPEN-SIDECAR-08",
+      "callback": "xOpen",
+      "input": {
+        "role": "WAL",
+        "name": "operations.sqlite-wal",
+        "caller_flags": "READWRITE|CREATE|EXCLUSIVE|WAL",
+        "adapter_create_syscall": "openat2",
+        "adapter_create_flags": "O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC",
+        "adapter_create_mode": "0600",
+        "adapter_create_resolve": "RESOLVE_BENEATH|RESOLVE_NO_SYMLINKS|RESOLVE_NO_MAGICLINKS|RESOLVE_NO_XDEV",
+        "adapter_create_result": "EEXIST",
+        "eexist_inspect_syscall": "not_called",
+        "eexist_inspect_flags": "",
+        "eexist_inspect_resolve": "",
+        "retry_open_syscall": "not_called",
+        "retry_open_flags": "",
+        "retry_open_resolve": "",
+        "registered_generation": "same_inode"
+      },
+      "expected_sqlite_rc": "SQLITE_CANTOPEN",
+      "expected_output_or_state": {
+        "identity": "registered_generation_inode",
+        "generation_advanced": false,
+        "namespace_mutated": false,
+        "application_sql_dispatch": 0,
+        "post_ready_read_dispatch": 0,
+        "registered_file_content_unchanged": true,
+        "opath_fd_close_count": 0,
+        "retained_fd": "none",
+        "readiness": "ready"
+      },
+      "injection": "exclusive_create_eexist_no_reopen",
+      "barriers": []
+    }
+  ]
+}

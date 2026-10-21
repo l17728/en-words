@@ -1,0 +1,32 @@
+{
+  "review": "pilot-start-kernel-sdd-backend-review14",
+  "date": "2026-10-16",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "scope": "read-only review of verified handle, per-connection first SQL identity check, SQLite auxiliary files, catalog/quarantine semantics",
+  "code_modified": false,
+  "docs_modified": false,
+  "tests_run": false,
+  "verdict": "BLOCK",
+  "findings": [
+    {
+      "id": "BE14-1",
+      "severity": "P1",
+      "status": "open",
+      "title": "Auxiliary-file CREATE_NEW/O_EXCL conflicts with reopen of existing WAL/SHM after child restart",
+      "recommendation": "Specify a handle-relative no-follow protocol with two branches: atomically create a missing WAL/SHM/journal, or verify and safely reopen an existing one; ensure pilot_e2e SQLite VFS actually mediates all auxiliary opens on Windows and POSIX."
+    }
+  ],
+  "checks": {
+    "main_db_verified_handle_lifetime": "PASS",
+    "per_connection_first_sql_identity_check": "PASS_WITH_IMPLEMENTATION_GATE",
+    "wal_shm_journal_create_and_reopen": "BLOCK",
+    "catalog_without_hmac_under_threat_model": "PASS",
+    "catalog_quarantine_and_tombstone": "PASS"
+  },
+  "implementation_gates": [
+    "Prove PRAGMA database_list is the first SQL for every connection before hidden initialization/ping queries.",
+    "Implement and verify safe create-if-missing and verified reopen of existing WAL/SHM/journal artifacts after restart.",
+    "Verify the selected modernc VFS mediates all auxiliary file operations through the verified directory handle on Windows and POSIX.",
+    "Keep catalog checks to ACL/owner/file-ID/schema/durability; do not require HMAC."
+  ]
+}

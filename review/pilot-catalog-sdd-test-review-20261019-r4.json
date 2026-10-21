@@ -1,0 +1,50 @@
+{
+  "review": "pilot-catalog-sdd-test-review-20261019-r4",
+  "date": "2026-10-19",
+  "document": "docs/41-????Start??????SDD.md",
+  "sections": [
+    "?109.1",
+    "?109.2",
+    "?109.3",
+    "?109.4"
+  ],
+  "domain": "test design and acceptance matrix",
+  "verdict": "PASS",
+  "tests_run": false,
+  "scope": "Read-only targeted follow-up to r3. Checked same-case Start race barrier, provisioning lock creation/recovery, absent-catalog artifacts, first-frame Sync/response loss, and boundary determinism. No code or SDD changes.",
+  "summary": "The r3 blocker is closed. ?109.4 now gates the same-case lock race on both child supervisors independently recording an optimistic ready snapshot, then releases them to the stable case lock and asserts one transition plus zero loser side effects. First-frame parent Sync/response-loss behavior, fixed test-only IDs, and provisioning lock identity checks are also specified. No remaining blocking design gap was found in the reviewed acceptance matrix.",
+  "closed_r3_findings": [
+    {
+      "id": "CAT-TEST-1094-04",
+      "status": "CLOSED",
+      "evidence": "?109.4 line 182 explicitly requires a first named barrier to open only after both processes independently record optimistic `ready`, followed by a second barrier toward the stable case lock; the loser re-reads the latest catalog and must have zero DB/sidecar/key and Planner/Registry side effects."
+    }
+  ],
+  "closed_prior_findings": [
+    "CAT-TEST-1094-02",
+    "CAT-TEST-1094-03",
+    "CAT-TEST-1093-01",
+    "CAT-TEST-1093-02",
+    "CAT-TEST-1093-03",
+    "CAT-TEST-1093-04"
+  ],
+  "non_blocking_recommendations": [
+    {
+      "id": "CAT-TEST-1094-05",
+      "severity": "P3",
+      "status": "recommendation",
+      "title": "Assert exactly one ready transition during concurrent provisioning recovery",
+      "evidence": "?109.4 requires two recovery processes to converge on the same stable lock identity, while ?109.2 allows only one provisioning?ready transition. The current provisioning race text explicitly asserts identity convergence but does not repeat the one-ready-append/no-duplicate-generation oracle in that sentence.",
+      "recommendation": "Add an assertion that concurrent recovery produces exactly one `provisioning ? ready` frame and contiguous generation, while the loser observes the ready state and performs no duplicate append."
+    }
+  ],
+  "reviewed_areas": {
+    "same_case_stale_read_race": "PASS: both optimistic ready reads are observed before lock contention; winner/loser and zero-side-effect oracle specified",
+    "bootstrap_and_provisioning_race": "PASS: bootstrap lock ordering, stable lock identity, startup Sync, and absent-catalog residual-artifact rejection specified",
+    "first_create_parent_sync_and_response_loss": "PASS: recovery handles complete durable provisioning frame without allocating another case ID",
+    "golden determinism": "PASS: fixed IDs/keys restricted to tests; production IDs remain CSPRNG-generated",
+    "frame_faults_and_numeric_boundaries": "PASS: prior explicit fault/oracle and framing/schema/capacity vectors remain intact",
+    "platform gates": "ACKNOWLEDGED: Windows/POSIX verified-handle, ACL/mode, identity, parent Sync require implementation acceptance"
+  },
+  "limitations": "This verdict approves the test-design contract only. It does not establish that the catalog/supervisor exists or that any acceptance test passes."
+}

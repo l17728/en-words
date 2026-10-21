@@ -1,0 +1,34 @@
+{
+  "review_id": "pilot-supervisor-sdd-test-r5-20261019",
+  "reviewed_document": "docs/42-Pilot隔离运行监督器SDD.md",
+  "sha256": "eb4cde3000d7c66ae0a39d060970c180046335120daaa295682c5b9ab0f25a01",
+  "review_type": "read-only test-domain regression review",
+  "date": "2026-10-19",
+  "verdict": "BLOCKED",
+  "r3_f1_status": "CLOSED",
+  "r3_f2_status": "CLOSED",
+  "open_p1_count": 0,
+  "open_p2_count": 1,
+  "tests_executed": false,
+  "findings": [
+    {
+      "id": "R5-N1",
+      "severity": "P2",
+      "blocks_implementation_gate": true,
+      "title": "Close adapter state/error combinations lack a complete oracle",
+      "sections": ["9", "13"],
+      "evidence": "Section 9 defines {state: closed|still_open|unknown, err} without constraining state when err is non-nil. FI-CLOSE-01a limits DB.Close errors to still_open or unknown; other close rows similarly omit closed+err handling.",
+      "recommendation": "Either forbid closed+non-nil-error and classify ambiguous results as unknown, or define the close-sequence, poison/return, and retry behavior for closed+err and add assertions. Keep database/sql aggregate handle proof distinct from raw handle close."
+    }
+  ],
+  "reviewed_areas": {
+    "per_member_fault_and_restart_oracles": "PASS",
+    "cleanup_unlink_and_close_rows": "PASS_WITH_R5_N1_AMBIGUITY",
+    "case_id_and_sqlite_boundary": "PASS",
+    "C1_C5_platform_e2e_coverage_logging": "PASS"
+  },
+  "files_written": [
+    "review/pilot-supervisor-sdd-test-r5-20261019.md",
+    "review/pilot-supervisor-sdd-test-r5-20261019.json"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "review": "pilot-start-kernel-sdd-test-review-4",
+  "date": "2026-10-16",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "tests_run": false,
+  "implementation_approved": false,
+  "scope": "Verify closure of the three blockers in review 3 only",
+  "review3_blockers": [
+    {
+      "id": "PILOT-START-TEST-01-AUDIT-CARDINALITY",
+      "status": "closed",
+      "evidence": "Section 4 specifies exactly two audit rows, one per tool; section 6.1 asserts exactly two rows with one say and one show_word and unchanged counts on replay."
+    },
+    {
+      "id": "PILOT-START-TEST-01-AUDIT-EVIDENCE",
+      "status": "closed",
+      "evidence": "Existing audit_logs.Args is specified as exact JSON containing bytes, schema_version, scope, and effect_index, with say/show_word mapped to indexes 0/1; transactional insertion and lifecycle verification are specified without claiming DB uniqueness."
+    },
+    {
+      "id": "PILOT-START-TEST-06-LOG-MAPPING",
+      "status": "closed",
+      "evidence": "pilot_start_not_committed maps to not_committed/rollback_proven, and the event schema rejects unknown fields and enum values."
+    }
+  ],
+  "prior_approvals_still_valid": [
+    "canonical fingerprint golden vector",
+    "typed active codec and explicit golden fixture",
+    "post-COMMIT/pre-response-drop E2E contract",
+    "deterministic pending_unknown recovery matrix"
+  ],
+  "disposition": "Scoped review blockers closed. This does not replace cross-domain SDD approval or implementation acceptance."
+}

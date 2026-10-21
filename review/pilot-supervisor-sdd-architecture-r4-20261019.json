@@ -1,0 +1,31 @@
+{
+  "review": "pilot-supervisor-sdd-architecture-r4-20261019",
+  "date": "2026-10-19",
+  "source": "docs/42-Pilot隔离运行监督器SDD.md",
+  "source_sha256": "0B3019C4DDE3CA42F3BF05D29768332D72AC72C7259DDEE4F8A7372E6F9AE5A1",
+  "comparison_source": "docs/41-试点课堂Start持久迁移内核SDD.md §109.2-109.3",
+  "status": "PASS",
+  "blocking_count": 0,
+  "previous_findings": [
+    {
+      "id": "SUP-SDD-R3-01",
+      "status": "CLOSED",
+      "evidence": "§44 separates application DB-open counts from recovery counters. FI-DB-01a/01b permit at most one mode=ro recovery connection with only the two fixed PRAGMAs; FI-DB-01c forbids opening an untrusted identity-mismatched object."
+    },
+    {
+      "id": "SUP-SDD-R3-02",
+      "status": "CLOSED",
+      "evidence": "FI-CLEAN-01 enumerates all legal cleanup source states and distinguishes zero-byte/no-frame, complete-frame, and partial-frame restart outcomes; deletion requires durable cleanup_quarantined."
+    }
+  ],
+  "findings": [],
+  "passed": [
+    "§63 defines the verified catalog.log handle as the unique global catalog lock object and bootstrap lock serializes first creation; ordinary operations do not wait on bootstrap, so the lock order has no cycle.",
+    "Advisory catalog read -> release -> stable case lock -> catalog re-read under lock -> release -> OpenVerified is consistently specified; same-case mutations hold the case lock.",
+    "Per-state capabilities and cleanup source transitions are consistent with docs/41 §109.2.",
+    "Absent-directory cleanup verifies and syncs the pinned parent before the deleted tombstone while retaining the external stable case lock, consistent with docs/41 §109.3.",
+    "Normal CaseHandle.Close releases the case lock last; CleanupCase keeps that lock through durable quarantine, member/directory deletion, and tombstone; Supervisor.Close owns only shared-resource closure.",
+    "An unknown lower-level close state requires the dedicated pilot child to exit and its PID to be reaped before a replacement child starts; unknown handles are never closed again in-process."
+  ],
+  "execution": "Read-only architecture review. No design/code changes; no tests or builds run."
+}

@@ -1,0 +1,74 @@
+{
+  "review": "pilot-catalog-sdd-test-review-20261019-r3",
+  "date": "2026-10-19",
+  "document": "docs/41-????Start??????SDD.md",
+  "sections": [
+    "?109.1",
+    "?109.2",
+    "?109.3",
+    "?109.4"
+  ],
+  "domain": "test design and acceptance matrix",
+  "verdict": "BLOCKED",
+  "tests_run": false,
+  "scope": "Read-only follow-up to r2. Checked same-case race determinism, first-create Sync/response-loss recovery, golden ID determinism, and prior matrix coverage. No code or SDD changes.",
+  "summary": "The new material closes the two P3 precision findings and adds a same-case two-process Start test. However, the test does not explicitly gate both children after they have independently observed the optimistic ready state and before either takes the stable case lock. Without that synchronization point, the race can run serially and does not deterministically exercise the stale-ready/two-phase revalidation condition. One P2 blocker remains.",
+  "closed_r2_findings": [
+    {
+      "id": "CAT-TEST-1094-02",
+      "status": "CLOSED",
+      "evidence": "?109.4 row 168 covers initial-frame file/parent Sync uncertainty; line 180 now explicitly tests frame and parent Sync success followed by a lost response and provisioning-only recovery."
+    },
+    {
+      "id": "CAT-TEST-1094-03",
+      "status": "CLOSED",
+      "evidence": "?109.4 line 180 specifies fixed IDs/keys in test-only golden vectors and prohibits golden identifiers at runtime; production IDs remain OS-CSPRNG generated."
+    }
+  ],
+  "retained_r1_closure": [
+    {
+      "id": "CAT-TEST-1093-01",
+      "status": "CLOSED",
+      "evidence": "Frame-component crash outcomes and restart/open oracles remain specified."
+    },
+    {
+      "id": "CAT-TEST-1093-02",
+      "status": "CLOSED",
+      "evidence": "Zero/partial/full writes, Sync and parent Sync failures, lock/read failures, poison/no-retry/no-open assertions remain specified."
+    },
+    {
+      "id": "CAT-TEST-1093-03",
+      "status": "CLOSED",
+      "evidence": "Transition, framing/schema, catalog size, frame count, and generation boundaries remain specified, including the stat/read seam when exact byte-cap validity is unreachable."
+    },
+    {
+      "id": "CAT-TEST-1093-04",
+      "status": "CLOSED_FOR_DIFFERENT_CASE_GLOBAL_APPEND",
+      "evidence": "Different-case process contention remains barrier-controlled with reader visibility and process-death recovery."
+    }
+  ],
+  "findings": [
+    {
+      "id": "CAT-TEST-1094-04",
+      "severity": "P2",
+      "status": "open",
+      "title": "Same-case Start barrier does not require both children to observe ready before lock acquisition",
+      "evidence": "?109.4 line 180 says both children are released from a named barrier ?toward? the stable case-ID lock, then the loser reacquires/revalidates. It does not require each child to report its optimistic catalog read as ready before the parent releases the barrier. A scheduler may let the winner append before the loser performs its first read.",
+      "risk": "The test can pass without reproducing the stale optimistic-read race that the two-phase authorization is intended to protect. It may only show that a later sequential request sees a non-ready state.",
+      "recommendation": "Add a stage barrier after each child has completed and reported optimistic `ready` and before either requests the case lock. Release only after both reports arrive. Then assert exactly one `ready ? open_recovery_required` append and one winner; the loser reacquires the lock, re-reads the catalog, returns `already_started`/`case_not_ready`, and has zero DB/sidecar/key opens and zero Planner/Registry calls. Repeat with controlled lock acquisition order."
+    }
+  ],
+  "reviewed_areas": {
+    "frame_crash_boundaries": "PASS",
+    "fault_injection_and_poison_oracles": "PASS",
+    "transition_and_numeric_boundaries": "PASS",
+    "different_case_barrier_race": "PASS",
+    "same_case_stale_read_race": "GAP: post-optimistic-read barrier condition is unspecified",
+    "first_create_parent_sync_then_lost_response": "PASS",
+    "golden ID determinism": "PASS",
+    "platform gates": "ACKNOWLEDGED: Windows/POSIX verified handle, ACL/mode, identity, and parent Sync remain implementation gates"
+  },
+  "exit_criteria": [
+    "Specify the barrier arrival condition as both children having observed optimistic ready before lock acquisition; assert winner/loser side effects and revalidation."
+  ]
+}

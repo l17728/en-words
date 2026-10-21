@@ -1,0 +1,30 @@
+{
+    "schema_version":  1,
+    "name":  "pilot-root-windows-contract",
+    "source_sdd_sha256":  "7FFD26641063634B96D6E4882EB1A981ACFF056AF3ECF0AD32CDC591DE7FEB80",
+    "package":  "./internal/pilotsupervisor",
+    "build_tags":  [
+                       "pilot_e2e"
+                   ],
+    "targets":  [
+                    "windows/amd64"
+                ],
+    "required_tests":  {
+                           "TestWindowsBindingOpenErrorClassification":  [
+                                                                             "missing_binding_is_identity_change",
+                                                                             "access_or_query_failure_is_io",
+                                                                             "policy_failure_is_preserved",
+                                                                             "unknown_native_error_is_io"
+                                                                         ],
+                           "TestWindowsMissingWorkerSIDIsConfigurationFailure":  [
+
+                                                                                 ]
+                       },
+    "source_sdd_path":  "docs/44-Pilot验证根与成员句柄切片SDD.md",
+    "import_path":  "enwords/internal/pilotsupervisor",
+    "parent_only_tests":  [
+                              "TestWindowsMissingWorkerSIDIsConfigurationFailure"
+                          ],
+    "cgo_enabled":  0,
+    "goamd64":  "v1"
+}

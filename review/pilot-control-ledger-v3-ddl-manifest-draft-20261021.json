@@ -1,0 +1,1637 @@
+{
+  "manifest_version": 1,
+  "feature": "Pilot Control Ledger v3 literal SQLite DDL draft",
+  "status": "DRAFT_FOR_DOMAIN_REVIEW_NOT_IMPLEMENTATION_AUTHORITY",
+  "sqlite_minimum": "3.37.0",
+  "source_hashes": {
+    "docs/50-pilot-runroot-product-orchestration-sdd.md": "fa699830239aa0463c574cff4ae2ff7aa6f85b6a163d57b6abdb3907bcbaa52f",
+    "docs/51-pilot-control-ledger-v3-sdd.md": "13e3e2d6859623f8c6f424d87e139fe684bde5cd48d4506dd3e8b9ca276b2a26",
+    "docs/52-pilot-control-ledger-v3-physical-model-decisions.md": "4a33744b224cbf5ea3c94149c451218f38598fe64bc2a42ffd10054e1f86bef5",
+    "docs/53-pilot-control-ledger-v3-physical-schema-matrix.md": "cb29920d48e3c484836cb3544a26d884811ed06f5cf1078a3bd6ea2d43596d3c",
+    "docs/54-pilot-runroot-stage-a-implementation-delta.md": "c4c0dd80d56df92f265da2a0b9b18bb754267595faf6510c1899398aa2841070",
+    "review/pilot-control-ledger-v3-literal-ddl-draft-20261021.sql": "a32c7ead5544fef50576989c7655dd4a9d70b9ae21a2358f91824054bf45403d",
+    "review/pilot-control-ledger-v3-invariant-queries-draft-20261021.sql": "5fbcb2d7075e482a2d6f5222339511ead34ed5f8a99fdd635d56b7d45dbd0c8a",
+    "review/pilot-control-ledger-v3-bootstrap-seed-draft-20261021.sql": "649278aa692942c45a7ead2a924dcf82567a73116a33cfb603af1807d332c158",
+    "review/pilot-control-ledger-v3-schema-fault-manifest-20261021.json": "68f65fa3e2eb28a8ad8e4a8cf6ebb370419e6b53196f1ea2d3ff249e81e853bd",
+    "review/pilot-runroot-product-orchestration-manifest-20261021.json": "40791519dcf20b2dc16e44ec9945676bc72298f80b7181d1a018eb3a7a3b1b15",
+    "review/pilot-control-ledger-v3-authz-vectors-20261021.json": "1ac497a2fa25db41bb1cfdc8b5fe568e1338df1bf7376ef7544e287ea5786968",
+    "review/test_pilot_v3_ddl_draft.py": "ac26fca31cb54139191d5e7a4f5e56378f5aa3caa05e827c975e3c78c2179c6a",
+    "review/pilot-control-ledger-v3-write-capabilities-20261021.json": "c2eb22dbb1e583a9a2082c1980e91fd92514784350d895e47b851817431e48ac",
+    "review/generate_pilot_v3_ddl_manifest.py": "36da30c7a106247f0844a583066a3c7af69bd582b7a3acb86cb6f607ee264410"
+  },
+  "ddl_statement_count": 95,
+  "ddl_statements": [
+    {
+      "ordinal": 1,
+      "object_type": "table",
+      "object_name": "run_root_ledger_meta",
+      "normalized_sql": "CREATE TABLE run_root_ledger_meta ( singleton INTEGER NOT NULL PRIMARY KEY CHECK(singleton=1), schema_version INTEGER NOT NULL CHECK(schema_version=3) ) STRICT",
+      "sha256": "d72be88bbd00225182813c8cf01908a7ba4af0102bb5a83b593f388930ca3db1"
+    },
+    {
+      "ordinal": 2,
+      "object_type": "table",
+      "object_name": "pilot_control_generations",
+      "normalized_sql": "CREATE TABLE pilot_control_generations ( generation BLOB NOT NULL PRIMARY KEY CHECK(typeof(generation)='blob' AND length(generation)=8 AND generation<>zeroblob(8)), launch_nonce TEXT NOT NULL UNIQUE CHECK(typeof(launch_nonce)='text' AND length(CAST(launch_nonce AS BLOB))=32 AND length(launch_nonce)=32 AND launch_nonce NOT GLOB '*[^0-9a-f]*'), mode TEXT NOT NULL CHECK(mode IN ('normal','recovery')), normal_run_epoch BLOB, target_run_epoch BLOB, target_generation BLOB, target_launch_nonce TEXT, consumed_at INTEGER NOT NULL CHECK(consumed_at>=0), UNIQUE(generation,launch_nonce,normal_run_epoch,mode), CHECK((mode='normal' AND typeof(normal_run_epoch)='blob' AND length(normal_run_epoch)=16 AND target_run_epoch IS NULL AND target_generation IS NULL AND target_launch_nonce IS NULL) OR (mode='recovery' AND normal_run_epoch IS NULL AND typeof(target_run_epoch)='blob' AND length(target_run_epoch)=16 AND typeof(target_generation)='blob' AND length(target_generation)=8 AND typeof(target_launch_nonce)='text' AND length(CAST(target_launch_nonce AS BLOB))=32 AND length(target_launch_nonce)=32 AND target_launch_nonce NOT GLOB '*[^0-9a-f]*')) ) STRICT, WITHOUT ROWID",
+      "sha256": "3af17fab264309149109a19dc0750122739f854efed45ef3757d38c60e9c72aa"
+    },
+    {
+      "ordinal": 3,
+      "object_type": "table",
+      "object_name": "pilot_launcher_journal_anchor",
+      "normalized_sql": "CREATE TABLE pilot_launcher_journal_anchor ( singleton_id INTEGER NOT NULL PRIMARY KEY CHECK(singleton_id=1), journal_id BLOB NOT NULL UNIQUE CHECK(typeof(journal_id)='blob' AND length(journal_id)=16 AND journal_id<>zeroblob(16)), restore_generation BLOB NOT NULL CHECK(typeof(restore_generation)='blob' AND length(restore_generation)=8 AND restore_generation<>zeroblob(8)), last_sequence INTEGER NOT NULL CHECK(last_sequence>=0), last_record_hash BLOB NOT NULL CHECK(typeof(last_record_hash)='blob' AND length(last_record_hash)=32), updated_at INTEGER NOT NULL CHECK(updated_at>=0), CHECK((last_sequence=0 AND last_record_hash=zeroblob(32)) OR (last_sequence>0 AND last_record_hash<>zeroblob(32))) ) STRICT, WITHOUT ROWID",
+      "sha256": "59c57f2e6543a05be45aab6913d9a301dc79d7d998d2d4715a50b4aa07a4ec68"
+    },
+    {
+      "ordinal": 4,
+      "object_type": "trigger",
+      "object_name": "pilot_launcher_journal_anchor_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_launcher_journal_anchor_no_delete BEFORE DELETE ON pilot_launcher_journal_anchor BEGIN SELECT RAISE(ABORT,'launcher journal anchor cannot be deleted'); END",
+      "sha256": "51a152fc67b8719f8999c8c04dd4ef5412f1a7254a7fc7b391c687937ca4572a"
+    },
+    {
+      "ordinal": 5,
+      "object_type": "trigger",
+      "object_name": "pilot_launcher_journal_anchor_monotonic",
+      "normalized_sql": "CREATE TRIGGER pilot_launcher_journal_anchor_monotonic BEFORE UPDATE ON pilot_launcher_journal_anchor WHEN NEW.singleton_id<>OLD.singleton_id OR NEW.journal_id<>OLD.journal_id OR NEW.restore_generation<>OLD.restore_generation OR NEW.last_sequence<>OLD.last_sequence+1 OR NEW.last_record_hash=OLD.last_record_hash OR NEW.updated_at<OLD.updated_at BEGIN SELECT RAISE(ABORT,'launcher journal anchor must advance exactly once'); END",
+      "sha256": "a363caa8744c09d59e9940b91e0f411dffdf32fc393d9248763c3eaa92d10c43"
+    },
+    {
+      "ordinal": 6,
+      "object_type": "table",
+      "object_name": "pilot_principal_aliases",
+      "normalized_sql": "CREATE TABLE pilot_principal_aliases ( tenant_id BLOB NOT NULL CHECK(typeof(tenant_id)='blob' AND length(tenant_id) BETWEEN 1 AND 256), identity_key_version INTEGER NOT NULL CHECK(identity_key_version BETWEEN 1 AND 65535), identity_digest BLOB NOT NULL CHECK(typeof(identity_digest)='blob' AND length(identity_digest)=32), principal_ref BLOB NOT NULL CHECK(typeof(principal_ref)='blob' AND length(principal_ref)=32), canonical_key_version INTEGER NOT NULL CHECK(canonical_key_version BETWEEN 1 AND 65535), created_at INTEGER NOT NULL CHECK(created_at>=0), PRIMARY KEY(tenant_id,identity_key_version,identity_digest), UNIQUE(tenant_id,principal_ref,identity_key_version) ) STRICT, WITHOUT ROWID",
+      "sha256": "1e43b134efe9df4a39dbfd62dabf91bc2c8d211151eac335b5ae47194daf54a0"
+    },
+    {
+      "ordinal": 7,
+      "object_type": "table",
+      "object_name": "pilot_authorization_state",
+      "normalized_sql": "CREATE TABLE pilot_authorization_state ( tenant_id BLOB NOT NULL CHECK(typeof(tenant_id)='blob' AND length(tenant_id) BETWEEN 1 AND 256), principal_ref BLOB NOT NULL CHECK(typeof(principal_ref)='blob' AND length(principal_ref)=32), authz_revision BLOB NOT NULL CHECK(typeof(authz_revision)='blob' AND length(authz_revision)=8 AND authz_revision<>zeroblob(8)), authz_snapshot_digest BLOB NOT NULL CHECK(typeof(authz_snapshot_digest)='blob' AND length(authz_snapshot_digest)=32), role TEXT NOT NULL CHECK(role IN ('student','teacher','admin')), account_state TEXT NOT NULL CHECK(account_state IN ('active','disabled')), updated_at INTEGER NOT NULL CHECK(updated_at>=0), PRIMARY KEY(tenant_id,principal_ref) ) STRICT, WITHOUT ROWID",
+      "sha256": "1f191c99adc36d34a3a62ff57e93361707dfba9544e381fc6efd77d71d0a7eb2"
+    },
+    {
+      "ordinal": 8,
+      "object_type": "table",
+      "object_name": "pilot_session_fences",
+      "normalized_sql": "CREATE TABLE pilot_session_fences ( tenant_id BLOB NOT NULL, principal_ref BLOB NOT NULL CHECK(typeof(principal_ref)='blob' AND length(principal_ref)=32), session_key_hash BLOB NOT NULL CHECK(typeof(session_key_hash)='blob' AND length(session_key_hash)=32), session_revision BLOB NOT NULL CHECK(typeof(session_revision)='blob' AND length(session_revision)=8 AND session_revision<>zeroblob(8)), session_state TEXT NOT NULL CHECK(session_state IN ('active','revoked')), expires_at INTEGER NOT NULL CHECK(expires_at>=0), updated_at INTEGER NOT NULL CHECK(updated_at>=0), PRIMARY KEY(tenant_id,principal_ref,session_key_hash), FOREIGN KEY(tenant_id,principal_ref) REFERENCES pilot_authorization_state(tenant_id,principal_ref) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID",
+      "sha256": "fb46261d888ea708ff39e9d73883be7531f4f8140d30e6c7115670882e697fcc"
+    },
+    {
+      "ordinal": 9,
+      "object_type": "table",
+      "object_name": "pilot_fixture_grants",
+      "normalized_sql": "CREATE TABLE pilot_fixture_grants ( tenant_id BLOB NOT NULL, principal_ref BLOB NOT NULL CHECK(typeof(principal_ref)='blob' AND length(principal_ref)=32), fixture_id TEXT NOT NULL CHECK(typeof(fixture_id)='text' AND length(CAST(fixture_id AS BLOB)) BETWEEN 1 AND 64 AND fixture_id GLOB '[a-z0-9]*' AND fixture_id NOT GLOB '*[^a-z0-9._-]*'), grant_revision BLOB NOT NULL CHECK(typeof(grant_revision)='blob' AND length(grant_revision)=8 AND grant_revision<>zeroblob(8)), allowed INTEGER NOT NULL CHECK(allowed IN (0,1)), updated_at INTEGER NOT NULL CHECK(updated_at>=0), PRIMARY KEY(tenant_id,principal_ref,fixture_id), FOREIGN KEY(tenant_id,principal_ref) REFERENCES pilot_authorization_state(tenant_id,principal_ref) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID",
+      "sha256": "afcc25012231fc1e7c97d9ea8e6c1441f9c56985b5042d66c7ef4e89018c597d"
+    },
+    {
+      "ordinal": 10,
+      "object_type": "table",
+      "object_name": "pilot_authz_update_receipts",
+      "normalized_sql": "CREATE TABLE pilot_authz_update_receipts ( request_id BLOB NOT NULL PRIMARY KEY CHECK(typeof(request_id)='blob' AND length(request_id)=16), tenant_id BLOB NOT NULL, principal_ref BLOB NOT NULL CHECK(typeof(principal_ref)='blob' AND length(principal_ref)=32), target_kind TEXT NOT NULL CHECK(target_kind IN ('account','session')), target_key BLOB NOT NULL CHECK(typeof(target_key)='blob' AND length(target_key)=32), revision BLOB NOT NULL CHECK(typeof(revision)='blob' AND length(revision)=8 AND revision<>zeroblob(8)), update_digest BLOB NOT NULL CHECK(typeof(update_digest)='blob' AND length(update_digest)=32), committed_at INTEGER NOT NULL CHECK(committed_at>=0), UNIQUE(tenant_id,principal_ref,target_kind,target_key,revision), CHECK(target_kind<>'account' OR target_key=zeroblob(32)), FOREIGN KEY(tenant_id,principal_ref) REFERENCES pilot_authorization_state(tenant_id,principal_ref) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID",
+      "sha256": "15bef72485db1fa115365831a94b408e6147727f35dc4955ffbb34b706fab91c"
+    },
+    {
+      "ordinal": 11,
+      "object_type": "table",
+      "object_name": "pilot_bootstrap_handoffs",
+      "normalized_sql": "CREATE TABLE pilot_bootstrap_handoffs ( generation BLOB NOT NULL PRIMARY KEY CHECK(typeof(generation)='blob' AND length(generation)=8), launch_nonce TEXT NOT NULL CHECK(length(CAST(launch_nonce AS BLOB))=32 AND length(launch_nonce)=32 AND launch_nonce NOT GLOB '*[^0-9a-f]*'), run_epoch BLOB NOT NULL UNIQUE CHECK(typeof(run_epoch)='blob' AND length(run_epoch)=16), control_mode TEXT NOT NULL DEFAULT 'normal' CHECK(control_mode='normal'), gateway_pid INTEGER NOT NULL CHECK(gateway_pid>0), gateway_uid INTEGER NOT NULL CHECK(gateway_uid>0), gateway_start_ticks BLOB NOT NULL CHECK(typeof(gateway_start_ticks)='blob' AND length(gateway_start_ticks)=8 AND gateway_start_ticks<>zeroblob(8)), gateway_pidns_device BLOB NOT NULL CHECK(typeof(gateway_pidns_device)='blob' AND length(gateway_pidns_device)=8 AND gateway_pidns_device<>zeroblob(8)), gateway_pidns_inode BLOB NOT NULL CHECK(typeof(gateway_pidns_inode)='blob' AND length(gateway_pidns_inode)=8 AND gateway_pidns_inode<>zeroblob(8)), gateway_cgroup_mount_id BLOB NOT NULL CHECK(typeof(gateway_cgroup_mount_id)='blob' AND length(gateway_cgroup_mount_id)=8 AND gateway_cgroup_mount_id<>zeroblob(8)), gateway_cgroup_device BLOB NOT NULL CHECK(typeof(gateway_cgroup_device)='blob' AND length(gateway_cgroup_device)=8 AND gateway_cgroup_device<>zeroblob(8)), gateway_cgroup_inode BLOB NOT NULL CHECK(typeof(gateway_cgroup_inode)='blob' AND length(gateway_cgroup_inode)=8 AND gateway_cgroup_inode<>zeroblob(8)), handed_off_at INTEGER NOT NULL CHECK(handed_off_at>=0), UNIQUE(generation,run_epoch), UNIQUE(generation,run_epoch,gateway_pid,gateway_uid,gateway_start_ticks,gateway_pidns_device,gateway_pidns_inode,gateway_cgroup_mount_id,gateway_cgroup_device,gateway_cgroup_inode), UNIQUE(generation,run_epoch,launch_nonce,gateway_pid,gateway_uid,gateway_start_ticks,gateway_pidns_device,gateway_pidns_inode,gateway_cgroup_mount_id,gateway_cgroup_device,gateway_cgroup_inode), FOREIGN KEY(generation,launch_nonce,run_epoch,control_mode) REFERENCES pilot_control_generations(generation,launch_nonce,normal_run_epoch,mode) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID",
+      "sha256": "50b752bde1f06eb364e865bd5932607b96c0fccc577af5c513feac6102e1db6a"
+    },
+    {
+      "ordinal": 12,
+      "object_type": "table",
+      "object_name": "pilot_run_lifecycle",
+      "normalized_sql": "CREATE TABLE pilot_run_lifecycle ( generation BLOB NOT NULL PRIMARY KEY CHECK(typeof(generation)='blob' AND length(generation)=8), run_epoch BLOB NOT NULL UNIQUE CHECK(typeof(run_epoch)='blob' AND length(run_epoch)=16), lifecycle_state TEXT NOT NULL CHECK(lifecycle_state IN ('bootstrapped','logger_registered','logger_ready','reaper_ready','registered','active','terminating','unregistered','containment_empty','terminal')), run_root_operation_id BLOB CHECK(run_root_operation_id IS NULL OR (typeof(run_root_operation_id)='blob' AND length(run_root_operation_id)=16)), close_operation_id BLOB CHECK(close_operation_id IS NULL OR (typeof(close_operation_id)='blob' AND length(close_operation_id)=16)), close_key_hash BLOB CHECK(close_key_hash IS NULL OR (typeof(close_key_hash)='blob' AND length(close_key_hash)=32)), close_payload_digest BLOB CHECK(close_payload_digest IS NULL OR (typeof(close_payload_digest)='blob' AND length(close_payload_digest)=32)), terminal_result TEXT CHECK(terminal_result IS NULL OR terminal_result IN ('abandoned','closed_without_root')), updated_at INTEGER NOT NULL CHECK(updated_at>=0), CHECK((close_operation_id IS NULL AND close_key_hash IS NULL AND close_payload_digest IS NULL) OR (close_operation_id IS NOT NULL AND close_key_hash IS NOT NULL AND close_payload_digest IS NOT NULL)), CHECK((lifecycle_state='terminal' AND terminal_result IS NOT NULL) OR (lifecycle_state<>'terminal' AND terminal_result IS NULL)), UNIQUE(generation,run_epoch), FOREIGN KEY(generation,run_epoch) REFERENCES pilot_bootstrap_handoffs(generation,run_epoch) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID",
+      "sha256": "2d90d7c6085597d7732115de58703df6aa4f1aa013180adee52b33089ae573aa"
+    },
+    {
+      "ordinal": 13,
+      "object_type": "table",
+      "object_name": "run_epoch_allocations",
+      "normalized_sql": "CREATE TABLE run_epoch_allocations ( run_epoch BLOB NOT NULL PRIMARY KEY CHECK(typeof(run_epoch)='blob' AND length(run_epoch)=16), allocation_sequence INTEGER NOT NULL UNIQUE CHECK(allocation_sequence>0), generation BLOB NOT NULL CHECK(typeof(generation)='blob' AND length(generation)=8), tenant_id BLOB NOT NULL CHECK(typeof(tenant_id)='blob' AND length(tenant_id) BETWEEN 1 AND 256), principal_ref BLOB NOT NULL CHECK(typeof(principal_ref)='blob' AND length(principal_ref)=32), session_key_hash BLOB NOT NULL CHECK(typeof(session_key_hash)='blob' AND length(session_key_hash)=32), gateway_pid INTEGER NOT NULL CHECK(gateway_pid>0), gateway_uid INTEGER NOT NULL CHECK(gateway_uid>0), gateway_pidns_device BLOB NOT NULL CHECK(typeof(gateway_pidns_device)='blob' AND length(gateway_pidns_device)=8 AND gateway_pidns_device<>zeroblob(8)), gateway_pidns_inode BLOB NOT NULL CHECK(typeof(gateway_pidns_inode)='blob' AND length(gateway_pidns_inode)=8 AND gateway_pidns_inode<>zeroblob(8)), gateway_cgroup_mount_id BLOB NOT NULL CHECK(typeof(gateway_cgroup_mount_id)='blob' AND length(gateway_cgroup_mount_id)=8 AND gateway_cgroup_mount_id<>zeroblob(8)), gateway_cgroup_device BLOB NOT NULL CHECK(typeof(gateway_cgroup_device)='blob' AND length(gateway_cgroup_device)=8 AND gateway_cgroup_device<>zeroblob(8)), gateway_cgroup_inode BLOB NOT NULL CHECK(typeof(gateway_cgroup_inode)='blob' AND length(gateway_cgroup_inode)=8 AND gateway_cgroup_inode<>zeroblob(8)), gateway_start_ticks BLOB NOT NULL CHECK(typeof(gateway_start_ticks)='blob' AND length(gateway_start_ticks)=8 AND gateway_start_ticks<>zeroblob(8)), schema_digest BLOB NOT NULL CHECK(typeof(schema_digest)='blob' AND length(schema_digest)=32), payload_digest BLOB NOT NULL CHECK(typeof(payload_digest)='blob' AND length(payload_digest)=32), request_id BLOB NOT NULL CHECK(typeof(request_id)='blob' AND length(request_id)=16), business_operation_id BLOB NOT NULL CHECK(typeof(business_operation_id)='blob' AND length(business_operation_id)=16), operation_id BLOB NOT NULL UNIQUE CHECK(typeof(operation_id)='blob' AND length(operation_id)=16), allocation_state TEXT NOT NULL CHECK(allocation_state IN ('prepared','executing','completed','abandoned','indeterminate')), run_terminal_state TEXT NOT NULL CHECK(run_terminal_state IN ('none','active','abandoned','indeterminate')), terminal_evidence_digest BLOB CHECK(terminal_evidence_digest IS NULL OR (typeof(terminal_evidence_digest)='blob' AND length(terminal_evidence_digest)=32)), allocated_at INTEGER NOT NULL CHECK(allocated_at>=0), UNIQUE(run_epoch,generation), UNIQUE(tenant_id,principal_ref,business_operation_id), UNIQUE(run_epoch,operation_id,tenant_id,principal_ref,business_operation_id,request_id,payload_digest,generation), FOREIGN KEY(generation,run_epoch) REFERENCES pilot_run_lifecycle(generation,run_epoch) ON DELETE RESTRICT ON UPDATE RESTRICT, FOREIGN KEY(generation,run_epoch,gateway_pid,gateway_uid,gateway_start_ticks,gateway_pidns_device,gateway_pidns_inode,gateway_cgroup_mount_id,gateway_cgroup_device,gateway_cgroup_inode) REFERENCES pilot_bootstrap_handoffs(generation,run_epoch,gateway_pid,gateway_uid,gateway_start_ticks,gateway_pidns_device,gateway_pidns_inode,gateway_cgroup_mount_id,gateway_cgroup_device,gateway_cgroup_inode) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID",
+      "sha256": "05ba7a48b26d2d7daff5d92ca907b44466e347978efe04967a82a299adf43be5"
+    },
+    {
+      "ordinal": 14,
+      "object_type": "table",
+      "object_name": "run_root_operations",
+      "normalized_sql": "CREATE TABLE run_root_operations ( operation_id BLOB NOT NULL PRIMARY KEY CHECK(typeof(operation_id)='blob' AND length(operation_id)=16), tenant_id BLOB NOT NULL CHECK(typeof(tenant_id)='blob' AND length(tenant_id) BETWEEN 1 AND 256), principal_ref BLOB NOT NULL CHECK(typeof(principal_ref)='blob' AND length(principal_ref)=32), business_operation_id BLOB NOT NULL CHECK(typeof(business_operation_id)='blob' AND length(business_operation_id)=16), operation_kind TEXT NOT NULL CHECK(operation_kind IN ('run_root_create','pilot_run_close','pilot_no_root_abort')), request_id BLOB NOT NULL CHECK(typeof(request_id)='blob' AND length(request_id)=16), run_epoch BLOB NOT NULL CHECK(typeof(run_epoch)='blob' AND length(run_epoch)=16), allocated_run_epoch BLOB CHECK(allocated_run_epoch IS NULL OR (typeof(allocated_run_epoch)='blob' AND length(allocated_run_epoch)=16)), generation BLOB NOT NULL CHECK(typeof(generation)='blob' AND length(generation)=8), payload_digest BLOB NOT NULL CHECK(typeof(payload_digest)='blob' AND length(payload_digest)=32), operation_state TEXT NOT NULL CHECK(operation_state IN ('prepared','executing','completed','abandoned','indeterminate')), owner_generation BLOB NOT NULL CHECK(typeof(owner_generation)='blob' AND length(owner_generation)=8), response_code TEXT CHECK(response_code IS NULL OR response_code IN ('created','exists','abandoned','indeterminate','closed_without_root')), canonical_response BLOB CHECK(canonical_response IS NULL OR (typeof(canonical_response)='blob' AND length(canonical_response) BETWEEN 1 AND 65536)), receipt_digest BLOB CHECK(receipt_digest IS NULL OR (typeof(receipt_digest)='blob' AND length(receipt_digest)=32)), dispatch_commit_digest BLOB CHECK(dispatch_commit_digest IS NULL OR (typeof(dispatch_commit_digest)='blob' AND length(dispatch_commit_digest)=32)), created_at INTEGER NOT NULL CHECK(created_at>=0), updated_at INTEGER NOT NULL CHECK(updated_at>=created_at), UNIQUE(tenant_id,principal_ref,business_operation_id), UNIQUE(operation_id,run_epoch,generation), UNIQUE(operation_id,run_epoch,principal_ref,payload_digest), CHECK((operation_kind='run_root_create' AND allocated_run_epoch IS NOT NULL AND allocated_run_epoch=run_epoch) OR (operation_kind<>'run_root_create' AND allocated_run_epoch IS NULL)), FOREIGN KEY(generation,run_epoch) REFERENCES pilot_run_lifecycle(generation,run_epoch) ON DELETE RESTRICT ON UPDATE RESTRICT, FOREIGN KEY(allocated_run_epoch,operation_id,tenant_id,principal_ref,business_operation_id,request_id,payload_digest,generation) REFERENCES run_epoch_allocations(run_epoch,operation_id,tenant_id,principal_ref,business_operation_id,request_id,payload_digest,generation) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID",
+      "sha256": "473db60cfc58ae3cf8dde4ed468e1478b6fe426024d954f4c9225e0ebea50fb9"
+    },
+    {
+      "ordinal": 15,
+      "object_type": "index",
+      "object_name": "pilot_one_root_create_per_epoch",
+      "normalized_sql": "CREATE UNIQUE INDEX pilot_one_root_create_per_epoch ON run_root_operations(run_epoch) WHERE operation_kind='run_root_create'",
+      "sha256": "721ab2d6fdd31106caed4d81ca582bde865f37fe6717ca5a6dc790d01e422c87"
+    },
+    {
+      "ordinal": 16,
+      "object_type": "index",
+      "object_name": "pilot_one_close_per_epoch",
+      "normalized_sql": "CREATE UNIQUE INDEX pilot_one_close_per_epoch ON run_root_operations(run_epoch) WHERE operation_kind IN ('pilot_run_close','pilot_no_root_abort')",
+      "sha256": "4934a5e8469712dd980fef06b3c864b8eb09df1209460763f36068158eed3947"
+    },
+    {
+      "ordinal": 17,
+      "object_type": "table",
+      "object_name": "pilot_run_lease",
+      "normalized_sql": "CREATE TABLE pilot_run_lease ( singleton_id INTEGER NOT NULL PRIMARY KEY CHECK(singleton_id=1), run_epoch BLOB, generation BLOB, operation_id BLOB, updated_at INTEGER NOT NULL CHECK(updated_at>=0), CHECK((run_epoch IS NULL AND generation IS NULL AND operation_id IS NULL) OR (typeof(run_epoch)='blob' AND length(run_epoch)=16 AND typeof(generation)='blob' AND length(generation)=8 AND typeof(operation_id)='blob' AND length(operation_id)=16)), FOREIGN KEY(run_epoch,generation) REFERENCES run_epoch_allocations(run_epoch,generation) ON DELETE RESTRICT ON UPDATE RESTRICT, FOREIGN KEY(operation_id,run_epoch,generation) REFERENCES run_root_operations(operation_id,run_epoch,generation) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID",
+      "sha256": "809a60ef23982f975d544baa00204d8d9c36d401722fc0d01c1603cd6e59674f"
+    },
+    {
+      "ordinal": 18,
+      "object_type": "table",
+      "object_name": "pilot_business_capacity_counts",
+      "normalized_sql": "CREATE TABLE pilot_business_capacity_counts ( scope_kind TEXT NOT NULL CHECK(scope_kind IN ('global','tenant','principal')), tenant_id BLOB NOT NULL, principal_ref BLOB NOT NULL CHECK(typeof(principal_ref)='blob' AND length(principal_ref)=32), count INTEGER NOT NULL CHECK(count>=0), PRIMARY KEY(scope_kind,tenant_id,principal_ref), CHECK((scope_kind='global' AND tenant_id=X'' AND principal_ref=zeroblob(32)) OR (scope_kind='tenant' AND typeof(tenant_id)='blob' AND length(tenant_id) BETWEEN 1 AND 256 AND principal_ref=zeroblob(32)) OR (scope_kind='principal' AND typeof(tenant_id)='blob' AND length(tenant_id) BETWEEN 1 AND 256)) ) STRICT, WITHOUT ROWID",
+      "sha256": "f6158ba71bdca45d9e839a372366745f31ee68944e2eaf9c4fc9f4e950dad93a"
+    },
+    {
+      "ordinal": 19,
+      "object_type": "table",
+      "object_name": "pilot_capacity_policy",
+      "normalized_sql": "CREATE TABLE pilot_capacity_policy ( singleton_id INTEGER NOT NULL PRIMARY KEY CHECK(singleton_id=1), global_limit INTEGER NOT NULL CHECK(global_limit>0), tenant_limit INTEGER NOT NULL CHECK(tenant_limit>0), principal_limit INTEGER NOT NULL CHECK(principal_limit>0 AND principal_limit<=tenant_limit AND tenant_limit<=global_limit) ) STRICT, WITHOUT ROWID",
+      "sha256": "7ea9a393eebe678552fb33bff6b7577d1d9c0afc41f4eb87be1014a15ced27ba"
+    },
+    {
+      "ordinal": 20,
+      "object_type": "table",
+      "object_name": "pilot_capacity_alert_events",
+      "normalized_sql": "CREATE TABLE pilot_capacity_alert_events ( scope_kind TEXT NOT NULL CHECK(scope_kind IN ('global','tenant','principal')), scope_tenant_id BLOB NOT NULL, scope_principal_ref BLOB NOT NULL CHECK(typeof(scope_principal_ref)='blob' AND length(scope_principal_ref)=32), threshold_percent INTEGER NOT NULL CHECK(threshold_percent IN (80,90)), first_crossing_count INTEGER NOT NULL CHECK(first_crossing_count>0), crossing_run_epoch BLOB NOT NULL CHECK(typeof(crossing_run_epoch)='blob' AND length(crossing_run_epoch)=16), crossed_at INTEGER NOT NULL CHECK(crossed_at>=0), PRIMARY KEY(scope_kind,scope_tenant_id,scope_principal_ref,threshold_percent), CHECK((scope_kind='global' AND scope_tenant_id=X'' AND scope_principal_ref=zeroblob(32)) OR (scope_kind='tenant' AND typeof(scope_tenant_id)='blob' AND length(scope_tenant_id) BETWEEN 1 AND 256 AND scope_principal_ref=zeroblob(32)) OR (scope_kind='principal' AND typeof(scope_tenant_id)='blob' AND length(scope_tenant_id) BETWEEN 1 AND 256)) ) STRICT, WITHOUT ROWID",
+      "sha256": "7dba8020851ec0b983bce6d189dba93b1d2ee5879963ce37227b19092fbd00ec"
+    },
+    {
+      "ordinal": 21,
+      "object_type": "table",
+      "object_name": "pilot_operation_evidence_receipts",
+      "normalized_sql": "CREATE TABLE pilot_operation_evidence_receipts ( receipt_digest BLOB NOT NULL PRIMARY KEY CHECK(typeof(receipt_digest)='blob' AND length(receipt_digest)=32), operation_id BLOB NOT NULL UNIQUE CHECK(typeof(operation_id)='blob' AND length(operation_id)=16), run_epoch BLOB NOT NULL CHECK(typeof(run_epoch)='blob' AND length(run_epoch)=16), principal_ref BLOB NOT NULL CHECK(typeof(principal_ref)='blob' AND length(principal_ref)=32), payload_digest BLOB NOT NULL CHECK(typeof(payload_digest)='blob' AND length(payload_digest)=32), canonical_receipt BLOB NOT NULL CHECK(typeof(canonical_receipt)='blob' AND length(canonical_receipt) BETWEEN 1 AND 65536), created_at INTEGER NOT NULL CHECK(created_at>=0), FOREIGN KEY(operation_id,run_epoch,principal_ref,payload_digest) REFERENCES run_root_operations(operation_id,run_epoch,principal_ref,payload_digest) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID",
+      "sha256": "2de0f3f9579c4fd297a55a93e8fef4943b425f2b8b62db494afdeefb121b7df7"
+    },
+    {
+      "ordinal": 22,
+      "object_type": "table",
+      "object_name": "pilot_prepared_cancel_receipts",
+      "normalized_sql": "CREATE TABLE pilot_prepared_cancel_receipts ( receipt_digest BLOB NOT NULL PRIMARY KEY CHECK(typeof(receipt_digest)='blob' AND length(receipt_digest)=32), operation_id BLOB NOT NULL UNIQUE CHECK(typeof(operation_id)='blob' AND length(operation_id)=16), generation BLOB NOT NULL CHECK(typeof(generation)='blob' AND length(generation)=8), run_epoch BLOB NOT NULL CHECK(typeof(run_epoch)='blob' AND length(run_epoch)=16), close_operation_id BLOB NOT NULL CHECK(typeof(close_operation_id)='blob' AND length(close_operation_id)=16), intent_delivery_disposition TEXT NOT NULL CHECK(intent_delivery_disposition IN ('acknowledged','never_authorized')), intent_digest BLOB CHECK(intent_digest IS NULL OR (typeof(intent_digest)='blob' AND length(intent_digest)=32)), intent_correlation BLOB CHECK(intent_correlation IS NULL OR (typeof(intent_correlation)='blob' AND length(intent_correlation)=16)), absence_witness_digest BLOB NOT NULL CHECK(typeof(absence_witness_digest)='blob' AND length(absence_witness_digest)=32), canonical_receipt BLOB NOT NULL CHECK(typeof(canonical_receipt)='blob' AND length(canonical_receipt) BETWEEN 1 AND 8192), created_at INTEGER NOT NULL CHECK(created_at>=0), CHECK((intent_delivery_disposition='acknowledged' AND intent_digest IS NOT NULL AND intent_correlation IS NOT NULL) OR (intent_delivery_disposition='never_authorized' AND intent_digest IS NOT NULL AND intent_correlation IS NULL)), FOREIGN KEY(operation_id,run_epoch,generation) REFERENCES run_root_operations(operation_id,run_epoch,generation) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID",
+      "sha256": "3661c36fafcf18e6428eacc5e0f63a9754f120c17d53be131c92330bee842181"
+    },
+    {
+      "ordinal": 23,
+      "object_type": "table",
+      "object_name": "pilot_run_containment_evidence",
+      "normalized_sql": "CREATE TABLE pilot_run_containment_evidence ( run_epoch BLOB NOT NULL CHECK(typeof(run_epoch)='blob' AND length(run_epoch)=16), gateway_generation BLOB NOT NULL CHECK(typeof(gateway_generation)='blob' AND length(gateway_generation)=8), launch_nonce TEXT NOT NULL CHECK(length(CAST(launch_nonce AS BLOB))=32 AND length(launch_nonce)=32 AND launch_nonce NOT GLOB '*[^0-9a-f]*'), gateway_pid INTEGER NOT NULL CHECK(gateway_pid>0), gateway_uid INTEGER NOT NULL CHECK(gateway_uid>0), gateway_start_ticks BLOB NOT NULL CHECK(typeof(gateway_start_ticks)='blob' AND length(gateway_start_ticks)=8 AND gateway_start_ticks<>zeroblob(8)), gateway_pidns_device BLOB NOT NULL CHECK(typeof(gateway_pidns_device)='blob' AND length(gateway_pidns_device)=8 AND gateway_pidns_device<>zeroblob(8)), gateway_pidns_inode BLOB NOT NULL CHECK(typeof(gateway_pidns_inode)='blob' AND length(gateway_pidns_inode)=8 AND gateway_pidns_inode<>zeroblob(8)), gateway_cgroup_mount_id BLOB NOT NULL CHECK(typeof(gateway_cgroup_mount_id)='blob' AND length(gateway_cgroup_mount_id)=8 AND gateway_cgroup_mount_id<>zeroblob(8)), gateway_cgroup_device BLOB NOT NULL CHECK(typeof(gateway_cgroup_device)='blob' AND length(gateway_cgroup_device)=8 AND gateway_cgroup_device<>zeroblob(8)), gateway_cgroup_inode BLOB NOT NULL CHECK(typeof(gateway_cgroup_inode)='blob' AND length(gateway_cgroup_inode)=8 AND gateway_cgroup_inode<>zeroblob(8)), endpoint_parent_device BLOB NOT NULL CHECK(typeof(endpoint_parent_device)='blob' AND length(endpoint_parent_device)=8 AND endpoint_parent_device<>zeroblob(8)), endpoint_parent_inode BLOB NOT NULL CHECK(typeof(endpoint_parent_inode)='blob' AND length(endpoint_parent_inode)=8 AND endpoint_parent_inode<>zeroblob(8)), endpoint_device BLOB NOT NULL CHECK(typeof(endpoint_device)='blob' AND length(endpoint_device)=8 AND endpoint_device<>zeroblob(8)), endpoint_inode BLOB NOT NULL CHECK(typeof(endpoint_inode)='blob' AND length(endpoint_inode)=8 AND endpoint_inode<>zeroblob(8)), endpoint_removed INTEGER NOT NULL CHECK(endpoint_removed=1), leader_reaped INTEGER NOT NULL CHECK(leader_reaped=1), populated INTEGER NOT NULL CHECK(populated=0), evidence_version INTEGER NOT NULL CHECK(evidence_version=1), launcher_evidence_digest BLOB NOT NULL CHECK(typeof(launcher_evidence_digest)='blob' AND length(launcher_evidence_digest)=32), evidence_digest BLOB NOT NULL CHECK(typeof(evidence_digest)='blob' AND length(evidence_digest)=32), canonical_receipt BLOB NOT NULL CHECK(typeof(canonical_receipt)='blob' AND length(canonical_receipt) BETWEEN 1 AND 65536), recorded_at INTEGER NOT NULL CHECK(recorded_at>=0), PRIMARY KEY(run_epoch,gateway_generation), UNIQUE(run_epoch,evidence_digest), FOREIGN KEY(gateway_generation,run_epoch,launch_nonce,gateway_pid,gateway_uid,gateway_start_ticks,gateway_pidns_device,gateway_pidns_inode,gateway_cgroup_mount_id,gateway_cgroup_device,gateway_cgroup_inode) REFERENCES pilot_bootstrap_handoffs(generation,run_epoch,launch_nonce,gateway_pid,gateway_uid,gateway_start_ticks,gateway_pidns_device,gateway_pidns_inode,gateway_cgroup_mount_id,gateway_cgroup_device,gateway_cgroup_inode) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID",
+      "sha256": "7e95c300ccd20e11c0cbbe39e5c635f28bdfd265952919ff6edce6df49f9bd5b"
+    },
+    {
+      "ordinal": 24,
+      "object_type": "table",
+      "object_name": "pilot_run_cleanup_dispositions",
+      "normalized_sql": "CREATE TABLE pilot_run_cleanup_dispositions ( run_epoch BLOB NOT NULL PRIMARY KEY CHECK(typeof(run_epoch)='blob' AND length(run_epoch)=16), disposition TEXT NOT NULL CHECK(disposition IN ('complete','retained','indeterminate')), root_mount_id BLOB NOT NULL CHECK(typeof(root_mount_id)='blob' AND length(root_mount_id)=8 AND root_mount_id<>zeroblob(8)), root_device BLOB NOT NULL CHECK(typeof(root_device)='blob' AND length(root_device)=8 AND root_device<>zeroblob(8)), root_inode BLOB NOT NULL CHECK(typeof(root_inode)='blob' AND length(root_inode)=8 AND root_inode<>zeroblob(8)), disposition_digest BLOB NOT NULL CHECK(typeof(disposition_digest)='blob' AND length(disposition_digest)=32), canonical_evidence BLOB NOT NULL CHECK(typeof(canonical_evidence)='blob' AND length(canonical_evidence) BETWEEN 1 AND 8192), recorded_at INTEGER NOT NULL CHECK(recorded_at>=0), FOREIGN KEY(run_epoch) REFERENCES run_epoch_allocations(run_epoch) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID",
+      "sha256": "4b6c201703a1d3ee6766922dd3f18cc41b52f98b79b809046305d58e5d38bf6c"
+    },
+    {
+      "ordinal": 25,
+      "object_type": "table",
+      "object_name": "pilot_root_run_state",
+      "normalized_sql": "CREATE TABLE pilot_root_run_state ( run_epoch BLOB NOT NULL PRIMARY KEY CHECK(typeof(run_epoch)='blob' AND length(run_epoch)=16), root_mount_id BLOB NOT NULL CHECK(typeof(root_mount_id)='blob' AND length(root_mount_id)=8 AND root_mount_id<>zeroblob(8)), root_device BLOB NOT NULL CHECK(typeof(root_device)='blob' AND length(root_device)=8 AND root_device<>zeroblob(8)), root_inode BLOB NOT NULL CHECK(typeof(root_inode)='blob' AND length(root_inode)=8 AND root_inode<>zeroblob(8)), run_state TEXT NOT NULL CHECK(run_state IN ('active','terminating','containment_empty','abandoned')), cleanup_state TEXT NOT NULL CHECK(cleanup_state IN ('not_required','pending','complete','retained','indeterminate')), containment_evidence_digest BLOB CHECK(containment_evidence_digest IS NULL OR (typeof(containment_evidence_digest)='blob' AND length(containment_evidence_digest)=32)), updated_at INTEGER NOT NULL CHECK(updated_at>=0), FOREIGN KEY(run_epoch) REFERENCES run_epoch_allocations(run_epoch) ON DELETE RESTRICT ON UPDATE RESTRICT, FOREIGN KEY(run_epoch,containment_evidence_digest) REFERENCES pilot_run_containment_evidence(run_epoch,evidence_digest) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID",
+      "sha256": "d97826ea0190ec787cf3f9d73af9a62bcde6ddb55cbc23271a2f454d81b17445"
+    },
+    {
+      "ordinal": 26,
+      "object_type": "table",
+      "object_name": "run_root_event_outbox",
+      "normalized_sql": "CREATE TABLE run_root_event_outbox ( outbox_id BLOB NOT NULL PRIMARY KEY CHECK(typeof(outbox_id)='blob' AND length(outbox_id)=16), operation_id BLOB NOT NULL CHECK(typeof(operation_id)='blob' AND length(operation_id)=16), event_name TEXT NOT NULL CHECK(event_name IN ('run_root_dispatch_intent','bootstrap.finish')), process_id INTEGER NOT NULL CHECK(process_id>0), canonical_event BLOB NOT NULL CHECK(typeof(canonical_event)='blob' AND length(canonical_event) BETWEEN 1 AND 65536), event_digest BLOB NOT NULL CHECK(typeof(event_digest)='blob' AND length(event_digest)=32), delivery_state TEXT NOT NULL CHECK(delivery_state IN ('ready','send_authorized','acknowledged','suppressed')), acknowledged_digest BLOB CHECK(acknowledged_digest IS NULL OR (typeof(acknowledged_digest)='blob' AND length(acknowledged_digest)=32)), acknowledged_correlation BLOB CHECK(acknowledged_correlation IS NULL OR (typeof(acknowledged_correlation)='blob' AND length(acknowledged_correlation)=16)), suppression_receipt_digest BLOB CHECK(suppression_receipt_digest IS NULL OR (typeof(suppression_receipt_digest)='blob' AND length(suppression_receipt_digest)=32)), created_at INTEGER NOT NULL CHECK(created_at>=0), UNIQUE(operation_id,event_name), CHECK((delivery_state='acknowledged' AND acknowledged_digest IS NOT NULL AND acknowledged_correlation IS NOT NULL AND suppression_receipt_digest IS NULL) OR (delivery_state='suppressed' AND event_name='run_root_dispatch_intent' AND acknowledged_digest IS NULL AND acknowledged_correlation IS NULL AND suppression_receipt_digest IS NOT NULL) OR (delivery_state IN ('ready','send_authorized') AND acknowledged_digest IS NULL AND acknowledged_correlation IS NULL AND suppression_receipt_digest IS NULL)), FOREIGN KEY(operation_id) REFERENCES run_root_operations(operation_id) ON DELETE RESTRICT ON UPDATE RESTRICT, FOREIGN KEY(suppression_receipt_digest) REFERENCES pilot_prepared_cancel_receipts(receipt_digest) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID",
+      "sha256": "5a62b87a5d4489a41085a1b32ae0806a2ed3d58a60b1c1b27e539479b314cdfe"
+    },
+    {
+      "ordinal": 27,
+      "object_type": "trigger",
+      "object_name": "pilot_allocation_capacity_after_insert",
+      "normalized_sql": "CREATE TRIGGER pilot_allocation_capacity_after_insert AFTER INSERT ON run_epoch_allocations BEGIN SELECT CASE WHEN NOT EXISTS(SELECT 1 FROM pilot_capacity_policy WHERE singleton_id=1) THEN RAISE(ABORT,'capacity_policy_missing') END; INSERT INTO pilot_business_capacity_counts(scope_kind,tenant_id,principal_ref,count) SELECT 'tenant',NEW.tenant_id,zeroblob(32),0 WHERE NOT EXISTS(SELECT 1 FROM pilot_business_capacity_counts WHERE scope_kind='tenant' AND tenant_id=NEW.tenant_id AND principal_ref=zeroblob(32)); INSERT INTO pilot_business_capacity_counts(scope_kind,tenant_id,principal_ref,count) SELECT 'principal',NEW.tenant_id,NEW.principal_ref,0 WHERE NOT EXISTS(SELECT 1 FROM pilot_business_capacity_counts WHERE scope_kind='principal' AND tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref); SELECT CASE WHEN NOT EXISTS(SELECT 1 FROM pilot_business_capacity_counts WHERE scope_kind='global' AND tenant_id=X'' AND principal_ref=zeroblob(32)) OR NOT EXISTS(SELECT 1 FROM pilot_business_capacity_counts WHERE scope_kind='tenant' AND tenant_id=NEW.tenant_id AND principal_ref=zeroblob(32)) OR NOT EXISTS(SELECT 1 FROM pilot_business_capacity_counts WHERE scope_kind='principal' AND tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref) THEN RAISE(ABORT,'capacity_scope_missing') END; SELECT CASE WHEN NEW.allocation_sequence<>(SELECT count+1 FROM pilot_business_capacity_counts WHERE scope_kind='global' AND tenant_id=X'' AND principal_ref=zeroblob(32)) THEN RAISE(ABORT,'allocation_sequence') END; SELECT CASE WHEN (SELECT count FROM pilot_business_capacity_counts WHERE scope_kind='global' AND tenant_id=X'' AND principal_ref=zeroblob(32)) >= (SELECT global_limit FROM pilot_capacity_policy WHERE singleton_id=1) OR (SELECT count FROM pilot_business_capacity_counts WHERE scope_kind='tenant' AND tenant_id=NEW.tenant_id AND principal_ref=zeroblob(32)) >= (SELECT tenant_limit FROM pilot_capacity_policy WHERE singleton_id=1) OR (SELECT count FROM pilot_business_capacity_counts WHERE scope_kind='principal' AND tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref) >= (SELECT principal_limit FROM pilot_capacity_policy WHERE singleton_id=1) THEN RAISE(ABORT,'capacity_exceeded') END; UPDATE pilot_business_capacity_counts SET count=count+1 WHERE (scope_kind='global' AND tenant_id=X'' AND principal_ref=zeroblob(32)) OR (scope_kind='tenant' AND tenant_id=NEW.tenant_id AND principal_ref=zeroblob(32)) OR (scope_kind='principal' AND tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref); INSERT INTO pilot_capacity_alert_events(scope_kind,scope_tenant_id,scope_principal_ref,threshold_percent,first_crossing_count,crossing_run_epoch,crossed_at) SELECT c.scope_kind,c.tenant_id,c.principal_ref,80,c.count,NEW.run_epoch,NEW.allocated_at FROM pilot_business_capacity_counts c JOIN pilot_capacity_policy p ON p.singleton_id=1 WHERE c.count=(CASE c.scope_kind WHEN 'global' THEN p.global_limit WHEN 'tenant' THEN p.tenant_limit ELSE p.principal_limit END*80+99)/100 AND ((c.scope_kind='global' AND c.tenant_id=X'' AND c.principal_ref=zeroblob(32)) OR (c.scope_kind='tenant' AND c.tenant_id=NEW.tenant_id AND c.principal_ref=zeroblob(32)) OR (c.scope_kind='principal' AND c.tenant_id=NEW.tenant_id AND c.principal_ref=NEW.principal_ref)); INSERT INTO pilot_capacity_alert_events(scope_kind,scope_tenant_id,scope_principal_ref,threshold_percent,first_crossing_count,crossing_run_epoch,crossed_at) SELECT c.scope_kind,c.tenant_id,c.principal_ref,90,c.count,NEW.run_epoch,NEW.allocated_at FROM pilot_business_capacity_counts c JOIN pilot_capacity_policy p ON p.singleton_id=1 WHERE c.count=(CASE c.scope_kind WHEN 'global' THEN p.global_limit WHEN 'tenant' THEN p.tenant_limit ELSE p.principal_limit END*90+99)/100 AND ((c.scope_kind='global' AND c.tenant_id=X'' AND c.principal_ref=zeroblob(32)) OR (c.scope_kind='tenant' AND c.tenant_id=NEW.tenant_id AND c.principal_ref=zeroblob(32)) OR (c.scope_kind='principal' AND c.tenant_id=NEW.tenant_id AND c.principal_ref=NEW.principal_ref)); END",
+      "sha256": "d2ddc21934500d6bf79891e47fdc5198764a254cf5407bb6c3fff4dd7a2aab06"
+    },
+    {
+      "ordinal": 28,
+      "object_type": "trigger",
+      "object_name": "run_root_ledger_meta_no_update",
+      "normalized_sql": "CREATE TRIGGER run_root_ledger_meta_no_update BEFORE UPDATE ON run_root_ledger_meta BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "50e8a8bea1fef95f411d6c4a7808a15646b4ff9cf6bcd73a9ad7238af9cb5dc4"
+    },
+    {
+      "ordinal": 29,
+      "object_type": "trigger",
+      "object_name": "run_root_ledger_meta_no_delete",
+      "normalized_sql": "CREATE TRIGGER run_root_ledger_meta_no_delete BEFORE DELETE ON run_root_ledger_meta BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "0fb0e23c49d74bf3fdb024389fecb510c2c72215c18286c6fa3e8cf6d21d6628"
+    },
+    {
+      "ordinal": 30,
+      "object_type": "trigger",
+      "object_name": "run_root_ledger_meta_no_replace",
+      "normalized_sql": "CREATE TRIGGER run_root_ledger_meta_no_replace BEFORE INSERT ON run_root_ledger_meta WHEN EXISTS(SELECT 1 FROM run_root_ledger_meta WHERE singleton=NEW.singleton) BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "5af7ce0876a2af6f853e1f24d0337476e90b437097aa5d0ae678239b90e2e760"
+    },
+    {
+      "ordinal": 31,
+      "object_type": "trigger",
+      "object_name": "pilot_control_generations_no_update",
+      "normalized_sql": "CREATE TRIGGER pilot_control_generations_no_update BEFORE UPDATE ON pilot_control_generations BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "c3be86ffad454004f58565a3dc1738693fa1329cf329931ab3555635618d7298"
+    },
+    {
+      "ordinal": 32,
+      "object_type": "trigger",
+      "object_name": "pilot_control_generations_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_control_generations_no_delete BEFORE DELETE ON pilot_control_generations BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "fd5475a1376223d3f52fe1a4b6e822904709d5fa409c171d147bf71e4cd7193b"
+    },
+    {
+      "ordinal": 33,
+      "object_type": "trigger",
+      "object_name": "pilot_control_generations_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_control_generations_no_replace BEFORE INSERT ON pilot_control_generations WHEN EXISTS(SELECT 1 FROM pilot_control_generations WHERE generation=NEW.generation OR launch_nonce=NEW.launch_nonce) BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "7df45e4add96513f8f608e6edaae072e2559dea5da5a75264f8fa5225363538a"
+    },
+    {
+      "ordinal": 34,
+      "object_type": "trigger",
+      "object_name": "pilot_principal_aliases_no_update",
+      "normalized_sql": "CREATE TRIGGER pilot_principal_aliases_no_update BEFORE UPDATE ON pilot_principal_aliases BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "a7573aa3e62031fd5e861ef2bf01cbfb59933a7dff502fde09b606564e06252b"
+    },
+    {
+      "ordinal": 35,
+      "object_type": "trigger",
+      "object_name": "pilot_principal_aliases_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_principal_aliases_no_delete BEFORE DELETE ON pilot_principal_aliases BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "acbbee2bb2397d513702bb8bbdbbef4fd37af94549796eb764cab5e7752a92d3"
+    },
+    {
+      "ordinal": 36,
+      "object_type": "trigger",
+      "object_name": "pilot_principal_aliases_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_principal_aliases_no_replace BEFORE INSERT ON pilot_principal_aliases WHEN EXISTS(SELECT 1 FROM pilot_principal_aliases WHERE (tenant_id=NEW.tenant_id AND identity_key_version=NEW.identity_key_version AND identity_digest=NEW.identity_digest) OR (tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref AND identity_key_version=NEW.identity_key_version)) BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "35f9c39dd7a0bbaa1d2019cbebd6f6c249b98f9ab74c17f74f990b94fc580c93"
+    },
+    {
+      "ordinal": 37,
+      "object_type": "trigger",
+      "object_name": "pilot_authz_receipts_no_update",
+      "normalized_sql": "CREATE TRIGGER pilot_authz_receipts_no_update BEFORE UPDATE ON pilot_authz_update_receipts BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "12484e5bbbb5209dbf2d9858e03f05355ac37dfb9e62c42a871c547386e707e0"
+    },
+    {
+      "ordinal": 38,
+      "object_type": "trigger",
+      "object_name": "pilot_authz_receipts_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_authz_receipts_no_delete BEFORE DELETE ON pilot_authz_update_receipts BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "b5b8b9ddd65eb4d4a7238090a6ac567f453deb1bdabf3cc3bc2a9bd8b98f0b69"
+    },
+    {
+      "ordinal": 39,
+      "object_type": "trigger",
+      "object_name": "pilot_authz_receipts_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_authz_receipts_no_replace BEFORE INSERT ON pilot_authz_update_receipts WHEN EXISTS(SELECT 1 FROM pilot_authz_update_receipts WHERE request_id=NEW.request_id OR (tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref AND target_kind=NEW.target_kind AND target_key=NEW.target_key AND revision=NEW.revision)) BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "6c0cef9d06ac4e8885a702186d040170bc4cebd55ec6dfeec4251b5bef7f7161"
+    },
+    {
+      "ordinal": 40,
+      "object_type": "trigger",
+      "object_name": "pilot_handoffs_no_update",
+      "normalized_sql": "CREATE TRIGGER pilot_handoffs_no_update BEFORE UPDATE ON pilot_bootstrap_handoffs BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "7ad64a7ac8da2764e23f47ed8cde24e4ad944547574302d8ad6ebf29a901ff8f"
+    },
+    {
+      "ordinal": 41,
+      "object_type": "trigger",
+      "object_name": "pilot_handoffs_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_handoffs_no_delete BEFORE DELETE ON pilot_bootstrap_handoffs BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "97328d5f86276a67ea527e22bcd929831e68826091e2e6201b44103b5100c56d"
+    },
+    {
+      "ordinal": 42,
+      "object_type": "trigger",
+      "object_name": "pilot_handoffs_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_handoffs_no_replace BEFORE INSERT ON pilot_bootstrap_handoffs WHEN EXISTS(SELECT 1 FROM pilot_bootstrap_handoffs WHERE generation=NEW.generation OR run_epoch=NEW.run_epoch OR launch_nonce=NEW.launch_nonce) BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "1304b2c22571f84dfb8e2c801e564421c2f7bce9f155870d71d17f9ce2962b1d"
+    },
+    {
+      "ordinal": 43,
+      "object_type": "trigger",
+      "object_name": "pilot_operation_receipts_no_update",
+      "normalized_sql": "CREATE TRIGGER pilot_operation_receipts_no_update BEFORE UPDATE ON pilot_operation_evidence_receipts BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "c72620fe6e35fb6a1e1ec2ec12368f8a9931a7b144883b8b00ffc20550be55be"
+    },
+    {
+      "ordinal": 44,
+      "object_type": "trigger",
+      "object_name": "pilot_operation_receipts_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_operation_receipts_no_delete BEFORE DELETE ON pilot_operation_evidence_receipts BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "c79f14fd6f5d1594c73df19409bf1324b9f02a406f45c57dc74d9c9aaad088a9"
+    },
+    {
+      "ordinal": 45,
+      "object_type": "trigger",
+      "object_name": "pilot_operation_receipts_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_operation_receipts_no_replace BEFORE INSERT ON pilot_operation_evidence_receipts WHEN EXISTS(SELECT 1 FROM pilot_operation_evidence_receipts WHERE receipt_digest=NEW.receipt_digest OR operation_id=NEW.operation_id) BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "47d05240cfd6832fc661675126755c71db96dba53d235a54cc5beab1e81ee7cd"
+    },
+    {
+      "ordinal": 46,
+      "object_type": "trigger",
+      "object_name": "pilot_cancel_receipts_no_update",
+      "normalized_sql": "CREATE TRIGGER pilot_cancel_receipts_no_update BEFORE UPDATE ON pilot_prepared_cancel_receipts BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "9b3f9232e9f75d8eb4297248a38181f3bc2c3ff71dc5b40c0c93eeb808e1154f"
+    },
+    {
+      "ordinal": 47,
+      "object_type": "trigger",
+      "object_name": "pilot_cancel_receipts_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_cancel_receipts_no_delete BEFORE DELETE ON pilot_prepared_cancel_receipts BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "8f97ce745a0a0c643716ecb3722ca3ad23636b8495a00157337ca0461ac3f328"
+    },
+    {
+      "ordinal": 48,
+      "object_type": "trigger",
+      "object_name": "pilot_cancel_receipts_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_cancel_receipts_no_replace BEFORE INSERT ON pilot_prepared_cancel_receipts WHEN EXISTS(SELECT 1 FROM pilot_prepared_cancel_receipts WHERE receipt_digest=NEW.receipt_digest OR operation_id=NEW.operation_id) BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "b8b0f86fccc09607f1d200d65963119e4a65995ad2317849f8a78d942ce95e71"
+    },
+    {
+      "ordinal": 49,
+      "object_type": "trigger",
+      "object_name": "pilot_containment_evidence_no_update",
+      "normalized_sql": "CREATE TRIGGER pilot_containment_evidence_no_update BEFORE UPDATE ON pilot_run_containment_evidence BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "801039d01fd7a5c699ab507da83ddac728ff4bb0c85c98f8cd1347768c32a77f"
+    },
+    {
+      "ordinal": 50,
+      "object_type": "trigger",
+      "object_name": "pilot_containment_evidence_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_containment_evidence_no_delete BEFORE DELETE ON pilot_run_containment_evidence BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "ba68b025fdd94d1884e333c414c555c491046d3c245141dd953789513bfed0aa"
+    },
+    {
+      "ordinal": 51,
+      "object_type": "trigger",
+      "object_name": "pilot_containment_evidence_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_containment_evidence_no_replace BEFORE INSERT ON pilot_run_containment_evidence WHEN EXISTS(SELECT 1 FROM pilot_run_containment_evidence WHERE run_epoch=NEW.run_epoch AND gateway_generation=NEW.gateway_generation) BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "30aaba06cbd9a2cabbcc686b619750684a7e3ec67965bc829eba8df412d74a9c"
+    },
+    {
+      "ordinal": 52,
+      "object_type": "trigger",
+      "object_name": "pilot_cleanup_dispositions_no_update",
+      "normalized_sql": "CREATE TRIGGER pilot_cleanup_dispositions_no_update BEFORE UPDATE ON pilot_run_cleanup_dispositions BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "35561670c969658107cff75ce22ae344d24b2861eea90ad021ae22046a651c52"
+    },
+    {
+      "ordinal": 53,
+      "object_type": "trigger",
+      "object_name": "pilot_cleanup_dispositions_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_cleanup_dispositions_no_delete BEFORE DELETE ON pilot_run_cleanup_dispositions BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "17c156ee5beb8cb56f8f6cc64cad02ecd5ff75e1426ff5f7d95929a1de375ccf"
+    },
+    {
+      "ordinal": 54,
+      "object_type": "trigger",
+      "object_name": "pilot_cleanup_dispositions_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_cleanup_dispositions_no_replace BEFORE INSERT ON pilot_run_cleanup_dispositions WHEN EXISTS(SELECT 1 FROM pilot_run_cleanup_dispositions WHERE run_epoch=NEW.run_epoch) BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "ca1bdc543dbef142f70fe2a1592fb64a52c77b4434d37a31acd1a6a4e217693a"
+    },
+    {
+      "ordinal": 55,
+      "object_type": "trigger",
+      "object_name": "pilot_capacity_policy_no_update",
+      "normalized_sql": "CREATE TRIGGER pilot_capacity_policy_no_update BEFORE UPDATE ON pilot_capacity_policy BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "f569531cba05293e29e127a5201baf2bc5716a38ea59bb0f4da5c6e94fdde866"
+    },
+    {
+      "ordinal": 56,
+      "object_type": "trigger",
+      "object_name": "pilot_capacity_policy_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_capacity_policy_no_delete BEFORE DELETE ON pilot_capacity_policy BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "2d6e67278d0f4a102a63be356942410d3ae0125a2fac70f67fb218d19ea61faf"
+    },
+    {
+      "ordinal": 57,
+      "object_type": "trigger",
+      "object_name": "pilot_capacity_policy_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_capacity_policy_no_replace BEFORE INSERT ON pilot_capacity_policy WHEN EXISTS(SELECT 1 FROM pilot_capacity_policy WHERE singleton_id=NEW.singleton_id) BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "637fc063048f65978bef8bf74d77e5afea22fe30fc4d23e6ef10ff2f98d8f993"
+    },
+    {
+      "ordinal": 58,
+      "object_type": "trigger",
+      "object_name": "pilot_capacity_counts_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_capacity_counts_no_delete BEFORE DELETE ON pilot_business_capacity_counts BEGIN SELECT RAISE(ABORT,'capacity_count_immutable'); END",
+      "sha256": "1f79298759e01a158c9feada2e70c8062e16a589042180369983fbcb92341ef1"
+    },
+    {
+      "ordinal": 59,
+      "object_type": "trigger",
+      "object_name": "pilot_capacity_alerts_no_update",
+      "normalized_sql": "CREATE TRIGGER pilot_capacity_alerts_no_update BEFORE UPDATE ON pilot_capacity_alert_events BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "01311fe397b170549ac0401a25c3346ba61a0e4a344480cd35eb94bade15be28"
+    },
+    {
+      "ordinal": 60,
+      "object_type": "trigger",
+      "object_name": "pilot_capacity_alerts_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_capacity_alerts_no_delete BEFORE DELETE ON pilot_capacity_alert_events BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "4a1919fdff485a3821d22651f65df65c81f77bed28d8dbce7b987f879b89472f"
+    },
+    {
+      "ordinal": 61,
+      "object_type": "trigger",
+      "object_name": "pilot_capacity_alerts_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_capacity_alerts_no_replace BEFORE INSERT ON pilot_capacity_alert_events WHEN EXISTS(SELECT 1 FROM pilot_capacity_alert_events WHERE scope_kind=NEW.scope_kind AND scope_tenant_id=NEW.scope_tenant_id AND scope_principal_ref=NEW.scope_principal_ref AND threshold_percent=NEW.threshold_percent) BEGIN SELECT RAISE(ABORT,'immutable'); END",
+      "sha256": "7b857ea2b7add35a8bcc1834fcd4af2f7e35f51a46f5eeb9a2c3edc2b890e1cc"
+    },
+    {
+      "ordinal": 62,
+      "object_type": "trigger",
+      "object_name": "pilot_lease_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_lease_no_delete BEFORE DELETE ON pilot_run_lease BEGIN SELECT RAISE(ABORT,'lease_singleton'); END",
+      "sha256": "809470487ab2f7d1e0ffa236640db103e3ae561b1b2f7f10b720e41203ea9f0c"
+    },
+    {
+      "ordinal": 63,
+      "object_type": "trigger",
+      "object_name": "pilot_lease_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_lease_no_replace BEFORE INSERT ON pilot_run_lease WHEN EXISTS(SELECT 1 FROM pilot_run_lease WHERE singleton_id=NEW.singleton_id) BEGIN SELECT RAISE(ABORT,'lease_singleton'); END",
+      "sha256": "dd6e54f39c939276f62ae4dfd70bacf95c485f3caebd3e6f3b3c931c7f9c8e6a"
+    },
+    {
+      "ordinal": 64,
+      "object_type": "trigger",
+      "object_name": "pilot_authz_state_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_authz_state_no_replace BEFORE INSERT ON pilot_authorization_state WHEN EXISTS(SELECT 1 FROM pilot_authorization_state WHERE tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref) BEGIN SELECT RAISE(ABORT,'authz_exists'); END",
+      "sha256": "992127c47e768f6b86e584991a6ed398180eb538a5e15cf50ef9bd9479ca8c09"
+    },
+    {
+      "ordinal": 65,
+      "object_type": "trigger",
+      "object_name": "pilot_authz_state_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_authz_state_no_delete BEFORE DELETE ON pilot_authorization_state BEGIN SELECT RAISE(ABORT,'authz_tombstone'); END",
+      "sha256": "bf0d74804c79b31c977c0212a046c7a784abb0f1bb48cff8311aec8108b5dbf2"
+    },
+    {
+      "ordinal": 66,
+      "object_type": "trigger",
+      "object_name": "pilot_authz_state_update_guard",
+      "normalized_sql": "CREATE TRIGGER pilot_authz_state_update_guard BEFORE UPDATE ON pilot_authorization_state WHEN NEW.tenant_id<>OLD.tenant_id OR NEW.principal_ref<>OLD.principal_ref OR NEW.authz_revision<=OLD.authz_revision OR NEW.updated_at<OLD.updated_at BEGIN SELECT RAISE(ABORT,'authz_revision'); END",
+      "sha256": "7e2840f70cc3207d7477742d70d93f396ce6d23170a060b7446a1d0e58f657cf"
+    },
+    {
+      "ordinal": 67,
+      "object_type": "trigger",
+      "object_name": "pilot_session_fence_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_session_fence_no_replace BEFORE INSERT ON pilot_session_fences WHEN EXISTS(SELECT 1 FROM pilot_session_fences WHERE tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref AND session_key_hash=NEW.session_key_hash) BEGIN SELECT RAISE(ABORT,'session_exists'); END",
+      "sha256": "3bf3636c4dfcb4d600998f81746e71457eee900c1cb7406a9b9c4ca548d11f06"
+    },
+    {
+      "ordinal": 68,
+      "object_type": "trigger",
+      "object_name": "pilot_session_fence_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_session_fence_no_delete BEFORE DELETE ON pilot_session_fences BEGIN SELECT RAISE(ABORT,'session_tombstone'); END",
+      "sha256": "ee4d636efa345be261032542e1d0877c03a97c0d6e0fc73fff2fb1cefd6d21f0"
+    },
+    {
+      "ordinal": 69,
+      "object_type": "trigger",
+      "object_name": "pilot_session_fence_update_guard",
+      "normalized_sql": "CREATE TRIGGER pilot_session_fence_update_guard BEFORE UPDATE ON pilot_session_fences WHEN NEW.tenant_id<>OLD.tenant_id OR NEW.principal_ref<>OLD.principal_ref OR NEW.session_key_hash<>OLD.session_key_hash OR NEW.session_revision<=OLD.session_revision OR NEW.updated_at<OLD.updated_at OR NEW.expires_at>OLD.expires_at OR (OLD.session_state='revoked' AND NEW.session_state<>'revoked') BEGIN SELECT RAISE(ABORT,'session_revision'); END",
+      "sha256": "55a6c772180cd13d1313c9b8db58ff3dd1bb5120b1bf44082d1338490b6d619b"
+    },
+    {
+      "ordinal": 70,
+      "object_type": "trigger",
+      "object_name": "pilot_fixture_grant_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_fixture_grant_no_replace BEFORE INSERT ON pilot_fixture_grants WHEN EXISTS(SELECT 1 FROM pilot_fixture_grants WHERE tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref AND fixture_id=NEW.fixture_id) BEGIN SELECT RAISE(ABORT,'grant_exists'); END",
+      "sha256": "b9814b2927d2b8e766735804d2f27addf876a1800127bea472bc6ea4dd5d72d8"
+    },
+    {
+      "ordinal": 71,
+      "object_type": "trigger",
+      "object_name": "pilot_fixture_grant_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_fixture_grant_no_delete BEFORE DELETE ON pilot_fixture_grants BEGIN SELECT RAISE(ABORT,'grant_tombstone'); END",
+      "sha256": "dabe5dc9aeca248f9c2e092ecd220f49fd894ab49d65ed2caa08f23bbac62f00"
+    },
+    {
+      "ordinal": 72,
+      "object_type": "trigger",
+      "object_name": "pilot_fixture_grant_update_guard",
+      "normalized_sql": "CREATE TRIGGER pilot_fixture_grant_update_guard BEFORE UPDATE ON pilot_fixture_grants WHEN NEW.tenant_id<>OLD.tenant_id OR NEW.principal_ref<>OLD.principal_ref OR NEW.fixture_id<>OLD.fixture_id OR NEW.grant_revision<=OLD.grant_revision OR NEW.updated_at<OLD.updated_at BEGIN SELECT RAISE(ABORT,'grant_revision'); END",
+      "sha256": "3b59fe6559628dc92ab40f3e803a75397c610f2ea3e2c03a2e3244bcf6ecf12f"
+    },
+    {
+      "ordinal": 73,
+      "object_type": "trigger",
+      "object_name": "pilot_lifecycle_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_lifecycle_no_replace BEFORE INSERT ON pilot_run_lifecycle WHEN EXISTS(SELECT 1 FROM pilot_run_lifecycle WHERE generation=NEW.generation OR run_epoch=NEW.run_epoch) BEGIN SELECT RAISE(ABORT,'lifecycle_exists'); END",
+      "sha256": "e1339807746b9c60555f4525f122f2b89bcf2ab8704cb480f90021b8cad56fca"
+    },
+    {
+      "ordinal": 74,
+      "object_type": "trigger",
+      "object_name": "pilot_lifecycle_insert_guard",
+      "normalized_sql": "CREATE TRIGGER pilot_lifecycle_insert_guard BEFORE INSERT ON pilot_run_lifecycle WHEN NEW.lifecycle_state<>'bootstrapped' OR NEW.run_root_operation_id IS NOT NULL OR NEW.close_operation_id IS NOT NULL OR NEW.terminal_result IS NOT NULL BEGIN SELECT RAISE(ABORT,'lifecycle_initial_state'); END",
+      "sha256": "8e42c0169aace543e6c59157f0629bcda579ac463c7e1b6bc2c8cc9dbbea6b39"
+    },
+    {
+      "ordinal": 75,
+      "object_type": "trigger",
+      "object_name": "pilot_lifecycle_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_lifecycle_no_delete BEFORE DELETE ON pilot_run_lifecycle BEGIN SELECT RAISE(ABORT,'lifecycle_tombstone'); END",
+      "sha256": "1682a170c212724232fd3ad367b8df5d40a5199fa7a2a296454980907ce13962"
+    },
+    {
+      "ordinal": 76,
+      "object_type": "trigger",
+      "object_name": "pilot_lifecycle_update_guard",
+      "normalized_sql": "CREATE TRIGGER pilot_lifecycle_update_guard BEFORE UPDATE ON pilot_run_lifecycle WHEN NEW.generation<>OLD.generation OR NEW.run_epoch<>OLD.run_epoch OR OLD.lifecycle_state='terminal' OR NEW.updated_at<OLD.updated_at OR NOT ((OLD.lifecycle_state=NEW.lifecycle_state) OR (OLD.lifecycle_state='bootstrapped' AND NEW.lifecycle_state='logger_registered') OR (OLD.lifecycle_state='logger_registered' AND NEW.lifecycle_state='logger_ready') OR (OLD.lifecycle_state='logger_ready' AND NEW.lifecycle_state='reaper_ready') OR (OLD.lifecycle_state='reaper_ready' AND NEW.lifecycle_state='registered') OR (OLD.lifecycle_state='registered' AND NEW.lifecycle_state IN ('active','terminating')) OR (OLD.lifecycle_state='active' AND NEW.lifecycle_state='terminating') OR (OLD.lifecycle_state='terminating' AND NEW.lifecycle_state='unregistered') OR (OLD.lifecycle_state='unregistered' AND NEW.lifecycle_state='containment_empty') OR (OLD.lifecycle_state='containment_empty' AND NEW.lifecycle_state='terminal')) OR (OLD.run_root_operation_id IS NOT NULL AND NEW.run_root_operation_id IS NOT OLD.run_root_operation_id) OR (OLD.run_root_operation_id IS NULL AND NEW.run_root_operation_id IS NOT NULL AND (NEW.lifecycle_state<>OLD.lifecycle_state OR OLD.lifecycle_state NOT IN ('registered','active'))) OR (OLD.close_operation_id IS NULL AND NEW.close_operation_id IS NOT NULL AND (NEW.lifecycle_state<>'terminating' OR OLD.lifecycle_state NOT IN ('registered','active'))) OR (OLD.close_operation_id IS NOT NULL AND (NEW.close_operation_id IS NOT OLD.close_operation_id OR NEW.close_key_hash IS NOT OLD.close_key_hash OR NEW.close_payload_digest IS NOT OLD.close_payload_digest)) BEGIN SELECT RAISE(ABORT,'lifecycle_transition'); END",
+      "sha256": "13efb6f001248d8ef2415a42191cdb3482ab697df4a4bae47af60a24d5367535"
+    },
+    {
+      "ordinal": 77,
+      "object_type": "trigger",
+      "object_name": "pilot_allocation_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_allocation_no_replace BEFORE INSERT ON run_epoch_allocations WHEN EXISTS(SELECT 1 FROM run_epoch_allocations WHERE run_epoch=NEW.run_epoch OR operation_id=NEW.operation_id OR (tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref AND business_operation_id=NEW.business_operation_id)) BEGIN SELECT RAISE(ABORT,'allocation_exists'); END",
+      "sha256": "12afae1b71610da3237517a05f2894d5da613dc427e475086481fe483df4ba44"
+    },
+    {
+      "ordinal": 78,
+      "object_type": "trigger",
+      "object_name": "pilot_allocation_insert_guard",
+      "normalized_sql": "CREATE TRIGGER pilot_allocation_insert_guard BEFORE INSERT ON run_epoch_allocations WHEN NEW.allocation_state<>'prepared' OR NEW.run_terminal_state<>'none' OR NEW.terminal_evidence_digest IS NOT NULL BEGIN SELECT RAISE(ABORT,'allocation_initial_state'); END",
+      "sha256": "a1b5c27e61fbc5ee2b486c529d94b8663edb371839df222a3238f3fbea9ba11c"
+    },
+    {
+      "ordinal": 79,
+      "object_type": "trigger",
+      "object_name": "pilot_allocation_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_allocation_no_delete BEFORE DELETE ON run_epoch_allocations BEGIN SELECT RAISE(ABORT,'allocation_tombstone'); END",
+      "sha256": "ccd60189a24fb0ea6d486fc4f66e2bde5a82ab4754235d95187c71f6eefd632f"
+    },
+    {
+      "ordinal": 80,
+      "object_type": "trigger",
+      "object_name": "pilot_allocation_update_guard",
+      "normalized_sql": "CREATE TRIGGER pilot_allocation_update_guard BEFORE UPDATE ON run_epoch_allocations WHEN NEW.run_epoch<>OLD.run_epoch OR NEW.allocation_sequence<>OLD.allocation_sequence OR NEW.generation<>OLD.generation OR NEW.tenant_id<>OLD.tenant_id OR NEW.principal_ref<>OLD.principal_ref OR NEW.session_key_hash<>OLD.session_key_hash OR NEW.request_id<>OLD.request_id OR NEW.business_operation_id<>OLD.business_operation_id OR NEW.operation_id<>OLD.operation_id OR NEW.payload_digest<>OLD.payload_digest OR NEW.schema_digest<>OLD.schema_digest OR NEW.gateway_pid<>OLD.gateway_pid OR NEW.gateway_uid<>OLD.gateway_uid OR NEW.gateway_start_ticks<>OLD.gateway_start_ticks OR NEW.gateway_pidns_device<>OLD.gateway_pidns_device OR NEW.gateway_pidns_inode<>OLD.gateway_pidns_inode OR NEW.gateway_cgroup_mount_id<>OLD.gateway_cgroup_mount_id OR NEW.gateway_cgroup_device<>OLD.gateway_cgroup_device OR NEW.gateway_cgroup_inode<>OLD.gateway_cgroup_inode OR NEW.allocated_at<>OLD.allocated_at OR (OLD.terminal_evidence_digest IS NOT NULL AND NEW.terminal_evidence_digest IS NOT OLD.terminal_evidence_digest) OR (NEW.terminal_evidence_digest IS NOT NULL AND NEW.run_terminal_state NOT IN ('abandoned','indeterminate')) OR NOT ((OLD.allocation_state='prepared' AND NEW.allocation_state IN ('executing','completed','abandoned','indeterminate')) OR (OLD.allocation_state='executing' AND NEW.allocation_state IN ('completed','abandoned','indeterminate')) OR OLD.allocation_state=NEW.allocation_state) OR NOT ((OLD.run_terminal_state='none' AND NEW.run_terminal_state IN ('none','active','abandoned','indeterminate')) OR (OLD.run_terminal_state='active' AND NEW.run_terminal_state IN ('active','abandoned','indeterminate')) OR OLD.run_terminal_state=NEW.run_terminal_state) OR (OLD.run_terminal_state IN ('abandoned','indeterminate') AND NEW.run_terminal_state<>OLD.run_terminal_state) BEGIN SELECT RAISE(ABORT,'allocation_transition'); END",
+      "sha256": "9e8191ff2b164c7833d19b3ccc4fbd80666d56e6fbee6e492682558f07ff0406"
+    },
+    {
+      "ordinal": 81,
+      "object_type": "trigger",
+      "object_name": "pilot_operation_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_operation_no_replace BEFORE INSERT ON run_root_operations WHEN EXISTS(SELECT 1 FROM run_root_operations WHERE operation_id=NEW.operation_id OR (tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref AND business_operation_id=NEW.business_operation_id) OR (NEW.operation_kind='run_root_create' AND operation_kind='run_root_create' AND run_epoch=NEW.run_epoch) OR (NEW.operation_kind IN ('pilot_run_close','pilot_no_root_abort') AND operation_kind IN ('pilot_run_close','pilot_no_root_abort') AND run_epoch=NEW.run_epoch)) BEGIN SELECT RAISE(ABORT,'operation_exists'); END",
+      "sha256": "ef66ff656661f3037e51923b5b3dbdc43b484481700f52d4b5b3ec1aa7150ca1"
+    },
+    {
+      "ordinal": 82,
+      "object_type": "trigger",
+      "object_name": "pilot_operation_insert_guard",
+      "normalized_sql": "CREATE TRIGGER pilot_operation_insert_guard BEFORE INSERT ON run_root_operations WHEN NEW.operation_state<>'prepared' OR NEW.owner_generation<>zeroblob(8) OR NEW.response_code IS NOT NULL OR NEW.canonical_response IS NOT NULL OR NEW.receipt_digest IS NOT NULL OR NEW.dispatch_commit_digest IS NOT NULL BEGIN SELECT RAISE(ABORT,'operation_initial_state'); END",
+      "sha256": "aab1ce44ac0f22a808e804de429bdadf969c7da534af8cae4f66d88eb74ebe99"
+    },
+    {
+      "ordinal": 83,
+      "object_type": "trigger",
+      "object_name": "pilot_operation_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_operation_no_delete BEFORE DELETE ON run_root_operations BEGIN SELECT RAISE(ABORT,'operation_tombstone'); END",
+      "sha256": "7d3c964d3999afb6ad74a3c28fd2684de8f6816a726a0168219642956f2a1abe"
+    },
+    {
+      "ordinal": 84,
+      "object_type": "trigger",
+      "object_name": "pilot_operation_update_guard",
+      "normalized_sql": "CREATE TRIGGER pilot_operation_update_guard BEFORE UPDATE ON run_root_operations WHEN NEW.operation_id<>OLD.operation_id OR NEW.tenant_id<>OLD.tenant_id OR NEW.principal_ref<>OLD.principal_ref OR NEW.business_operation_id<>OLD.business_operation_id OR NEW.operation_kind<>OLD.operation_kind OR NEW.request_id<>OLD.request_id OR NEW.run_epoch<>OLD.run_epoch OR NEW.allocated_run_epoch IS NOT OLD.allocated_run_epoch OR NEW.generation<>OLD.generation OR NEW.payload_digest<>OLD.payload_digest OR NEW.created_at<>OLD.created_at OR NEW.updated_at<OLD.updated_at OR (OLD.owner_generation<>zeroblob(8) AND NEW.owner_generation<>OLD.owner_generation) OR (OLD.owner_generation=zeroblob(8) AND NEW.owner_generation<>zeroblob(8) AND NOT (OLD.operation_state='prepared' AND NEW.operation_state='executing')) OR (OLD.response_code IS NOT NULL AND NEW.response_code IS NOT OLD.response_code) OR (OLD.canonical_response IS NOT NULL AND NEW.canonical_response IS NOT OLD.canonical_response) OR (OLD.receipt_digest IS NOT NULL AND NEW.receipt_digest IS NOT OLD.receipt_digest) OR (OLD.dispatch_commit_digest IS NOT NULL AND NEW.dispatch_commit_digest IS NOT OLD.dispatch_commit_digest) OR (OLD.operation_state IN ('completed','abandoned','indeterminate') AND (NEW.operation_state<>OLD.operation_state OR NEW.response_code IS NOT OLD.response_code OR NEW.canonical_response IS NOT OLD.canonical_response OR NEW.receipt_digest IS NOT OLD.receipt_digest OR NEW.dispatch_commit_digest IS NOT OLD.dispatch_commit_digest OR NEW.owner_generation<>OLD.owner_generation)) OR (NEW.operation_state='executing' AND NEW.owner_generation=zeroblob(8)) OR NOT ((OLD.operation_state='prepared' AND NEW.operation_state IN ('executing','abandoned','indeterminate')) OR (OLD.operation_state='executing' AND NEW.operation_state IN ('completed','abandoned','indeterminate')) OR OLD.operation_state=NEW.operation_state) BEGIN SELECT RAISE(ABORT,'operation_transition'); END",
+      "sha256": "386ba865ebeff052c5fa0fd68ca1704ae5b737065d635e8e27a1115abeab04cb"
+    },
+    {
+      "ordinal": 85,
+      "object_type": "trigger",
+      "object_name": "pilot_lease_update_guard",
+      "normalized_sql": "CREATE TRIGGER pilot_lease_update_guard BEFORE UPDATE ON pilot_run_lease WHEN NEW.singleton_id<>OLD.singleton_id OR NEW.updated_at<OLD.updated_at OR NOT ((OLD.run_epoch IS NULL AND OLD.generation IS NULL AND OLD.operation_id IS NULL AND ((NEW.run_epoch IS NULL AND NEW.generation IS NULL AND NEW.operation_id IS NULL) OR (NEW.run_epoch IS NOT NULL AND NEW.generation IS NOT NULL AND NEW.operation_id IS NOT NULL))) OR (OLD.run_epoch IS NOT NULL AND OLD.generation IS NOT NULL AND OLD.operation_id IS NOT NULL AND ((NEW.run_epoch IS NULL AND NEW.generation IS NULL AND NEW.operation_id IS NULL) OR (NEW.run_epoch=OLD.run_epoch AND NEW.generation=OLD.generation AND NEW.operation_id=OLD.operation_id)))) BEGIN SELECT RAISE(ABORT,'lease_owner_transition'); END",
+      "sha256": "e74e28d71df80bbf59fe8846b8fa9f8522cbf6a1d5206455bf31f3e02ee83b13"
+    },
+    {
+      "ordinal": 86,
+      "object_type": "trigger",
+      "object_name": "pilot_capacity_counts_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_capacity_counts_no_replace BEFORE INSERT ON pilot_business_capacity_counts WHEN EXISTS(SELECT 1 FROM pilot_business_capacity_counts WHERE scope_kind=NEW.scope_kind AND tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref) OR NEW.count<>0 BEGIN SELECT RAISE(ABORT,'capacity_count_insert'); END",
+      "sha256": "9f38a704fff67bbacc18fb775a28587d507a006c039dc7e46d4c72b6a8b998dc"
+    },
+    {
+      "ordinal": 87,
+      "object_type": "trigger",
+      "object_name": "pilot_capacity_counts_update_guard",
+      "normalized_sql": "CREATE TRIGGER pilot_capacity_counts_update_guard BEFORE UPDATE ON pilot_business_capacity_counts WHEN NEW.scope_kind<>OLD.scope_kind OR NEW.tenant_id<>OLD.tenant_id OR NEW.principal_ref<>OLD.principal_ref OR NEW.count<>OLD.count+1 BEGIN SELECT RAISE(ABORT,'capacity_count_increment'); END",
+      "sha256": "d3e16142ba2bd891bfa713747a95f0538babbdc348b931a5205cc06366149b0a"
+    },
+    {
+      "ordinal": 88,
+      "object_type": "trigger",
+      "object_name": "pilot_root_state_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_root_state_no_replace BEFORE INSERT ON pilot_root_run_state WHEN EXISTS(SELECT 1 FROM pilot_root_run_state WHERE run_epoch=NEW.run_epoch) BEGIN SELECT RAISE(ABORT,'root_state_exists'); END",
+      "sha256": "cf3e5a8d13cb90e27fce7fef14a339024c94ae0f799191aafde95b5ba251e4e1"
+    },
+    {
+      "ordinal": 89,
+      "object_type": "trigger",
+      "object_name": "pilot_root_state_insert_guard",
+      "normalized_sql": "CREATE TRIGGER pilot_root_state_insert_guard BEFORE INSERT ON pilot_root_run_state WHEN NEW.run_state<>'active' OR NEW.cleanup_state<>'not_required' OR NEW.containment_evidence_digest IS NOT NULL BEGIN SELECT RAISE(ABORT,'root_state_initial'); END",
+      "sha256": "6ae4c69e1a54664cb0cfa5e642e6c772dde8aaf49cf8328f33aa0e42a1e07753"
+    },
+    {
+      "ordinal": 90,
+      "object_type": "trigger",
+      "object_name": "pilot_root_state_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_root_state_no_delete BEFORE DELETE ON pilot_root_run_state BEGIN SELECT RAISE(ABORT,'root_state_tombstone'); END",
+      "sha256": "ea341a46e3bed464031b3b8f5b8253f543343555d78e6ffd27f27aa5d3e41e6e"
+    },
+    {
+      "ordinal": 91,
+      "object_type": "trigger",
+      "object_name": "pilot_root_state_update_guard",
+      "normalized_sql": "CREATE TRIGGER pilot_root_state_update_guard BEFORE UPDATE ON pilot_root_run_state WHEN NEW.run_epoch<>OLD.run_epoch OR NEW.root_mount_id<>OLD.root_mount_id OR NEW.root_device<>OLD.root_device OR NEW.root_inode<>OLD.root_inode OR NEW.updated_at<OLD.updated_at OR NOT ((OLD.run_state='active' AND NEW.run_state IN ('active','terminating')) OR (OLD.run_state='terminating' AND NEW.run_state IN ('terminating','containment_empty')) OR (OLD.run_state='containment_empty' AND NEW.run_state IN ('containment_empty','abandoned')) OR OLD.run_state=NEW.run_state) OR NOT ((OLD.cleanup_state='not_required' AND NEW.cleanup_state IN ('not_required','pending')) OR (OLD.cleanup_state='pending' AND NEW.cleanup_state IN ('pending','complete','retained','indeterminate')) OR OLD.cleanup_state=NEW.cleanup_state) OR (OLD.run_state='abandoned' AND NEW.run_state<>'abandoned') OR (OLD.cleanup_state IN ('complete','retained','indeterminate') AND NEW.cleanup_state<>OLD.cleanup_state) OR (OLD.containment_evidence_digest IS NOT NULL AND NEW.containment_evidence_digest IS NOT OLD.containment_evidence_digest) OR (NEW.containment_evidence_digest IS NOT NULL AND NEW.run_state NOT IN ('containment_empty','abandoned')) BEGIN SELECT RAISE(ABORT,'root_state_transition'); END",
+      "sha256": "4fa56e5e410252ce8c69c4926e5371032fc8f77e4e5bc7c98fe815bf78463f13"
+    },
+    {
+      "ordinal": 92,
+      "object_type": "trigger",
+      "object_name": "pilot_outbox_no_replace",
+      "normalized_sql": "CREATE TRIGGER pilot_outbox_no_replace BEFORE INSERT ON run_root_event_outbox WHEN EXISTS(SELECT 1 FROM run_root_event_outbox WHERE outbox_id=NEW.outbox_id OR (operation_id=NEW.operation_id AND event_name=NEW.event_name)) BEGIN SELECT RAISE(ABORT,'outbox_exists'); END",
+      "sha256": "365ed2edce6748384a5c1906155a79101e755237b3b1c94aeb3c74aa9121a39c"
+    },
+    {
+      "ordinal": 93,
+      "object_type": "trigger",
+      "object_name": "pilot_outbox_insert_guard",
+      "normalized_sql": "CREATE TRIGGER pilot_outbox_insert_guard BEFORE INSERT ON run_root_event_outbox WHEN NEW.delivery_state<>'ready' BEGIN SELECT RAISE(ABORT,'outbox_initial_state'); END",
+      "sha256": "9494a20c71a496d72909a7b04653a3b277acebe5460d5acfab3e2d6d64966ee4"
+    },
+    {
+      "ordinal": 94,
+      "object_type": "trigger",
+      "object_name": "pilot_outbox_no_delete",
+      "normalized_sql": "CREATE TRIGGER pilot_outbox_no_delete BEFORE DELETE ON run_root_event_outbox BEGIN SELECT RAISE(ABORT,'outbox_tombstone'); END",
+      "sha256": "a5d5dd269bda422baeb85c417d40d22bc53d3f36755c216ba2a722741005084c"
+    },
+    {
+      "ordinal": 95,
+      "object_type": "trigger",
+      "object_name": "pilot_outbox_update_guard",
+      "normalized_sql": "CREATE TRIGGER pilot_outbox_update_guard BEFORE UPDATE ON run_root_event_outbox WHEN NEW.outbox_id<>OLD.outbox_id OR NEW.operation_id<>OLD.operation_id OR NEW.event_name<>OLD.event_name OR NEW.process_id<>OLD.process_id OR NEW.canonical_event<>OLD.canonical_event OR NEW.event_digest<>OLD.event_digest OR NEW.created_at<>OLD.created_at OR NOT ((OLD.delivery_state='ready' AND NEW.delivery_state IN ('ready','send_authorized','suppressed')) OR (OLD.delivery_state='send_authorized' AND NEW.delivery_state IN ('send_authorized','acknowledged')) OR (OLD.delivery_state IN ('acknowledged','suppressed') AND NEW.delivery_state=OLD.delivery_state)) OR (OLD.delivery_state='acknowledged' AND (NEW.acknowledged_digest IS NOT OLD.acknowledged_digest OR NEW.acknowledged_correlation IS NOT OLD.acknowledged_correlation)) OR (OLD.delivery_state='suppressed' AND NEW.suppression_receipt_digest IS NOT OLD.suppression_receipt_digest) OR (NEW.delivery_state='acknowledged' AND (NEW.acknowledged_digest<>NEW.event_digest OR NEW.acknowledged_correlation IS NULL)) BEGIN SELECT RAISE(ABORT,'outbox_transition'); END",
+      "sha256": "dc18b647cea47a29b49d011070c836fa3837288de1af76df5b5e2e1c6c8d8ace"
+    }
+  ],
+  "bootstrap_seed_sql": {
+    "path": "review/pilot-control-ledger-v3-bootstrap-seed-draft-20261021.sql",
+    "sha256": "649278aa692942c45a7ead2a924dcf82567a73116a33cfb603af1807d332c158",
+    "policy_parameters": {
+      "production": [
+        1000000,
+        100000,
+        1000
+      ],
+      "fixture": [
+        7,
+        5,
+        3
+      ]
+    },
+    "atomic_with_ddl": true
+  },
+  "accepted_explicit_objects": [
+    {
+      "type": "index",
+      "name": "pilot_one_close_per_epoch",
+      "table_name": "run_root_operations",
+      "normalized_sql": "CREATE UNIQUE INDEX pilot_one_close_per_epoch ON run_root_operations(run_epoch) WHERE operation_kind IN ('pilot_run_close','pilot_no_root_abort')"
+    },
+    {
+      "type": "index",
+      "name": "pilot_one_root_create_per_epoch",
+      "table_name": "run_root_operations",
+      "normalized_sql": "CREATE UNIQUE INDEX pilot_one_root_create_per_epoch ON run_root_operations(run_epoch) WHERE operation_kind='run_root_create'"
+    },
+    {
+      "type": "table",
+      "name": "pilot_authorization_state",
+      "table_name": "pilot_authorization_state",
+      "normalized_sql": "CREATE TABLE pilot_authorization_state ( tenant_id BLOB NOT NULL CHECK(typeof(tenant_id)='blob' AND length(tenant_id) BETWEEN 1 AND 256), principal_ref BLOB NOT NULL CHECK(typeof(principal_ref)='blob' AND length(principal_ref)=32), authz_revision BLOB NOT NULL CHECK(typeof(authz_revision)='blob' AND length(authz_revision)=8 AND authz_revision<>zeroblob(8)), authz_snapshot_digest BLOB NOT NULL CHECK(typeof(authz_snapshot_digest)='blob' AND length(authz_snapshot_digest)=32), role TEXT NOT NULL CHECK(role IN ('student','teacher','admin')), account_state TEXT NOT NULL CHECK(account_state IN ('active','disabled')), updated_at INTEGER NOT NULL CHECK(updated_at>=0), PRIMARY KEY(tenant_id,principal_ref) ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "pilot_authz_update_receipts",
+      "table_name": "pilot_authz_update_receipts",
+      "normalized_sql": "CREATE TABLE pilot_authz_update_receipts ( request_id BLOB NOT NULL PRIMARY KEY CHECK(typeof(request_id)='blob' AND length(request_id)=16), tenant_id BLOB NOT NULL, principal_ref BLOB NOT NULL CHECK(typeof(principal_ref)='blob' AND length(principal_ref)=32), target_kind TEXT NOT NULL CHECK(target_kind IN ('account','session')), target_key BLOB NOT NULL CHECK(typeof(target_key)='blob' AND length(target_key)=32), revision BLOB NOT NULL CHECK(typeof(revision)='blob' AND length(revision)=8 AND revision<>zeroblob(8)), update_digest BLOB NOT NULL CHECK(typeof(update_digest)='blob' AND length(update_digest)=32), committed_at INTEGER NOT NULL CHECK(committed_at>=0), UNIQUE(tenant_id,principal_ref,target_kind,target_key,revision), CHECK(target_kind<>'account' OR target_key=zeroblob(32)), FOREIGN KEY(tenant_id,principal_ref) REFERENCES pilot_authorization_state(tenant_id,principal_ref) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "pilot_bootstrap_handoffs",
+      "table_name": "pilot_bootstrap_handoffs",
+      "normalized_sql": "CREATE TABLE pilot_bootstrap_handoffs ( generation BLOB NOT NULL PRIMARY KEY CHECK(typeof(generation)='blob' AND length(generation)=8), launch_nonce TEXT NOT NULL CHECK(length(CAST(launch_nonce AS BLOB))=32 AND length(launch_nonce)=32 AND launch_nonce NOT GLOB '*[^0-9a-f]*'), run_epoch BLOB NOT NULL UNIQUE CHECK(typeof(run_epoch)='blob' AND length(run_epoch)=16), control_mode TEXT NOT NULL DEFAULT 'normal' CHECK(control_mode='normal'), gateway_pid INTEGER NOT NULL CHECK(gateway_pid>0), gateway_uid INTEGER NOT NULL CHECK(gateway_uid>0), gateway_start_ticks BLOB NOT NULL CHECK(typeof(gateway_start_ticks)='blob' AND length(gateway_start_ticks)=8 AND gateway_start_ticks<>zeroblob(8)), gateway_pidns_device BLOB NOT NULL CHECK(typeof(gateway_pidns_device)='blob' AND length(gateway_pidns_device)=8 AND gateway_pidns_device<>zeroblob(8)), gateway_pidns_inode BLOB NOT NULL CHECK(typeof(gateway_pidns_inode)='blob' AND length(gateway_pidns_inode)=8 AND gateway_pidns_inode<>zeroblob(8)), gateway_cgroup_mount_id BLOB NOT NULL CHECK(typeof(gateway_cgroup_mount_id)='blob' AND length(gateway_cgroup_mount_id)=8 AND gateway_cgroup_mount_id<>zeroblob(8)), gateway_cgroup_device BLOB NOT NULL CHECK(typeof(gateway_cgroup_device)='blob' AND length(gateway_cgroup_device)=8 AND gateway_cgroup_device<>zeroblob(8)), gateway_cgroup_inode BLOB NOT NULL CHECK(typeof(gateway_cgroup_inode)='blob' AND length(gateway_cgroup_inode)=8 AND gateway_cgroup_inode<>zeroblob(8)), handed_off_at INTEGER NOT NULL CHECK(handed_off_at>=0), UNIQUE(generation,run_epoch), UNIQUE(generation,run_epoch,gateway_pid,gateway_uid,gateway_start_ticks,gateway_pidns_device,gateway_pidns_inode,gateway_cgroup_mount_id,gateway_cgroup_device,gateway_cgroup_inode), UNIQUE(generation,run_epoch,launch_nonce,gateway_pid,gateway_uid,gateway_start_ticks,gateway_pidns_device,gateway_pidns_inode,gateway_cgroup_mount_id,gateway_cgroup_device,gateway_cgroup_inode), FOREIGN KEY(generation,launch_nonce,run_epoch,control_mode) REFERENCES pilot_control_generations(generation,launch_nonce,normal_run_epoch,mode) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "pilot_business_capacity_counts",
+      "table_name": "pilot_business_capacity_counts",
+      "normalized_sql": "CREATE TABLE pilot_business_capacity_counts ( scope_kind TEXT NOT NULL CHECK(scope_kind IN ('global','tenant','principal')), tenant_id BLOB NOT NULL, principal_ref BLOB NOT NULL CHECK(typeof(principal_ref)='blob' AND length(principal_ref)=32), count INTEGER NOT NULL CHECK(count>=0), PRIMARY KEY(scope_kind,tenant_id,principal_ref), CHECK((scope_kind='global' AND tenant_id=X'' AND principal_ref=zeroblob(32)) OR (scope_kind='tenant' AND typeof(tenant_id)='blob' AND length(tenant_id) BETWEEN 1 AND 256 AND principal_ref=zeroblob(32)) OR (scope_kind='principal' AND typeof(tenant_id)='blob' AND length(tenant_id) BETWEEN 1 AND 256)) ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "pilot_capacity_alert_events",
+      "table_name": "pilot_capacity_alert_events",
+      "normalized_sql": "CREATE TABLE pilot_capacity_alert_events ( scope_kind TEXT NOT NULL CHECK(scope_kind IN ('global','tenant','principal')), scope_tenant_id BLOB NOT NULL, scope_principal_ref BLOB NOT NULL CHECK(typeof(scope_principal_ref)='blob' AND length(scope_principal_ref)=32), threshold_percent INTEGER NOT NULL CHECK(threshold_percent IN (80,90)), first_crossing_count INTEGER NOT NULL CHECK(first_crossing_count>0), crossing_run_epoch BLOB NOT NULL CHECK(typeof(crossing_run_epoch)='blob' AND length(crossing_run_epoch)=16), crossed_at INTEGER NOT NULL CHECK(crossed_at>=0), PRIMARY KEY(scope_kind,scope_tenant_id,scope_principal_ref,threshold_percent), CHECK((scope_kind='global' AND scope_tenant_id=X'' AND scope_principal_ref=zeroblob(32)) OR (scope_kind='tenant' AND typeof(scope_tenant_id)='blob' AND length(scope_tenant_id) BETWEEN 1 AND 256 AND scope_principal_ref=zeroblob(32)) OR (scope_kind='principal' AND typeof(scope_tenant_id)='blob' AND length(scope_tenant_id) BETWEEN 1 AND 256)) ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "pilot_capacity_policy",
+      "table_name": "pilot_capacity_policy",
+      "normalized_sql": "CREATE TABLE pilot_capacity_policy ( singleton_id INTEGER NOT NULL PRIMARY KEY CHECK(singleton_id=1), global_limit INTEGER NOT NULL CHECK(global_limit>0), tenant_limit INTEGER NOT NULL CHECK(tenant_limit>0), principal_limit INTEGER NOT NULL CHECK(principal_limit>0 AND principal_limit<=tenant_limit AND tenant_limit<=global_limit) ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "pilot_control_generations",
+      "table_name": "pilot_control_generations",
+      "normalized_sql": "CREATE TABLE pilot_control_generations ( generation BLOB NOT NULL PRIMARY KEY CHECK(typeof(generation)='blob' AND length(generation)=8 AND generation<>zeroblob(8)), launch_nonce TEXT NOT NULL UNIQUE CHECK(typeof(launch_nonce)='text' AND length(CAST(launch_nonce AS BLOB))=32 AND length(launch_nonce)=32 AND launch_nonce NOT GLOB '*[^0-9a-f]*'), mode TEXT NOT NULL CHECK(mode IN ('normal','recovery')), normal_run_epoch BLOB, target_run_epoch BLOB, target_generation BLOB, target_launch_nonce TEXT, consumed_at INTEGER NOT NULL CHECK(consumed_at>=0), UNIQUE(generation,launch_nonce,normal_run_epoch,mode), CHECK((mode='normal' AND typeof(normal_run_epoch)='blob' AND length(normal_run_epoch)=16 AND target_run_epoch IS NULL AND target_generation IS NULL AND target_launch_nonce IS NULL) OR (mode='recovery' AND normal_run_epoch IS NULL AND typeof(target_run_epoch)='blob' AND length(target_run_epoch)=16 AND typeof(target_generation)='blob' AND length(target_generation)=8 AND typeof(target_launch_nonce)='text' AND length(CAST(target_launch_nonce AS BLOB))=32 AND length(target_launch_nonce)=32 AND target_launch_nonce NOT GLOB '*[^0-9a-f]*')) ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "pilot_fixture_grants",
+      "table_name": "pilot_fixture_grants",
+      "normalized_sql": "CREATE TABLE pilot_fixture_grants ( tenant_id BLOB NOT NULL, principal_ref BLOB NOT NULL CHECK(typeof(principal_ref)='blob' AND length(principal_ref)=32), fixture_id TEXT NOT NULL CHECK(typeof(fixture_id)='text' AND length(CAST(fixture_id AS BLOB)) BETWEEN 1 AND 64 AND fixture_id GLOB '[a-z0-9]*' AND fixture_id NOT GLOB '*[^a-z0-9._-]*'), grant_revision BLOB NOT NULL CHECK(typeof(grant_revision)='blob' AND length(grant_revision)=8 AND grant_revision<>zeroblob(8)), allowed INTEGER NOT NULL CHECK(allowed IN (0,1)), updated_at INTEGER NOT NULL CHECK(updated_at>=0), PRIMARY KEY(tenant_id,principal_ref,fixture_id), FOREIGN KEY(tenant_id,principal_ref) REFERENCES pilot_authorization_state(tenant_id,principal_ref) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "pilot_launcher_journal_anchor",
+      "table_name": "pilot_launcher_journal_anchor",
+      "normalized_sql": "CREATE TABLE pilot_launcher_journal_anchor ( singleton_id INTEGER NOT NULL PRIMARY KEY CHECK(singleton_id=1), journal_id BLOB NOT NULL UNIQUE CHECK(typeof(journal_id)='blob' AND length(journal_id)=16 AND journal_id<>zeroblob(16)), restore_generation BLOB NOT NULL CHECK(typeof(restore_generation)='blob' AND length(restore_generation)=8 AND restore_generation<>zeroblob(8)), last_sequence INTEGER NOT NULL CHECK(last_sequence>=0), last_record_hash BLOB NOT NULL CHECK(typeof(last_record_hash)='blob' AND length(last_record_hash)=32), updated_at INTEGER NOT NULL CHECK(updated_at>=0), CHECK((last_sequence=0 AND last_record_hash=zeroblob(32)) OR (last_sequence>0 AND last_record_hash<>zeroblob(32))) ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "pilot_operation_evidence_receipts",
+      "table_name": "pilot_operation_evidence_receipts",
+      "normalized_sql": "CREATE TABLE pilot_operation_evidence_receipts ( receipt_digest BLOB NOT NULL PRIMARY KEY CHECK(typeof(receipt_digest)='blob' AND length(receipt_digest)=32), operation_id BLOB NOT NULL UNIQUE CHECK(typeof(operation_id)='blob' AND length(operation_id)=16), run_epoch BLOB NOT NULL CHECK(typeof(run_epoch)='blob' AND length(run_epoch)=16), principal_ref BLOB NOT NULL CHECK(typeof(principal_ref)='blob' AND length(principal_ref)=32), payload_digest BLOB NOT NULL CHECK(typeof(payload_digest)='blob' AND length(payload_digest)=32), canonical_receipt BLOB NOT NULL CHECK(typeof(canonical_receipt)='blob' AND length(canonical_receipt) BETWEEN 1 AND 65536), created_at INTEGER NOT NULL CHECK(created_at>=0), FOREIGN KEY(operation_id,run_epoch,principal_ref,payload_digest) REFERENCES run_root_operations(operation_id,run_epoch,principal_ref,payload_digest) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "pilot_prepared_cancel_receipts",
+      "table_name": "pilot_prepared_cancel_receipts",
+      "normalized_sql": "CREATE TABLE pilot_prepared_cancel_receipts ( receipt_digest BLOB NOT NULL PRIMARY KEY CHECK(typeof(receipt_digest)='blob' AND length(receipt_digest)=32), operation_id BLOB NOT NULL UNIQUE CHECK(typeof(operation_id)='blob' AND length(operation_id)=16), generation BLOB NOT NULL CHECK(typeof(generation)='blob' AND length(generation)=8), run_epoch BLOB NOT NULL CHECK(typeof(run_epoch)='blob' AND length(run_epoch)=16), close_operation_id BLOB NOT NULL CHECK(typeof(close_operation_id)='blob' AND length(close_operation_id)=16), intent_delivery_disposition TEXT NOT NULL CHECK(intent_delivery_disposition IN ('acknowledged','never_authorized')), intent_digest BLOB CHECK(intent_digest IS NULL OR (typeof(intent_digest)='blob' AND length(intent_digest)=32)), intent_correlation BLOB CHECK(intent_correlation IS NULL OR (typeof(intent_correlation)='blob' AND length(intent_correlation)=16)), absence_witness_digest BLOB NOT NULL CHECK(typeof(absence_witness_digest)='blob' AND length(absence_witness_digest)=32), canonical_receipt BLOB NOT NULL CHECK(typeof(canonical_receipt)='blob' AND length(canonical_receipt) BETWEEN 1 AND 8192), created_at INTEGER NOT NULL CHECK(created_at>=0), CHECK((intent_delivery_disposition='acknowledged' AND intent_digest IS NOT NULL AND intent_correlation IS NOT NULL) OR (intent_delivery_disposition='never_authorized' AND intent_digest IS NOT NULL AND intent_correlation IS NULL)), FOREIGN KEY(operation_id,run_epoch,generation) REFERENCES run_root_operations(operation_id,run_epoch,generation) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "pilot_principal_aliases",
+      "table_name": "pilot_principal_aliases",
+      "normalized_sql": "CREATE TABLE pilot_principal_aliases ( tenant_id BLOB NOT NULL CHECK(typeof(tenant_id)='blob' AND length(tenant_id) BETWEEN 1 AND 256), identity_key_version INTEGER NOT NULL CHECK(identity_key_version BETWEEN 1 AND 65535), identity_digest BLOB NOT NULL CHECK(typeof(identity_digest)='blob' AND length(identity_digest)=32), principal_ref BLOB NOT NULL CHECK(typeof(principal_ref)='blob' AND length(principal_ref)=32), canonical_key_version INTEGER NOT NULL CHECK(canonical_key_version BETWEEN 1 AND 65535), created_at INTEGER NOT NULL CHECK(created_at>=0), PRIMARY KEY(tenant_id,identity_key_version,identity_digest), UNIQUE(tenant_id,principal_ref,identity_key_version) ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "pilot_root_run_state",
+      "table_name": "pilot_root_run_state",
+      "normalized_sql": "CREATE TABLE pilot_root_run_state ( run_epoch BLOB NOT NULL PRIMARY KEY CHECK(typeof(run_epoch)='blob' AND length(run_epoch)=16), root_mount_id BLOB NOT NULL CHECK(typeof(root_mount_id)='blob' AND length(root_mount_id)=8 AND root_mount_id<>zeroblob(8)), root_device BLOB NOT NULL CHECK(typeof(root_device)='blob' AND length(root_device)=8 AND root_device<>zeroblob(8)), root_inode BLOB NOT NULL CHECK(typeof(root_inode)='blob' AND length(root_inode)=8 AND root_inode<>zeroblob(8)), run_state TEXT NOT NULL CHECK(run_state IN ('active','terminating','containment_empty','abandoned')), cleanup_state TEXT NOT NULL CHECK(cleanup_state IN ('not_required','pending','complete','retained','indeterminate')), containment_evidence_digest BLOB CHECK(containment_evidence_digest IS NULL OR (typeof(containment_evidence_digest)='blob' AND length(containment_evidence_digest)=32)), updated_at INTEGER NOT NULL CHECK(updated_at>=0), FOREIGN KEY(run_epoch) REFERENCES run_epoch_allocations(run_epoch) ON DELETE RESTRICT ON UPDATE RESTRICT, FOREIGN KEY(run_epoch,containment_evidence_digest) REFERENCES pilot_run_containment_evidence(run_epoch,evidence_digest) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "pilot_run_cleanup_dispositions",
+      "table_name": "pilot_run_cleanup_dispositions",
+      "normalized_sql": "CREATE TABLE pilot_run_cleanup_dispositions ( run_epoch BLOB NOT NULL PRIMARY KEY CHECK(typeof(run_epoch)='blob' AND length(run_epoch)=16), disposition TEXT NOT NULL CHECK(disposition IN ('complete','retained','indeterminate')), root_mount_id BLOB NOT NULL CHECK(typeof(root_mount_id)='blob' AND length(root_mount_id)=8 AND root_mount_id<>zeroblob(8)), root_device BLOB NOT NULL CHECK(typeof(root_device)='blob' AND length(root_device)=8 AND root_device<>zeroblob(8)), root_inode BLOB NOT NULL CHECK(typeof(root_inode)='blob' AND length(root_inode)=8 AND root_inode<>zeroblob(8)), disposition_digest BLOB NOT NULL CHECK(typeof(disposition_digest)='blob' AND length(disposition_digest)=32), canonical_evidence BLOB NOT NULL CHECK(typeof(canonical_evidence)='blob' AND length(canonical_evidence) BETWEEN 1 AND 8192), recorded_at INTEGER NOT NULL CHECK(recorded_at>=0), FOREIGN KEY(run_epoch) REFERENCES run_epoch_allocations(run_epoch) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "pilot_run_containment_evidence",
+      "table_name": "pilot_run_containment_evidence",
+      "normalized_sql": "CREATE TABLE pilot_run_containment_evidence ( run_epoch BLOB NOT NULL CHECK(typeof(run_epoch)='blob' AND length(run_epoch)=16), gateway_generation BLOB NOT NULL CHECK(typeof(gateway_generation)='blob' AND length(gateway_generation)=8), launch_nonce TEXT NOT NULL CHECK(length(CAST(launch_nonce AS BLOB))=32 AND length(launch_nonce)=32 AND launch_nonce NOT GLOB '*[^0-9a-f]*'), gateway_pid INTEGER NOT NULL CHECK(gateway_pid>0), gateway_uid INTEGER NOT NULL CHECK(gateway_uid>0), gateway_start_ticks BLOB NOT NULL CHECK(typeof(gateway_start_ticks)='blob' AND length(gateway_start_ticks)=8 AND gateway_start_ticks<>zeroblob(8)), gateway_pidns_device BLOB NOT NULL CHECK(typeof(gateway_pidns_device)='blob' AND length(gateway_pidns_device)=8 AND gateway_pidns_device<>zeroblob(8)), gateway_pidns_inode BLOB NOT NULL CHECK(typeof(gateway_pidns_inode)='blob' AND length(gateway_pidns_inode)=8 AND gateway_pidns_inode<>zeroblob(8)), gateway_cgroup_mount_id BLOB NOT NULL CHECK(typeof(gateway_cgroup_mount_id)='blob' AND length(gateway_cgroup_mount_id)=8 AND gateway_cgroup_mount_id<>zeroblob(8)), gateway_cgroup_device BLOB NOT NULL CHECK(typeof(gateway_cgroup_device)='blob' AND length(gateway_cgroup_device)=8 AND gateway_cgroup_device<>zeroblob(8)), gateway_cgroup_inode BLOB NOT NULL CHECK(typeof(gateway_cgroup_inode)='blob' AND length(gateway_cgroup_inode)=8 AND gateway_cgroup_inode<>zeroblob(8)), endpoint_parent_device BLOB NOT NULL CHECK(typeof(endpoint_parent_device)='blob' AND length(endpoint_parent_device)=8 AND endpoint_parent_device<>zeroblob(8)), endpoint_parent_inode BLOB NOT NULL CHECK(typeof(endpoint_parent_inode)='blob' AND length(endpoint_parent_inode)=8 AND endpoint_parent_inode<>zeroblob(8)), endpoint_device BLOB NOT NULL CHECK(typeof(endpoint_device)='blob' AND length(endpoint_device)=8 AND endpoint_device<>zeroblob(8)), endpoint_inode BLOB NOT NULL CHECK(typeof(endpoint_inode)='blob' AND length(endpoint_inode)=8 AND endpoint_inode<>zeroblob(8)), endpoint_removed INTEGER NOT NULL CHECK(endpoint_removed=1), leader_reaped INTEGER NOT NULL CHECK(leader_reaped=1), populated INTEGER NOT NULL CHECK(populated=0), evidence_version INTEGER NOT NULL CHECK(evidence_version=1), launcher_evidence_digest BLOB NOT NULL CHECK(typeof(launcher_evidence_digest)='blob' AND length(launcher_evidence_digest)=32), evidence_digest BLOB NOT NULL CHECK(typeof(evidence_digest)='blob' AND length(evidence_digest)=32), canonical_receipt BLOB NOT NULL CHECK(typeof(canonical_receipt)='blob' AND length(canonical_receipt) BETWEEN 1 AND 65536), recorded_at INTEGER NOT NULL CHECK(recorded_at>=0), PRIMARY KEY(run_epoch,gateway_generation), UNIQUE(run_epoch,evidence_digest), FOREIGN KEY(gateway_generation,run_epoch,launch_nonce,gateway_pid,gateway_uid,gateway_start_ticks,gateway_pidns_device,gateway_pidns_inode,gateway_cgroup_mount_id,gateway_cgroup_device,gateway_cgroup_inode) REFERENCES pilot_bootstrap_handoffs(generation,run_epoch,launch_nonce,gateway_pid,gateway_uid,gateway_start_ticks,gateway_pidns_device,gateway_pidns_inode,gateway_cgroup_mount_id,gateway_cgroup_device,gateway_cgroup_inode) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "pilot_run_lease",
+      "table_name": "pilot_run_lease",
+      "normalized_sql": "CREATE TABLE pilot_run_lease ( singleton_id INTEGER NOT NULL PRIMARY KEY CHECK(singleton_id=1), run_epoch BLOB, generation BLOB, operation_id BLOB, updated_at INTEGER NOT NULL CHECK(updated_at>=0), CHECK((run_epoch IS NULL AND generation IS NULL AND operation_id IS NULL) OR (typeof(run_epoch)='blob' AND length(run_epoch)=16 AND typeof(generation)='blob' AND length(generation)=8 AND typeof(operation_id)='blob' AND length(operation_id)=16)), FOREIGN KEY(run_epoch,generation) REFERENCES run_epoch_allocations(run_epoch,generation) ON DELETE RESTRICT ON UPDATE RESTRICT, FOREIGN KEY(operation_id,run_epoch,generation) REFERENCES run_root_operations(operation_id,run_epoch,generation) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "pilot_run_lifecycle",
+      "table_name": "pilot_run_lifecycle",
+      "normalized_sql": "CREATE TABLE pilot_run_lifecycle ( generation BLOB NOT NULL PRIMARY KEY CHECK(typeof(generation)='blob' AND length(generation)=8), run_epoch BLOB NOT NULL UNIQUE CHECK(typeof(run_epoch)='blob' AND length(run_epoch)=16), lifecycle_state TEXT NOT NULL CHECK(lifecycle_state IN ('bootstrapped','logger_registered','logger_ready','reaper_ready','registered','active','terminating','unregistered','containment_empty','terminal')), run_root_operation_id BLOB CHECK(run_root_operation_id IS NULL OR (typeof(run_root_operation_id)='blob' AND length(run_root_operation_id)=16)), close_operation_id BLOB CHECK(close_operation_id IS NULL OR (typeof(close_operation_id)='blob' AND length(close_operation_id)=16)), close_key_hash BLOB CHECK(close_key_hash IS NULL OR (typeof(close_key_hash)='blob' AND length(close_key_hash)=32)), close_payload_digest BLOB CHECK(close_payload_digest IS NULL OR (typeof(close_payload_digest)='blob' AND length(close_payload_digest)=32)), terminal_result TEXT CHECK(terminal_result IS NULL OR terminal_result IN ('abandoned','closed_without_root')), updated_at INTEGER NOT NULL CHECK(updated_at>=0), CHECK((close_operation_id IS NULL AND close_key_hash IS NULL AND close_payload_digest IS NULL) OR (close_operation_id IS NOT NULL AND close_key_hash IS NOT NULL AND close_payload_digest IS NOT NULL)), CHECK((lifecycle_state='terminal' AND terminal_result IS NOT NULL) OR (lifecycle_state<>'terminal' AND terminal_result IS NULL)), UNIQUE(generation,run_epoch), FOREIGN KEY(generation,run_epoch) REFERENCES pilot_bootstrap_handoffs(generation,run_epoch) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "pilot_session_fences",
+      "table_name": "pilot_session_fences",
+      "normalized_sql": "CREATE TABLE pilot_session_fences ( tenant_id BLOB NOT NULL, principal_ref BLOB NOT NULL CHECK(typeof(principal_ref)='blob' AND length(principal_ref)=32), session_key_hash BLOB NOT NULL CHECK(typeof(session_key_hash)='blob' AND length(session_key_hash)=32), session_revision BLOB NOT NULL CHECK(typeof(session_revision)='blob' AND length(session_revision)=8 AND session_revision<>zeroblob(8)), session_state TEXT NOT NULL CHECK(session_state IN ('active','revoked')), expires_at INTEGER NOT NULL CHECK(expires_at>=0), updated_at INTEGER NOT NULL CHECK(updated_at>=0), PRIMARY KEY(tenant_id,principal_ref,session_key_hash), FOREIGN KEY(tenant_id,principal_ref) REFERENCES pilot_authorization_state(tenant_id,principal_ref) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "run_epoch_allocations",
+      "table_name": "run_epoch_allocations",
+      "normalized_sql": "CREATE TABLE run_epoch_allocations ( run_epoch BLOB NOT NULL PRIMARY KEY CHECK(typeof(run_epoch)='blob' AND length(run_epoch)=16), allocation_sequence INTEGER NOT NULL UNIQUE CHECK(allocation_sequence>0), generation BLOB NOT NULL CHECK(typeof(generation)='blob' AND length(generation)=8), tenant_id BLOB NOT NULL CHECK(typeof(tenant_id)='blob' AND length(tenant_id) BETWEEN 1 AND 256), principal_ref BLOB NOT NULL CHECK(typeof(principal_ref)='blob' AND length(principal_ref)=32), session_key_hash BLOB NOT NULL CHECK(typeof(session_key_hash)='blob' AND length(session_key_hash)=32), gateway_pid INTEGER NOT NULL CHECK(gateway_pid>0), gateway_uid INTEGER NOT NULL CHECK(gateway_uid>0), gateway_pidns_device BLOB NOT NULL CHECK(typeof(gateway_pidns_device)='blob' AND length(gateway_pidns_device)=8 AND gateway_pidns_device<>zeroblob(8)), gateway_pidns_inode BLOB NOT NULL CHECK(typeof(gateway_pidns_inode)='blob' AND length(gateway_pidns_inode)=8 AND gateway_pidns_inode<>zeroblob(8)), gateway_cgroup_mount_id BLOB NOT NULL CHECK(typeof(gateway_cgroup_mount_id)='blob' AND length(gateway_cgroup_mount_id)=8 AND gateway_cgroup_mount_id<>zeroblob(8)), gateway_cgroup_device BLOB NOT NULL CHECK(typeof(gateway_cgroup_device)='blob' AND length(gateway_cgroup_device)=8 AND gateway_cgroup_device<>zeroblob(8)), gateway_cgroup_inode BLOB NOT NULL CHECK(typeof(gateway_cgroup_inode)='blob' AND length(gateway_cgroup_inode)=8 AND gateway_cgroup_inode<>zeroblob(8)), gateway_start_ticks BLOB NOT NULL CHECK(typeof(gateway_start_ticks)='blob' AND length(gateway_start_ticks)=8 AND gateway_start_ticks<>zeroblob(8)), schema_digest BLOB NOT NULL CHECK(typeof(schema_digest)='blob' AND length(schema_digest)=32), payload_digest BLOB NOT NULL CHECK(typeof(payload_digest)='blob' AND length(payload_digest)=32), request_id BLOB NOT NULL CHECK(typeof(request_id)='blob' AND length(request_id)=16), business_operation_id BLOB NOT NULL CHECK(typeof(business_operation_id)='blob' AND length(business_operation_id)=16), operation_id BLOB NOT NULL UNIQUE CHECK(typeof(operation_id)='blob' AND length(operation_id)=16), allocation_state TEXT NOT NULL CHECK(allocation_state IN ('prepared','executing','completed','abandoned','indeterminate')), run_terminal_state TEXT NOT NULL CHECK(run_terminal_state IN ('none','active','abandoned','indeterminate')), terminal_evidence_digest BLOB CHECK(terminal_evidence_digest IS NULL OR (typeof(terminal_evidence_digest)='blob' AND length(terminal_evidence_digest)=32)), allocated_at INTEGER NOT NULL CHECK(allocated_at>=0), UNIQUE(run_epoch,generation), UNIQUE(tenant_id,principal_ref,business_operation_id), UNIQUE(run_epoch,operation_id,tenant_id,principal_ref,business_operation_id,request_id,payload_digest,generation), FOREIGN KEY(generation,run_epoch) REFERENCES pilot_run_lifecycle(generation,run_epoch) ON DELETE RESTRICT ON UPDATE RESTRICT, FOREIGN KEY(generation,run_epoch,gateway_pid,gateway_uid,gateway_start_ticks,gateway_pidns_device,gateway_pidns_inode,gateway_cgroup_mount_id,gateway_cgroup_device,gateway_cgroup_inode) REFERENCES pilot_bootstrap_handoffs(generation,run_epoch,gateway_pid,gateway_uid,gateway_start_ticks,gateway_pidns_device,gateway_pidns_inode,gateway_cgroup_mount_id,gateway_cgroup_device,gateway_cgroup_inode) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "run_root_event_outbox",
+      "table_name": "run_root_event_outbox",
+      "normalized_sql": "CREATE TABLE run_root_event_outbox ( outbox_id BLOB NOT NULL PRIMARY KEY CHECK(typeof(outbox_id)='blob' AND length(outbox_id)=16), operation_id BLOB NOT NULL CHECK(typeof(operation_id)='blob' AND length(operation_id)=16), event_name TEXT NOT NULL CHECK(event_name IN ('run_root_dispatch_intent','bootstrap.finish')), process_id INTEGER NOT NULL CHECK(process_id>0), canonical_event BLOB NOT NULL CHECK(typeof(canonical_event)='blob' AND length(canonical_event) BETWEEN 1 AND 65536), event_digest BLOB NOT NULL CHECK(typeof(event_digest)='blob' AND length(event_digest)=32), delivery_state TEXT NOT NULL CHECK(delivery_state IN ('ready','send_authorized','acknowledged','suppressed')), acknowledged_digest BLOB CHECK(acknowledged_digest IS NULL OR (typeof(acknowledged_digest)='blob' AND length(acknowledged_digest)=32)), acknowledged_correlation BLOB CHECK(acknowledged_correlation IS NULL OR (typeof(acknowledged_correlation)='blob' AND length(acknowledged_correlation)=16)), suppression_receipt_digest BLOB CHECK(suppression_receipt_digest IS NULL OR (typeof(suppression_receipt_digest)='blob' AND length(suppression_receipt_digest)=32)), created_at INTEGER NOT NULL CHECK(created_at>=0), UNIQUE(operation_id,event_name), CHECK((delivery_state='acknowledged' AND acknowledged_digest IS NOT NULL AND acknowledged_correlation IS NOT NULL AND suppression_receipt_digest IS NULL) OR (delivery_state='suppressed' AND event_name='run_root_dispatch_intent' AND acknowledged_digest IS NULL AND acknowledged_correlation IS NULL AND suppression_receipt_digest IS NOT NULL) OR (delivery_state IN ('ready','send_authorized') AND acknowledged_digest IS NULL AND acknowledged_correlation IS NULL AND suppression_receipt_digest IS NULL)), FOREIGN KEY(operation_id) REFERENCES run_root_operations(operation_id) ON DELETE RESTRICT ON UPDATE RESTRICT, FOREIGN KEY(suppression_receipt_digest) REFERENCES pilot_prepared_cancel_receipts(receipt_digest) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "table",
+      "name": "run_root_ledger_meta",
+      "table_name": "run_root_ledger_meta",
+      "normalized_sql": "CREATE TABLE run_root_ledger_meta ( singleton INTEGER NOT NULL PRIMARY KEY CHECK(singleton=1), schema_version INTEGER NOT NULL CHECK(schema_version=3) ) STRICT"
+    },
+    {
+      "type": "table",
+      "name": "run_root_operations",
+      "table_name": "run_root_operations",
+      "normalized_sql": "CREATE TABLE run_root_operations ( operation_id BLOB NOT NULL PRIMARY KEY CHECK(typeof(operation_id)='blob' AND length(operation_id)=16), tenant_id BLOB NOT NULL CHECK(typeof(tenant_id)='blob' AND length(tenant_id) BETWEEN 1 AND 256), principal_ref BLOB NOT NULL CHECK(typeof(principal_ref)='blob' AND length(principal_ref)=32), business_operation_id BLOB NOT NULL CHECK(typeof(business_operation_id)='blob' AND length(business_operation_id)=16), operation_kind TEXT NOT NULL CHECK(operation_kind IN ('run_root_create','pilot_run_close','pilot_no_root_abort')), request_id BLOB NOT NULL CHECK(typeof(request_id)='blob' AND length(request_id)=16), run_epoch BLOB NOT NULL CHECK(typeof(run_epoch)='blob' AND length(run_epoch)=16), allocated_run_epoch BLOB CHECK(allocated_run_epoch IS NULL OR (typeof(allocated_run_epoch)='blob' AND length(allocated_run_epoch)=16)), generation BLOB NOT NULL CHECK(typeof(generation)='blob' AND length(generation)=8), payload_digest BLOB NOT NULL CHECK(typeof(payload_digest)='blob' AND length(payload_digest)=32), operation_state TEXT NOT NULL CHECK(operation_state IN ('prepared','executing','completed','abandoned','indeterminate')), owner_generation BLOB NOT NULL CHECK(typeof(owner_generation)='blob' AND length(owner_generation)=8), response_code TEXT CHECK(response_code IS NULL OR response_code IN ('created','exists','abandoned','indeterminate','closed_without_root')), canonical_response BLOB CHECK(canonical_response IS NULL OR (typeof(canonical_response)='blob' AND length(canonical_response) BETWEEN 1 AND 65536)), receipt_digest BLOB CHECK(receipt_digest IS NULL OR (typeof(receipt_digest)='blob' AND length(receipt_digest)=32)), dispatch_commit_digest BLOB CHECK(dispatch_commit_digest IS NULL OR (typeof(dispatch_commit_digest)='blob' AND length(dispatch_commit_digest)=32)), created_at INTEGER NOT NULL CHECK(created_at>=0), updated_at INTEGER NOT NULL CHECK(updated_at>=created_at), UNIQUE(tenant_id,principal_ref,business_operation_id), UNIQUE(operation_id,run_epoch,generation), UNIQUE(operation_id,run_epoch,principal_ref,payload_digest), CHECK((operation_kind='run_root_create' AND allocated_run_epoch IS NOT NULL AND allocated_run_epoch=run_epoch) OR (operation_kind<>'run_root_create' AND allocated_run_epoch IS NULL)), FOREIGN KEY(generation,run_epoch) REFERENCES pilot_run_lifecycle(generation,run_epoch) ON DELETE RESTRICT ON UPDATE RESTRICT, FOREIGN KEY(allocated_run_epoch,operation_id,tenant_id,principal_ref,business_operation_id,request_id,payload_digest,generation) REFERENCES run_epoch_allocations(run_epoch,operation_id,tenant_id,principal_ref,business_operation_id,request_id,payload_digest,generation) ON DELETE RESTRICT ON UPDATE RESTRICT ) STRICT, WITHOUT ROWID"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_allocation_capacity_after_insert",
+      "table_name": "run_epoch_allocations",
+      "normalized_sql": "CREATE TRIGGER pilot_allocation_capacity_after_insert AFTER INSERT ON run_epoch_allocations BEGIN SELECT CASE WHEN NOT EXISTS(SELECT 1 FROM pilot_capacity_policy WHERE singleton_id=1) THEN RAISE(ABORT,'capacity_policy_missing') END; INSERT INTO pilot_business_capacity_counts(scope_kind,tenant_id,principal_ref,count) SELECT 'tenant',NEW.tenant_id,zeroblob(32),0 WHERE NOT EXISTS(SELECT 1 FROM pilot_business_capacity_counts WHERE scope_kind='tenant' AND tenant_id=NEW.tenant_id AND principal_ref=zeroblob(32)); INSERT INTO pilot_business_capacity_counts(scope_kind,tenant_id,principal_ref,count) SELECT 'principal',NEW.tenant_id,NEW.principal_ref,0 WHERE NOT EXISTS(SELECT 1 FROM pilot_business_capacity_counts WHERE scope_kind='principal' AND tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref); SELECT CASE WHEN NOT EXISTS(SELECT 1 FROM pilot_business_capacity_counts WHERE scope_kind='global' AND tenant_id=X'' AND principal_ref=zeroblob(32)) OR NOT EXISTS(SELECT 1 FROM pilot_business_capacity_counts WHERE scope_kind='tenant' AND tenant_id=NEW.tenant_id AND principal_ref=zeroblob(32)) OR NOT EXISTS(SELECT 1 FROM pilot_business_capacity_counts WHERE scope_kind='principal' AND tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref) THEN RAISE(ABORT,'capacity_scope_missing') END; SELECT CASE WHEN NEW.allocation_sequence<>(SELECT count+1 FROM pilot_business_capacity_counts WHERE scope_kind='global' AND tenant_id=X'' AND principal_ref=zeroblob(32)) THEN RAISE(ABORT,'allocation_sequence') END; SELECT CASE WHEN (SELECT count FROM pilot_business_capacity_counts WHERE scope_kind='global' AND tenant_id=X'' AND principal_ref=zeroblob(32)) >= (SELECT global_limit FROM pilot_capacity_policy WHERE singleton_id=1) OR (SELECT count FROM pilot_business_capacity_counts WHERE scope_kind='tenant' AND tenant_id=NEW.tenant_id AND principal_ref=zeroblob(32)) >= (SELECT tenant_limit FROM pilot_capacity_policy WHERE singleton_id=1) OR (SELECT count FROM pilot_business_capacity_counts WHERE scope_kind='principal' AND tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref) >= (SELECT principal_limit FROM pilot_capacity_policy WHERE singleton_id=1) THEN RAISE(ABORT,'capacity_exceeded') END; UPDATE pilot_business_capacity_counts SET count=count+1 WHERE (scope_kind='global' AND tenant_id=X'' AND principal_ref=zeroblob(32)) OR (scope_kind='tenant' AND tenant_id=NEW.tenant_id AND principal_ref=zeroblob(32)) OR (scope_kind='principal' AND tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref); INSERT INTO pilot_capacity_alert_events(scope_kind,scope_tenant_id,scope_principal_ref,threshold_percent,first_crossing_count,crossing_run_epoch,crossed_at) SELECT c.scope_kind,c.tenant_id,c.principal_ref,80,c.count,NEW.run_epoch,NEW.allocated_at FROM pilot_business_capacity_counts c JOIN pilot_capacity_policy p ON p.singleton_id=1 WHERE c.count=(CASE c.scope_kind WHEN 'global' THEN p.global_limit WHEN 'tenant' THEN p.tenant_limit ELSE p.principal_limit END*80+99)/100 AND ((c.scope_kind='global' AND c.tenant_id=X'' AND c.principal_ref=zeroblob(32)) OR (c.scope_kind='tenant' AND c.tenant_id=NEW.tenant_id AND c.principal_ref=zeroblob(32)) OR (c.scope_kind='principal' AND c.tenant_id=NEW.tenant_id AND c.principal_ref=NEW.principal_ref)); INSERT INTO pilot_capacity_alert_events(scope_kind,scope_tenant_id,scope_principal_ref,threshold_percent,first_crossing_count,crossing_run_epoch,crossed_at) SELECT c.scope_kind,c.tenant_id,c.principal_ref,90,c.count,NEW.run_epoch,NEW.allocated_at FROM pilot_business_capacity_counts c JOIN pilot_capacity_policy p ON p.singleton_id=1 WHERE c.count=(CASE c.scope_kind WHEN 'global' THEN p.global_limit WHEN 'tenant' THEN p.tenant_limit ELSE p.principal_limit END*90+99)/100 AND ((c.scope_kind='global' AND c.tenant_id=X'' AND c.principal_ref=zeroblob(32)) OR (c.scope_kind='tenant' AND c.tenant_id=NEW.tenant_id AND c.principal_ref=zeroblob(32)) OR (c.scope_kind='principal' AND c.tenant_id=NEW.tenant_id AND c.principal_ref=NEW.principal_ref)); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_allocation_insert_guard",
+      "table_name": "run_epoch_allocations",
+      "normalized_sql": "CREATE TRIGGER pilot_allocation_insert_guard BEFORE INSERT ON run_epoch_allocations WHEN NEW.allocation_state<>'prepared' OR NEW.run_terminal_state<>'none' OR NEW.terminal_evidence_digest IS NOT NULL BEGIN SELECT RAISE(ABORT,'allocation_initial_state'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_allocation_no_delete",
+      "table_name": "run_epoch_allocations",
+      "normalized_sql": "CREATE TRIGGER pilot_allocation_no_delete BEFORE DELETE ON run_epoch_allocations BEGIN SELECT RAISE(ABORT,'allocation_tombstone'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_allocation_no_replace",
+      "table_name": "run_epoch_allocations",
+      "normalized_sql": "CREATE TRIGGER pilot_allocation_no_replace BEFORE INSERT ON run_epoch_allocations WHEN EXISTS(SELECT 1 FROM run_epoch_allocations WHERE run_epoch=NEW.run_epoch OR operation_id=NEW.operation_id OR (tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref AND business_operation_id=NEW.business_operation_id)) BEGIN SELECT RAISE(ABORT,'allocation_exists'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_allocation_update_guard",
+      "table_name": "run_epoch_allocations",
+      "normalized_sql": "CREATE TRIGGER pilot_allocation_update_guard BEFORE UPDATE ON run_epoch_allocations WHEN NEW.run_epoch<>OLD.run_epoch OR NEW.allocation_sequence<>OLD.allocation_sequence OR NEW.generation<>OLD.generation OR NEW.tenant_id<>OLD.tenant_id OR NEW.principal_ref<>OLD.principal_ref OR NEW.session_key_hash<>OLD.session_key_hash OR NEW.request_id<>OLD.request_id OR NEW.business_operation_id<>OLD.business_operation_id OR NEW.operation_id<>OLD.operation_id OR NEW.payload_digest<>OLD.payload_digest OR NEW.schema_digest<>OLD.schema_digest OR NEW.gateway_pid<>OLD.gateway_pid OR NEW.gateway_uid<>OLD.gateway_uid OR NEW.gateway_start_ticks<>OLD.gateway_start_ticks OR NEW.gateway_pidns_device<>OLD.gateway_pidns_device OR NEW.gateway_pidns_inode<>OLD.gateway_pidns_inode OR NEW.gateway_cgroup_mount_id<>OLD.gateway_cgroup_mount_id OR NEW.gateway_cgroup_device<>OLD.gateway_cgroup_device OR NEW.gateway_cgroup_inode<>OLD.gateway_cgroup_inode OR NEW.allocated_at<>OLD.allocated_at OR (OLD.terminal_evidence_digest IS NOT NULL AND NEW.terminal_evidence_digest IS NOT OLD.terminal_evidence_digest) OR (NEW.terminal_evidence_digest IS NOT NULL AND NEW.run_terminal_state NOT IN ('abandoned','indeterminate')) OR NOT ((OLD.allocation_state='prepared' AND NEW.allocation_state IN ('executing','completed','abandoned','indeterminate')) OR (OLD.allocation_state='executing' AND NEW.allocation_state IN ('completed','abandoned','indeterminate')) OR OLD.allocation_state=NEW.allocation_state) OR NOT ((OLD.run_terminal_state='none' AND NEW.run_terminal_state IN ('none','active','abandoned','indeterminate')) OR (OLD.run_terminal_state='active' AND NEW.run_terminal_state IN ('active','abandoned','indeterminate')) OR OLD.run_terminal_state=NEW.run_terminal_state) OR (OLD.run_terminal_state IN ('abandoned','indeterminate') AND NEW.run_terminal_state<>OLD.run_terminal_state) BEGIN SELECT RAISE(ABORT,'allocation_transition'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_authz_receipts_no_delete",
+      "table_name": "pilot_authz_update_receipts",
+      "normalized_sql": "CREATE TRIGGER pilot_authz_receipts_no_delete BEFORE DELETE ON pilot_authz_update_receipts BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_authz_receipts_no_replace",
+      "table_name": "pilot_authz_update_receipts",
+      "normalized_sql": "CREATE TRIGGER pilot_authz_receipts_no_replace BEFORE INSERT ON pilot_authz_update_receipts WHEN EXISTS(SELECT 1 FROM pilot_authz_update_receipts WHERE request_id=NEW.request_id OR (tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref AND target_kind=NEW.target_kind AND target_key=NEW.target_key AND revision=NEW.revision)) BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_authz_receipts_no_update",
+      "table_name": "pilot_authz_update_receipts",
+      "normalized_sql": "CREATE TRIGGER pilot_authz_receipts_no_update BEFORE UPDATE ON pilot_authz_update_receipts BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_authz_state_no_delete",
+      "table_name": "pilot_authorization_state",
+      "normalized_sql": "CREATE TRIGGER pilot_authz_state_no_delete BEFORE DELETE ON pilot_authorization_state BEGIN SELECT RAISE(ABORT,'authz_tombstone'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_authz_state_no_replace",
+      "table_name": "pilot_authorization_state",
+      "normalized_sql": "CREATE TRIGGER pilot_authz_state_no_replace BEFORE INSERT ON pilot_authorization_state WHEN EXISTS(SELECT 1 FROM pilot_authorization_state WHERE tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref) BEGIN SELECT RAISE(ABORT,'authz_exists'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_authz_state_update_guard",
+      "table_name": "pilot_authorization_state",
+      "normalized_sql": "CREATE TRIGGER pilot_authz_state_update_guard BEFORE UPDATE ON pilot_authorization_state WHEN NEW.tenant_id<>OLD.tenant_id OR NEW.principal_ref<>OLD.principal_ref OR NEW.authz_revision<=OLD.authz_revision OR NEW.updated_at<OLD.updated_at BEGIN SELECT RAISE(ABORT,'authz_revision'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_cancel_receipts_no_delete",
+      "table_name": "pilot_prepared_cancel_receipts",
+      "normalized_sql": "CREATE TRIGGER pilot_cancel_receipts_no_delete BEFORE DELETE ON pilot_prepared_cancel_receipts BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_cancel_receipts_no_replace",
+      "table_name": "pilot_prepared_cancel_receipts",
+      "normalized_sql": "CREATE TRIGGER pilot_cancel_receipts_no_replace BEFORE INSERT ON pilot_prepared_cancel_receipts WHEN EXISTS(SELECT 1 FROM pilot_prepared_cancel_receipts WHERE receipt_digest=NEW.receipt_digest OR operation_id=NEW.operation_id) BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_cancel_receipts_no_update",
+      "table_name": "pilot_prepared_cancel_receipts",
+      "normalized_sql": "CREATE TRIGGER pilot_cancel_receipts_no_update BEFORE UPDATE ON pilot_prepared_cancel_receipts BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_capacity_alerts_no_delete",
+      "table_name": "pilot_capacity_alert_events",
+      "normalized_sql": "CREATE TRIGGER pilot_capacity_alerts_no_delete BEFORE DELETE ON pilot_capacity_alert_events BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_capacity_alerts_no_replace",
+      "table_name": "pilot_capacity_alert_events",
+      "normalized_sql": "CREATE TRIGGER pilot_capacity_alerts_no_replace BEFORE INSERT ON pilot_capacity_alert_events WHEN EXISTS(SELECT 1 FROM pilot_capacity_alert_events WHERE scope_kind=NEW.scope_kind AND scope_tenant_id=NEW.scope_tenant_id AND scope_principal_ref=NEW.scope_principal_ref AND threshold_percent=NEW.threshold_percent) BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_capacity_alerts_no_update",
+      "table_name": "pilot_capacity_alert_events",
+      "normalized_sql": "CREATE TRIGGER pilot_capacity_alerts_no_update BEFORE UPDATE ON pilot_capacity_alert_events BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_capacity_counts_no_delete",
+      "table_name": "pilot_business_capacity_counts",
+      "normalized_sql": "CREATE TRIGGER pilot_capacity_counts_no_delete BEFORE DELETE ON pilot_business_capacity_counts BEGIN SELECT RAISE(ABORT,'capacity_count_immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_capacity_counts_no_replace",
+      "table_name": "pilot_business_capacity_counts",
+      "normalized_sql": "CREATE TRIGGER pilot_capacity_counts_no_replace BEFORE INSERT ON pilot_business_capacity_counts WHEN EXISTS(SELECT 1 FROM pilot_business_capacity_counts WHERE scope_kind=NEW.scope_kind AND tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref) OR NEW.count<>0 BEGIN SELECT RAISE(ABORT,'capacity_count_insert'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_capacity_counts_update_guard",
+      "table_name": "pilot_business_capacity_counts",
+      "normalized_sql": "CREATE TRIGGER pilot_capacity_counts_update_guard BEFORE UPDATE ON pilot_business_capacity_counts WHEN NEW.scope_kind<>OLD.scope_kind OR NEW.tenant_id<>OLD.tenant_id OR NEW.principal_ref<>OLD.principal_ref OR NEW.count<>OLD.count+1 BEGIN SELECT RAISE(ABORT,'capacity_count_increment'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_capacity_policy_no_delete",
+      "table_name": "pilot_capacity_policy",
+      "normalized_sql": "CREATE TRIGGER pilot_capacity_policy_no_delete BEFORE DELETE ON pilot_capacity_policy BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_capacity_policy_no_replace",
+      "table_name": "pilot_capacity_policy",
+      "normalized_sql": "CREATE TRIGGER pilot_capacity_policy_no_replace BEFORE INSERT ON pilot_capacity_policy WHEN EXISTS(SELECT 1 FROM pilot_capacity_policy WHERE singleton_id=NEW.singleton_id) BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_capacity_policy_no_update",
+      "table_name": "pilot_capacity_policy",
+      "normalized_sql": "CREATE TRIGGER pilot_capacity_policy_no_update BEFORE UPDATE ON pilot_capacity_policy BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_cleanup_dispositions_no_delete",
+      "table_name": "pilot_run_cleanup_dispositions",
+      "normalized_sql": "CREATE TRIGGER pilot_cleanup_dispositions_no_delete BEFORE DELETE ON pilot_run_cleanup_dispositions BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_cleanup_dispositions_no_replace",
+      "table_name": "pilot_run_cleanup_dispositions",
+      "normalized_sql": "CREATE TRIGGER pilot_cleanup_dispositions_no_replace BEFORE INSERT ON pilot_run_cleanup_dispositions WHEN EXISTS(SELECT 1 FROM pilot_run_cleanup_dispositions WHERE run_epoch=NEW.run_epoch) BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_cleanup_dispositions_no_update",
+      "table_name": "pilot_run_cleanup_dispositions",
+      "normalized_sql": "CREATE TRIGGER pilot_cleanup_dispositions_no_update BEFORE UPDATE ON pilot_run_cleanup_dispositions BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_containment_evidence_no_delete",
+      "table_name": "pilot_run_containment_evidence",
+      "normalized_sql": "CREATE TRIGGER pilot_containment_evidence_no_delete BEFORE DELETE ON pilot_run_containment_evidence BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_containment_evidence_no_replace",
+      "table_name": "pilot_run_containment_evidence",
+      "normalized_sql": "CREATE TRIGGER pilot_containment_evidence_no_replace BEFORE INSERT ON pilot_run_containment_evidence WHEN EXISTS(SELECT 1 FROM pilot_run_containment_evidence WHERE run_epoch=NEW.run_epoch AND gateway_generation=NEW.gateway_generation) BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_containment_evidence_no_update",
+      "table_name": "pilot_run_containment_evidence",
+      "normalized_sql": "CREATE TRIGGER pilot_containment_evidence_no_update BEFORE UPDATE ON pilot_run_containment_evidence BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_control_generations_no_delete",
+      "table_name": "pilot_control_generations",
+      "normalized_sql": "CREATE TRIGGER pilot_control_generations_no_delete BEFORE DELETE ON pilot_control_generations BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_control_generations_no_replace",
+      "table_name": "pilot_control_generations",
+      "normalized_sql": "CREATE TRIGGER pilot_control_generations_no_replace BEFORE INSERT ON pilot_control_generations WHEN EXISTS(SELECT 1 FROM pilot_control_generations WHERE generation=NEW.generation OR launch_nonce=NEW.launch_nonce) BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_control_generations_no_update",
+      "table_name": "pilot_control_generations",
+      "normalized_sql": "CREATE TRIGGER pilot_control_generations_no_update BEFORE UPDATE ON pilot_control_generations BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_fixture_grant_no_delete",
+      "table_name": "pilot_fixture_grants",
+      "normalized_sql": "CREATE TRIGGER pilot_fixture_grant_no_delete BEFORE DELETE ON pilot_fixture_grants BEGIN SELECT RAISE(ABORT,'grant_tombstone'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_fixture_grant_no_replace",
+      "table_name": "pilot_fixture_grants",
+      "normalized_sql": "CREATE TRIGGER pilot_fixture_grant_no_replace BEFORE INSERT ON pilot_fixture_grants WHEN EXISTS(SELECT 1 FROM pilot_fixture_grants WHERE tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref AND fixture_id=NEW.fixture_id) BEGIN SELECT RAISE(ABORT,'grant_exists'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_fixture_grant_update_guard",
+      "table_name": "pilot_fixture_grants",
+      "normalized_sql": "CREATE TRIGGER pilot_fixture_grant_update_guard BEFORE UPDATE ON pilot_fixture_grants WHEN NEW.tenant_id<>OLD.tenant_id OR NEW.principal_ref<>OLD.principal_ref OR NEW.fixture_id<>OLD.fixture_id OR NEW.grant_revision<=OLD.grant_revision OR NEW.updated_at<OLD.updated_at BEGIN SELECT RAISE(ABORT,'grant_revision'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_handoffs_no_delete",
+      "table_name": "pilot_bootstrap_handoffs",
+      "normalized_sql": "CREATE TRIGGER pilot_handoffs_no_delete BEFORE DELETE ON pilot_bootstrap_handoffs BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_handoffs_no_replace",
+      "table_name": "pilot_bootstrap_handoffs",
+      "normalized_sql": "CREATE TRIGGER pilot_handoffs_no_replace BEFORE INSERT ON pilot_bootstrap_handoffs WHEN EXISTS(SELECT 1 FROM pilot_bootstrap_handoffs WHERE generation=NEW.generation OR run_epoch=NEW.run_epoch OR launch_nonce=NEW.launch_nonce) BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_handoffs_no_update",
+      "table_name": "pilot_bootstrap_handoffs",
+      "normalized_sql": "CREATE TRIGGER pilot_handoffs_no_update BEFORE UPDATE ON pilot_bootstrap_handoffs BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_launcher_journal_anchor_monotonic",
+      "table_name": "pilot_launcher_journal_anchor",
+      "normalized_sql": "CREATE TRIGGER pilot_launcher_journal_anchor_monotonic BEFORE UPDATE ON pilot_launcher_journal_anchor WHEN NEW.singleton_id<>OLD.singleton_id OR NEW.journal_id<>OLD.journal_id OR NEW.restore_generation<>OLD.restore_generation OR NEW.last_sequence<>OLD.last_sequence+1 OR NEW.last_record_hash=OLD.last_record_hash OR NEW.updated_at<OLD.updated_at BEGIN SELECT RAISE(ABORT,'launcher journal anchor must advance exactly once'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_launcher_journal_anchor_no_delete",
+      "table_name": "pilot_launcher_journal_anchor",
+      "normalized_sql": "CREATE TRIGGER pilot_launcher_journal_anchor_no_delete BEFORE DELETE ON pilot_launcher_journal_anchor BEGIN SELECT RAISE(ABORT,'launcher journal anchor cannot be deleted'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_lease_no_delete",
+      "table_name": "pilot_run_lease",
+      "normalized_sql": "CREATE TRIGGER pilot_lease_no_delete BEFORE DELETE ON pilot_run_lease BEGIN SELECT RAISE(ABORT,'lease_singleton'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_lease_no_replace",
+      "table_name": "pilot_run_lease",
+      "normalized_sql": "CREATE TRIGGER pilot_lease_no_replace BEFORE INSERT ON pilot_run_lease WHEN EXISTS(SELECT 1 FROM pilot_run_lease WHERE singleton_id=NEW.singleton_id) BEGIN SELECT RAISE(ABORT,'lease_singleton'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_lease_update_guard",
+      "table_name": "pilot_run_lease",
+      "normalized_sql": "CREATE TRIGGER pilot_lease_update_guard BEFORE UPDATE ON pilot_run_lease WHEN NEW.singleton_id<>OLD.singleton_id OR NEW.updated_at<OLD.updated_at OR NOT ((OLD.run_epoch IS NULL AND OLD.generation IS NULL AND OLD.operation_id IS NULL AND ((NEW.run_epoch IS NULL AND NEW.generation IS NULL AND NEW.operation_id IS NULL) OR (NEW.run_epoch IS NOT NULL AND NEW.generation IS NOT NULL AND NEW.operation_id IS NOT NULL))) OR (OLD.run_epoch IS NOT NULL AND OLD.generation IS NOT NULL AND OLD.operation_id IS NOT NULL AND ((NEW.run_epoch IS NULL AND NEW.generation IS NULL AND NEW.operation_id IS NULL) OR (NEW.run_epoch=OLD.run_epoch AND NEW.generation=OLD.generation AND NEW.operation_id=OLD.operation_id)))) BEGIN SELECT RAISE(ABORT,'lease_owner_transition'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_lifecycle_insert_guard",
+      "table_name": "pilot_run_lifecycle",
+      "normalized_sql": "CREATE TRIGGER pilot_lifecycle_insert_guard BEFORE INSERT ON pilot_run_lifecycle WHEN NEW.lifecycle_state<>'bootstrapped' OR NEW.run_root_operation_id IS NOT NULL OR NEW.close_operation_id IS NOT NULL OR NEW.terminal_result IS NOT NULL BEGIN SELECT RAISE(ABORT,'lifecycle_initial_state'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_lifecycle_no_delete",
+      "table_name": "pilot_run_lifecycle",
+      "normalized_sql": "CREATE TRIGGER pilot_lifecycle_no_delete BEFORE DELETE ON pilot_run_lifecycle BEGIN SELECT RAISE(ABORT,'lifecycle_tombstone'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_lifecycle_no_replace",
+      "table_name": "pilot_run_lifecycle",
+      "normalized_sql": "CREATE TRIGGER pilot_lifecycle_no_replace BEFORE INSERT ON pilot_run_lifecycle WHEN EXISTS(SELECT 1 FROM pilot_run_lifecycle WHERE generation=NEW.generation OR run_epoch=NEW.run_epoch) BEGIN SELECT RAISE(ABORT,'lifecycle_exists'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_lifecycle_update_guard",
+      "table_name": "pilot_run_lifecycle",
+      "normalized_sql": "CREATE TRIGGER pilot_lifecycle_update_guard BEFORE UPDATE ON pilot_run_lifecycle WHEN NEW.generation<>OLD.generation OR NEW.run_epoch<>OLD.run_epoch OR OLD.lifecycle_state='terminal' OR NEW.updated_at<OLD.updated_at OR NOT ((OLD.lifecycle_state=NEW.lifecycle_state) OR (OLD.lifecycle_state='bootstrapped' AND NEW.lifecycle_state='logger_registered') OR (OLD.lifecycle_state='logger_registered' AND NEW.lifecycle_state='logger_ready') OR (OLD.lifecycle_state='logger_ready' AND NEW.lifecycle_state='reaper_ready') OR (OLD.lifecycle_state='reaper_ready' AND NEW.lifecycle_state='registered') OR (OLD.lifecycle_state='registered' AND NEW.lifecycle_state IN ('active','terminating')) OR (OLD.lifecycle_state='active' AND NEW.lifecycle_state='terminating') OR (OLD.lifecycle_state='terminating' AND NEW.lifecycle_state='unregistered') OR (OLD.lifecycle_state='unregistered' AND NEW.lifecycle_state='containment_empty') OR (OLD.lifecycle_state='containment_empty' AND NEW.lifecycle_state='terminal')) OR (OLD.run_root_operation_id IS NOT NULL AND NEW.run_root_operation_id IS NOT OLD.run_root_operation_id) OR (OLD.run_root_operation_id IS NULL AND NEW.run_root_operation_id IS NOT NULL AND (NEW.lifecycle_state<>OLD.lifecycle_state OR OLD.lifecycle_state NOT IN ('registered','active'))) OR (OLD.close_operation_id IS NULL AND NEW.close_operation_id IS NOT NULL AND (NEW.lifecycle_state<>'terminating' OR OLD.lifecycle_state NOT IN ('registered','active'))) OR (OLD.close_operation_id IS NOT NULL AND (NEW.close_operation_id IS NOT OLD.close_operation_id OR NEW.close_key_hash IS NOT OLD.close_key_hash OR NEW.close_payload_digest IS NOT OLD.close_payload_digest)) BEGIN SELECT RAISE(ABORT,'lifecycle_transition'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_operation_insert_guard",
+      "table_name": "run_root_operations",
+      "normalized_sql": "CREATE TRIGGER pilot_operation_insert_guard BEFORE INSERT ON run_root_operations WHEN NEW.operation_state<>'prepared' OR NEW.owner_generation<>zeroblob(8) OR NEW.response_code IS NOT NULL OR NEW.canonical_response IS NOT NULL OR NEW.receipt_digest IS NOT NULL OR NEW.dispatch_commit_digest IS NOT NULL BEGIN SELECT RAISE(ABORT,'operation_initial_state'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_operation_no_delete",
+      "table_name": "run_root_operations",
+      "normalized_sql": "CREATE TRIGGER pilot_operation_no_delete BEFORE DELETE ON run_root_operations BEGIN SELECT RAISE(ABORT,'operation_tombstone'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_operation_no_replace",
+      "table_name": "run_root_operations",
+      "normalized_sql": "CREATE TRIGGER pilot_operation_no_replace BEFORE INSERT ON run_root_operations WHEN EXISTS(SELECT 1 FROM run_root_operations WHERE operation_id=NEW.operation_id OR (tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref AND business_operation_id=NEW.business_operation_id) OR (NEW.operation_kind='run_root_create' AND operation_kind='run_root_create' AND run_epoch=NEW.run_epoch) OR (NEW.operation_kind IN ('pilot_run_close','pilot_no_root_abort') AND operation_kind IN ('pilot_run_close','pilot_no_root_abort') AND run_epoch=NEW.run_epoch)) BEGIN SELECT RAISE(ABORT,'operation_exists'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_operation_receipts_no_delete",
+      "table_name": "pilot_operation_evidence_receipts",
+      "normalized_sql": "CREATE TRIGGER pilot_operation_receipts_no_delete BEFORE DELETE ON pilot_operation_evidence_receipts BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_operation_receipts_no_replace",
+      "table_name": "pilot_operation_evidence_receipts",
+      "normalized_sql": "CREATE TRIGGER pilot_operation_receipts_no_replace BEFORE INSERT ON pilot_operation_evidence_receipts WHEN EXISTS(SELECT 1 FROM pilot_operation_evidence_receipts WHERE receipt_digest=NEW.receipt_digest OR operation_id=NEW.operation_id) BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_operation_receipts_no_update",
+      "table_name": "pilot_operation_evidence_receipts",
+      "normalized_sql": "CREATE TRIGGER pilot_operation_receipts_no_update BEFORE UPDATE ON pilot_operation_evidence_receipts BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_operation_update_guard",
+      "table_name": "run_root_operations",
+      "normalized_sql": "CREATE TRIGGER pilot_operation_update_guard BEFORE UPDATE ON run_root_operations WHEN NEW.operation_id<>OLD.operation_id OR NEW.tenant_id<>OLD.tenant_id OR NEW.principal_ref<>OLD.principal_ref OR NEW.business_operation_id<>OLD.business_operation_id OR NEW.operation_kind<>OLD.operation_kind OR NEW.request_id<>OLD.request_id OR NEW.run_epoch<>OLD.run_epoch OR NEW.allocated_run_epoch IS NOT OLD.allocated_run_epoch OR NEW.generation<>OLD.generation OR NEW.payload_digest<>OLD.payload_digest OR NEW.created_at<>OLD.created_at OR NEW.updated_at<OLD.updated_at OR (OLD.owner_generation<>zeroblob(8) AND NEW.owner_generation<>OLD.owner_generation) OR (OLD.owner_generation=zeroblob(8) AND NEW.owner_generation<>zeroblob(8) AND NOT (OLD.operation_state='prepared' AND NEW.operation_state='executing')) OR (OLD.response_code IS NOT NULL AND NEW.response_code IS NOT OLD.response_code) OR (OLD.canonical_response IS NOT NULL AND NEW.canonical_response IS NOT OLD.canonical_response) OR (OLD.receipt_digest IS NOT NULL AND NEW.receipt_digest IS NOT OLD.receipt_digest) OR (OLD.dispatch_commit_digest IS NOT NULL AND NEW.dispatch_commit_digest IS NOT OLD.dispatch_commit_digest) OR (OLD.operation_state IN ('completed','abandoned','indeterminate') AND (NEW.operation_state<>OLD.operation_state OR NEW.response_code IS NOT OLD.response_code OR NEW.canonical_response IS NOT OLD.canonical_response OR NEW.receipt_digest IS NOT OLD.receipt_digest OR NEW.dispatch_commit_digest IS NOT OLD.dispatch_commit_digest OR NEW.owner_generation<>OLD.owner_generation)) OR (NEW.operation_state='executing' AND NEW.owner_generation=zeroblob(8)) OR NOT ((OLD.operation_state='prepared' AND NEW.operation_state IN ('executing','abandoned','indeterminate')) OR (OLD.operation_state='executing' AND NEW.operation_state IN ('completed','abandoned','indeterminate')) OR OLD.operation_state=NEW.operation_state) BEGIN SELECT RAISE(ABORT,'operation_transition'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_outbox_insert_guard",
+      "table_name": "run_root_event_outbox",
+      "normalized_sql": "CREATE TRIGGER pilot_outbox_insert_guard BEFORE INSERT ON run_root_event_outbox WHEN NEW.delivery_state<>'ready' BEGIN SELECT RAISE(ABORT,'outbox_initial_state'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_outbox_no_delete",
+      "table_name": "run_root_event_outbox",
+      "normalized_sql": "CREATE TRIGGER pilot_outbox_no_delete BEFORE DELETE ON run_root_event_outbox BEGIN SELECT RAISE(ABORT,'outbox_tombstone'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_outbox_no_replace",
+      "table_name": "run_root_event_outbox",
+      "normalized_sql": "CREATE TRIGGER pilot_outbox_no_replace BEFORE INSERT ON run_root_event_outbox WHEN EXISTS(SELECT 1 FROM run_root_event_outbox WHERE outbox_id=NEW.outbox_id OR (operation_id=NEW.operation_id AND event_name=NEW.event_name)) BEGIN SELECT RAISE(ABORT,'outbox_exists'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_outbox_update_guard",
+      "table_name": "run_root_event_outbox",
+      "normalized_sql": "CREATE TRIGGER pilot_outbox_update_guard BEFORE UPDATE ON run_root_event_outbox WHEN NEW.outbox_id<>OLD.outbox_id OR NEW.operation_id<>OLD.operation_id OR NEW.event_name<>OLD.event_name OR NEW.process_id<>OLD.process_id OR NEW.canonical_event<>OLD.canonical_event OR NEW.event_digest<>OLD.event_digest OR NEW.created_at<>OLD.created_at OR NOT ((OLD.delivery_state='ready' AND NEW.delivery_state IN ('ready','send_authorized','suppressed')) OR (OLD.delivery_state='send_authorized' AND NEW.delivery_state IN ('send_authorized','acknowledged')) OR (OLD.delivery_state IN ('acknowledged','suppressed') AND NEW.delivery_state=OLD.delivery_state)) OR (OLD.delivery_state='acknowledged' AND (NEW.acknowledged_digest IS NOT OLD.acknowledged_digest OR NEW.acknowledged_correlation IS NOT OLD.acknowledged_correlation)) OR (OLD.delivery_state='suppressed' AND NEW.suppression_receipt_digest IS NOT OLD.suppression_receipt_digest) OR (NEW.delivery_state='acknowledged' AND (NEW.acknowledged_digest<>NEW.event_digest OR NEW.acknowledged_correlation IS NULL)) BEGIN SELECT RAISE(ABORT,'outbox_transition'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_principal_aliases_no_delete",
+      "table_name": "pilot_principal_aliases",
+      "normalized_sql": "CREATE TRIGGER pilot_principal_aliases_no_delete BEFORE DELETE ON pilot_principal_aliases BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_principal_aliases_no_replace",
+      "table_name": "pilot_principal_aliases",
+      "normalized_sql": "CREATE TRIGGER pilot_principal_aliases_no_replace BEFORE INSERT ON pilot_principal_aliases WHEN EXISTS(SELECT 1 FROM pilot_principal_aliases WHERE (tenant_id=NEW.tenant_id AND identity_key_version=NEW.identity_key_version AND identity_digest=NEW.identity_digest) OR (tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref AND identity_key_version=NEW.identity_key_version)) BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_principal_aliases_no_update",
+      "table_name": "pilot_principal_aliases",
+      "normalized_sql": "CREATE TRIGGER pilot_principal_aliases_no_update BEFORE UPDATE ON pilot_principal_aliases BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_root_state_insert_guard",
+      "table_name": "pilot_root_run_state",
+      "normalized_sql": "CREATE TRIGGER pilot_root_state_insert_guard BEFORE INSERT ON pilot_root_run_state WHEN NEW.run_state<>'active' OR NEW.cleanup_state<>'not_required' OR NEW.containment_evidence_digest IS NOT NULL BEGIN SELECT RAISE(ABORT,'root_state_initial'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_root_state_no_delete",
+      "table_name": "pilot_root_run_state",
+      "normalized_sql": "CREATE TRIGGER pilot_root_state_no_delete BEFORE DELETE ON pilot_root_run_state BEGIN SELECT RAISE(ABORT,'root_state_tombstone'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_root_state_no_replace",
+      "table_name": "pilot_root_run_state",
+      "normalized_sql": "CREATE TRIGGER pilot_root_state_no_replace BEFORE INSERT ON pilot_root_run_state WHEN EXISTS(SELECT 1 FROM pilot_root_run_state WHERE run_epoch=NEW.run_epoch) BEGIN SELECT RAISE(ABORT,'root_state_exists'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_root_state_update_guard",
+      "table_name": "pilot_root_run_state",
+      "normalized_sql": "CREATE TRIGGER pilot_root_state_update_guard BEFORE UPDATE ON pilot_root_run_state WHEN NEW.run_epoch<>OLD.run_epoch OR NEW.root_mount_id<>OLD.root_mount_id OR NEW.root_device<>OLD.root_device OR NEW.root_inode<>OLD.root_inode OR NEW.updated_at<OLD.updated_at OR NOT ((OLD.run_state='active' AND NEW.run_state IN ('active','terminating')) OR (OLD.run_state='terminating' AND NEW.run_state IN ('terminating','containment_empty')) OR (OLD.run_state='containment_empty' AND NEW.run_state IN ('containment_empty','abandoned')) OR OLD.run_state=NEW.run_state) OR NOT ((OLD.cleanup_state='not_required' AND NEW.cleanup_state IN ('not_required','pending')) OR (OLD.cleanup_state='pending' AND NEW.cleanup_state IN ('pending','complete','retained','indeterminate')) OR OLD.cleanup_state=NEW.cleanup_state) OR (OLD.run_state='abandoned' AND NEW.run_state<>'abandoned') OR (OLD.cleanup_state IN ('complete','retained','indeterminate') AND NEW.cleanup_state<>OLD.cleanup_state) OR (OLD.containment_evidence_digest IS NOT NULL AND NEW.containment_evidence_digest IS NOT OLD.containment_evidence_digest) OR (NEW.containment_evidence_digest IS NOT NULL AND NEW.run_state NOT IN ('containment_empty','abandoned')) BEGIN SELECT RAISE(ABORT,'root_state_transition'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_session_fence_no_delete",
+      "table_name": "pilot_session_fences",
+      "normalized_sql": "CREATE TRIGGER pilot_session_fence_no_delete BEFORE DELETE ON pilot_session_fences BEGIN SELECT RAISE(ABORT,'session_tombstone'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_session_fence_no_replace",
+      "table_name": "pilot_session_fences",
+      "normalized_sql": "CREATE TRIGGER pilot_session_fence_no_replace BEFORE INSERT ON pilot_session_fences WHEN EXISTS(SELECT 1 FROM pilot_session_fences WHERE tenant_id=NEW.tenant_id AND principal_ref=NEW.principal_ref AND session_key_hash=NEW.session_key_hash) BEGIN SELECT RAISE(ABORT,'session_exists'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_session_fence_update_guard",
+      "table_name": "pilot_session_fences",
+      "normalized_sql": "CREATE TRIGGER pilot_session_fence_update_guard BEFORE UPDATE ON pilot_session_fences WHEN NEW.tenant_id<>OLD.tenant_id OR NEW.principal_ref<>OLD.principal_ref OR NEW.session_key_hash<>OLD.session_key_hash OR NEW.session_revision<=OLD.session_revision OR NEW.updated_at<OLD.updated_at OR NEW.expires_at>OLD.expires_at OR (OLD.session_state='revoked' AND NEW.session_state<>'revoked') BEGIN SELECT RAISE(ABORT,'session_revision'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "run_root_ledger_meta_no_delete",
+      "table_name": "run_root_ledger_meta",
+      "normalized_sql": "CREATE TRIGGER run_root_ledger_meta_no_delete BEFORE DELETE ON run_root_ledger_meta BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "run_root_ledger_meta_no_replace",
+      "table_name": "run_root_ledger_meta",
+      "normalized_sql": "CREATE TRIGGER run_root_ledger_meta_no_replace BEFORE INSERT ON run_root_ledger_meta WHEN EXISTS(SELECT 1 FROM run_root_ledger_meta WHERE singleton=NEW.singleton) BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "run_root_ledger_meta_no_update",
+      "table_name": "run_root_ledger_meta",
+      "normalized_sql": "CREATE TRIGGER run_root_ledger_meta_no_update BEFORE UPDATE ON run_root_ledger_meta BEGIN SELECT RAISE(ABORT,'immutable'); END"
+    }
+  ],
+  "accepted_implicit_objects": [
+    "SQLite autoindexes derived from the exact DDL; names verified via index_list/index_xinfo"
+  ],
+  "connection_authorizer_policy": {
+    "driver_binding": {
+      "module": "github.com/mattn/go-sqlite3",
+      "database_scope": "isolated Pilot v3 ledger only; leave the existing application GORM SQLite driver unchanged",
+      "authorizer_installation": "sqlite3.SQLiteDriver.ConnectHook calls SQLiteConn.RegisterAuthorizer for every physical connection before pool admission",
+      "build_requirement": "CGO_ENABLED=1 with a supported C compiler; Linux CI/reference-host validation is mandatory",
+      "release_gate": "pin an exact driver version and verify the pinned API, license, Windows distribution, all physical pool connections, capability clearing, and performance before implementation"
+    },
+    "required_on": "every resident and pooled SQLite connection before exposure to RPC handlers",
+    "deny": [
+      "ATTACH",
+      "DETACH",
+      "TEMP schema objects",
+      "schema DDL after initialization",
+      "ANALYZE/REINDEX after initialization",
+      "mutating PRAGMAs",
+      "all unscoped DML on protected tables"
+    ],
+    "method_capability_manifest": {
+      "path": "review/pilot-control-ledger-v3-write-capabilities-20261021.json",
+      "sha256": "c2eb22dbb1e583a9a2082c1980e91fd92514784350d895e47b851817431e48ac"
+    },
+    "trigger_capabilities": {
+      "pilot_allocation_capacity_after_insert": [
+        "INSERT/UPDATE pilot_business_capacity_counts",
+        "INSERT pilot_capacity_alert_events"
+      ]
+    },
+    "principle": "unexported method-scoped capabilities are acquired only after typed authentication and signature verification; SQL is prepared within the scope, capability always clears, no raw-SQL API or cross-capability statement cache exists, and the sole writer is serialized"
+  },
+  "rejected_objects": [
+    "all TEMP objects",
+    "views",
+    "virtual tables",
+    "unlisted tables",
+    "unlisted indexes",
+    "unlisted triggers",
+    "all extra sqlite_master objects except SQLite-owned internal objects"
+  ],
+  "bootstrap_rows": [
+    {
+      "table": "run_root_ledger_meta",
+      "columns": [
+        "singleton",
+        "schema_version"
+      ],
+      "values": [
+        1,
+        3
+      ]
+    },
+    {
+      "table": "pilot_launcher_journal_anchor",
+      "columns": [
+        "singleton_id",
+        "journal_id",
+        "restore_generation",
+        "last_sequence",
+        "last_record_hash",
+        "updated_at"
+      ],
+      "values": [
+        1,
+        "externally_provisioned_16_byte_id",
+        "externally_provisioned_nonzero_generation",
+        0,
+        "zero_32_byte_hash",
+        0
+      ]
+    },
+    {
+      "table": "pilot_run_lease",
+      "columns": [
+        "singleton_id",
+        "run_epoch",
+        "generation",
+        "operation_id",
+        "updated_at"
+      ],
+      "values": [
+        1,
+        null,
+        null,
+        null,
+        0
+      ]
+    },
+    {
+      "table": "pilot_capacity_policy",
+      "values": [
+        1,
+        "production=1000000/100000/1000; fixture=7/5/3"
+      ]
+    },
+    {
+      "table": "pilot_business_capacity_counts",
+      "columns": [
+        "scope_kind",
+        "tenant_id",
+        "principal_ref",
+        "count"
+      ],
+      "values": [
+        "global",
+        "X''",
+        "zeroblob(32)",
+        0
+      ]
+    }
+  ],
+  "named_invariants": [
+    {
+      "invariant_id": "INV-01",
+      "name": "control generation and handoff are the same normal tuple",
+      "sha256": "05bfef3785213d52dec164e80d52c25c2fc50302e2a4e967b02ae53bdc64c68d",
+      "query": "SELECT count(*) AS violation_count FROM pilot_bootstrap_handoffs h LEFT JOIN pilot_control_generations c ON c.generation=h.generation AND c.launch_nonce=h.launch_nonce WHERE c.generation IS NULL OR c.mode<>'normal' OR c.normal_run_epoch<>h.run_epoch OR h.control_mode<>c.mode",
+      "execution_scope": "startup_or_offline_reconciliation; not per-transaction hot path",
+      "oracle": "zero rows or a single violation_count=0 row"
+    },
+    {
+      "invariant_id": "INV-02",
+      "name": "every lifecycle has exactly its immutable handoff tuple",
+      "sha256": "abc7301373768f5250d3108c1af2c1a33a9557c99a6f5bb5c846c680b1bcc7c3",
+      "query": "SELECT count(*) AS violation_count FROM pilot_run_lifecycle l LEFT JOIN pilot_bootstrap_handoffs h ON h.generation=l.generation AND h.run_epoch=l.run_epoch WHERE h.generation IS NULL",
+      "execution_scope": "startup_or_offline_reconciliation; not per-transaction hot path",
+      "oracle": "zero rows or a single violation_count=0 row"
+    },
+    {
+      "invariant_id": "INV-03",
+      "name": "operation, allocation, lifecycle and business identity bindings agree",
+      "sha256": "8c1373f1c90b49b0e6001c077e152ff750b73fc8ee8de477672ad0206c169927",
+      "query": "WITH violations AS ( SELECT o.operation_id AS id FROM run_root_operations o LEFT JOIN pilot_run_lifecycle l ON l.generation=o.generation AND l.run_epoch=o.run_epoch LEFT JOIN run_epoch_allocations a ON a.run_epoch=o.allocated_run_epoch WHERE l.generation IS NULL OR (o.operation_kind='run_root_create' AND l.run_root_operation_id IS NOT o.operation_id) OR (o.operation_kind IN ('pilot_run_close','pilot_no_root_abort') AND l.close_operation_id IS NOT o.operation_id) OR (o.operation_kind='run_root_create' AND (a.run_epoch IS NULL OR a.operation_id<>o.operation_id OR a.generation<>o.generation OR a.tenant_id<>o.tenant_id OR a.principal_ref<>o.principal_ref OR a.business_operation_id<>o.business_operation_id OR a.request_id<>o.request_id OR a.payload_digest<>o.payload_digest OR a.run_epoch<>o.run_epoch)) OR (o.operation_kind<>'run_root_create' AND o.allocated_run_epoch IS NOT NULL) OR ((o.operation_kind='pilot_run_close' AND l.lifecycle_state='terminal' AND o.operation_state<>'completed') OR (o.operation_kind='pilot_no_root_abort' AND o.operation_state='completed' AND l.terminal_result<>'closed_without_root')) UNION ALL SELECT l.run_epoch FROM pilot_run_lifecycle l LEFT JOIN run_root_operations o ON o.operation_id=l.run_root_operation_id AND o.generation=l.generation AND o.run_epoch=l.run_epoch WHERE l.run_root_operation_id IS NOT NULL AND (o.operation_id IS NULL OR o.operation_kind<>'run_root_create') UNION ALL SELECT l.run_epoch FROM pilot_run_lifecycle l LEFT JOIN run_root_operations o ON o.operation_id=l.close_operation_id AND o.generation=l.generation AND o.run_epoch=l.run_epoch WHERE l.close_operation_id IS NOT NULL AND (o.operation_id IS NULL OR o.operation_kind NOT IN ('pilot_run_close','pilot_no_root_abort') OR o.payload_digest<>l.close_payload_digest) ) SELECT count(*) AS violation_count FROM violations",
+      "execution_scope": "startup_or_offline_reconciliation; not per-transaction hot path",
+      "oracle": "zero rows or a single violation_count=0 row"
+    },
+    {
+      "invariant_id": "INV-04",
+      "name": "exactly one lease singleton; occupied lease names its exact allocation and operation",
+      "sha256": "c1dcd76a0aec378bb433b44770928eb00a7e975fe8a23edcf914d01200f2388c",
+      "query": "SELECT CASE WHEN (SELECT count(*) FROM pilot_run_lease)<>1 THEN 1 WHEN EXISTS(SELECT 1 FROM pilot_run_lease x WHERE x.singleton_id<>1) THEN 1 WHEN EXISTS(SELECT 1 FROM pilot_run_lease x WHERE x.run_epoch IS NOT NULL AND NOT EXISTS( SELECT 1 FROM run_epoch_allocations a JOIN run_root_operations o ON o.operation_id=x.operation_id AND o.run_epoch=x.run_epoch AND o.generation=x.generation WHERE a.run_epoch=x.run_epoch AND a.generation=x.generation AND a.operation_id=x.operation_id)) THEN 1 WHEN EXISTS(SELECT 1 FROM run_epoch_allocations a WHERE a.run_terminal_state<>'abandoned' AND NOT EXISTS( SELECT 1 FROM pilot_run_lease x WHERE x.run_epoch=a.run_epoch AND x.generation=a.generation AND x.operation_id=a.operation_id)) THEN 1 WHEN EXISTS(SELECT 1 FROM run_epoch_allocations a JOIN pilot_run_lease x ON x.run_epoch=a.run_epoch WHERE a.run_terminal_state='abandoned') THEN 1 ELSE 0 END AS violation_count",
+      "execution_scope": "startup_or_offline_reconciliation; not per-transaction hot path",
+      "oracle": "zero rows or a single violation_count=0 row"
+    },
+    {
+      "invariant_id": "INV-05",
+      "name": "every created root-create has its exact receipt, finish event, and root-state; no other root-state exists",
+      "sha256": "c24393a8cfffc25c84efcdb40fb21694af427ff8a9390aa262fa977e1fb14ae2",
+      "query": "WITH expected(run_epoch,operation_id) AS ( SELECT a.run_epoch,o.operation_id FROM run_epoch_allocations a JOIN run_root_operations o ON o.operation_id=a.operation_id AND o.run_epoch=a.run_epoch WHERE o.operation_kind='run_root_create' AND o.operation_state='completed' AND o.response_code='created' ), mismatch(run_epoch) AS ( SELECT e.run_epoch FROM expected e LEFT JOIN pilot_root_run_state r USING(run_epoch) WHERE r.run_epoch IS NULL UNION ALL SELECT r.run_epoch FROM pilot_root_run_state r LEFT JOIN expected e USING(run_epoch) WHERE e.run_epoch IS NULL UNION ALL SELECT o.run_epoch FROM run_root_operations o WHERE o.operation_kind='run_root_create' AND o.operation_state='completed' AND o.response_code='created' AND (NOT EXISTS(SELECT 1 FROM pilot_operation_evidence_receipts x WHERE x.operation_id=o.operation_id AND x.receipt_digest=o.receipt_digest AND x.run_epoch=o.run_epoch AND x.principal_ref=o.principal_ref AND x.payload_digest=o.payload_digest) OR NOT EXISTS(SELECT 1 FROM run_root_event_outbox x WHERE x.operation_id=o.operation_id AND x.event_name='bootstrap.finish')) ) SELECT count(*) AS violation_count FROM mismatch",
+      "execution_scope": "startup_or_offline_reconciliation; not per-transaction hot path",
+      "oracle": "zero rows or a single violation_count=0 row"
+    },
+    {
+      "invariant_id": "INV-06",
+      "name": "acknowledged finish events have the matching operation receipt and all ACKs bind event bytes",
+      "sha256": "29f55e8942b40444d5139382466b0aeee390eff7877bd5c46998805b7f81fb6e",
+      "query": "SELECT count(*) AS violation_count FROM run_root_event_outbox e LEFT JOIN run_root_operations o ON o.operation_id=e.operation_id LEFT JOIN pilot_operation_evidence_receipts r ON r.operation_id=e.operation_id AND r.run_epoch=o.run_epoch AND r.principal_ref=o.principal_ref AND r.payload_digest=o.payload_digest LEFT JOIN run_epoch_allocations a ON a.run_epoch=o.allocated_run_epoch AND a.operation_id=o.operation_id LEFT JOIN pilot_run_lifecycle l ON l.generation=o.generation AND l.run_epoch=o.run_epoch LEFT JOIN pilot_run_lease x ON x.singleton_id=1 LEFT JOIN pilot_root_run_state rootstate ON rootstate.run_epoch=o.run_epoch LEFT JOIN pilot_run_cleanup_dispositions cleanup ON cleanup.run_epoch=o.run_epoch LEFT JOIN pilot_run_containment_evidence containment ON containment.run_epoch=o.run_epoch AND containment.gateway_generation=o.generation AND containment.evidence_digest=rootstate.containment_evidence_digest WHERE e.delivery_state='acknowledged' AND (e.acknowledged_digest<>e.event_digest OR e.acknowledged_correlation IS NULL OR o.operation_id IS NULL OR (e.event_name='bootstrap.finish' AND (r.operation_id IS NULL OR r.receipt_digest<>o.receipt_digest OR NOT ((o.response_code='created' AND o.operation_state='completed' AND a.allocation_state='completed' AND rootstate.run_epoch IS NOT NULL AND ((a.run_terminal_state='active' AND rootstate.run_state='active' AND rootstate.cleanup_state='not_required' AND x.run_epoch=o.run_epoch AND x.generation=o.generation AND x.operation_id=o.operation_id) OR (a.run_terminal_state='active' AND rootstate.run_state IN ('terminating','containment_empty') AND rootstate.cleanup_state IN ('pending','complete','retained') AND l.lifecycle_state IN ('terminating','unregistered','containment_empty') AND x.run_epoch=o.run_epoch AND x.generation=o.generation AND x.operation_id=o.operation_id) OR (a.run_terminal_state='abandoned' AND rootstate.run_state='abandoned' AND rootstate.cleanup_state IN ('complete','retained') AND cleanup.run_epoch IS NOT NULL AND cleanup.disposition IN ('complete','retained') AND containment.run_epoch IS NOT NULL AND NOT EXISTS(SELECT 1 FROM pilot_run_lease held WHERE held.run_epoch=o.run_epoch)))) OR (o.response_code='exists' AND o.operation_state='abandoned' AND a.allocation_state='indeterminate' AND x.run_epoch IS NOT NULL AND a.run_terminal_state='indeterminate' AND x.run_epoch=o.run_epoch AND x.generation=o.generation AND x.operation_id=o.operation_id AND rootstate.run_epoch IS NULL AND l.lifecycle_state IN ('registered','terminating','unregistered','containment_empty'))))))",
+      "execution_scope": "startup_or_offline_reconciliation; not per-transaction hot path",
+      "oracle": "zero rows or a single violation_count=0 row"
+    },
+    {
+      "invariant_id": "INV-07",
+      "name": "terminal roots have exact containment/cleanup evidence, complete cleanup, terminal lifecycle and no lease",
+      "sha256": "06e9e897a52b215453d6308814fc60f73c33f045b2025063425c59ffa133c397",
+      "query": "WITH violations(run_epoch) AS ( SELECT r.run_epoch FROM pilot_root_run_state r JOIN pilot_run_lifecycle l ON l.run_epoch=r.run_epoch JOIN run_epoch_allocations a ON a.run_epoch=r.run_epoch LEFT JOIN run_root_operations rootop ON rootop.operation_id=l.run_root_operation_id AND rootop.run_epoch=l.run_epoch AND rootop.generation=l.generation LEFT JOIN run_root_operations closeop ON closeop.operation_id=l.close_operation_id AND closeop.run_epoch=l.run_epoch AND closeop.generation=l.generation LEFT JOIN pilot_operation_evidence_receipts close_receipt ON close_receipt.operation_id=closeop.operation_id AND close_receipt.run_epoch=closeop.run_epoch AND close_receipt.principal_ref=closeop.principal_ref AND close_receipt.payload_digest=closeop.payload_digest AND close_receipt.receipt_digest=closeop.receipt_digest LEFT JOIN pilot_run_containment_evidence e ON e.run_epoch=r.run_epoch AND e.gateway_generation=l.generation AND e.evidence_digest=r.containment_evidence_digest LEFT JOIN pilot_run_cleanup_dispositions d ON d.run_epoch=r.run_epoch WHERE r.run_state='abandoned' AND (l.lifecycle_state<>'terminal' OR l.terminal_result<>'abandoned' OR a.allocation_state<>'completed' OR a.run_terminal_state<>'abandoned' OR rootop.operation_kind<>'run_root_create' OR rootop.operation_state<>'completed' OR rootop.response_code<>'created' OR closeop.operation_kind<>'pilot_run_close' OR closeop.operation_state<>'completed' OR closeop.response_code<>'abandoned' OR close_receipt.operation_id IS NULL OR e.run_epoch IS NULL OR d.run_epoch IS NULL OR d.disposition NOT IN ('complete','retained') OR r.cleanup_state NOT IN ('complete','retained') OR d.root_mount_id<>r.root_mount_id OR d.root_device<>r.root_device OR d.root_inode<>r.root_inode OR EXISTS(SELECT 1 FROM pilot_run_lease x WHERE x.run_epoch=r.run_epoch) OR EXISTS(SELECT 1 FROM run_root_event_outbox x WHERE x.operation_id IN (SELECT operation_id FROM run_root_operations WHERE run_epoch=r.run_epoch) AND x.delivery_state<>'acknowledged')) UNION ALL SELECT l.run_epoch FROM pilot_run_lifecycle l LEFT JOIN pilot_root_run_state r ON r.run_epoch=l.run_epoch LEFT JOIN run_epoch_allocations a ON a.run_epoch=l.run_epoch LEFT JOIN run_root_operations rootop ON rootop.operation_id=l.run_root_operation_id AND rootop.run_epoch=l.run_epoch AND rootop.generation=l.generation LEFT JOIN run_root_operations closeop ON closeop.operation_id=l.close_operation_id AND closeop.run_epoch=l.run_epoch AND closeop.generation=l.generation LEFT JOIN pilot_operation_evidence_receipts close_receipt ON close_receipt.operation_id=closeop.operation_id AND close_receipt.run_epoch=closeop.run_epoch AND close_receipt.principal_ref=closeop.principal_ref AND close_receipt.payload_digest=closeop.payload_digest AND close_receipt.receipt_digest=closeop.receipt_digest WHERE l.lifecycle_state='terminal' AND l.terminal_result='abandoned' AND l.run_root_operation_id IS NOT NULL AND NOT ( (r.run_epoch IS NOT NULL AND r.run_state='abandoned' AND r.cleanup_state IN ('complete','retained') AND a.allocation_state='completed' AND a.run_terminal_state='abandoned' AND rootop.operation_kind='run_root_create' AND rootop.operation_state='completed' AND rootop.response_code='created' AND closeop.operation_kind='pilot_run_close' AND closeop.operation_state='completed' AND closeop.response_code='abandoned' AND close_receipt.operation_id IS NOT NULL) OR (r.run_epoch IS NULL AND a.allocation_state='abandoned' AND a.run_terminal_state='abandoned' AND rootop.operation_kind='run_root_create' AND rootop.operation_state='abandoned' AND rootop.response_code='abandoned' AND closeop.operation_kind='pilot_run_close' AND closeop.operation_state='completed' AND closeop.response_code='abandoned' AND close_receipt.operation_id IS NOT NULL AND EXISTS(SELECT 1 FROM pilot_prepared_cancel_receipts c WHERE c.operation_id=rootop.operation_id AND c.generation=l.generation AND c.run_epoch=l.run_epoch AND c.close_operation_id=closeop.operation_id) AND EXISTS(SELECT 1 FROM pilot_run_containment_evidence e WHERE e.run_epoch=l.run_epoch AND e.gateway_generation=l.generation) AND NOT EXISTS(SELECT 1 FROM pilot_run_lease x WHERE x.run_epoch=l.run_epoch) AND NOT EXISTS(SELECT 1 FROM run_root_event_outbox e JOIN run_root_operations x ON x.operation_id=e.operation_id WHERE x.run_epoch=l.run_epoch AND e.delivery_state NOT IN ('acknowledged','suppressed')))) UNION ALL SELECT l.run_epoch FROM pilot_run_lifecycle l WHERE l.lifecycle_state='terminal' AND l.terminal_result='abandoned' AND l.run_root_operation_id IS NULL UNION ALL SELECT l.run_epoch FROM pilot_run_lifecycle l LEFT JOIN run_root_operations o ON o.operation_id=l.close_operation_id AND o.run_epoch=l.run_epoch AND o.generation=l.generation WHERE l.lifecycle_state='terminal' AND l.terminal_result='closed_without_root' AND (l.run_root_operation_id IS NOT NULL OR EXISTS(SELECT 1 FROM run_epoch_allocations a WHERE a.run_epoch=l.run_epoch) OR EXISTS(SELECT 1 FROM pilot_root_run_state r WHERE r.run_epoch=l.run_epoch) OR o.operation_id IS NULL OR o.operation_kind<>'pilot_no_root_abort' OR o.operation_state<>'completed' OR o.response_code<>'closed_without_root' OR EXISTS(SELECT 1 FROM pilot_run_lease x WHERE x.run_epoch=l.run_epoch) OR NOT EXISTS(SELECT 1 FROM pilot_operation_evidence_receipts cr WHERE cr.operation_id=o.operation_id AND cr.run_epoch=o.run_epoch AND cr.principal_ref=o.principal_ref AND cr.payload_digest=o.payload_digest AND cr.receipt_digest=o.receipt_digest) OR NOT EXISTS(SELECT 1 FROM pilot_run_containment_evidence e WHERE e.run_epoch=l.run_epoch AND e.gateway_generation=l.generation) OR EXISTS(SELECT 1 FROM run_root_event_outbox e JOIN run_root_operations x ON x.operation_id=e.operation_id WHERE x.run_epoch=l.run_epoch)) ) SELECT count(*) AS violation_count FROM violations",
+      "execution_scope": "startup_or_offline_reconciliation; not per-transaction hot path",
+      "oracle": "zero rows or a single violation_count=0 row"
+    },
+    {
+      "invariant_id": "INV-08",
+      "name": "suppression is bound to this dispatch intent, create operation, close operation and epoch",
+      "sha256": "5918470b62807abf4b66a80712312aa1137b31ecd5f33085cb9f895f18f0d7ad",
+      "query": "SELECT count(*) AS violation_count FROM run_root_event_outbox e JOIN run_root_operations o ON o.operation_id=e.operation_id LEFT JOIN pilot_prepared_cancel_receipts c ON c.receipt_digest=e.suppression_receipt_digest LEFT JOIN pilot_run_lifecycle l ON l.generation=o.generation AND l.run_epoch=o.run_epoch LEFT JOIN run_root_operations closeop ON closeop.operation_id=c.close_operation_id WHERE e.delivery_state='suppressed' AND (e.event_name<>'run_root_dispatch_intent' OR c.receipt_digest IS NULL OR c.operation_id<>o.operation_id OR c.run_epoch<>o.run_epoch OR c.generation<>o.generation OR c.intent_digest<>e.event_digest OR c.intent_delivery_disposition<>'never_authorized' OR l.close_operation_id<>c.close_operation_id OR closeop.operation_kind<>'pilot_run_close' OR closeop.run_epoch<>o.run_epoch OR closeop.generation<>o.generation OR closeop.tenant_id<>o.tenant_id OR closeop.principal_ref<>o.principal_ref OR closeop.payload_digest<>l.close_payload_digest)",
+      "execution_scope": "startup_or_offline_reconciliation; not per-transaction hot path",
+      "oracle": "zero rows or a single violation_count=0 row"
+    },
+    {
+      "invariant_id": "INV-09",
+      "name": "account/session authorization values each have one exact latest signed receipt",
+      "sha256": "abc66939b9d0b8813f6a66591820d033c7efa14f5954176ad95a0b67ddbe586e",
+      "query": "WITH problems(n) AS ( SELECT count(*) FROM pilot_authorization_state a LEFT JOIN pilot_authz_update_receipts r ON r.tenant_id=a.tenant_id AND r.principal_ref=a.principal_ref AND r.target_kind='account' AND r.target_key=zeroblob(32) AND r.revision=a.authz_revision WHERE r.request_id IS NULL UNION ALL SELECT count(*) FROM pilot_session_fences s LEFT JOIN pilot_authz_update_receipts r ON r.tenant_id=s.tenant_id AND r.principal_ref=s.principal_ref AND r.target_kind='session' AND r.target_key=s.session_key_hash AND r.revision=s.session_revision WHERE r.request_id IS NULL UNION ALL SELECT count(*) FROM pilot_fixture_grants g LEFT JOIN pilot_authorization_state a ON a.tenant_id=g.tenant_id AND a.principal_ref=g.principal_ref LEFT JOIN pilot_authz_update_receipts r ON r.tenant_id=g.tenant_id AND r.principal_ref=g.principal_ref AND r.target_kind='account' AND r.target_key=zeroblob(32) AND r.revision=g.grant_revision WHERE a.principal_ref IS NULL OR r.request_id IS NULL OR g.grant_revision<>a.authz_revision ) SELECT coalesce(sum(n),0) AS violation_count FROM problems",
+      "execution_scope": "startup_or_offline_reconciliation; not per-transaction hot path",
+      "oracle": "zero rows or a single violation_count=0 row"
+    },
+    {
+      "invariant_id": "INV-10",
+      "name": "exact global/tenant/principal scope inventory and counts match permanent allocation tombstones",
+      "sha256": "d12fee26253ca78c364e3465d3b9db2816e0c0d6640e5369b93ecb656ac90648",
+      "query": "WITH expected(scope_kind,tenant_id,principal_ref,n) AS ( SELECT 'global',X'',zeroblob(32),count(*) FROM run_epoch_allocations UNION ALL SELECT 'tenant',tenant_id,zeroblob(32),count(*) FROM run_epoch_allocations GROUP BY tenant_id UNION ALL SELECT 'principal',tenant_id,principal_ref,count(*) FROM run_epoch_allocations GROUP BY tenant_id,principal_ref ), mismatch(scope_kind,tenant_id,principal_ref) AS ( SELECT e.scope_kind,e.tenant_id,e.principal_ref FROM expected e LEFT JOIN pilot_business_capacity_counts c USING(scope_kind,tenant_id,principal_ref) WHERE c.scope_kind IS NULL OR c.count<>e.n UNION ALL SELECT c.scope_kind,c.tenant_id,c.principal_ref FROM pilot_business_capacity_counts c LEFT JOIN expected e USING(scope_kind,tenant_id,principal_ref) WHERE e.scope_kind IS NULL ), sequence_gap(n) AS ( SELECT CASE WHEN count(*)=0 THEN 0 WHEN min(allocation_sequence)=1 AND max(allocation_sequence)=count(*) THEN 0 ELSE 1 END FROM run_epoch_allocations ) SELECT (SELECT count(*) FROM mismatch)+(SELECT n FROM sequence_gap) AS violation_count",
+      "execution_scope": "startup_or_offline_reconciliation; not per-transaction hot path",
+      "oracle": "zero rows or a single violation_count=0 row"
+    },
+    {
+      "invariant_id": "INV-11",
+      "name": "crossing alert inventory and threshold counts match immutable policy and current exact counters",
+      "sha256": "85356157c209105510ea8ce260767bdf6bf592e628fc34395df28cd473adc93d",
+      "query": "WITH scoped_allocations(scope_kind,tenant_id,principal_ref,run_epoch,allocated_at,ordinal) AS ( SELECT 'global',X'',zeroblob(32),run_epoch,allocated_at,row_number() OVER(ORDER BY allocation_sequence) FROM run_epoch_allocations UNION ALL SELECT 'tenant',tenant_id,zeroblob(32),run_epoch,allocated_at,row_number() OVER(PARTITION BY tenant_id ORDER BY allocation_sequence) FROM run_epoch_allocations UNION ALL SELECT 'principal',tenant_id,principal_ref,run_epoch,allocated_at,row_number() OVER(PARTITION BY tenant_id,principal_ref ORDER BY allocation_sequence) FROM run_epoch_allocations ), thresholds(scope_kind,tenant_id,principal_ref,current_count,threshold_percent,target_count) AS ( SELECT c.scope_kind,c.tenant_id,c.principal_ref,c.count,t.threshold, (CASE c.scope_kind WHEN 'global' THEN p.global_limit WHEN 'tenant' THEN p.tenant_limit ELSE p.principal_limit END*t.threshold+99)/100 FROM pilot_business_capacity_counts c CROSS JOIN pilot_capacity_policy p CROSS JOIN (SELECT 80 AS threshold UNION ALL SELECT 90) t ), expected(scope_kind,tenant_id,principal_ref,threshold_percent,first_crossing_count,crossing_run_epoch,crossed_at) AS ( SELECT t.scope_kind,t.tenant_id,t.principal_ref,t.threshold_percent,t.target_count,s.run_epoch,s.allocated_at FROM thresholds t JOIN scoped_allocations s ON s.scope_kind=t.scope_kind AND s.tenant_id=t.tenant_id AND s.principal_ref=t.principal_ref AND s.ordinal=t.target_count WHERE t.current_count>=t.target_count ), mismatch AS ( SELECT e.scope_kind,e.tenant_id,e.principal_ref,e.threshold_percent FROM expected e LEFT JOIN pilot_capacity_alert_events a ON a.scope_kind=e.scope_kind AND a.scope_tenant_id=e.tenant_id AND a.scope_principal_ref=e.principal_ref AND a.threshold_percent=e.threshold_percent WHERE a.threshold_percent IS NULL OR a.first_crossing_count<>e.first_crossing_count OR a.crossing_run_epoch<>e.crossing_run_epoch OR a.crossed_at<>e.crossed_at UNION ALL SELECT a.scope_kind,a.scope_tenant_id,a.scope_principal_ref,a.threshold_percent FROM pilot_capacity_alert_events a LEFT JOIN expected e ON e.scope_kind=a.scope_kind AND e.tenant_id=a.scope_tenant_id AND e.principal_ref=a.scope_principal_ref AND e.threshold_percent=a.threshold_percent WHERE e.threshold_percent IS NULL ) SELECT count(*) AS violation_count FROM mismatch",
+      "execution_scope": "startup_or_offline_reconciliation; not per-transaction hot path",
+      "oracle": "zero rows or a single violation_count=0 row"
+    }
+  ],
+  "schema_fault_case_ids": [
+    "SCHEMA-01",
+    "SCHEMA-02",
+    "SCHEMA-03",
+    "SCHEMA-04",
+    "SCHEMA-05",
+    "SCHEMA-06",
+    "SCHEMA-07",
+    "SCHEMA-08",
+    "SCHEMA-09",
+    "SCHEMA-10",
+    "SCHEMA-11",
+    "SCHEMA-12",
+    "SCHEMA-13",
+    "SCHEMA-14",
+    "SCHEMA-15",
+    "SCHEMA-16",
+    "SCHEMA-17",
+    "SCHEMA-18",
+    "SCHEMA-19",
+    "SCHEMA-20",
+    "SCHEMA-21",
+    "SCHEMA-22",
+    "SCHEMA-23",
+    "SCHEMA-24",
+    "SCHEMA-25",
+    "CAP-01",
+    "CAP-02",
+    "CAP-03",
+    "PERF-01",
+    "CAP-04",
+    "SCHEMA-31",
+    "SCHEMA-32",
+    "SCHEMA-33",
+    "SCHEMA-34",
+    "SCHEMA-35",
+    "SCHEMA-36"
+  ],
+  "product_orchestration_case_ids": [
+    "API-00",
+    "A0-01",
+    "A2-01",
+    "A2-02a",
+    "A2-02b",
+    "API-01",
+    "API-02",
+    "API-03",
+    "API-04",
+    "API-05",
+    "API-06",
+    "API-07",
+    "API-08",
+    "API-09",
+    "API-10",
+    "API-11",
+    "API-12",
+    "API-13",
+    "API-14",
+    "API-15",
+    "API-16",
+    "DR-01",
+    "DR-02",
+    "IDRES-01",
+    "IDRES-02",
+    "IDRES-03",
+    "IDRES-04",
+    "IDRES-05",
+    "IDRES-06",
+    "IDRES-07",
+    "IDRES-08",
+    "LAUNCH-01",
+    "LAUNCH-02",
+    "LAUNCH-03",
+    "LAUNCH-04",
+    "LAUNCH-05",
+    "LAUNCH-06",
+    "LAUNCH-07",
+    "LAUNCH-08",
+    "LAUNCH-09",
+    "LAUNCH-10",
+    "LAUNCH-11",
+    "LAUNCH-12",
+    "LAUNCH-13",
+    "LOG-01",
+    "LOG-02",
+    "LOG-03",
+    "LOG-04",
+    "LOG-05",
+    "LOG-06",
+    "LOG-07",
+    "LOG-08",
+    "PRODUCT-01",
+    "PRODUCT-02",
+    "PRODUCT-03",
+    "PRODUCT-04",
+    "PRODUCT-05",
+    "PRODUCT-06",
+    "PRODUCT-07",
+    "PRODUCT-08",
+    "PRODUCT-09",
+    "PRODUCT-10",
+    "PRODUCT-11",
+    "PRODUCT-12",
+    "PRODUCT-13",
+    "PRODUCT-14",
+    "PRODUCT-15",
+    "PRODUCT-16",
+    "PRODUCT-17",
+    "PRODUCT-18",
+    "PRODUCT-19",
+    "RECOVERY-01",
+    "RECOVERY-02",
+    "RECOVERY-03",
+    "RECOVERY-04",
+    "RECOVERY-05",
+    "RECOVERY-06",
+    "RECOVERY-07",
+    "RECOVERY-08",
+    "RECOVERY-09",
+    "RECOVERY-10",
+    "RECOVERY-11",
+    "ROOT-01",
+    "ROOT-02",
+    "ROOT-03",
+    "ROOT-04",
+    "ROOT-05",
+    "ROOT-06",
+    "ROOT-07",
+    "ROOT-08",
+    "ROOT-09",
+    "ROOT-10",
+    "ROOT-11",
+    "ROOT-12",
+    "ROOT-13",
+    "ROOT-14",
+    "ROOT-15",
+    "ROOT-16",
+    "UI-01",
+    "UI-02",
+    "UI-03",
+    "UI-04",
+    "UI-05",
+    "UI-06",
+    "UI-07",
+    "UI-08"
+  ],
+  "case_mapping_rule": "schema/fault cases bind to exact schema inventory, statements and named invariants selected by area; product cases bind to runtime behavior and are not satisfied by DDL fixtures alone",
+  "known_review_gates": [
+    "Validate every declared state transition and immutable-column guard against docs/51-53 before freezing.",
+    "Verify exact process identity byte encodings and canonical receipt sizes against docs/43/47.",
+    "Freeze all startup seed policy values and read-only preflight behavior.",
+    "Run each named invariant against positive and deliberately corrupt fixtures; zero-row initialization alone is only a parser smoke test.",
+    "Bind the production connection authorizer to the same protected writer constructor and verify all pooled connections before admission.",
+    "Do not implement or load this DDL until all four domain reviews pass against this manifest hash."
+  ]
+}

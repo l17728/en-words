@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-19",
+  "status": "BLOCKED",
+  "blocking_count": 1,
+  "scope": "Shared health and Windows/Unix lock implementation follow-up; read-only, no tests executed.",
+  "findings": [
+    {
+      "id": "CAT-IMPL-01",
+      "severity": "P2",
+      "state": "partially_fixed",
+      "location": "server/internal/store/pilot_start_catalog.go:196-204,221-235; constructors at 108,139",
+      "detail": "Shared health closes the sequential sibling-call case, but health is checked only before acquiring the global lock. B can pass the check and wait, then A writes a complete frame, fails Sync, poisons health and releases the lock. B acquires the lock and continues reading/writing without another health check. Constructors also perform IO without rejecting an already-poisoned supplied health.",
+      "required": "Check health after acquiring the global lock and before any journal IO, with correct unlock on rejection. Apply the same fail-closed rule to create/open. Preserve the pre-lock fast check if useful.",
+      "regression": "Use named barriers to prove B has passed its initial check and waits behind A before A's uncertain Sync failure. After acquisition B must return poisoned with zero further read/write/Sync success. Cover Snapshot, Transition and constructor use of poisoned health."
+    }
+  ],
+  "related_hardening": [
+    "catalogHealthForTestOrSupervisor at line 101 silently creates a fresh health domain for missing, nil or multiple arguments. Make supervisor health an explicit required nonnil parameter; test helpers may construct their own domain. This prevents accidental same-supervisor bypass of the shared failure contract."
+  ],
+  "passed": [
+    "The new shared health object uses a mutex and has no reset path; sequential sibling calls after poison reject.",
+    "Windows uses an exclusive LockFileEx byte range and Unix uses flock LOCK_EX with EINTR retry; each wrapper also serializes local goroutines and releases its local gate on lock failure.",
+    "Platform code is pilot_e2e plus platform build-tag isolated, receives existing handles and does not claim path/ACL verification. No additional independent blocker found in the basic lock implementation."
+  ],
+  "limitations": [
+    "The new platform test only acquires/releases the same handle twice. It does not prove two-process exclusion, crash release, bounded waiting or verified identity.",
+    "Current sibling-health regression is sequential and does not cover the lock-wait race.",
+    "Lock timeout/termination supervision, bootstrap and case lifetime ownership remain future supervisor integration acceptance."
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "review": "pilot-supervisor-idempotency-test-r1",
+  "date": "2026-10-19",
+  "mode": "read-only SDD test-design review; implementation tests not run",
+  "document": {
+    "path": "docs/42-Pilot隔离运行监督器SDD.md",
+    "sha256": "79436BF0CF92CD7ED04B6D0C0EE2ECD9AE44369733655287C1F73E1E468B0876"
+  },
+  "verdict": "FAIL_TEST_COVERAGE",
+  "findings": [
+    {
+      "id": "P1-IDEMPOTENCY-HTTP",
+      "severity": "P1",
+      "status": "OPEN",
+      "location": "docs/42 §3, §5, E2E-PILOT-08, FI-IPC-01",
+      "finding": "Tests cover retry/conflict at request_id level but do not establish HTTP Idempotency-Key scoping, completed same-key replay, concurrent one-IPC coalescing, or same-key cross-session isolation.",
+      "required_action": "Add deterministic Go/process FI and browser E2E cases for completed retry, concurrent retry with exactly one IPC/CreateCase, same-session key conflict before IPC, and same key in another session. Assert request-map cardinality, catalog generation/inventory, and zero unauthorized opens/effects."
+    },
+    {
+      "id": "P1-GRANT-EXPIRY-BOUNDARY",
+      "severity": "P1",
+      "status": "OPEN",
+      "location": "docs/42 §3, §5, FI-AUTH-01 and E2E mappings",
+      "finding": "The predicate now < expires_at_ms <= now+60s is specified, but tests only name expired grants; equality/one-millisecond boundaries and expiry between signing and IPC validation have no oracle.",
+      "required_action": "Add frozen-clock cases for expiry==now reject, now+1ms accept, now+60s accept, now+60s+1ms reject, and expiry during IPC wait. Assert rejection before any member/DB/key opens or business effects; map a stable browser-visible outcome in E2E."
+    },
+    {
+      "id": "P2-NEW-RUN-ROOT-ORACLE",
+      "severity": "P2",
+      "status": "OPEN",
+      "location": "docs/42 §7, E2E-PILOT-08, FI-IPC-01",
+      "finding": "Fresh run/root is stated for uncertain create, but FI-IPC-01 lacks explicit distinct epoch/root identity and new catalog inventory assertions.",
+      "required_action": "Assert old/new epochs and verified root identities differ; new worker never opens old root; old selector stays inaccessible; new catalog is independent and has exactly the expected inventory."
+    }
+  ],
+  "covered": {
+    "ready_durable_then_ipc_selector_lost": "PASS_FOR_DESIGN",
+    "owner_bound_http_response_lost_then_retry": "NAMED_BUT_NEEDS_EXACT_IDEMPOTENCY_ASSERTIONS"
+  },
+  "limitations": [
+    "No implementation or E2E tests were run."
+  ]
+}

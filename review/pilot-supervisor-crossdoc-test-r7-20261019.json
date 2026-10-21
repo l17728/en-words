@@ -1,0 +1,49 @@
+{
+  "review": "pilot-supervisor-crossdoc-test-final",
+  "date": "2026-10-19",
+  "mode": "read-only document review; implementation tests not run; SDD not modified",
+  "documents": {
+    "docs/41-试点课堂Start持久迁移内核SDD.md": "EDCCD7B52ACE3300912796B69730B7B91D6C47542D959B9471798D173E10BE34",
+    "docs/42-Pilot隔离运行监督器SDD.md": "AA33AC4A45B15E84281D81A38A6CAE97FF52D538BFF26B16E5BBE21A5D223A56"
+  },
+  "verdict": "BLOCKED",
+  "findings": [
+    {
+      "id": "B5",
+      "severity": "BLOCKER",
+      "status": "OPEN",
+      "location": "docs/42 FI-REC-01",
+      "finding": "FI-REC-01 groups suffix-only corruption and corrupt-prefix cases but requires R-AUDIT validation to succeed for both. R-AUDIT depends on valid sidecar tool events/HMAC/timestamps, which cannot succeed for the corrupt-prefix branch that must reject the receipt.",
+      "required_action": "Split the profiles. Suffix-only damage after an intact valid prefix runs all R-* and passes R-AUDIT. Prefix corruption returns no receipt and must not assert R-AUDIT success; specify schema/data query counts, state, error and zero writes."
+    },
+    {
+      "id": "B6",
+      "severity": "BLOCKER",
+      "status": "OPEN",
+      "location": "docs/42 E2E-PILOT-06",
+      "finding": "Suffix-only degraded receipt requires all R-* reads, incrementing schema and data recovery counters, while the same E2E row says counters remain zero for all cases.",
+      "required_action": "Separate recovery-query counters from business-side-effect counters; assert exact schema/data query counts for suffix profile and zero writes, Planner, Registry, new command, and outbox delivery. Define prefix-corruption query counts consistently with FI-REC-01."
+    }
+  ],
+  "non_blocking": [
+    {
+      "id": "P2-REF-70",
+      "location": "docs/42 §9.1 R-AUDIT",
+      "finding": "The local timing contract still references nonexistent docs/41 §70.",
+      "recommendation": "Remove the stale citation or replace it with an existing section."
+    },
+    {
+      "id": "P2-POSIX-CLOSE",
+      "location": "docs/42 FI-CLOSE POSIX rows",
+      "finding": "POSIX lock release is described as descriptor close; implementation must use that close-based behavior or separately inject flock(LOCK_UN)."
+    }
+  ],
+  "checks": {
+    "capability_owner_run_scope_authorization": "PASS_FOR_DESIGN",
+    "logical_time_and_fault_matrix": "PASS_FOR_DESIGN",
+    "R_star_projection_profiles": "PASS_WITH_B5_COUNTER_CONFLICT",
+    "E2E_journey_mapping": "BLOCKED_BY_B6",
+    "linux_windows_evidence_and_coverage": "PASS_FOR_DESIGN",
+    "implementation_or_pilot_acceptance": "NOT_REVIEWED"
+  }
+}

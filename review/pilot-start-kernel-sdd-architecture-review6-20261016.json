@@ -1,0 +1,17 @@
+{
+  "review":"pilot-start-kernel-sdd-architecture-review6",
+  "date":"2026-10-16",
+  "source":"docs/41-试点课堂Start持久迁移内核SDD.md",
+  "source_sha256":"4c18e16156f64bfa09d01bee7c32426ef8bf5fd345b2d54b6a0547cbf4b27a88",
+  "status":"BLOCK",
+  "blocker_count":3,
+  "blockers":[
+    {"id":"START6-01","severity":"P2","location":"section3 fingerprint and attempt_started ordering","finding":"Pre-Planner intent HMAC requires fingerprint containing Planner-produced say text","required":"Separate pre-plan intent and post-plan bundle fingerprints or explicitly separate pure rendering from Registry; receipt-only recovery must not regenerate planning"},
+    {"id":"START6-02","severity":"P2","location":"execution erratum line49","finding":"lesson+command single-flight cannot prevent simultaneous different commands for the same lesson","required":"Use case/store+lesson serialization if preserving the guarantee; distinguish coordinator queue tests from independent SQLite writer competition"},
+    {"id":"START6-03","severity":"P2","location":"sidecar schema/recovery supplement and section4 attempt audit","finding":"Strict event field allowlist conflicts with required audit fields; committed-without-receipt and committed-with-corrupt-sidecar branches are not unambiguous","required":"Unify event codec and recovery table, explicitly distinguish integrity failure from receipt recovery; bound hash-chain deletion claims"}
+  ],
+  "approved":["Durable attempt intent before tool execution addresses crash gap in principle", "Supervisor-owned case directory, SQLite and key reused across restarts", "Planner and sidecar I/O outside SQLite writer", "Writer revalidation before atomic commit", "Current owner authorization with receipt before stale task/nickname checks", "Global and per-lesson lifecycle audit split", "Student-scoped ordinal and mixed A-active/B-created matrix", "State/room_facts/outbox DDL mapping"],
+  "implementation_notes":["Reserve cache capacity atomically before intent/tool execution", "Child failure must not delete supervisor-owned recovery evidence", "Do not hold global cache mutex across SQL or fsync", "Valid-prefix suffix deletion is not detectable by a hash chain without trusted head anchoring"],
+  "execution":{"tests":false,"builds":false,"services":false,"source_or_spec_edits":false},
+  "report":"review/pilot-start-kernel-sdd-architecture-review6-20261016.md"
+}

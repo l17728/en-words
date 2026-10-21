@@ -1,0 +1,14 @@
+﻿# Pilot test discovery audit: BLOCKED
+
+- Requested command: `python review/pilot_test_discovery.py --manifest review/pilot-pure-contract-manifest.json --target windows/amd64`
+- Go binary resolved by the updated audit tool: `D:\en-words\.test-tools\go\bin\go.EXE`
+- Audit run directory retained: `.test-artifacts/pilot-test-discovery/20261020T013059Z`
+- Result: BLOCKED before suite execution; no missing test names can be concluded.
+
+## Evidence
+
+The audit process reached `go test -tags pilot_e2e -list . ./internal/pilotsupervisor`. It remained active for more than three minutes without producing list output or creating the list stdout/stderr files. At the final process inspection, Go PID 9120 had been running since 09:31:33 and reported CPU time 2.578125 seconds. Its child was `compile.exe -V=full` PID 2436, started 09:34:36, CPU time 0.09375 seconds, responsive but making no observable progress. Python audit PID 9260 remained responsive. The audit was interrupted after the three-minute threshold; the wrapper exit code was 1. The preserved run directory is empty because the audit did not complete the Go toolchain/list probes.
+
+A separate earlier direct tagged JSON test did finish with exit code 0 and showed the four matching parent tests and their subtests passing, but its console output was truncated and it is not a manifest-discovery result. An earlier attempt to save that run via `Start-Process` ended with exit code -1073741510 and emitted no test events. These are not used as manifest audit evidence.
+
+No source files were changed by this audit.

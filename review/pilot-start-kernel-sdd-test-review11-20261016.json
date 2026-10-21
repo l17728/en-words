@@ -1,0 +1,41 @@
+﻿{
+  "review": "pilot-start-kernel-sdd-test-review11",
+  "date": "2026-10-16",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "domain": "test design and acceptance contract",
+  "verdict": "BLOCK",
+  "tests_run": false,
+  "review9_findings": [
+    {"topic": "receipt-present damaged-sidecar recovery", "status": "CLOSED", "sections": [47, 51, 93, 96]},
+    {"topic": "ACL/path/key provisioning negatives", "status": "CLOSED_FOR_RECEIPT_MISS_AND_NEW_OPERATION_PATHS", "sections": [42, 93]},
+    {"topic": "PilotToolPermit replay and binding negatives", "status": "CLOSED", "sections": [26, 93]}
+  ],
+  "findings": [
+    {
+      "id": "P2-1",
+      "severity": "P2",
+      "status": "open",
+      "title": "Receipt-hit path skips ACL/file-identity validation required before each open",
+      "sections": [42, 47, 52, 93],
+      "evidence": "§42 requires per-open ACL checks; §§47 and 52 perform/read the receipt before ACL/key validation. §93's security negatives stop before Prepare and do not exercise the receipt-hit path.",
+      "required_change": "Validate ACL and canonical file identity before opening DB for receipt lookup while preserving receipt precedence over sidecar checks; test valid receipt with weakened ACL/path swap and assert no receipt disclosure or planner/registry calls. Or explicitly scope and test an exception."
+    },
+    {
+      "id": "P2-2",
+      "severity": "P2",
+      "status": "open",
+      "title": "Failed grouped cleanup and quarantine behavior have no injected acceptance case",
+      "sections": [42, 93],
+      "evidence": "§42 mandates case isolation/non-reuse after cleanup failure; §93 lists nominal retention and grouped deletion only.",
+      "required_change": "Inject failure deleting one artifact, prove quarantine and no access/reuse, define retry/operator destruction, and ensure no fresh key is created over residual case files."
+    }
+  ],
+  "reviewed_areas": {
+    "plan_tool_crash_matrix": "PASS",
+    "event_state_result_enums": "PASS",
+    "degraded_receipt_recovery": "PASS",
+    "PilotRegistryOnce_permit_tests": "PASS",
+    "retention_nominal_paths": "PASS",
+    "cleanup_failure_path": "TEST_GAP"
+  }
+}

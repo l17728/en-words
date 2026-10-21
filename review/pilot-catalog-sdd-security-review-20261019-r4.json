@@ -1,0 +1,26 @@
+{
+  "review_id": "pilot-catalog-sdd-security-review-20261019-r4",
+  "date": "2026-10-19",
+  "artifact": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "scope": ["§42", "§108", "§109.1", "§109.2", "§109.3", "§109.4"],
+  "review_type": "read-only design security review",
+  "decision": "PASS",
+  "blockers": [],
+  "findings": [],
+  "checks": {
+    "first_catalog_frame_before_case_artifacts": "PASS_BY_DESIGN",
+    "initial_file_and_parent_sync_order": "PASS_BY_DESIGN",
+    "provisioning_recovery_restricted_to_initialization": "PASS_BY_DESIGN",
+    "case_id_reuse_or_authorization_bypass": "NONE_IDENTIFIED",
+    "case_lock_toctou": "PASS_BY_DESIGN_PENDING_ATOMIC_LOCK_CREATION_ACCEPTANCE"
+  },
+  "implementation_acceptance_gates": [
+    "Race two provisioning recovery supervisors when stable case lock does not yet exist; prove atomic create and same verified lock identity.",
+    "Define and enforce exact initial-member allowlist; reject unexpected links, reparse points, extra members, identity or ACL mismatch.",
+    "Fault-inject every catalog, lock, case-directory, initial-file, permission and ready-transition boundary; prove no artifacts before durable provisioning and no lesson execution during recovery.",
+    "Treat absent catalog with leftover case or lock artifacts as fail-closed, never as a clean first run."
+  ],
+  "tests_run": false,
+  "code_changed": false,
+  "limitations": "PASS applies to design text only; bootstrap, filesystem durability, lock identity, and supervisor behavior were not executed or verified."
+}

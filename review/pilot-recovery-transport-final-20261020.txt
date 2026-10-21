@@ -1,0 +1,33 @@
+﻿Recovery handler/transport validation (final ACK decoder cases)
+Date: 2026-10-20
+Linux runtime availability: WSL has no registered distribution; Docker unavailable; no SSH host aliases configured. No Linux runtime acceptance was performed.
+
+Source hashes at test start:
+EBA13B7E972A7B19EF80A0ECD33B86AA832A0CBE7294296783CC65F251481165  D:\en-words\server\internal\pilotsupervisor\recovery_bootstrap.go
+5AD49D67F9057E80812F9DA200A518F9C780B1E045CA48F57470DAFE048E6B9D  D:\en-words\server\internal\pilotsupervisor\recovery_bootstrap_test.go
+C6429C835CCA33EF7B8DBD2FAF444D96E85B2770CA6CF9DFF1722D645A3E0CB4  D:\en-words\server\internal\pilotsupervisor\recovery_transport_linux.go
+3E19884F0CE8CE882D27FE1CC9A3925C29C78559C61A8C5493C1405B423B1AB5  D:\en-words\server\internal\pilotsupervisor\recovery_transport_linux_test.go
+
+## Tagged package tests (Windows host, uncached)
+Command: go test -count=1 -tags pilot_e2e ./internal/pilotsupervisor
+ok  	enwords/internal/pilotsupervisor	3.338s
+Exit code: 0
+
+## Tagged package vet (Windows host)
+Command: go vet -tags pilot_e2e ./internal/pilotsupervisor
+Exit code: 0
+
+## Linux amd64 compile-only test binary
+Command: GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go test -c -tags pilot_e2e -o D:\en-words\.test-tools\pilot-supervisor-linux-amd64.test ./internal/pilotsupervisor
+Exit code: 0
+
+## Linux arm64 compile-only test binary
+Command: GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go test -c -tags pilot_e2e -o D:\en-words\.test-tools\pilot-supervisor-linux-arm64.test ./internal/pilotsupervisor
+Exit code: 0
+
+## Focused coverage test
+Command: go test -count=1 -tags pilot_e2e -coverprofile=D:\en-words\.test-tools\pilot-supervisor-windows.cover ./internal/pilotsupervisor
+ok  	enwords/internal/pilotsupervisor	3.558s	coverage: 48.4% of statements
+Exit code: 0
+
+Summary: Windows tests exit=0; Windows vet exit=0; Linux amd64 compile exit=0; Linux arm64 compile exit=0; Coverage test exit=0

@@ -1,0 +1,43 @@
+{
+  "review_id": "pilot-supervisor-sdd-test-r2-20261019",
+  "reviewed_document": "docs/42-Pilot隔离运行监督器SDD.md",
+  "sha256": "8c74f0b709d2be92056b357688ba6a18c31e056a80e857245b2a7e74368a9073",
+  "review_type": "read-only test design re-review",
+  "date": "2026-10-19",
+  "verdict": "BLOCKED",
+  "p1_count": 0,
+  "open_p2_count": 4,
+  "tests_executed": false,
+  "prior_findings": [
+    {"id": "F1", "status": "OPEN", "severity": "P2", "note": "Crash/recovery semantics improved, but member-level before/during/after create/write/Sync crash cuts still need exact artifact, catalog, reopen, and zero-effect oracles."},
+    {"id": "F2", "status": "OPEN", "severity": "P2", "note": "Failure matrix still bundles multiple operations and does not map each errno/short/full-write-plus-uncertain-Sync to return class, poison scope, restart result, and side-effect assertions."},
+    {"id": "F3", "status": "CLOSED", "severity": "P2", "note": "C1-C5 named IPC schedules, lock-holder crash, bounded waits, linearization and zero-side-effect assertions address the prior gap."},
+    {"id": "F4", "status": "CLOSED", "severity": "P2", "note": "Native Linux/Windows runner metadata, filesystem scope, concrete assertions, evidence, and fail-on-skip requirements are specified."},
+    {"id": "F5", "status": "CLOSED", "severity": "P2", "note": "E2E-PILOT-01..07 trace the later browser acceptance and state clearly that supervisor tests are insufficient."},
+    {"id": "F6", "status": "CLOSED", "severity": "P2", "note": "Coverage profile/thresholds, platform adapter coverage, event schema, trace linkage and negative log scans are specified."}
+  ],
+  "new_findings": [
+    {
+      "id": "N1",
+      "severity": "P2",
+      "blocks_implementation_gate": true,
+      "title": "Case ID width is inconsistent",
+      "sections": ["2", "7"],
+      "evidence": "Section 2 requires a 256-bit random case ID; Section 7 requires an unallocated 16-byte ID represented as 32 hex characters.",
+      "recommendation": "Choose one ID width and align validators, lock names, golden vectors, collision tests, and capacity reasoning."
+    },
+    {
+      "id": "N2",
+      "severity": "P2",
+      "blocks_implementation_gate": true,
+      "title": "SQLite OS file identity requirement conflicts with driver limitation",
+      "sections": ["2.6", "9"],
+      "evidence": "Section 2.6 requires matching the OS file ID of the opened DB; Section 9 says the driver does not expose the actual SQLite-opened file identity and substitutes protected-directory/path checks.",
+      "recommendation": "Either define the trusted-account/protected-directory/path check as the actual invariant and test oracle, or provide a driver/VFS/hook that proves the SQLite connection uses the verified OS file identity."
+    }
+  ],
+  "files_written": [
+    "review/pilot-supervisor-sdd-test-r2-20261019.md",
+    "review/pilot-supervisor-sdd-test-r2-20261019.json"
+  ]
+}

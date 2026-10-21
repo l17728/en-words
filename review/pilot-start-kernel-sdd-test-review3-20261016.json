@@ -1,0 +1,56 @@
+{
+  "review": "pilot-start-kernel-sdd-test-review-3",
+  "date": "2026-10-16",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "tests_run": false,
+  "implementation_approved": false,
+  "prior_findings": [
+    {
+      "id": "PILOT-START-TEST-01",
+      "status": "block",
+      "severity": "P1",
+      "reason": "Audit storage/linkage is now substantially specified, but Go dual-pool cardinality says one audit while the SDD requires two. The audit also does not persist schema version or scope, leaving historical evidence weaker than the design's tool/schema/scope audit requirement."
+    },
+    {
+      "id": "PILOT-START-TEST-02",
+      "status": "approve",
+      "severity": "P1",
+      "reason": "Typed codec schema and complete byte-exact golden JSON fixture are specified; the canonical fingerprint hash vector matches direct calculation. Current empty quiz/judged maps are explicit and future non-empty states are versioned separately."
+    },
+    {
+      "id": "PILOT-START-TEST-03",
+      "status": "approve",
+      "severity": "P1",
+      "reason": "The post-COMMIT/pre-response hook independently checks persisted receipt, checkpoint, audit, and two outbox rows before dropping the HTTP response."
+    },
+    {
+      "id": "PILOT-START-TEST-04",
+      "status": "approve",
+      "severity": "P1",
+      "reason": "A deterministic held-writer pending_unknown matrix now covers lookup timeout, unavailable recovery connection, commit/rollback settlement, and same-ID convergence without a second write while unresolved."
+    },
+    {
+      "id": "PILOT-START-TEST-05",
+      "status": "block",
+      "severity": "P2",
+      "reason": "Deterministic barriers and checkpoint/receipt/outbox cardinalities were added, but the expected audit count is one instead of the specified two, so the cross-pool audit idempotency contract remains unproven."
+    },
+    {
+      "id": "PILOT-START-TEST-06",
+      "status": "partial_block",
+      "severity": "P2",
+      "reason": "Event/reason enums and privacy sentinels are defined, but not_committed/rollback_proven lacks an explicit event mapping and log objects are not explicitly strict-allowlist schemas rejecting unknown keys."
+    }
+  ],
+  "fingerprint_vector": {
+    "status": "verified-by-direct-hash-calculation",
+    "expected_sha256": "06e513f5380a577706fe27f69e73d02dcdbfbda56b1e9e3f7545d0fecb4a5ba9",
+    "actual_sha256": "06e513f5380a577706fe27f69e73d02dcdbfbda56b1e9e3f7545d0fecb4a5ba9"
+  },
+  "remaining_blockers": [
+    "Correct the dual-pool audit cardinality to exactly two tool audit rows and verify replay does not add rows.",
+    "Resolve whether schema version/scope must be persisted and obtain security/architecture agreement for the chosen audit evidence model.",
+    "Map not_committed/rollback_proven to an event and make log fields a strict allowlist with fixed error codes."
+  ],
+  "disposition": "Not approved for implementation until remaining blockers are resolved and re-reviewed."
+}

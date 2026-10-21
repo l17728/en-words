@@ -1,0 +1,32 @@
+{
+  "review": "pilot-start-kernel-sdd-backend-review17",
+  "date": "2026-10-16",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "scope": "read-only review of catalog cross-process locking, lock ordering, concurrency, restart verification, and sync failure semantics",
+  "code_modified": false,
+  "docs_modified": false,
+  "tests_run": false,
+  "verdict": "BLOCK",
+  "findings": [
+    {
+      "id": "BE17-1",
+      "severity": "P1",
+      "status": "open",
+      "title": "Case-open sequence does not explicitly recheck catalog after acquiring the case lock",
+      "recommendation": "Specify catalog snapshot under lock and release, acquire case OS lock, re-read/revalidate catalog under catalog lock, then release catalog lock and OpenVerified/open DB. Never authorize an open using the pre-lock snapshot."
+    }
+  ],
+  "checks": {
+    "cross_process_lock_feasible_on_local_windows_posix": "PASS_WITH_IMPLEMENTATION_GATE",
+    "case_then_catalog_lock_order": "PASS_BUT_OPEN_SEQUENCE_UNDERSPECIFIED",
+    "short_catalog_critical_section_and_different_case_parallelism": "PASS",
+    "reader_consistency_under_catalog_lock": "PASS",
+    "restart_chain_validation_and_sync_failure": "PASS"
+  },
+  "implementation_gates": [
+    "Freeze OS lock primitive and semantics (Windows handle lock; POSIX flock/fcntl) on supported local filesystems.",
+    "Race two supervisor processes on same-case cleanup/open and prove catalog recheck after case-lock acquisition.",
+    "Run different-case parallel append/DB work and restart full-chain verification.",
+    "Fault-inject zero-byte, partial-frame, and uncertain-sync append outcomes; fail closed on ambiguous tail."
+  ]
+}

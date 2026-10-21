@@ -1,0 +1,16 @@
+{
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "mode": "read_only_no_tests",
+  "decision": "scope_accepted_contract_revisions_required_before_implementation",
+  "blockers": [
+    {"id": "SK-B1", "title": "started lifecycle and exact initial fields do not yet map to current schema"},
+    {"id": "SK-B2", "title": "receipt lookup composite key and replay-before-CAS order"},
+    {"id": "SK-B3", "title": "detached plan finite grammar and frozen versus live configuration"},
+    {"id": "SK-B4", "title": "lifecycle audit and bidirectional receipt/audit/outbox integrity"},
+    {"id": "SK-B5", "title": "unknown commit versus known rollback recovery contract"}
+  ],
+  "legacy_fence_previous_blockers_reused": false,
+  "production_modified": false,
+  "tests_run": false,
+  "report": "review/pilot-start-kernel-sdd-backend-review-20261016.md"
+}

@@ -1,0 +1,4 @@
+Command: D:\en-words\.test-tools\go\bin\go.exe test -c -tags pilot_e2e -o D:\en-words\.test-tools\tmp\pilot-catalog-store-windows-amd64-r10.test.exe ./internal/store
+GOCACHE=D:\en-words\.test-tools\gocache
+GOMODCACHE=D:\en-words\.test-tools\gomodcache
+

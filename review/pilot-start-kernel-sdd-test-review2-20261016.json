@@ -1,0 +1,51 @@
+{
+  "review": "pilot-start-kernel-sdd-test-review-2",
+  "date": "2026-10-16",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "tests_run": false,
+  "implementation_approved": false,
+  "first_review_findings": [
+    {
+      "id": "PILOT-START-TEST-01",
+      "status": "block",
+      "severity": "P1",
+      "reason": "The proposed audit_logs row and decision TraceID linkage partially define persistence, but omit the required schema version, scope, effect index, and queued status. The single-row Args value only stores bytes. Unique/cardinality and trace-collision behavior remain underspecified."
+    },
+    {
+      "id": "PILOT-START-TEST-02",
+      "status": "block",
+      "severity": "P1",
+      "reason": "The fingerprint hash vector is reproducible, but active codec field types, array element types, and an explicit golden codec JSON fixture are absent; field names alone cannot define strict codec tests."
+    },
+    {
+      "id": "PILOT-START-TEST-03",
+      "status": "approve",
+      "severity": "P1",
+      "reason": "The revised harness verifies committed receipt/checkpoint/audit/two outbox rows via an independent connection after COMMIT and before dropping the HTTP response, establishing the required ordering. Implementation must preserve the one-shot, non-request-configurable hook."
+    },
+    {
+      "id": "PILOT-START-TEST-04",
+      "status": "block",
+      "severity": "P1",
+      "reason": "No deterministic held-writer/lookup, receipt lookup unavailable, or post-settlement same-ID re-entry tests are added. The new E2E covers a known committed receipt, not pending_unknown; pre-COMMIT interruption does not prove rollback evidence."
+    },
+    {
+      "id": "PILOT-START-TEST-05",
+      "status": "block",
+      "severity": "P2",
+      "reason": "The dual-pool test has no synchronization barrier proving overlap; its row-sequence cardinality and identical receipt equality remain ambiguous, allowing sequential execution to pass."
+    },
+    {
+      "id": "PILOT-START-TEST-06",
+      "status": "block",
+      "severity": "P2",
+      "reason": "Required outcome/reason enums and event sequences are not listed, and serialized-log privacy assertions lack a concrete forbidden-value matrix."
+    }
+  ],
+  "fingerprint_vector": {
+    "status": "verified-by-direct-hash-calculation",
+    "expected_sha256": "06e513f5380a577706fe27f69e73d02dcdbfbda56b1e9e3f7545d0fecb4a5ba9",
+    "actual_sha256": "06e513f5380a577706fe27f69e73d02dcdbfbda56b1e9e3f7545d0fecb4a5ba9"
+  },
+  "disposition": "Not approved yet; resolve the five blocked findings and request a fresh cross-domain design review."
+}

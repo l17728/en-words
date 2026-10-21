@@ -1,0 +1,33 @@
+﻿{
+  "review_id": "pilot-start-kernel-agent-review7-20261016",
+  "domain": "ai_agent_teaching_strategy",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "cross_check": "docs/04-Agent与话术库设计.md",
+  "review_type": "read_only_design_rereview",
+  "code_modified": false,
+  "document_modified": false,
+  "tests_run": false,
+  "decision": "pass",
+  "summary": "AGENT-START-14 已关闭：docs/41 T-01 的叮当老师断言与 docs/04 OP-1 替换结果逐字一致；fallback 独立且有来源标识与测试夹具。plan_ready/tool_started/tool_result 顺序、失败 sidecar provenance 与恢复/审计链一致，未见其他 P1/P2 阻断。",
+  "prior_findings": [
+    {"id": "AGENT-START-14", "priority": "P1", "status": "closed", "evidence": "docs/41 §3、docs/04 OP-1 与 Golden 均使用叮当老师；未检出叮叮老师残留。"}
+  ],
+  "checklist": {
+    "T01_op1_exactly_matches_docs04_after_substitution": "pass_design",
+    "fallback_has_fixed_text_and_source": "pass_design",
+    "plan_ready_precedes_registry": "pass_design",
+    "tool_started_and_tool_result_are_durable_and_ordered": "pass_design",
+    "missing_result_recovers_pending_unknown_without_replay": "pass_design",
+    "trusted_actor_scope_risk_and_hmac_provenance": "pass_design",
+    "failed_attempt_separate_from_success_receipt_audit": "pass_design",
+    "rollback_and_commit_unknown_recovery": "pass_design",
+    "stable_output_and_no_replanning_tests": "pass_design",
+    "implementation_or_tests_verified": false,
+    "production_or_real_pilot_authorization": "no"
+  },
+  "findings": [],
+  "limitations": [
+    "Design-only review; no code changes or test execution.",
+    "PASS is limited to this Agent-domain review scope and is not implementation acceptance or pilot authorization."
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "review":"pilot-start-kernel-sdd-architecture-review3",
+  "date":"2026-10-16",
+  "scope":"D15 patch and outbox mandatory timestamps only",
+  "status":"needs_acceptance_text_correction",
+  "structural_blocker_count":0,
+  "required_correction_count":1,
+  "decisions":[
+    {"id":"START-SDD-04","decision":"approve","evidence":"docs41 sections3/4 now require PlanEffects and Registry classroom.show_word plus say, with exactly two tool audits and two outbox rows"},
+    {"id":"OUTBOX-DDL","decision":"approve","evidence":"next_attempt_at and created_at explicitly use start_time_ms; pending claim and lease fields satisfy existing pilot_schema.go checks"}
+  ],
+  "required_corrections":[{"id":"START-AUDIT-COUNT","severity":"P3","location":"docs41 section6.1 line67 at review time","finding":"Acceptance still requires 1 matching audit while the updated protocol requires 2","required":"Assert exactly two audit rows, one classroom.say and one classroom.show_word"}],
+  "execution":"Read-only document/source comparison; no tests/builds/services; only review reports written",
+  "limits":"No new approval for Room, output consumer, real model or human audio integration"
+}

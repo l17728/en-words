@@ -1,0 +1,26 @@
+﻿{
+  "review": "pilot-start-kernel-sdd-test-review13",
+  "date": "2026-10-16",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "domain": "test design and acceptance contract",
+  "verdict": "PASS",
+  "tests_run": false,
+  "closed_findings": [
+    {"prior_review": "review11", "topic": "ACL/file identity validation before receipt lookup", "status": "CLOSED", "sections": [42, 47, 52, 93]},
+    {"prior_review": "review11", "topic": "cleanup failure quarantine and no reuse", "status": "CLOSED", "sections": [42, 93, 96]},
+    {"prior_review": "review12", "topic": "loopback Host/Origin/Fetch Metadata/CSRF/Bearer security matrix", "status": "CLOSED", "sections": [74, 96]}
+  ],
+  "reviewed_areas": {
+    "receipt_degraded_recovery": "PASS",
+    "ACL_and_file_identity": "PASS",
+    "cleanup_quarantine": "PASS",
+    "PilotToolPermit_single_use_and_binding": "PASS",
+    "filesystem_and_key_negative_matrix": "PASS",
+    "loopback_request_security": "PASS",
+    "plan_tool_crash_lifecycle": "PASS",
+    "event_state_and_result_enums": "PASS",
+    "cardinality_and_log_assertions": "PASS",
+    "retention": "PASS"
+  },
+  "open_findings": []
+}

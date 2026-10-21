@@ -1,0 +1,13 @@
+{
+  "document": "docs/42-Pilot隔离运行监督器SDD.md",
+  "sha256": "BFCD1B6BF85A171563DC2FC2D42A890356145BFC5905332EAECF0C416EC958F4",
+  "domain": "backend",
+  "decision": "PASS",
+  "closed_findings": ["B42-01", "B42-02", "R3-cross-references", "R3-first-versus-subsequent-lock-summary"],
+  "blockers": [],
+  "remaining_review_findings": [],
+  "review_mode": "read_only_static",
+  "tests_run": false,
+  "prior_review": "review/pilot-supervisor-sdd-backend-review-r3-20261019.json",
+  "report": "review/pilot-supervisor-sdd-backend-review-r4-20261019.md"
+}

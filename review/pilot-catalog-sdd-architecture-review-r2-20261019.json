@@ -1,0 +1,41 @@
+{
+  "review": "pilot-catalog-sdd-architecture-r2",
+  "date": "2026-10-19",
+  "source": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "source_sha256": "c2e2454f81013eccb451ef527ed6733f6211865a7f0030d7d3d66d363971754d",
+  "status": "PASS",
+  "blocking_count": 0,
+  "scope": "Read-only review of CAT-01/CAT-02 closure and cleanup restart; no implementation or test execution.",
+  "closed": [
+    {
+      "id": "CAT-01",
+      "evidence": ["32", "96", "109.3 (line 154)"],
+      "conclusion": "One case owns one target Start. Cross-lesson concurrency uses different cases; same-case requests serialize. Proven terminal failure requires a new fixture for explicit retry; unresolved pending_unknown is not retry permission. Catalog dispositions now match the operation scope."
+    },
+    {
+      "id": "CAT-02",
+      "evidence": ["56", "109.3 (line 156)", "109.4 cleanup fault oracle"],
+      "conclusion": "Stable lifecycle lock lives outside the removable directory. Supervisor-only cleanup resume handles partial or complete directory removal without opening SQLite/sidecar/key. Missing members are treated as removed; integrity/removal/sync failures retain quarantine; parent sync precedes durable deleted tombstone."
+    }
+  ],
+  "necessary_implementation_constraints": [
+    "Cleanup resume inherits the case-lock then catalog-recheck ordering in section 56; do not rely on a pre-lock state snapshot.",
+    "Keep the stable lock identity across cleanup and restart; deleting/recreating a lock object while contenders exist would split exclusion.",
+    "Even if the case directory is already absent, sync the parent before appending deleted, as required by the section 109.4 oracle.",
+    "A catalog append failure after deletion retains unresolved/quarantined authorization, never reconstructs the case or retries Start.",
+    "Cross-case harness concurrency does not replace independent store tests for multiple lesson lifecycles in one database."
+  ],
+  "nonblocking_notes": [
+    {
+      "id": "CAT-R2-P3-01",
+      "location": "109.4 line 175",
+      "detail": "The requested valid canonical payload of exactly 256 bytes and valid catalog of exactly 16 MiB are not reachable with the current fixed four-field schema, fixed-length case ID, finite state enum and 65536 contiguous generations. Separate raw framing limit tests from valid semantic journal vectors; do not add padding or weaken canonical validation to manufacture these cases.",
+      "impact": "Acceptance-vector clarification before implementing those boundary tests; not a lifecycle or cleanup design blocker."
+    }
+  ],
+  "limitations": [
+    "Design approval only; no catalog/supervisor implementation, OS lock/ACL validation, fault injection or crash recovery was executed.",
+    "The trusted supervisor account threat boundary remains unchanged; CRC is not authentication.",
+    "No production classroom, real model, audio or teaching completion claim."
+  ]
+}

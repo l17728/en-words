@@ -1,0 +1,95 @@
+﻿{
+    "review":  "pilot-supervisor-sdd-backend-r3",
+    "date":  "2026-10-19",
+    "document":  "docs/42-Pilot隔离运行监督器SDD.md",
+    "document_sha256":  "AEF772E4D71633690E4E3F4C7498837552088D5BD385AF1875DE820E1B9AA447",
+    "scope":  "Read-only backend implementability review of close adapter state/error combinations, still_open retry and lock release, unknown close process recovery, DB connection/recovery counters, FI state oracles, catalog append, and SQLite boundaries.",
+    "mode":  "read-only; no source changes or tests",
+    "result":  "blocked",
+    "prior_findings":  [
+                           {
+                               "id":  "R2-P2-close-context",
+                               "status":  "closed_design",
+                               "evidence":  "§3 declares CaseHandle.Close(ctx) and Supervisor.Close(ctx); §§9.3-9.5 define owner, drain, and timeout semantics."
+                           },
+                           {
+                               "id":  "R2-P2-error-enum",
+                               "status":  "closed_design",
+                               "evidence":  "§3 now lists lock_timeout, recovery_integrity_error, cleanup_pending, close_pending, operation_canceled, and io_uncertain in addition to case errors."
+                           },
+                           {
+                               "id":  "R2-P1-case-id-width",
+                               "status":  "closed",
+                               "evidence":  "§2.1 and §7 use 16-byte/128-bit IDs encoded as 32 lowercase hex."
+                           },
+                           {
+                               "id":  "R2-P2-sqlite-handle-identity",
+                               "status":  "closed_design",
+                               "evidence":  "§2.6 and §9.7 explicitly say PRAGMA database_list validates canonical path only and current modernc/glebarez cannot prove SQLite OS-handle identity; same-account races are excluded."
+                           }
+                       ],
+    "blocking_findings":  2,
+    "findings":  [
+                     {
+                         "id":  "R3-P1-close-state-unimplementable",
+                         "severity":  "P1",
+                         "section":  "§§9.3-9.5; FI-CLOSE-01a through FI-CLOSE-01g",
+                         "title":  "The close adapter promises a retry state that Go file/database APIs cannot reliably establish",
+                         "detail":  "The adapter says {still_open, err} may be retried against the same handle, but generic os.File.Close returns an error without a portable proof that the OS handle remains open; Go\u0027s os.File wrapper also marks the descriptor closed, so a second Close is not a safe same-handle retry. database/sql.DB.Close does not expose per-driver-handle open/closed state; §9.5 correctly requires unknown when closure cannot be proven, while FI-CLOSE-01a first says a DB.Close error yields close_pending and then branches to unknown. The document therefore gives incompatible outcomes and requires the implementation to infer inaccessible handle state. In addition, FI-CLOSE-01a/b/d say still_open retry eventually releases the case lock, but the adapter-level fault oracle never defines a deterministic implementation capable of producing still_open for these Go resources.",
+                         "required_action":  "Make the contract implementable: define `still_open` only for a specific OS adapter operation whose API can positively establish the same native handle is still valid and retryable; treat generic os.File.Close and database/sql.DB.Close errors as `unknown` unless their exact platform/driver contract proves otherwise. Align FI-CLOSE rows so DB.Close errors have one outcome. Define which layer owns the process-exit request and how the harness observes/reaps the exact child before permitting a replacement process. Add adapter tests for every admitted state/error pair and assert no unlock before all owned resources are proven closed.",
+                         "evidence":  "§9.4 permits still_open retry; §9.5 requires unknown for DB.Close errors that cannot prove closure. FI-CLOSE-01a calls generic DB.Close error close_pending before describing unknown. Go database/sql exposes only DB.Close() error, not whether each underlying connection is still open; os.File.Close error likewise is not a portable same-handle retry guarantee."
+                     },
+                     {
+                         "id":  "R3-P1-provisioning-db-counter-contradiction",
+                         "severity":  "P1",
+                         "section":  "§§8.1, 10.1, 13 FI-DB-01a/FI-DB-01b",
+                         "title":  "The DB creation/initialization protocol cannot satisfy its own open counters",
+                         "detail":  "Provisioning says CREATE_NEW an SQLite file, then recovery may open it mode=ro for PRAGMA database_list and integrity_check. FI-DB-01b adds SQLite initialization/write, but asserts db_open_rw=0 while describing the initializer and relies on a prior counter rule that defines db_open_rw as successful mode=rw SQL connections. The design does not say whether a prebuilt DB template is copied (not in the fixed allowlist), whether SQLite initialization is performed using mode=rw, or how a zero-byte CREATE_NEW file becomes a valid database. If it uses SQLite/database/sql to initialize, rw-open cannot be zero; if only ro-open is allowed, SQLite cannot initialize/write schema. As written, tests cannot implement the prescribed lifecycle and counter oracle simultaneously.",
+                         "required_action":  "Specify a single provisioning mechanism: either define an immutable reviewed fixture/template and its verified copy+fsync identity protocol, or explicitly permit one narrowly scoped mode=rw initialization connection before readiness and count it separately from application connections. Define expected DB format/schema and exact allowed SQL/counters for initialization and recovery; revise FI-DB-01a/b and §10.1 accordingly. Do not classify an application/schema write as a validation PRAGMA.",
+                         "evidence":  "§8.1 says CREATE_NEW SQLite then recovery uses mode=ro PRAGMAs; §10.1 defines db_open_rw as successful mode=rw SQL connections; FI-DB-01a/b require rw count zero while also asking for SQLite initialization/write."
+                     },
+                     {
+                         "id":  "R3-P2-catalog-fault-oracles-under-specified",
+                         "severity":  "P2",
+                         "section":  "§§10.2-10.3, 13 FI-CAT-02/FI-CAT-03/FI-OPEN-01",
+                         "title":  "Some journal error/restart outcomes are not uniquely determined",
+                         "detail":  "FI-CAT-02 says errno or short write causes global poison and later accepts only complete frames, but does not specify whether an errno after a complete write is injected at write or after bytes reached the file, nor the exact pre-existing durable state for append. FI-CAT-03 says after restart a complete frame may be accepted or no frame may preserve the prior state, yet its table does not tie each injected write/Sync/parent-Sync point to expected byte range and generation. FI-OPEN-01 groups read/seek/stat/CRC failures although error timing may leave cursor position or partial replay state; it says restart replay decides but not whether the current supervisor is poisoned for each syscall class. This weakens the newly added per-member exact-oracle promise.",
+                         "required_action":  "For each catalog operation, enumerate fault points before write, partial write, complete write before file Sync, file Sync error, and parent Sync error where applicable; state exact current health/poison scope and restart outcome conditional on observed durable bytes, including catalog generation and frame byte range. Separate read, seek, stat/identity, and CRC fault injection and state which invalidate the entire supervisor versus only the request. Keep the rule that a full valid frame after uncertain Sync is accepted only on fresh-process replay.",
+                         "evidence":  "§13 says every test records exact frame byte range and that mismatched oracle fails; FI-CAT-02/03 and FI-OPEN-01 still group distinct points and allow multiple possible results without mapping them to a named injection point."
+                     },
+                     {
+                         "id":  "R3-P2-log-lifecycle",
+                         "severity":  "P2",
+                         "section":  "§§2.7, 7, 9.1, 10-13",
+                         "title":  "The log allowlist is synchronized, but log/pseudonym-key lifecycle and bootstrap failure behavior are unspecified",
+                         "detail":  "The revised root allowlist consistently includes logs/ with events.jsonl and log.pseudonym.key, closing the prior inventory mismatch. However, the SDD does not define whether these files are created at root bootstrap or lazily, how the log key and event file are atomically created and synced, what identity/permissions are verified on restart, what happens if logging setup fails before bootstrap events can be recorded, how event append failures poison or block operations, or how root-epoch rotation and retention/cleanup interact with permanent case/catalog state. Since every bootstrap/create/open/close/failure event is mandatory and the pseudonym key determines stable case hashes, implementations/tests cannot choose a unique lifecycle.",
+                         "required_action":  "Define the logs/ creation and recovery lifecycle: CREATE_NEW/permissions/identity/file+parent Sync, key format/epoch and rotation, append/sync/error semantics, behavior when logging cannot initialize, retention and cleanup, and fault-injection/restart tests. State whether logs are always present or may be absent at startup and how absent vs partial/invalid files are handled.",
+                         "evidence":  "§2.7 mandates keyed case hashes, a protected pseudonym key, root-epoch rotation and structured events; §9.1/§7 list the exact log entries, but no lifecycle or FI oracle defines their creation/validation/append failure behavior."
+                     },
+                     {
+                         "id":  "R3-P2-context-error-mapping",
+                         "severity":  "P2",
+                         "section":  "§3 error enum; §9.2",
+                         "title":  "The operation_canceled stable error has no reachable mapping",
+                         "detail":  "The stable enum includes operation_canceled, but §9.2 says both context cancellation and timeout before lock acquisition return lock_timeout. A caller therefore cannot distinguish caller cancellation from deadline exhaustion, and tests cannot assert the advertised complete taxonomy. Other timeout paths should use the same mapping.",
+                         "required_action":  "Define deterministic mapping: context.Canceled -\u003e operation_canceled and deadline exceeded/lock wait cap -\u003e lock_timeout (or remove operation_canceled); apply consistently to lock, lease drain, and retryable pre-I/O waits. Add table-driven tests for canceled vs deadline contexts and assert no catalog/member effects.",
+                         "evidence":  "§3 enumerates operation_canceled; §9.2 groups context cancellation/timeout and returns lock_timeout."
+                     }
+                 ],
+    "notes":  [
+                  "The SQLite boundary itself is now accurately constrained: canonical path verification is not represented as OS handle binding, and the threat model explicitly excludes same-account attacks.",
+                  "The bootstrap/catalog/case lock order is implementable in principle using a stable catalog file handle lock and persistent per-case lock objects, subject to real Linux/Windows adapter validation.",
+                  "Unknown close recovery via a dedicated child and external harness is feasible in principle, but the parent must own termination and wait/reap; the child cannot certify its own exit. The SDD should name this ownership explicitly.",
+                  "No code was changed and no tests were run. This review is not evidence that the supervisor or pilot has been implemented or accepted.",
+                  "Cross-document compatibility checked against docs/41 §112 (SHA-256 7890FB542818C77F131CD06D09845120406EB7C1567AF1BDFA83C92FA51D3867): both corrections are compatible and accurately reflected by docs/42 §§2.6-2.7. The driver correction replaces an impossible file-ID assertion with canonical-path validation and the explicitly narrower trusted-directory threat boundary; it does not relax an invariant silently because the stronger same-account threat is explicitly out of scope and blocks enablement if required. The HMAC correction keeps the key inside the trusted Supervisor and permits only same-process restricted signing capability; a future IPC signer is gated on a separate review. Neither erratum causes a backend implementation incompatibility with the current test-only scope, but neither was implemented/proved by the catalog kernel.",
+                  "Cross-document compatibility checked against docs/41 §112 (SHA-256 7890FB542818C77F131CD06D09845120406EB7C1567AF1BDFA83C92FA51D3867): both corrections are compatible and accurately reflected by docs/42 §§2.6-2.7. Driver correction replaces an impossible file-ID assertion with canonical-path validation under an explicit trusted-directory threat boundary; stronger same-account protection remains a separate enablement gate. HMAC correction keeps the key within the trusted Supervisor process and gates any future IPC signer on separate review.",
+                  "Reviewed latest directory allowlist revision: §7 and §9.1 now agree on root controls, case-locks/, cases/, and logs/ entries; prior inventory mismatch is closed. The remaining log finding concerns lifecycle/failure semantics, not the name allowlist."
+              ],
+    "cross_documents":  [
+                            {
+                                "document":  "docs/41-试点课堂Start持久迁移内核SDD.md",
+                                "sha256":  "7890FB542818C77F131CD06D09845120406EB7C1567AF1BDFA83C92FA51D3867",
+                                "review":  "§112 driver/key-boundary erratum"
+                            }
+                        ]
+}

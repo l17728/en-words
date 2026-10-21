@@ -1,0 +1,34 @@
+{
+  "review": "architecture_stage_a0_design_refresh",
+  "date": "2026-10-21",
+  "status": "PASS",
+  "scope": "Static design delta review: SCHEMA-34..36, counts, source bindings; isolated A0 implementation only",
+  "sha256": {
+    "docs/51-pilot-control-ledger-v3-sdd.md": "13e3e2d6859623f8c6f424d87e139fe684bde5cd48d4506dd3e8b9ca276b2a26",
+    "docs/52-pilot-control-ledger-v3-physical-model-decisions.md": "4a33744b224cbf5ea3c94149c451218f38598fe64bc2a42ffd10054e1f86bef5",
+    "review/pilot-control-ledger-v3-schema-fault-manifest-20261021.json": "eda02616ea5472600106033535f4c35f92b0793dd34053bd67d5d0732db55106",
+    "review/pilot-runroot-product-orchestration-manifest-20261021.json": "bfc7bc302e7e9953793387f101221975571e57f4ae4535ed5edec5cceade8cdb",
+    "review/pilot-control-ledger-v3-ddl-manifest-draft-20261021.json": "54558381ea66be5305c4ba037e93ad7be53d23f6b8c28785b8e3ca0222ac2324"
+  },
+  "schema_cases": {
+    "total": 36,
+    "unique": 36
+  },
+  "product_cases": {
+    "total": 101,
+    "unique": 101
+  },
+  "source_binding_mismatches": [],
+  "blockers": [],
+  "findings": [
+    "SCHEMA-34 locks ConnectHook failure before readiness and prevents unprotected connection reuse.",
+    "SCHEMA-35 requires eight concurrently pinned physical connections and checks authorizer plus trigger provenance.",
+    "SCHEMA-36 checks capability cleanup across success, error and panic with same/other connection reuse."
+  ],
+  "boundaries": [
+    "DDL manifest remains DRAFT_FOR_DOMAIN_REVIEW_NOT_IMPLEMENTATION_AUTHORITY; this review does not change artifact status.",
+    "Approval permits isolated A0 implementation work after other domain approvals; does not enable product RPCs or skip A1/A2 native acceptance.",
+    "No tests, compilation, SQL execution, native acceptance or coverage verification performed.",
+    "SCHEMA-34..36 remain BLOCKED_NOT_IMPLEMENTED; method mutations and Stage B admission remain subject to documented gates."
+  ]
+}

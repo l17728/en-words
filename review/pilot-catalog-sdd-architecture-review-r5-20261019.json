@@ -1,0 +1,48 @@
+{
+  "review": "pilot-catalog-sdd-architecture-r5",
+  "date": "2026-10-19",
+  "source": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "source_sha256": "402d57e870b36daa3e1472c6d4351c33152b74614fb94999237b3af53087b967",
+  "scope": "Final read-only architecture review of section 109 initialization, authorization, concurrency and cleanup lifecycle design.",
+  "status": "PASS",
+  "blocking_count": 0,
+  "findings": [],
+  "checks": [
+    {
+      "contract": "Startup lock ordering",
+      "result": "PASS",
+      "evidence": "109.1/109.2: bootstrap lock then catalog lock; full replay, identity checks, file Sync and parent Sync stay under the catalog lock; release catalog then bootstrap before taking any case lock. Ordinary case operations never acquire bootstrap. No specified lock-order cycle."
+    },
+    {
+      "contract": "First frame and missing-catalog integrity",
+      "result": "PASS",
+      "evidence": "CREATE_NEW and first provisioning frame form one bootstrap sequence. File and parent durability precede case-lock/member creation. Missing catalog with residual case directories or case locks is rejected; permanent bootstrap lock alone is not a case artifact. Empty/partial existing catalog is not silently initialized."
+    },
+    {
+      "contract": "Provisioning recovery",
+      "result": "PASS",
+      "evidence": "Startup re-Sync is required before case authorization. Recoverers converge on the same stable lock identity and recheck catalog state. Exact initial members may become ready once; incomplete or invalid members become quarantined. No lesson Start, Planner or Registry execution occurs in provisioning recovery."
+    },
+    {
+      "contract": "One case one Start",
+      "result": "PASS",
+      "evidence": "109.3 limits each private fixture to one target Start; different lesson operations use different cases. Same-case contention validates ready snapshots before the race and rechecks under the case lock, with one winner and zero loser effects. Proven terminal failure permits only a fresh isolated fixture; unknown outcomes do not authorize another Start."
+    },
+    {
+      "contract": "Stable external lock and cleanup resume",
+      "result": "PASS",
+      "evidence": "Persistent verified case lock is outside the removable directory and is not replaced while contenders exist. Cleanup-only supervisor resume removes fixed members without opening SQLite/sidecar/key. Missing members are recoverable; anomalies remain isolated. Parent Sync precedes deleted tombstone, including the already-absent-directory fault oracle."
+    },
+    {
+      "contract": "Recovery evidence and privacy",
+      "result": "PASS",
+      "evidence": "Complete valid frames define recovered state, not HTTP delivery. CRC is explicitly not authentication. Fixed catalog fields exclude user/lesson identifiers, credentials and arbitrary errors. Partial chains and uncertain current-process writes fail closed."
+    }
+  ],
+  "prior_findings": "CAT-01, CAT-02, CAT-R3-01 and CAT-R3-02 remain closed. No new architecture blocker in this reviewed revision.",
+  "limitations": [
+    "Design approval only; catalog/supervisor implementation is not established by this review.",
+    "Named-barrier concurrency, interrupted writes, recovery Sync failures, platform ACL/identity/parent-directory durability and process-death lock release remain mandatory implementation acceptance.",
+    "No tests, builds, services or source/design modifications were performed. No real classroom/model/audio acceptance claim."
+  ]
+}

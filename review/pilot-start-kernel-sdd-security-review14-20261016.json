@@ -1,0 +1,52 @@
+{
+  "review_id": "pilot-start-kernel-sdd-security-review14-20261016",
+  "date": "2026-10-16",
+  "reviewer_domain": "security",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_type": "read-only design review",
+  "compared_against": "review/pilot-start-kernel-sdd-security-review13-20261016.json",
+  "focus": [
+    "SQLite VFS pre-page/pre-SQL identity gate",
+    "catalog stable inode/ACL/append-only restart anchor",
+    "cleanup quarantine and tombstone durability",
+    "critical file access races",
+    "CSRF and key boundary consistency"
+  ],
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "blocked_pending_quarantine_failure_restart_policy",
+  "summary": "The SQLite VFS identity gate now directly consumes the verified handle and requires file-ID proof before any page access or SQL. Catalog inode/ACL/append-only restart anchoring and critical DB/auxiliary/key file race protections are sufficient within the explicit trusted-account threat model. One lifecycle gap remains: a zero-byte cleanup_quarantined append failure leaves the old catalog valid, so a new supervisor has no durable record of the failed attempt despite the process-local fail-closed instruction.",
+  "round13_disposition": {
+    "finding_id": "PSK-SEC13-01",
+    "disposition": "closed",
+    "evidence": "§3 requires direct verified-handle consumption by pilot VFS, pre-page/pre-SQL file-ID verification, prohibits PRAGMA/path reopen, and mandates fail-closed if unsupported. The negative matrix asserts zero page/SQL/receipt access on identity mismatch."
+  },
+  "findings": [
+    {
+      "finding_id": "PSK-SEC14-01",
+      "severity": "P2",
+      "status": "open_condition",
+      "title": "Failed quarantine persistence has no restart anchor",
+      "evidence": "§3 requires global fail-closed if cleanup_quarantined append/Sync fails. A failure before bytes persist can leave a valid catalog with prior case state; the process-local latch is not described as surviving supervisor restart.",
+      "risk": "A restarted supervisor may not know that quarantine was attempted and may open the case according to stale prior state.",
+      "required_revision": "State whether fail-closed lasts only for the current process or must survive restart. For durable behavior, add a separate protected latch or equivalent recovery mechanism and define its own failure handling; otherwise prohibit supervisor restart pending operator verification and explicit clear. Add zero-byte append failure followed by restart acceptance case."
+    }
+  ],
+  "control_dispositions": {
+    "sqlite_verified_handle_vfs": "closed_in_design; file ID checked before any page access or SQL; no PRAGMA/path reopen",
+    "catalog_stable_identity": "sufficient under protected parent ACL and explicit trusted-account threat boundary",
+    "catalog_append_only_restart_validation": "strict schema/generation/frame validation; catalog HMAC mismatch remains closed and no MAC is required",
+    "critical_db_wal_sidecar_key_races": "specified with held handles, no-follow directory-relative operations, permissions, and identity checks",
+    "cleanup_quarantine_restart_failure": "underspecified after zero-byte append/Sync failure; open P2",
+    "csrf_and_key_controls": "coherent and retained"
+  },
+  "remaining_blocker_count": 1,
+  "remaining_conditions": [
+    "Clarify persistence semantics for a failed cleanup quarantine append and its supervisor restart behavior."
+  ],
+  "limitations": [
+    "No tests or runtime validation were run.",
+    "No SQLite VFS, filesystem race, ACL/catalog, key, database, or supervisor restart behavior was inspected at runtime.",
+    "This review does not approve implementation, production deployment, real student data, or classroom readiness."
+  ]
+}

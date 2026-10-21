@@ -1,0 +1,31 @@
+{
+  "review": "pilot-start-kernel-sdd-backend-review15",
+  "date": "2026-10-16",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "scope": "read-only review of verified-handle SQLite VFS, append-only catalog recovery, and cross-restart WAL/SHM/journal",
+  "code_modified": false,
+  "docs_modified": false,
+  "tests_run": false,
+  "verdict": "BLOCK",
+  "findings": [
+    {
+      "id": "BE15-1",
+      "severity": "P1",
+      "status": "open",
+      "title": "Selected modernc v1.23.1/glebarez dependency has no public writable VFS or verified-handle injection path",
+      "recommendation": "Freeze a pilot-only implementation route: maintain a writable modernc VFS fork/adapter with explicit upstream and patch ownership, or select a driver exposing writable VFS and OS-handle injection. Keep it out of production builds and prove there is no path/DSN fallback."
+    }
+  ],
+  "checks": {
+    "verified_handle_identity_before_page_or_sql": "PASS_CONTRACT_BLOCKED_BY_DRIVER_API",
+    "append_only_catalog_inode_and_recovery": "PASS",
+    "wal_shm_journal_create_and_verified_reopen_contract": "PASS_CONTRACT_BLOCKED_BY_DRIVER_API",
+    "new_semantic_conflicts": "NONE"
+  },
+  "implementation_gates": [
+    "Choose and version a writable handle-aware SQLite VFS/driver implementation in the pilot-only dependency graph.",
+    "Prove all main/auxiliary VFS callbacks use verified handles/dir handles and never fall back to path-backed default VFS.",
+    "Fault-inject first-page identity, create/reopen/recovery, locks/shared-memory, and replacement on Windows and POSIX.",
+    "Verify append-only catalog partial frame and uncertain Sync always fail closed across process restart."
+  ]
+}

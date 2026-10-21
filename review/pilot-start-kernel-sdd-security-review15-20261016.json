@@ -1,0 +1,47 @@
+{
+  "review_id": "pilot-start-kernel-sdd-security-review15-20261016",
+  "date": "2026-10-16",
+  "reviewer_domain": "security",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_type": "read-only design review",
+  "compared_against": "review/pilot-start-kernel-sdd-security-review14-20261016.json",
+  "focus": [
+    "modernc SQLite canonical-path/open-time identity boundary",
+    "catalog stable identity and append-only restart recovery",
+    "zero-byte versus partial cleanup quarantine append failure",
+    "critical DB/auxiliary/sidecar/key file races",
+    "CSRF, key, and data-lifecycle boundary consistency"
+  ],
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "approved_narrow_test_only_design_under_declared_threat_model",
+  "summary": "The SDD withdraws the unsupported writable-VFS/direct-handle claim and accurately specifies canonical-path modernc SQLite open with post-open diagnostic identity check before application SQL, explicitly excluding same-account/open-stage page access races. Protected parent ACL/mode and held handles protect against other accounts. Cleanup append failure recovery distinguishes zero-byte failure (no deletion, current process fail closed, restart may revalidate/retry from complete old catalog) from partial/uncertain tail (global fail closed, no rollback). The acceptance matrix covers both branches. No new security blocker was found in the written boundary.",
+  "round14_dispositions": [
+    {
+      "finding_id": "PSK-SEC14-01",
+      "disposition": "closed_in_design",
+      "evidence": "§3 says zero-byte cleanup_quarantined append/Sync failure causes no deletion and current-supervisor global fail-closed; on restart a complete old chain is authoritative and cleanup can be safely rechecked/retried. Partial tail/format/sequence/uncertain Sync causes global fail-closed without rollback. §6 acceptance matrix injects both cases."
+    },
+    {
+      "finding_id": "PSK-SEC13-01",
+      "disposition": "reframed_and_closed_with_explicit_scope",
+      "evidence": "§3 no longer claims direct verified-handle consumption by writable modernc VFS. It specifies canonical-path mode=rw open, no auto-create/ping/query, post-open PRAGMA database_list plus OS file-ID diagnostic before app SQL/receipt access, and explicitly disclaims pre-open/page-read and same-account race protection. External-account replacement is blocked by ACL/mode and handle rules."
+    }
+  ],
+  "control_dispositions": {
+    "sqlite_open_identity_contract": "coherent under explicit restricted threat model; runtime path/page-access behavior not verified",
+    "catalog_stable_inode_acl_append_only": "sufficient against other principals under protected parent ACL; trusted same-account tampering excluded",
+    "catalog_restart_recovery": "complete old chain may revalidate/retry cleanup after zero-byte failure; partial/uncertain chain globally fails closed",
+    "critical_file_races": "specified for parent ACL/mode, Windows held handles, links/path identity, auxiliary files, sidecar/key",
+    "csrf_loopback": "coherent in design",
+    "per_case_key_and_privacy": "fresh independent CSPRNG key; protected delivery and log minimization retained",
+    "data_lifecycle": "retention, quarantine, grouped deletion, and tombstone order retained"
+  },
+  "remaining_blocker_count": 0,
+  "remaining_conditions": [],
+  "limitations": [
+    "No tests or runtime validation were run.",
+    "No SQLite connection/page-access experiment, ACL/file-race, catalog fault injection, browser request, database, or restart path was executed.",
+    "Approval is limited to the written test-only design under its declared trusted-local-account boundary; it does not establish implementation correctness, production readiness, or classroom readiness."
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-19",
+  "source_sha256": "a9ce90edbfa78483a79be32b5a25b17fe62657bd2c12e60de045692e22b14a7a",
+  "source": "docs/43-Pilot授权幂等与父进程身份绑定SDD.md",
+  "status": "PASS",
+  "blocking_count": 0,
+  "scope": "Exact-snapshot focused review of section 2.4 ExecutePinnedCleanup branch clarification.",
+  "checks": [
+    "Existing durable present witness: revalidate immutable anchor/source/principal binding; same present identity continues the original unlink; precise ENOENT reuses the original witness for recovery; other states fail indeterminate.",
+    "No witness: locked no-follow observation must match the expected anchored present identity; first absence or unknown cannot produce a success receipt or completed CAS.",
+    "New initial witness becomes durable only after executing-owner and anchor CAS verification, before unlink. Receipt and terminal CAS must both be durable before success acknowledgement.",
+    "The clarification preserves resource-lock, principal isolation and immutable evidence constraints and does not grant a new operation or cross-run retry."
+  ],
+  "limits": "Source hash verified. No tests or implementation changes. PASS is limited to this design clarification and carries forward review2 scope; no native VFS/security or classroom readiness acceptance."
+}

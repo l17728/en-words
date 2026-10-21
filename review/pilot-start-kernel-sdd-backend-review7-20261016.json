@@ -1,0 +1,36 @@
+﻿{
+  "review": "pilot-start-kernel-sdd-backend-review7",
+  "date": "2026-10-16",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "scope": "read-only verification of BE6-1..11 and sidecar, recovery, mixed lifecycle audit contracts",
+  "code_modified": false,
+  "docs_modified": false,
+  "tests_run": false,
+  "verdict": "BLOCK",
+  "be6_status": {
+    "BE6-1": "PASS",
+    "BE6-2": "PASS",
+    "BE6-3": "PASS",
+    "BE6-4": "BLOCK_OPEN",
+    "BE6-5": "PASS_WITH_IMPLEMENTATION_CONDITION",
+    "BE6-6": "PASS",
+    "BE6-7": "PASS",
+    "BE6-8": "PASS",
+    "BE6-9": "PASS",
+    "BE6-10": "PARTIAL_BLOCKED",
+    "BE6-11": "PASS"
+  },
+  "findings": [
+    {"id":"BE7-1","severity":"P1","status":"open","title":"Writer-stage deterministic rejections lack a terminal sidecar transition","recommendation":"Define commit_attempt_started to terminal_failed for deterministic auth/schema/CAS/stale failures and permanently reject that command without replanning."},
+    {"id":"BE7-2","severity":"P1","status":"open","title":"rollback_proven is both a terminal state and a retryable state","recommendation":"Separate attempt terminal from command terminal; specify attempt_no progression and bounded same-bundle retries."},
+    {"id":"BE7-3","severity":"P2","status":"open","title":"Pilot audit orphan detection can collide with ordinary audit rows","recommendation":"Reserve an unambiguous pilot-only Args marker or define the exact globally reserved signature and reject collisions."},
+    {"id":"BE7-4","severity":"P2","status":"open","title":"Verifier does not explicitly compare outbox payload to authoritative persisted facts","recommendation":"Compare say payload to active room_facts teacher_text and show_word to frozen_words[0], alongside receipt/effect links."},
+    {"id":"BE7-5","severity":"P2","status":"open","title":"General same-ID writer reentry wording remains broader than unknown recovery rule","recommendation":"Restrict unknown recovery to read-only receipt checks and explicit original-connection rollback_proven retry."}
+  ],
+  "required_before_implementation": [
+    "Resolve BE6-4 by putting the pilot API adapter in an API-package pilot_e2e file while keeping Store independent of API.",
+    "Complete sidecar outcomes for deterministic writer failures and define bounded retry semantics.",
+    "Make pilot audit identification collision-free and payload verification derive from frozen facts.",
+    "Align all COMMIT-unknown prose to the narrow retry rule."
+  ]
+}

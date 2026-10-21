@@ -1,0 +1,66 @@
+{
+  "review": "pilot-start-kernel-sdd-test-review",
+  "date": "2026-10-16",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_scope": [
+    "dual-pool idempotency",
+    "unknown COMMIT outcomes",
+    "started codec, audit, and outbox",
+    "E2E harness realism",
+    "logging and privacy assertions"
+  ],
+  "tests_run": false,
+  "implementation_approved": false,
+  "findings": [
+    {
+      "id": "PILOT-START-TEST-01",
+      "severity": "P1",
+      "where": "docs/41 sections 3-4; server/internal/store/store.go:AuditLog",
+      "problem": "The SDD requires each tx-bound tool audit to link decision_id/command_id and record schema version, scope, effect index, and queued status, but defines no storage schema. Existing AuditLog lacks those linkage fields and has unrestricted Args text, so the atomic linkage and privacy/size requirements are not implementable unambiguously.",
+      "required_action": "Specify a normalized audit table or an exact migration/schema for the existing audit table, including fields, constraints/FKs, size limits, and same-transaction write behavior. Add failure, orphan, mismatch, ordering, and redaction checks."
+    },
+    {
+      "id": "PILOT-START-TEST-02",
+      "severity": "P1",
+      "where": "docs/41 sections 3-4 and 6",
+      "problem": "The exact active codec field table is deferred until implementation and canonical candidate/fingerprint encoding is unspecified. Golden tests for legal started state, duplicate JSON keys, and fingerprint stability cannot be derived deterministically.",
+      "required_action": "Freeze required/nullable codec fields and canonical fingerprint algorithm/version in the SDD; add golden canonical bytes/fingerprint vectors and field mutation vectors before implementation."
+    },
+    {
+      "id": "PILOT-START-TEST-03",
+      "severity": "P1",
+      "where": "docs/41 section 6 Playwright scenario",
+      "problem": "A generic network abort can happen before COMMIT, so the E2E scenario does not prove a committed Start whose response was lost. The contract can pass without exercising post-commit response loss.",
+      "required_action": "Provide a harness-only one-shot post-COMMIT/pre-response barrier, verify committed DB facts, drop the response, and have Playwright retrieve/replay the same command while asserting exact checkpoint, audit, receipt, and ordered outbox cardinalities."
+    },
+    {
+      "id": "PILOT-START-TEST-04",
+      "severity": "P1",
+      "where": "docs/41 sections 3 and 6 cases 2-3",
+      "problem": "The pending_unknown/receipt_not_observed recovery branch is specified but no listed test forces lookup while the original writer remains unresolved, lookup unavailability, or same-ID re-entry after settlement. Deferred COMMIT failure plus an already-saved receipt do not cover this uncertainty path.",
+      "required_action": "Add deterministic held-writer, receipt-lookup-failure, post-settlement same-ID re-entry, and rollback-proof cases; assert no success publication, new command ID, duplicate receipt, or duplicate effect while outcome is ambiguous."
+    },
+    {
+      "id": "PILOT-START-TEST-05",
+      "severity": "P2",
+      "where": "docs/41 section 6 case 1",
+      "problem": "The dual-pool test does not require synchronization proving an actual concurrent race. Without barriers, two independent pools could run sequentially and still pass. Audit/outbox cardinalities and linkage are not specified precisely.",
+      "required_action": "Hold pool A inside the writer transaction while pool B submits the identical command, release A, then assert both return the same receipt and exact checkpoint/receipt/audit/effect counts and effect ordering. Retain a different-command already_started case."
+    },
+    {
+      "id": "PILOT-START-TEST-06",
+      "severity": "P2",
+      "where": "docs/41 section 6 logging contract",
+      "problem": "Required event sequences and allowed outcome/reason values are not enumerated, so the stated log/privacy contract cannot be asserted consistently across accepted, replayed, rejected, and unknown outcomes.",
+      "required_action": "Add an event/state table and fixed enums, then assert retry trace correlation and absence of student/lesson IDs, candidate content, command plaintext, prompts/model responses, credentials, and arbitrary tool arguments in serialized logs."
+    }
+  ],
+  "satisfied": [
+    "authorization precedes receipt lookup and replay is fingerprint-bound",
+    "checkpoint, receipt, audit, and outbox share one transaction",
+    "unknown receipt is not treated as rollback and command ID must remain stable",
+    "outbox is explicitly queued-only and no media is executed in this slice",
+    "test-only harness is isolated from the default server and production route absence is tested"
+  ],
+  "disposition": "Do not implement from this draft; resolve P1 findings and request cross-domain review."
+}

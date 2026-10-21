@@ -1,0 +1,39 @@
+﻿{
+  "review": "pilot-start-kernel-sdd-test-review10",
+  "date": "2026-10-16",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "domain": "test design and acceptance contract",
+  "verdict": "BLOCK",
+  "tests_run": false,
+  "previous_findings": [
+    {"id": "review9-P2-1", "topic": "receipt-present damaged-sidecar degraded recovery", "status": "CLOSED", "sections": [47, 51, 93, 96]},
+    {"id": "review9-P2-2", "topic": "ACL/path/key provisioning negatives", "status": "CLOSED_FOR_PREPARE_PATH", "sections": [42, 93]},
+    {"id": "review9-P2-3", "topic": "PilotToolPermit reuse and binding negatives", "status": "CLOSED", "sections": [26, 93]}
+  ],
+  "findings": [
+    {
+      "id": "P2-1",
+      "severity": "P2",
+      "status": "open",
+      "title": "Receipt replay may open DB without the per-open ACL validation required by the contract",
+      "sections": [42, 47, 52, 93],
+      "evidence": "§42 requires ACL verification before each open. §§47/52 check receipt before ACL/key validation and defer ACL checks to receipt-miss. §93 ACL tests only assert rejection before Prepare, which receipt replay does not call.",
+      "required_change": "Specify ACL/canonical identity validation before DB receipt open while keeping receipt-first precedence over sidecar checks; test valid receipt plus weakened ACL or path swap and assert no receipt disclosure/no planner or registry calls. Or explicitly justify and test a scoped exception."
+    },
+    {
+      "id": "P2-2",
+      "severity": "P2",
+      "status": "open",
+      "title": "Cleanup failure isolation and non-reuse are specified but not exercised",
+      "sections": [42, 93],
+      "evidence": "§42 says cleanup failure isolates the case and forbids reuse. §93 covers nominal retention and grouped deletion, but no failed-delete injection or partial-cleanup recovery assertion.",
+      "required_change": "Inject undeletable/locked DB, WAL, sidecar, or key file; prove cleanup failure quarantines the case, blocks requests/reuse, and never overwrites residual artifacts with a fresh key; specify deterministic retry/quarantine behavior."
+    }
+  ],
+  "reviewed_areas": {
+    "plan_ready_tool_started_tool_result_crash_matrix": "PASS",
+    "event_state_and_result_enum": "PASS",
+    "retention_deadlines": "PASS_NOMINAL_PATH",
+    "cleanup_failure_path": "TEST_GAP"
+  }
+}

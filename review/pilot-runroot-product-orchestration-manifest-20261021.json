@@ -1,0 +1,973 @@
+{
+  "manifest_version": 1,
+  "feature": "Pilot RunRoot product orchestration",
+  "created_utc": "2026-10-21",
+  "source_hashes": {
+    "docs/43-Pilot授权幂等与父进程身份绑定SDD.md": "b586621fc749abd8e609fef211cf83e00b3614c25ea85711998bffec426dc251",
+    "docs/45-pilot-run-root-bootstrap-sdd.md": "c09416a9c6f0070655f7e03192b04630b98e25798f079c94bdee67dc831d2837",
+    "docs/46-pilot-host-logger-queue-sdd.md": "8c821317d515b49596f621ee2a6dbef1e9816fe55b41b24b86c1690d21bd6486",
+    "docs/47-pilot-linux-launcher-identity-handoff-sdd.md": "10674f2b05bb688e0664bbe527bbcf541e5f10a93aa0b18d5dc8dbb9e2e58e99",
+    "docs/50-pilot-runroot-product-orchestration-sdd.md": "fa699830239aa0463c574cff4ae2ff7aa6f85b6a163d57b6abdb3907bcbaa52f",
+    "docs/51-pilot-control-ledger-v3-sdd.md": "13e3e2d6859623f8c6f424d87e139fe684bde5cd48d4506dd3e8b9ca276b2a26",
+    "docs/52-pilot-control-ledger-v3-physical-model-decisions.md": "4a33744b224cbf5ea3c94149c451218f38598fe64bc2a42ffd10054e1f86bef5",
+    "docs/53-pilot-control-ledger-v3-physical-schema-matrix.md": "cb29920d48e3c484836cb3544a26d884811ed06f5cf1078a3bd6ea2d43596d3c",
+    "docs/54-pilot-runroot-stage-a-implementation-delta.md": "c4c0dd80d56df92f265da2a0b9b18bb754267595faf6510c1899398aa2841070"
+  },
+  "acceptance_state": "DESIGN_ONLY_NOT_IMPLEMENTED",
+  "cases": [
+    {
+      "case_id": "API-00",
+      "actor": "build/test harness",
+      "initial_state": "Default build; pilot config absent; empty launcher journal.",
+      "named_barrier": "api00.before_router_init",
+      "action": "Build and start the default server, then inspect registered routes and spawn counter.",
+      "oracle": "No pilot route or enabling config exists; launcher spawn count is zero; response is generic 404; no DB/journal writes.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "A0-01",
+      "actor": "method-specific authorized internal caller: web authorization authority, launcher, or recovery-only Reaper as required by each RPC",
+      "initial_state": "A0 resident identity authority is ready with the approved v3 schema; no business operation or allocation exists.",
+      "named_barrier": "a001.before_method_allowlist_dispatch",
+      "action": "Exercise every Stage B/business-only method against A0 across its authorized and unauthorized caller classes from docs/51; invoke an unknown method for each caller class.",
+      "oracle": "Only the authorized caller reaches the disabled-stage gate and receives pilot_not_enabled. Unauthorized method/caller pairs and unknown methods receive the same generic rpc_rejected response with no method, target-existence, or internal-error detail; authorization failures emit only safe control_auth_rejected. Ledger, journal, generation, lease, spawn, RunRoot, and dispatch state remain unchanged.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "A2-01",
+      "actor": "authorized normal or recovery-only per-run Reaper with valid process credentials",
+      "initial_state": "A2 has authenticated the exact Reaper generation but Stage B is disabled; durable allocation, operation, and lease state is absent.",
+      "named_barrier": "a201.before_launcher_rpc_allowlist",
+      "action": "Exercise the A2 launcher/resident dispatch allowlist using valid normal and recovery-only Reaper credentials plus invalid caller/method combinations; invoke unknown methods for each caller class.",
+      "oracle": "Only an authorized caller invoking a known business-only method receives pilot_not_enabled. Unauthorized pairs and unknown methods receive the same generic rpc_rejected without method/target/internal detail; safe control_auth_rejected is logged for authorization failures. No journal append, ledger mutation, generation/lease change, spawn, RunRoot creation, or business dispatch occurs.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "A2-02a",
+      "actor": "Original A2 launcher and exact registered child processes",
+      "initial_state": "One disabled Stage A2 generation is BOOTSTRAP-consumed and its Gateway has registered; no business operation, allocation, lease, RunRoot, outbox, or terminal receipt exists. Launcher remains alive for graceful cleanup.",
+      "named_barrier": "a202a.after_gateway_registered_before_graceful_stop",
+      "action": "Request graceful launcher stop, then attempt restart from the same ledger and journal.",
+      "oracle": "The original launcher terminates and reaps exact children through retained pidfds, appends and fdatasyncs a quarantine journal frame, then A0 commits the matching sequence/hash anchor through AdvanceLauncherJournalAnchor. No lifecycle/terminal evidence is invented; no second control generation or replacement child is admitted. Uncertain child, journal sync, anchor commit, or containment state keeps startup blocked. Reuse requires separately reviewed Stage B retirement/recovery.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "A2-02b",
+      "actor": "systemd service manager and replacement A2 launcher",
+      "initial_state": "One disabled Stage A2 generation is BOOTSTRAP-consumed and its Gateway has registered; the original launcher has hard-crashed and systemd is configured with KillMode=control-group.",
+      "named_barrier": "a202b.after_launcher_crash_before_cgroup_empty_proof",
+      "action": "Hard-kill the launcher; systemd terminates the service cgroup and PID 1 reaps descendants. Start a replacement attempt and require it to prove the prior cgroup is empty before journal access or spawn.",
+      "oracle": "Replacement never waitid's a child of the dead launcher. If cgroup emptiness cannot be proven through the approved systemd/cgroup interface, it remains blocked and spawns nothing. When proven empty, replacement appends and fdatasyncs a quarantine frame, then A0 commits the matching sequence/hash anchor through AdvanceLauncherJournalAnchor. It invents no lifecycle/terminal evidence, consumes no replacement generation, and admits no child until separately reviewed Stage B retirement/recovery; uncertain journal sync or anchor commit remains blocked.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "API-01",
+      "actor": "API/service actor",
+      "initial_state": "No session; pilot build and fixture enabled.",
+      "named_barrier": "api01.before_auth",
+      "action": "POST /pilot/runs without credentials.",
+      "oracle": "401; no signer call, journal/ledger write, spawn, or root; trace logs safe.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "API-02",
+      "actor": "API/service actor",
+      "initial_state": "Authenticated non-student account.",
+      "named_barrier": "api02.before_admission",
+      "action": "POST valid start.",
+      "oracle": "403; no admission signature, launcher call, generation, epoch, or root.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "API-03",
+      "actor": "API/service actor",
+      "initial_state": "Student authenticated in a tenant without fixture grant.",
+      "named_barrier": "api03.before_fixture_policy",
+      "action": "POST valid fixture request.",
+      "oracle": "403/404 generic policy result; no cross-tenant existence leak or side effect.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "API-04",
+      "actor": "API/service actor",
+      "initial_state": "Authorized student requests unallowlisted fixture.",
+      "named_barrier": "api04.after_auth_before_sign",
+      "action": "POST request.",
+      "oracle": "Stable fixture_not_allowed; no admission or launch.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "API-05",
+      "actor": "API/service actor",
+      "initial_state": "Authorized student sends absent, short, malformed, or noncanonical key.",
+      "named_barrier": "api05.after_auth_before_sign",
+      "action": "POST request for each invalid key class.",
+      "oracle": "400 stable error; no key digest persistence or side effect.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "API-06",
+      "actor": "API/service actor",
+      "initial_state": "One student, two requests with same key and payload; launcher available.",
+      "named_barrier": "api06.after_lookup_before_insert",
+      "action": "Release both requests at a named two-party barrier.",
+      "oracle": "One durable mapping, one launch/root; both responses resolve to the same operation state and trace correlation.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "API-07",
+      "actor": "API/service actor",
+      "initial_state": "Existing key bound to fixture A.",
+      "named_barrier": "api07.after_key_lookup",
+      "action": "Retry same key with fixture B.",
+      "oracle": "409 idempotency_conflict; mapping bytes unchanged; zero extra spawn/syscall.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "API-08",
+      "actor": "API/service actor",
+      "initial_state": "Student B asks for Student A key.",
+      "named_barrier": "api08.before_status_query",
+      "action": "GET by-key with B credentials.",
+      "oracle": "Generic not-found equal to nonexistent key; no A metadata is returned.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "API-09",
+      "actor": "API/service actor",
+      "initial_state": "Start mapping commits; client disconnects before HTTP response.",
+      "named_barrier": "api09.after_launcher_commit_before_http_write",
+      "action": "Drop client connection then retry same key.",
+      "oracle": "Exactly one mapping and launch; retry returns current durable result without new spawn.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "API-10",
+      "actor": "API/service actor",
+      "initial_state": "Signed admission expires before launcher acceptance.",
+      "named_barrier": "api10.after_sign_before_launcher_verify",
+      "action": "Advance fake clock past expiry at launcher verify barrier.",
+      "oracle": "Expired rejection; no ledger prepare, spawn, mkdir, or epoch lease.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "API-11",
+      "actor": "API/service actor",
+      "initial_state": "Authenticated valid request; launcher socket unavailable.",
+      "named_barrier": "api11.before_ipc_send",
+      "action": "POST start.",
+      "oracle": "Stable pilot_unavailable/recovery_required per durable commit evidence; never allocate a second epoch blindly.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "API-12",
+      "actor": "API/service actor",
+      "initial_state": "Existing operation; launcher journal survives but Reaper unavailable.",
+      "named_barrier": "api12.after_reaper_exit_before_projection",
+      "action": "GET status.",
+      "oracle": "recovery_required, retry disabled; no status GET cleanup or launch side effect.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "API-13",
+      "actor": "API/service actor",
+      "initial_state": "Student B closes A run, then owner reuses close key with changed digest.",
+      "named_barrier": "api13.before_close_lookup",
+      "action": "Submit both close requests.",
+      "oracle": "B gets generic not-found; conflicting owner request gets idempotency_conflict; no second UNREGISTER.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "API-14",
+      "actor": "student, authorization service, launcher, resident PilotControlReaper",
+      "initial_state": "An authenticated session is valid at HTTP middleware entry; start, existing status replay, and close retry requests are paused after middleware but before the final authorization-fence check.",
+      "named_barrier": "api14.before_final_authorization_fence_check",
+      "action": "Independently revoke the session, downgrade the role, or remove fixture authorization by committing a signed fence update at the barrier; release each start, status replay, and close retry request and capture HTTP response, trace, and durable state before/after.",
+      "oracle": "Every operation rechecks live authorization and rejects after revocation, including idempotent status/close replay; no prior result or cross-principal data is disclosed, and no journal/ledger/outbox/lease mutation, spawn, root syscall, or UNREGISTER occurs. Safe trace includes trace ID and authorization failure class only.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "API-15",
+      "actor": "authenticated student, authorization service, launcher intent authority",
+      "initial_state": "Student has an authenticated session, current student role, and access to a synthetic fixture; no run intent exists.",
+      "named_barrier": "api15.concurrent_requests_after_keyring_counter_snapshot",
+      "action": "Release at least 32 independent valid intent-mint requests concurrently; capture each reserved counter, key_id, nonce, encryption ordering and side effects. Separately crash after counter fsync but before response, restore an old VM snapshot against the external keyring, corrupt/miss the keyring, exhaust the issuance cap, and exercise key rotation. Also submit noncanonical base64url, wrong-version/tag length, altered AAD, unknown purpose, zero-width IDs, and expiry just below/at/above the exact 86,400-second boundary.",
+      "oracle": "All concurrent calls hold the per-key reservation mutex across read, increment, fsync and encryption; every reservation is strictly increasing and every (key_id, nonce) is unique. Counter reservation is durable before encryption and burned across crash. Rollback/corruption/cap exhaustion fails closed; rotation starts a new key/prefix and does not reuse a prior nonce. No journal/run/generation/lease/spawn/root effect occurs. Claims are canonical and signed; no plaintext claims leak. Parser rejects noncanonical encoding, malformed token layout, AAD mismatch, unsupported purpose, invalid fixed-width fields, or nonexact expiry before any side effect.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "API-16",
+      "actor": "authenticated student, launcher journal, isolated test clock",
+      "initial_state": "One current-epoch intent handle is durably bound to an active run; another valid current-epoch handle is unbound.",
+      "named_barrier": "api16.after_clock_advance_before_authenticated_handle_lookup",
+      "action": "Advance the fake clock beyond 24 hours; submit same-payload start/status/close with the already-bound handle, then attempt first start with the unbound handle and attempt changed-payload reuse of the bound handle.",
+      "oracle": "After fresh authentication/current authorization and epoch validation, same-payload retry, owner status, and close of the already-bound handle return the persisted operation despite expiry. The unbound expired handle returns intent_handle_expired without journal mutation/spawn/root effect. Changed payload conflicts; stale epoch still rejects before journal lookup.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "DR-01",
+      "actor": "launcher, resident Reaper, authenticated student",
+      "initial_state": "A controlled disaster restore rotates the externally injected journal ID and namespace epoch; the old journal is quarantined. An opaque intent handle previously completed successfully.",
+      "named_barrier": "dr01.before_old_completed_key_lookup",
+      "action": "Retry the exact old completed handle after service recovery, then attempt to reuse a forged/stale-epoch handle without choosing or submitting an epoch, then explicitly select Start and request a fresh intent handle.",
+      "oracle": "The old completed handle and forged/stale-epoch handle fail with idempotency_epoch_expired or invalid_intent_handle before journal lookup or child/root/lease side effect; the old operation is not repeated. Only after deliberate new intent does the server return a current-epoch opaque handle, which can create one new operation. No epoch is exposed to or supplied by the browser.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "DR-02",
+      "actor": "launcher, resident Reaper, authenticated student",
+      "initial_state": "Controlled disaster restore rotates the externally injected journal ID and namespace epoch; the old journal is quarantined. An opaque intent handle was durably canceled before spawn.",
+      "named_barrier": "dr02.before_old_canceled_key_lookup",
+      "action": "Retry the exact old handle after service recovery, then explicitly choose Start and obtain a new server-issued current-epoch handle.",
+      "oracle": "The old handle fails with idempotency_epoch_expired and cannot spawn or create a lease. Only the explicit new intent obtains a current-epoch handle and can create one new operation; no browser-supplied epoch or silent remint is accepted.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "IDRES-01",
+      "actor": "authenticated web signer, launcher, resident Reaper identity resolver",
+      "initial_state": "PilotIdentityResolver is healthy; no run child or launcher journal entry exists; admission contains authenticated opaque tenant/user identity.",
+      "named_barrier": "idres01.before_resolve_before_journal",
+      "action": "Submit a signed valid start admission and record resolver, journal, queue, and child-process events.",
+      "oracle": "Resolver validates issuer/signature and resolves the stable principal before journal lookup; launcher verifies response binding; no Reaper/Gateway business child is started before resolution; immutable_user_id is absent from logs and persisted ledger.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "IDRES-02",
+      "actor": "authenticated web signer and launcher",
+      "initial_state": "Resolver is stopped, times out, or returns a bad signature; both a new start and an old-run status/close request are attempted.",
+      "named_barrier": "idres02.resolver_timeout_or_invalid_reply",
+      "action": "Inject each resolver failure before any launcher journal lookup.",
+      "oracle": "New request returns pilot_unavailable; corrupt signature returns fail-closed auth error; no journal read/write, queue, spawn, close effect, or principal fallback occurs; trace records safe failure class only.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "IDRES-03",
+      "actor": "32 concurrent authenticated login requests for one account",
+      "initial_state": "No alias exists for an account under active HMAC key version K7.",
+      "named_barrier": "idres03.alias_insert_race",
+      "action": "Resolve identical signed tenant/user claims concurrently through independent resolver connections.",
+      "oracle": "Exactly one immutable alias row commits; all callers receive the same canonical principal; losing transactions read back that mapping; no duplicate business namespace or run spawn is created by resolution alone.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "IDRES-04",
+      "actor": "same account across every retained HMAC version, business replay, and a new account",
+      "initial_state": "For every retained HMAC version K1..K6, an immutable alias and permanent business-operation tombstone exist; active write version is K7. Wrapping-key rotation is also scheduled.",
+      "named_barrier": "idres04.alias_lookup_across_versions",
+      "action": "Iterate every retained HMAC key version: reauthenticate its account, resolve the original business-operation key against its tombstone, and compare the original principal/result; then create a new K7 identity, rotate the wrapping key, and resolve each old account again in a new session.",
+      "oracle": "Every retained-version account resolves to its original canonical principal and exact tombstone result without a new namespace or side effect; new identity gets K7; wrapping-key rotation leaves alias bytes unchanged; session changes do not alter principal.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "IDRES-05",
+      "actor": "authenticated identities across tenants and independently damaged resolver fixtures",
+      "initial_state": "Same immutable_user_id exists in two tenants. Separate fixtures cover (a) a known principal with a permanent operation tombstone but missing alias, (b) a new identity with no tombstone but one required retained HMAC key missing, and (c) aliases with corrupted digest, principal_ref, or key-version fields.",
+      "named_barrier": "idres05.before_alias_fallback_or_namespace_creation",
+      "action": "Attempt cross-tenant token tampering; resolve each damaged fixture, including the no-tombstone identity with a missing retained key; inspect status/retry paths and verify alias bytes before and after.",
+      "oracle": "Tenant changes without valid signer claim reject before lookup; tenant-scoped principal inputs remain distinct; missing alias with candidate tombstone, any missing required retained key (even for a new identity), and any alias digest/principal/version corruption return ipc_registry_corrupt; no fallback alias, journal read/write, response disclosure, close, or spawn occurs.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "IDRES-06",
+      "actor": "resident PilotControlReaper and concurrent per-run Reaper/client requests",
+      "initial_state": "One business ledger transaction is paused while holding the resident SQLite writer; a separate first-use identity has no alias and sends a valid signed admission.",
+      "named_barrier": "idres06.writer_held_before_alias_resolution",
+      "action": "Issue ResolvePrincipal concurrently while the writer barrier is held, observe the bounded deadline, release the original transaction, then retry resolution.",
+      "oracle": "No code waits for resolver IPC while holding a business transaction or launcher journal mutex; first call times out within 500 ms with zero journal lookup/spawn and leaves service healthy; retry resolves after release; no deadlock, nested transaction, duplicate alias, or uncertain business commit occurs.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "IDRES-07",
+      "actor": "launcher, resident PilotControlReaper, registered per-run Reaper, and substituted same-UID process",
+      "initial_state": "One normal generation has an immutable BOOTSTRAP Gateway identity. The launcher has registered a distinct Reaper PID/start-time/PID-namespace/UID/cgroup identity bound to that generation, nonce, and epoch.",
+      "named_barrier": "idres07.before_rpc_caller_and_target_authorization",
+      "action": "Call each allowlisted control RPC from its authorized caller, then replay it from a launcher-only resolver peer, the Gateway process identity, a same-UID unregistered process, a replaced Reaper PID, and a stale generation; separately attempt an ACK from a non-owner Reaper.",
+      "oracle": "Only the mapped caller class and exact target tuple are admitted. Per-run Reaper identity is checked against the launcher registration while Gateway identity is checked against BOOTSTRAP; the two identities never substitute for each other. Unauthorized calls reject before writer reservation with no journal/ledger/outbox/lease/UNREGISTER changes; ACK is accepted only from the original delivery Reaper. Safe `control_auth_rejected` traces contain no PID, UID, nonce, or tuple values.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "IDRES-08",
+      "actor": "web authorization authority and resident PilotControlReaper",
+      "initial_state": "Account, fixture grant, and session are active with signed admission revisions. PrepareWithHandoff, LookupByPrincipalOperation, and BeginRunTermination are independently paused before their authorization check; close is also paused after its preflight check but before obtaining the writer.",
+      "named_barrier": "idres08.authorization_fence_commit_race",
+      "action": "Race a signed restrictive session/role/fixture update against each operation. For Prepare and BeginRunTermination test fence-commit-first and operation-writer-transaction-first. For LookupByPrincipalOperation and CheckCurrentAuthorization test fence-commit-first and read-snapshot-first. Also exercise close preflight success, fence commit, then close writer acquisition; exact update replay, stale revision, and changed bytes at the same revision.",
+      "oracle": "Prepare/close writer transaction after fence commit rejects stale admission with no mutation; Prepare/close commit first linearizes before revocation and remains governed by its durable operation. Lookup/check with fence-first denies with no result disclosure or write; read-snapshot-first may complete from that authorized snapshot and creates no durable operation receipt. Close preflight alone is not authority: if revocation commits before BeginRunTermination obtains the writer, close rejects and performs no teardown. Same update ID/digest is idempotent; stale/lower revision and same-revision changed bytes reject. Failed fence publication is not reported effective and pilot requests fail closed. Trace records revision class and correlation without raw identity/session data.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LAUNCH-01",
+      "actor": "API/service actor",
+      "initial_state": "No launcher active; two launcher processes race.",
+      "named_barrier": "launch01.after_flock_attempt",
+      "action": "Start both at barrier.",
+      "oracle": "Exactly one gets flock; loser creates no child/resource.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LAUNCH-02",
+      "actor": "API/service actor",
+      "initial_state": "Journal checksum/schema invalid.",
+      "named_barrier": "launch02.before_journal_readback",
+      "action": "Start launcher.",
+      "oracle": "Fail closed before Logger/Reaper/Gateway spawn; journal unchanged.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LAUNCH-03",
+      "actor": "API/service actor",
+      "initial_state": "Journal high-water is lower than Reaper ledger or MaxUint64.",
+      "named_barrier": "launch03.after_ledger_highwater_read",
+      "action": "Attempt normal generation allocation.",
+      "oracle": "Reject/quarantine; no wrap or spawn; existing state preserved.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LAUNCH-04",
+      "actor": "API/service actor",
+      "initial_state": "Logger emits wrong credentials or malformed readiness.",
+      "named_barrier": "launch04.before_ready_accept",
+      "action": "Run three isolated variants with phase-specific initial counters: (1) authenticated API service sends from wrong UID/GID and wrong per-packet SCM_CREDENTIALS to the real launcher endpoint; (2) replace the owner-only endpoint or make its permissions over-broad before API connect; (3) after valid admission and launcher journal binding plus Logger spawn, but before BOOTSTRAP, inject mismatching LOGGER_READY credentials/frame. Use real processes/credentials; harness never synthesizes credentials.",
+      "oracle": "(1) and (2): reject endpoint/peer before admission is accepted by launcher; no new business journal/ledger write and no request-triggered child spawn or dispatch (API may already have signed the admission). (3): allow prior admission, launcher/journal, and Logger spawn; reject READY, reap the owned Logger, and assert Reaper/Gateway/worker spawn=0 plus no business ledger/filesystem effect. Every branch closes owned descriptors and logs no raw PID/UID/GID, path, nonce, or token.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LAUNCH-05",
+      "actor": "API/service actor",
+      "initial_state": "Inject clone3 or cgroup placement failure.",
+      "named_barrier": "launch05.after_clone3_before_exec",
+      "action": "Attempt spawn.",
+      "oracle": "No child instruction runs before verified cgroup placement; FDs closed; lease held if allocated.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LAUNCH-06",
+      "actor": "API/service actor",
+      "initial_state": "Reaper consumes tuple then ACK is dropped.",
+      "named_barrier": "launch06.after_bootstrap_commit_before_ack",
+      "action": "Drop ACK and recover.",
+      "oracle": "Same generation never replayed; old children reaped; lease held; higher recovery generation only.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LAUNCH-07",
+      "actor": "API/service actor",
+      "initial_state": "Logger installed registration but ACK dropped.",
+      "named_barrier": "launch07.after_logger_install_before_ack",
+      "action": "Drop ACK.",
+      "oracle": "No business registration; generation retired/recovered; no duplicate register.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LAUNCH-08",
+      "actor": "API/service actor",
+      "initial_state": "Reaper sends event before channel readiness or readiness malformed.",
+      "named_barrier": "launch08.after_accept_before_ready",
+      "action": "Attempt event before valid READY.",
+      "oracle": "Logger persists no event; Reaper closes channel and fails closed.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LAUNCH-09",
+      "actor": "API/service actor",
+      "initial_state": "Append succeeds but ACK is lost.",
+      "named_barrier": "launch09.after_start_sync_before_ack",
+      "action": "Drop ACK.",
+      "oracle": "No replay because non-deduplicated; Gateway REGISTER never sent; lease held.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LAUNCH-10",
+      "actor": "API/service actor",
+      "initial_state": "Gateway accepts socket while registration is pending.",
+      "named_barrier": "launch10.listener_bound_before_register_ack",
+      "action": "Connect/queue request before ACK.",
+      "oracle": "No dispatch; failed REGISTER closes listener/peers/FDs.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LAUNCH-11",
+      "actor": "API/service actor",
+      "initial_state": "Pinned child exits at each identity-read barrier.",
+      "named_barrier": "launch11.after_each_pidfd_identity_read",
+      "action": "Replace/reuse visible PID before final verify.",
+      "oracle": "Identity mismatch prevents handoff/dispatch; all owned descriptors close.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LAUNCH-12",
+      "actor": "API/service actor",
+      "initial_state": "Gateway descendant resists graceful exit or wait deadline.",
+      "named_barrier": "launch12.after_cgroup_kill_before_waitid",
+      "action": "Trigger close and hold child.",
+      "oracle": "Bounded escalation; only pidfd wait and empty cgroup permit retirement; otherwise quarantined, no next generation.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LAUNCH-13",
+      "actor": "launcher intent authority and concurrent authenticated student requests",
+      "initial_state": "The active external keyring has a known per-key random prefix and durable counter; 32 or more independent valid intent-mint requests are ready concurrently.",
+      "named_barrier": "launch13.after_keyring_counter_snapshot_before_reservation",
+      "action": "Release all mint requests together. Repeat with process crash after counter fsync but before encrypt/response, rollback or corruption of keyring state, 2^24 issuance cap, counter wrap boundary, and key rotation.",
+      "oracle": "A per-key mutex serializes read?reserve?fsync?encrypt. All returned nonces are unique and counter reservations strictly increase; a crash burns its reserved counter. Any rollback/corruption fails closed before encryption; cap/wrap requires rotation to a fresh key and random prefix. No business journal, run, generation, lease, spawn, or filesystem effect occurs.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LOG-01",
+      "actor": "API/service actor",
+      "initial_state": "Logger startup + exact LOGGER_REGISTER credentials.",
+      "named_barrier": "log01.before_ready_and_register_ack",
+      "action": "Inject valid/malformed credentials and frames.",
+      "oracle": "Only exact pinned identity becomes ready/registered; safe structured log.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LOG-02",
+      "actor": "API/service actor",
+      "initial_state": "Reaper connects and waits for CHANNEL_READY.",
+      "named_barrier": "log02.after_socket_accept_before_ready",
+      "action": "Send event early.",
+      "oracle": "No event accepted before one matching readiness frame.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LOG-03",
+      "actor": "API/service actor",
+      "initial_state": "Outbox frame and ACK with wrong tuple/nonce/digest.",
+      "named_barrier": "log03.before_ack_correlation",
+      "action": "Inject each one-field mismatch.",
+      "oracle": "Reject and poison only affected context; no false acknowledged row.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LOG-04",
+      "actor": "API/service actor",
+      "initial_state": "HUP with queued packets, then true EOF.",
+      "named_barrier": "log04.after_hup_before_recv_eof",
+      "action": "Attempt unregister before and after drained EOF.",
+      "oracle": "HUP alone insufficient; exact ACK only after drain and handler completion.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LOG-05",
+      "actor": "API/service actor",
+      "initial_state": "Queue saturation plus shutdown/poison.",
+      "named_barrier": "log05.before_queue_admission_and_close",
+      "action": "Fill caps, cancel waiters, stop store.",
+      "oracle": "N+1 rejected; no unbounded goroutine/FD growth; all accepted jobs resolved or fenced.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LOG-06",
+      "actor": "API/service actor",
+      "initial_state": "Duplicate exact intent/finish and non-deduplicated start.",
+      "named_barrier": "log06.after_sync_before_ack",
+      "action": "Drop the first ACK, retire that socket only after logger returns EOF/drain, and resend exact bytes from the same live original Reaper on a fresh channel with a new delivery_nonce. Separately deliver a delayed stale ACK from the retired channel, then the current-attempt ACK; try replay from a replacement recovery-only Reaper.",
+      "oracle": "At most one canonical append. Only the matching current delivery_nonce ACK can be committed; stale ACK on a retired channel and replacement-Reaper replay are rejected. Exact-byte replay under the same active registration is deduplicated and persists the successful nonce as the sole ACK correlation.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LOG-07",
+      "actor": "API/service actor",
+      "initial_state": "Ancillary FD, truncation, HUP and shutdown at each transfer point.",
+      "named_barrier": "log07.before_and_after_fd_transfer",
+      "action": "Inject extra/truncated FDs and cancellation.",
+      "oracle": "Each FD closed exactly once; no leak; no lease release from EOF.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "LOG-08",
+      "actor": "API/service actor",
+      "initial_state": "Collect API/launcher/Reaper/Logger/Gateway logs for success and failure.",
+      "named_barrier": "log08.after_each_trace_event_emit",
+      "action": "Run scanner self-test against a synthetic log containing each forbidden-field canary, then scan real product test logs using synthetic sensitive values as test inputs.",
+      "oracle": "Scanner self-test flags every canary in the synthetic log. Product test logs have zero hits for canaries and contain no raw immutable_user_id, tenant/principal/session identifiers or hashes, signatures, keys/tokens, canonical envelope/CBOR/payload, audio/transcript/student data, filesystem paths, or process credentials; lifecycle events still correlate by trace ID.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PRODUCT-01",
+      "actor": "API/service actor",
+      "initial_state": "Admin enables synthetic fixture; one active generation at a time.",
+      "named_barrier": "product01.two_start_requests_ready_queue",
+      "action": "Both students submit starts concurrently.",
+      "oracle": "Exactly two principal namespaces/epochs/roots are served sequentially; max one active; each closes before next.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PRODUCT-02",
+      "actor": "API/service actor",
+      "initial_state": "Same student/key/payload from two browser contexts.",
+      "named_barrier": "product02.after_idempotency_read_before_claim",
+      "action": "Release both at barrier.",
+      "oracle": "One launch; same durable status; no duplicate epoch/root.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PRODUCT-03",
+      "actor": "API/service actor",
+      "initial_state": "Existing key bound to fixture A.",
+      "named_barrier": "product03.after_journal_binding_load",
+      "action": "Retry with fixture B.",
+      "oracle": "Conflict; journal/ledger immutable; zero extra side effects.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PRODUCT-04",
+      "actor": "API/service actor",
+      "initial_state": "Student B uses A key.",
+      "named_barrier": "product04.before_status_projection",
+      "action": "Poll by key as B.",
+      "oracle": "Generic not-found; equal behavior to absent key.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PRODUCT-05",
+      "actor": "API/service actor",
+      "initial_state": "Same stable principal starts, logs out, reauthenticates.",
+      "named_barrier": "product05.after_new_session_auth",
+      "action": "Poll original key with new session.",
+      "oracle": "Current authorization required; same operation found; no dependence on old session token.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PRODUCT-06",
+      "actor": "API/service actor",
+      "initial_state": "Admission arrives after expiry/revocation.",
+      "named_barrier": "product06.before_launcher_admission_check",
+      "action": "Delay between sign and verify.",
+      "oracle": "Reject before prepare/spawn; no retry under same stale signature.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PRODUCT-07",
+      "actor": "API/service actor",
+      "initial_state": "Valid run with logger unavailable after a durable boundary.",
+      "named_barrier": "product07.after_logger_timeout",
+      "action": "Poll and attempt retry.",
+      "oracle": "Exact recovery_required state; retry disabled; durable last boundary visible only to test harness.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PRODUCT-08",
+      "actor": "API/service actor",
+      "initial_state": "Pilot run is recovery_required; ordinary learning route available.",
+      "named_barrier": "product08.before_text_route_select",
+      "action": "Choose ordinary text route.",
+      "oracle": "Text route is a new explicit user action and never reports pilot success.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PRODUCT-09",
+      "actor": "API/service actor",
+      "initial_state": "Ready run, valid close key.",
+      "named_barrier": "product09.after_close_journal_fsync",
+      "action": "Retry identical close after response loss.",
+      "oracle": "Same close result; one UNREGISTER; no duplicate cleanup.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PRODUCT-10",
+      "actor": "API/service actor",
+      "initial_state": "Existing close key for run.",
+      "named_barrier": "product10.after_close_key_lookup",
+      "action": "Retry key with altered digest/operation ID.",
+      "oracle": "Conflict; no second UNREGISTER, cleanup, or lease mutation.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PRODUCT-11",
+      "actor": "API/service actor",
+      "initial_state": "Run is queued with no spawn intent.",
+      "named_barrier": "product11.before_cancel_queued_commit",
+      "action": "Cancel twice concurrently.",
+      "oracle": "One durable tombstone, zero generation/child/root; same result.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PRODUCT-12",
+      "actor": "API/service actor",
+      "initial_state": "Close races each startup ACK boundary.",
+      "named_barrier": "product12.after_each_startup_gate_before_ack",
+      "action": "Close at LOGGER_READY, BOOTSTRAP, REGISTER, CHANNEL_READY, bootstrap.start, Gateway REGISTER barriers.",
+      "oracle": "Before Gateway REGISTER_ACK uses startup containment, never UNREGISTER; after registered permits exactly one UNREGISTER.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PRODUCT-13",
+      "actor": "API/service actor",
+      "initial_state": "Reaper marks unregistered but launcher loses ACK.",
+      "named_barrier": "product13.after_unregistered_commit_before_ack",
+      "action": "Drop ACK then reconcile.",
+      "oracle": "Launcher never replays UNREGISTER or sends CONTAINMENT_EMPTY on the uncertain channel; it contains Gateway and reaps old Reaper, then uses a strictly higher recovery-only generation. Without committed containment evidence RECOVERY_BOOTSTRAP returns recovery_proof_missing; target business/lifecycle/lease rows remain byte-for-byte unchanged by recovery, lease stays held, and no next business generation is admitted.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PRODUCT-14",
+      "actor": "API/service actor",
+      "initial_state": "Finish outbox pending when user closes run.",
+      "named_barrier": "product14.after_close_containment_before_finalize",
+      "action": "Close and inspect status.",
+      "oracle": "Resources can be contained; no terminal release/closed status; recovery_required and held lease.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PRODUCT-15",
+      "actor": "launcher/Reaper",
+      "initial_state": "Close intent journal fsynced; control-ledger close row absent or commit ACK uncertain.",
+      "named_barrier": "product15.after_close_journal_fsync_before_ledger_ack",
+      "action": "Crash launcher between intent fsync and BeginRunTermination commit, then separately inject ledger commit with lost ACK.",
+      "oracle": "Restart compares exact close tuples; completes only absent binding before effects or observes committed row; mismatch quarantines; zero UNREGISTER until both stores agree; lease held on uncertainty.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PRODUCT-16",
+      "actor": "student/API/Reaper",
+      "initial_state": "RunRoot prepared with no committed Claim/dispatch while close is requested; separate variants race close against Claim and cover executing dispatch plus run_state=containment_empty with close operation executing.",
+      "named_barrier": "product16.close_freeze_before_cancel_ack",
+      "action": "At shared writer barriers, race BeginRunTermination vs Claim, AuthorizeOutboxSend vs prepared cancellation in both commit orders, and close vs first AuthorizeOutboxSend for an already committed bootstrap.finish. For the finish variant, commit FinishWithOutbox, let close commit before any send authorization, then authorize and ACK through the original Reaper/Logger channel, including a subcase where Gateway UNREGISTER and containment evidence commit before first send authorization. For prepared cancellation, close first, then submit exact no-dispatch proof; inject missing proof, lost ACK, and restart while intent is send_authorized without ACK. Include a separate exact retry branch: the same still-live Reaper reconnects under the same active Logger registration after the prior handler reaches EOF, using a new delivery_nonce; inject a stale ACK from the retired channel and verify it is ignored. Restart Logger/Reaper in a separate variant.",
+      "oracle": "Writer order is deterministic: close first moves lifecycle to terminating and blocks Claim; Claim first makes close recovery_required with lease held. For dispatch intent, send authorization first leaves send_authorized and cancellation remains blocked until exact ACK; if cancellation wins, ready?suppressed commits with receipt and late authorization rejects. For bootstrap.finish, close winning first still permits only the original live Reaper to authorize/send the already committed outcome-bound event while lifecycle is terminating, unregistered, or containment_empty; exact ACK is recorded without promoting lifecycle, then close can finish. Dispatch-intent authorization after close is rejected. Prepared cancellation requires durable close and exact no-dispatch/pinned-anchor absence proof; operation/allocation become abandoned, run_terminal_state remains none, lease stays held, and no run_state row is fabricated. An acknowledged intent receipt binds exact ACK digest/correlation; never_authorized binds the exact suppressed event digest. A send_authorized/no-ACK restart remains ambiguous, blocks cancellation and finalization, and holds the lease. The positive cancellation branch unregisters, proves containment empty, and FinalizePreparedCancellation verifies receipt, outbox disposition, cleanup_state=not_required and close binding, then atomically closes lifecycle, marks run terminal abandoned and releases the exact lease. Missing proof/ACK or uncertain commit keeps lease held and sends no UNREGISTER. `delivery_nonce` is the sole persisted ACK correlation. Only the ACK matching the current single-flight attempt is accepted; stale ACKs from retired channels are ignored. Exact-byte retry is allowed only by the same live Reaper under the still-active Logger registration after EOF/drain. After Logger restart or Reaper exit, replacement/recovery-only delivery is rejected and the lease remains held.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PRODUCT-17",
+      "actor": "student/API/Reaper",
+      "initial_state": "Gateway REGISTER_ACK durable; no RunRoot operation/allocation/root exists.",
+      "named_barrier": "product17.before_no_root_close_commit",
+      "action": "Close and complete UNREGISTER/containment/evidence/finalization.",
+      "oracle": "Normal path reaches closed_without_root only with exact absence witness and no missing expected lease; no RunRoot finish row is required.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PRODUCT-18",
+      "actor": "student/API/Reaper",
+      "initial_state": "No-root abort has durable containment evidence but FinalizeNoRootAbort commit/ACK uncertain.",
+      "named_barrier": "product18.after_no_root_evidence_before_finalize",
+      "action": "Crash Reaper/launcher, then request recovery.",
+      "oracle": "No generic recovery guesses or releases resources; retain blocked generation and require offline reconciliation unless exact reviewed docs/47 predicates authorize finalization.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PRODUCT-19",
+      "actor": "student/API/Reaper",
+      "initial_state": "RunRoot mkdir returns EEXIST with a validated collision receipt; operation is abandoned, allocation/run terminal are indeterminate, lease held.",
+      "named_barrier": "product19.after_collision_receipt_before_finish_send",
+      "action": "Commit the typed failure bootstrap.finish row, authorize and ACK it through the original Reaper/Logger, then request close and complete Gateway containment. Include a separate exact retry branch: the same still-live Reaper reconnects under the same active Logger registration after the prior handler reaches EOF, using a new delivery_nonce; inject a stale ACK from the retired channel and verify it is ignored. Restart Logger/Reaper in a separate variant.",
+      "oracle": "The UI receives a terminal failure and never reports ready. Close may reach containment_empty, but lifecycle finalization rejects the indeterminate allocation, run terminal stays indeterminate, no cleanup or lease release occurs, and status remains recovery_required pending offline reconciliation. Exact finish ACK is immutable and cannot promote lifecycle to active. `delivery_nonce` is the sole persisted ACK correlation. Only the ACK matching the current single-flight attempt is accepted; stale ACKs from retired channels are ignored. Exact-byte retry is allowed only by the same live Reaper under the still-active Logger registration after EOF/drain. After Logger restart or Reaper exit, replacement/recovery-only delivery is rejected and the lease remains held.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "RECOVERY-01",
+      "actor": "API/service actor",
+      "initial_state": "Old run terminating; no RunContainmentEvidence.",
+      "named_barrier": "recovery01.after_control_generation_commit",
+      "action": "Submit exact recovery target.",
+      "oracle": "Higher control nonce/generation consumed; target rows/lease bytes unchanged; recovery_proof_missing.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "RECOVERY-02",
+      "actor": "API/service actor",
+      "initial_state": "One immutable evidence row exists.",
+      "named_barrier": "recovery02.before_evidence_insert",
+      "action": "Try identical then conflicting duplicate.",
+      "oracle": "Identical is idempotent; conflict fails closed; no second row.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "RECOVERY-03",
+      "actor": "API/service actor",
+      "initial_state": "Validly authenticated recovery packet names altered target generation/nonce/epoch.",
+      "named_barrier": "recovery03.after_control_commit_before_target_check",
+      "action": "Submit mismatched target.",
+      "oracle": "Control generation consumed; target unchanged; rejected; no evidence writes.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "RECOVERY-04",
+      "actor": "API/service actor",
+      "initial_state": "N and N+1 recovery/bootstrap compete on independent SQLite connections.",
+      "named_barrier": "recovery04.after_begin_immediate",
+      "action": "Commit N+1 before stale N obtains writer.",
+      "oracle": "Only valid higher generation accepted; recovery same target epoch allowed under gate.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "RECOVERY-05",
+      "actor": "API/service actor",
+      "initial_state": "Normal Reaper receives valid containment empty.",
+      "named_barrier": "recovery05.before_evidence_state_commit",
+      "action": "Crash before transaction commit.",
+      "oracle": "No evidence or containment_empty row; lease held; recovery_proof_missing.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "RECOVERY-06",
+      "actor": "API/service actor",
+      "initial_state": "Evidence and containment_empty committed; run one created-root variant and one prepared-cancel variant with its exact cancellation receipt, abandoned operation/allocation, absent root run_state and not_required cleanup.",
+      "named_barrier": "recovery06.before_matching_terminal_commit",
+      "action": "Crash after evidence commit before finalization, then start a higher-generation recovery-only Reaper for the exact persisted target tuple.",
+      "oracle": "Evidence persists and lease stays held. Created-root recovery may call only FinalizeRunTerminal; prepared-cancel recovery may call only FinalizePreparedCancellation after checking the exact cancellation receipt and all predicates. If intent disposition is acknowledged, verify exact ACK digest and delivery correlation; if never_authorized, verify the intent row is suppressed with the receipt digest and matching event digest. Recovery cannot mutate evidence or resume delivery/business work. It releases the lease exactly once only after the matching final transaction commits; lost ACK retry returns already_terminal.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "RECOVERY-07",
+      "actor": "API/service actor",
+      "initial_state": "Target has committed terminal/evidence binding.",
+      "named_barrier": "recovery07.before_ack_after_terminal",
+      "action": "Issue higher authorized recovery query.",
+      "oracle": "already_terminal read-only result; no duplicate evidence/release.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "RECOVERY-08",
+      "actor": "API/service actor",
+      "initial_state": "Evidence exists but operation receipt or cleanup predicate fails.",
+      "named_barrier": "recovery08.after_target_load",
+      "action": "Submit recovery query.",
+      "oracle": "recovery_not_ready consumes control row, leaves target and lease unchanged.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "RECOVERY-09",
+      "actor": "API/service actor",
+      "initial_state": "Old child was reaped by original launcher/systemd.",
+      "named_barrier": "recovery09.before_target_reconcile",
+      "action": "Restart launcher and inspect target.",
+      "oracle": "No waitid on nonchild PID; only verified empty leaves and ledger evidence permit next gen.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "RECOVERY-10",
+      "actor": "API/service actor",
+      "initial_state": "Recovery-only Reaper started.",
+      "named_barrier": "recovery10.before_gateway_or_dispatch_capability",
+      "action": "Attempt Gateway/listener/operation creation.",
+      "oracle": "Capability absent; zero spawn/listener/dispatch; only read/finalize exact prior evidence.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "RECOVERY-11",
+      "actor": "native Linux ledger/recovery acceptance harness",
+      "initial_state": "Valid executing RunRoot operation exists; a corruption fixture has owner_generation=-1 despite the schema CHECK constraint.",
+      "named_barrier": "recovery11.after_corrupt_fixture_close_before_reopen",
+      "action": "In an isolated database, bypass SQLite CHECK enforcement only to write the negative owner generation; close every ledger/database handle, reopen through NewRunRootLedger, and invoke RecoverAfterRestart.",
+      "oracle": "Recovery rejects the persisted state as corrupt and preserves operation/allocation bytes. This unit-level native regression does not implement or pass the disabled Pilot API/launcher integration gate; that pilot gate remains blocked.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "ROOT-01",
+      "actor": "API/service actor",
+      "initial_state": "Durable prepared row and intent bytes; original Reaper/logger live.",
+      "named_barrier": "root01.after_prepared_commit",
+      "action": "Resume exact stored intent with fresh delivery nonce.",
+      "oracle": "No duplicate row/append; state remains prepared until ACK; no mkdir before claim.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "ROOT-02",
+      "actor": "API/service actor",
+      "initial_state": "Intent append durable, ACK absent.",
+      "named_barrier": "root02.after_intent_sync_before_ack",
+      "action": "Retry through same live registered Reaper.",
+      "oracle": "Logger deduplicates exact digest; one line; mismatch digest rejected.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "ROOT-03",
+      "actor": "API/service actor",
+      "initial_state": "Claim commit outcome is unknown.",
+      "named_barrier": "root03.after_executing_commit_before_ack",
+      "action": "Restart and attempt operation.",
+      "oracle": "Fenced indeterminate; lease held; mkdir count zero after recovery.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "ROOT-04",
+      "actor": "API/service actor",
+      "initial_state": "Committed event ACK uncertain.",
+      "named_barrier": "root04.after_dispatch_commit_before_ack",
+      "action": "Restart after event send.",
+      "oracle": "No committed-event replay and no mkdir; state indeterminate/lease held.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "ROOT-05",
+      "actor": "API/service actor",
+      "initial_state": "Valid pinned anchor and absent target.",
+      "named_barrier": "root05.after_mkdirat",
+      "action": "Inject crash after successful mkdirat.",
+      "oracle": "No retry/delete; operation resolves only from matching durable evidence, else held indeterminate.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "ROOT-06",
+      "actor": "API/service actor",
+      "initial_state": "Target name already exists and may be hostile.",
+      "named_barrier": "root06.before_mkdirat",
+      "action": "Call allocator; instrument open/stat/query on target.",
+      "oracle": "EEXIST recorded as collision; target never opened/queried/deleted; lease held.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "ROOT-07",
+      "actor": "API/service actor",
+      "initial_state": "mkdirat returns a documented no-effect errno with exact absence witness.",
+      "named_barrier": "root07.after_absence_witness",
+      "action": "Finalize documented no-effect result.",
+      "oracle": "Only exact witness allows terminal abandon; proper tombstone persists; counts match.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "ROOT-08",
+      "actor": "API/service actor",
+      "initial_state": "mkdirat returns undocumented errno.",
+      "named_barrier": "root08.after_mkdirat_error",
+      "action": "Return result.",
+      "oracle": "indeterminate + held lease; no retry or root cleanup.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "ROOT-09",
+      "actor": "API/service actor",
+      "initial_state": "mkdir succeeds; fchmod/fchown/ACL readback fails.",
+      "named_barrier": "root09.after_each_metadata_syscall",
+      "action": "Inject each failure.",
+      "oracle": "No cleanup/delete/reopen/retry; indeterminate and held.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "ROOT-10",
+      "actor": "API/service actor",
+      "initial_state": "Metadata valid; child fsync fails.",
+      "named_barrier": "root10.after_child_fsync_attempt",
+      "action": "Inject error.",
+      "oracle": "No terminal success; root retained/quarantined, lease held.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "ROOT-11",
+      "actor": "API/service actor",
+      "initial_state": "Child sync succeeds; anchor sync fails.",
+      "named_barrier": "root11.after_anchor_fsync_attempt",
+      "action": "Inject error.",
+      "oracle": "No success receipt; no retry; indeterminate lease held.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "ROOT-12",
+      "actor": "API/service actor",
+      "initial_state": "Pinned anchor or parent changes at barrier.",
+      "named_barrier": "root12.before_and_after_mkdir_binding_check",
+      "action": "Swap peer-controlled name/anchor.",
+      "oracle": "No unsafe target follow; exact drift error; no claim of absence; hold lease.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "ROOT-13",
+      "actor": "API/service actor",
+      "initial_state": "Persisted canonical evidence altered or digest mismatches.",
+      "named_barrier": "root13.before_receipt_validation",
+      "action": "Open/finish operation.",
+      "oracle": "Reject schema/digest; receipt absent; no completed state or lease release.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "ROOT-14",
+      "actor": "API/service actor",
+      "initial_state": "SQLite commit returns error after maybe committing terminal state.",
+      "named_barrier": "root14.after_finish_commit_attempt",
+      "action": "Reopen ledger after injected commit-then-error.",
+      "oracle": "Exactly zero or one complete atomic result; caller fenced; never infer rollback.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "ROOT-15",
+      "actor": "API/service actor",
+      "initial_state": "bootstrap.finish is committed and appended but ACK lost.",
+      "named_barrier": "root15.after_containment_empty_before_finish_ack",
+      "action": "Within the original docs/46 ACK deadline, hold the real Logger response while keeping the Logger store/channel healthy; let the live original Reaper process authenticated UNREGISTER, send its ACK, process authenticated CONTAINMENT_EMPTY and commit containment_empty; then release the real finish ACK on the original Logger channel. Separately have a distinct replacement recovery-only Reaper process attempt the ACK. In a separate timeout variant, exceed the deadline/poison the channel. Include a separate exact retry branch: the same still-live Reaper reconnects under the same active Logger registration after the prior handler reaches EOF, using a new delivery_nonce; inject a stale ACK from the retired channel and verify it is ignored. Restart Logger/Reaper in a separate variant.",
+      "oracle": "No ready/closed result or lease release before exact ACK. Only a created receipt with completed operation/allocation, active run-terminal state, held lease, and empty close fields promotes registered->active. The within-deadline late created ACK is committed by the still-live original Reaper in terminating/unregistered/containment_empty without lifecycle promotion; finalization then reaches terminal/closed and releases lease. Non-created ACK only acknowledges its outbox; EEXIST remains fenced/indeterminate and held. Actual replacement process is rejected without ledger mutation. Harness cannot fabricate credentials. Timeout/poison/retired Logger channel or exited original Reaper rejects late ACK, retains recovery_required and lease-held. `delivery_nonce` is the sole persisted ACK correlation. Only the ACK matching the current single-flight attempt is accepted; stale ACKs from retired channels are ignored. Exact-byte retry is allowed only by the same live Reaper under the still-active Logger registration after EOF/drain. After Logger restart or Reaper exit, replacement/recovery-only delivery is rejected and the lease remains held.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "ROOT-16",
+      "actor": "API/service actor",
+      "initial_state": "Run closed/abandoned then same epoch is presented again.",
+      "named_barrier": "root16.before_prepare_epoch_insert",
+      "action": "Retry with old epoch and new request.",
+      "oracle": "Unique permanent tombstone rejects; no root creation or lease reuse.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "UI-01",
+      "actor": "student browser/Reaper",
+      "initial_state": "Authenticated student has access to an enabled synthetic fixture; no active run.",
+      "named_barrier": "ui01.after_close_intent_before_finalize",
+      "action": "In Playwright, log in, select the fixture on /pilot, start; pause after start acceptance before first status projection to assert starting, then release and observe ready. Intercept close after durable close intent but before terminal finalization and hold at the named barrier; poll until closing is rendered, release finalization and observe closed. Drop the first close response and replay the exact close key.",
+      "oracle": "The page visibly renders starting, ready, closing while finalization is held, and closed after release. Replay returns the same close result; one launch, one UNREGISTER, one cleanup. Assert /login and /pilot page coverage and all four pilot API route outcomes; intent-handle issuance is directly covered by API-15 and exercised by UI-06/UI-07.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "UI-02",
+      "actor": "student browser/API",
+      "initial_state": "Pilot status is recovery_required after a controlled logger timeout; an owned lesson ID was retained for explicit ordinary learning.",
+      "named_barrier": "ui02.recovery_required_rendered_before_fallback",
+      "action": "Open /pilot, inspect recovery state and attempt retry; then explicitly navigate to /classroom/:lessonId using the retained lesson ID and continue the existing ordinary text lesson.",
+      "oracle": "Recovery-required reason is visible and pilot retry/start controls are disabled. Explicit navigation reaches the ordinary classroom flow with a visible separate-session indication; it never claims pilot recovery or success. Assert /pilot and /classroom/:lessonId coverage.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "UI-03",
+      "actor": "two student browsers/admin observer",
+      "initial_state": "Student A and Student B have separate authenticated browser contexts; A owns an opaque handle bound to A principal; B has no handle yet; an isolated test fixture is provisioned. A third browser context is authenticated as admin.",
+      "named_barrier": "ui03.two_students_start_before_independent_handle",
+      "action": "Student A starts twice with A handle; Student B attempts start using A handle and captures the generic result and state. Then B explicitly requests an intent handle in B authenticated context and starts with B handle. The admin opens /pilot and attempts GET-by-key for both students.",
+      "oracle": "Student A gets one stable operation/launch. B cannot use A handle: return generic owner-scoped not-found/rejection with no run, journal, generation, lease, spawn or root effect. After B explicitly obtains B-bound handle, B gets an independent operation and run, serialized by the singleton launcher. Admin is denied student pilot status and receives generic not-found for both status reads with no student-specific data. Assert /login and /pilot page coverage; do not require an admin pilot/health page.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "UI-04",
+      "actor": "student browser/API",
+      "initial_state": "Authenticated student is on /pilot with a deliberately invalid synthetic fixture ID.",
+      "named_barrier": "ui04.before_invalid_fixture_validation",
+      "action": "Submit start with the invalid fixture through the UI and inspect the response state.",
+      "oracle": "Visible rejected state and stable fixture_not_allowed error; no generation, Reaper/Gateway spawn, root, or lease. Assert /pilot route and error-state coverage.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "UI-05",
+      "actor": "two student browsers/Reaper",
+      "initial_state": "Student A starts while another run owns the single-generation slot; A remains queued with no generation/child/root.",
+      "named_barrier": "ui05.after_queue_before_cancel_commit",
+      "action": "Observe queued on /pilot; POST /api/v1/pilot/runs/by-key/close with the original Idempotency-Key and a distinct Close-Idempotency-Key; replay the identical close request; refresh and replay the original start key via GET /api/v1/pilot/runs/by-key.",
+      "oracle": "Visible canceled state; exact close-request replay and GET original-start-key replay return the same durable queued tombstone; zero generation, child, root, or lease for the canceled request. Assert the existing close route, /pilot route, and canceled-state coverage.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "UI-06",
+      "actor": "student browser after controlled disaster recovery",
+      "initial_state": "The app has refreshed its signed admission after the administrator rotated the namespace epoch; browser storage still contains a prior-epoch opaque intent handle.",
+      "named_barrier": "ui06.recovery_notice_before_new_start",
+      "action": "Open /pilot, attempt to resume the stored old handle, inspect the recovery notice, then explicitly select Start and request a new intent handle before submitting a run.",
+      "oracle": "The old handle is rejected with idempotency_epoch_expired and never automatically replaced. The page explains that a new explicit request is required; only after that action does the server issue a current-epoch opaque handle, which is persisted before the start request. No epoch is exposed to the browser.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "UI-07",
+      "actor": "student browser and pilot API",
+      "initial_state": "Authenticated student has access to an enabled synthetic fixture; no active run or stored current intent handle.",
+      "named_barrier": "ui07.intent_issuance_held_before_response",
+      "action": "In a real Playwright browser, invoke Start twice in the same task while the first POST /api/v1/pilot/intents is held at the named barrier; release issuance and observe all requests and durable state.",
+      "oracle": "The synchronous client single-flight guard accepts one activation only: exactly one intent request and one /api/v1/pilot/runs request are sent, one AEAD-encrypted opaque handle is persisted, and exactly one run/lease/spawn can result. A second click while pending is ignored and the control is visibly disabled. Retries after persistence reuse the same handle.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "UI-08",
+      "actor": "student browser, launcher, and isolated test clock",
+      "initial_state": "One current-epoch handle is already durably bound to an active run; a second current-epoch handle remains unbound.",
+      "named_barrier": "ui08.after_test_clock_advances_past_first_bind_expiry",
+      "action": "Advance the injected clock beyond the 24-hour handle first-bind expiry. In the real browser, refresh/status/close the active run using its bound handle, then attempt first start with the expired unbound handle.",
+      "oracle": "Fresh owner authorization permits the already-bound handle to return status and close without another launch after first-bind expiry. The unbound expired handle returns intent_handle_expired, displays the message \"No run was created. Start again to retry.\", offers one explicit Start action, and makes no automatic mint/retry; there is no journal write, run, lease, spawn, or root effect. Stale-epoch handles still fail before journal lookup.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    }
+  ]
+}

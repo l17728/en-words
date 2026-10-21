@@ -1,0 +1,14 @@
+{
+  "review":"pilot-start-kernel-sdd-architecture-review5",
+  "date":"2026-10-16",
+  "source":"docs/41-试点课堂Start持久迁移内核SDD.md",
+  "last_read_sha256":"bbb35b61c06349788a363cc5ef8d010ad4389fbb2b18d4c3a89ec5bc52719217",
+  "status":"blocked_pending_restart_command_provenance",
+  "blocker_count":1,
+  "closed":["START4-01 mixed-lifecycle global/per-lesson audit split", "START4-02 same-process bundle execution timing and ownership", "Prior audit count P3"],
+  "blockers":[{"id":"START5-01","severity":"P2","section":"3 bundle recovery supplement","finding":"After process death during Planner and before terminal sidecar/receipt, an old command is indistinguishable from a new command on cache miss","required":"Define server-minted current-incarnation command admission or a durable pre-Planner attempt marker; old unknown IDs must never regenerate Registry calls","test":"Terminate inside first Registry invocation before terminal records; restart and retry same ID with zero new Registry calls; separately admit a genuinely new server-minted command"}],
+  "implementation_constraints":["SQLite writer is database-wide, not lesson-local", "Do not hold a global cache mutex across SQL/handler/recovery", "Sidecar Flush+Sync after transaction/connection release; do not claim context can cancel fsync", "Reserve bounded cache capacity before Planner and never evict unknown entries", "Global integrity must retain orphan and unsupported-fact checks and per-lesson immutable creation checks"],
+  "text_corrections":["Section1 outside-transaction planning contradicts detailed writer-inside planning", "Meanings are frozen context/outbox data, not index-only parameters or summary audit"],
+  "execution":{"tests":false,"builds":false,"services":false,"product_changes":false,"spec_changes":false},
+  "report":"review/pilot-start-kernel-sdd-architecture-review5-20261016.md"
+}

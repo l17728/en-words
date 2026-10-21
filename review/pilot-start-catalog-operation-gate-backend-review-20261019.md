@@ -1,0 +1,11 @@
+# Pilot catalog operation-gate backend review — 2026-10-19
+
+**Verdict: PASS (static review).** The new supervisor-owned `operation` mutex closes the prior in-process poison race: open/create/Snapshot/Transition acquire it before checking health and retain it through the catalog lock, file work, Sync, poison publication, and OS unlock. A local lock-acquisition failure can no longer poison health concurrently with another local journal operation that is already past its health check.
+
+The lock order is consistent across entry points: `health.operation` → per-journal mutex (Snapshot/Transition only) → OS catalog lock → file operations. No path in this slice acquires these in reverse order. Poison publication uses the separate short-held health mutex and does not wait on the operation gate, avoiding a cycle. Error paths publish poison before dropping the operation gate; unlock failures also poison while the gate is held. Rejected state transitions remain non-poisoning and do not append.
+
+The barrier tests now match the serialization model. The Sync-failure waiter test verifies the operation gate remains held while Sync is blocked, releases the writer, then requires the waiter to observe poison without appending. Startup/Snapshot failure tests observe poison from the fake lock's unlock window, release the operation, then verify sibling calls fail closed. The earlier test-order deadlock is absent in the current version.
+
+The Unix `flock` and Windows `LockFileEx` implementations provide blocking and nonblocking lock operations, release the local gate on acquisition error/contention, and release it after OS unlock attempts. The child-process test uses a separately opened lock handle and an explicit TCP barrier: it verifies nonblocking acquisition fails while the parent holds the lock, then blocking acquisition succeeds after release. Its waits are bounded. No code-level blocker found in this slice.
+
+**Validation limit:** this was a read-only review; no tests or cross-compilation were run. Execute the `pilot_e2e` tagged tests on Windows and POSIX CI before treating platform behavior as verified. Supervisor integration must continue to provide one shared `pilotCatalogHealth` per process and preserve the documented bootstrap/case/catalog lock ordering.

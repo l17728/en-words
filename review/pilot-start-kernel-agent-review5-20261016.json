@@ -1,0 +1,49 @@
+﻿{
+  "review_id": "pilot-start-kernel-agent-review5-20261016",
+  "domain": "ai_agent_teaching_strategy",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_type": "read_only_design_rereview",
+  "code_modified": false,
+  "document_modified": false,
+  "tests_run": false,
+  "decision": "block",
+  "summary": "T-01专用Agent API和Prepare/Execute拆分可实现；但最终Agent输出HMAC在工具调用之后才写入bundle_ready，失败/崩溃时工具调用未绑定到精确文案，且sidecar未记录受信role/scope/risk上下文。",
+  "approved_points": [
+    "RenderLessonStartT01固定OP-1及方法内fallback，adapter不能直接访问Bank或拼话术",
+    "Prepare只作本地确定性Agent规划，Execute通过Registry执行两个工具",
+    "attempt_started Sync之前不调用Agent/Registry；所有工具及sidecar Sync在SQLite writer之外",
+    "同任务rollback复用bundle，COMMIT unknown及重启无receipt禁止同ID重新规划",
+    "成功bundle_hmac绑定最终命令fingerprint和typed effects"
+  ],
+  "findings": [
+    {
+      "id":"AGENT-START-12",
+      "priority":"P1",
+      "status":"blocking",
+      "section":"docs/41 §3 planning fingerprint/event transitions and §6 crash tests",
+      "title":"Agent output is fingerprint-bound after Registry execution",
+      "evidence":"planning_fingerprint excludes generated Agent output. Prepare returns say, Execute calls Registry, and only later bundle_ready binds final command fingerprint. Thus pre-bundle tool_result events are not cryptographically tied to the exact Agent output; a crash after a tool returns but before tool_result Sync also leaves no durable result event. No-replan prevents duplicate actions but does not prove what Agent decision was executed.",
+      "required_change":"After Prepare and before any Registry call, persist a plan_ready event containing HMAC of the final canonical command and explicit template/source/effect binding. Persist a tool_started event before each Registry call; then tool_result. On result-Sync failure recover as unknown and never reexecute. Add crash injection at each boundary, with no sensitive content in sidecar."
+    },
+    {
+      "id":"AGENT-START-13",
+      "priority":"P1",
+      "status":"blocking",
+      "section":"docs/41 §3 sidecar schema and failure audit separation",
+      "title":"Failed-call sidecar omits trusted actor/scope/risk provenance",
+      "evidence":"Sidecar explicitly excludes Actor, TraceID, risk, and task ID. On failed calls there is no successful lifecycle receipt/DB audit to demonstrate teacher_agent/classroom_event authorization, tool scope, and low-risk classification. A command HMAC alone does not expose a verifiable role/scope audit context.",
+      "required_change":"Persist fixed non-PII provenance fields or keyed task/trace correlations derived only from the verified capability/Registry entry (actor_role, trigger, scope, risk, tool sequence/result class). Validate they cannot be planner/HTTP supplied and fail closed on mismatched role/scope/tool. Continue excluding raw args/content/panic data."
+    }
+  ],
+  "checklist": {
+    "T01_agent_owned_exact_render_and_fallback":"pass_design",
+    "prepare_execute_boundary":"pass_design",
+    "attempt_started_precedes_agent_and_tools":"pass_design",
+    "final_agent_output_bound_before_tool_execution":"block",
+    "tool_result_durable_crash_window":"block",
+    "failed_attempt_role_scope_risk_audit":"block",
+    "same_id_no_replanning":"pass_design_pending_failure_boundary_tests",
+    "production_or_real_pilot_authorized":"no"
+  },
+  "retest_required": true
+}

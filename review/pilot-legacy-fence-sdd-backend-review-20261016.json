@@ -1,0 +1,17 @@
+{
+  "document": "docs/41-试点关闭态旧课堂保护接线SDD.md",
+  "domain": "backend_consistency_security_implementation_slicing",
+  "mode": "read_only_no_tests",
+  "decision": "direction_accepted_not_ready_for_full_implementation_freeze",
+  "blockers": [
+    {"id": "LF-B1", "title": "scope permanence versus outer transaction rollback and prepared receipt"},
+    {"id": "LF-B2", "title": "unknown COMMIT operation-key query lacks durable contract"},
+    {"id": "LF-B3", "title": "writer coverage lacks method-level scope and transaction mapping"},
+    {"id": "LF-B4", "title": "delete replay tombstone and cross-process retirement fence unresolved"}
+  ],
+  "independent_next_slice": "P1a disabled private guard/repository after LF-B1/B2 and finite method matrix; then P1b and P2; P3 waits separate frozen deletion protocol",
+  "pilot_enablement": "blocked_until_all_legacy_paths_and_delete_contract_close",
+  "production_changed": false,
+  "tests_run": false,
+  "report": "review/pilot-legacy-fence-sdd-backend-review-20261016.md"
+}

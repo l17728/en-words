@@ -1,0 +1,27 @@
+{
+  "review": "pilot-catalog-sdd-backend-review-20261019-r3",
+  "date": "2026-10-19",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md §109 latest full contract",
+  "references": [
+    "docs/41-试点课堂Start持久迁移内核SDD.md §§42,56,109,114"
+  ],
+  "read_only": true,
+  "tests_run": false,
+  "verdict": "PASS",
+  "findings": [],
+  "assessments": {
+    "bootstrap_and_global_lock_order": "IMPLEMENTABLE_NO_LOCK_CYCLE",
+    "first_create_new_and_provisioning_frame": "IMPLEMENTABLE_FAIL_CLOSED",
+    "startup_replay_identity_sync": "IMPLEMENTABLE_WITH_VERIFIED_HANDLE_PLATFORM_GATES",
+    "stable_case_lock_and_provisioning_recovery": "IMPLEMENTABLE_WITH_CROSS_PROCESS_TESTS",
+    "cleanup_resume": "STATE_PATH_COMPLETE_AND_IMPLEMENTABLE",
+    "crash_fault_matrix": "DETERMINISTIC_AND_EXECUTABLE",
+    "windows_posix_contract": "IMPLEMENTABLE_WITH_SEPARATE_PLATFORM_ACCEPTANCE"
+  },
+  "remaining_runtime_gates": [
+    "The catalog/supervisor is not implemented by this design review.",
+    "Verify Windows LockFileEx, ACL/file identity, and parent-directory durability behavior.",
+    "Verify POSIX locking, ownership/mode, directory Sync, and process-crash recovery.",
+    "Run child-process tests for first-create races, provisioning recovery, stable case-lock identity, cleanup resume, and no unauthorized DB/sidecar/key opens."
+  ]
+}
