@@ -25,10 +25,13 @@ Architecture review: **PASS for candidate-only scope**. Test-design review: **PA
 | `server/internal/pilotcontrol/pilot_vfs_trace_linux.go` | `83105da85893a30385851a92b49c9a10a23d57fe4b3c22d5427c0ffd02aeb176` |
 | `review/run_pilot_vfs_candidate.py` | `1c1ff779dbf98461ce98b1b1ce46fcb0a12567b184aed33fe6ae147b1997da45` |
 | `review/test_pilot_vfs_candidate_runner.py` | `84dc34fea9e7c47d40e31ffb5099ab90747e6900cba0d7999e8c4b1afac0adbd` |
+| `.github/workflows/pilot-control-cgo.yml` | `5a48159aeb8449d7aaa35fade8bcb705056e334929c975cc88fd4a0786549cb7` |
 
 ## Verification status
 
-Python syntax compilation passed. The portable lock-trace range validator passed; the Linux runner orchestration E2E is skipped on Windows. The candidate generator has not run on Linux, canonical fixture generation has not run, and no production/private VFS behavior is accepted. The Windows Go validation encountered a Go 1.25 standard-library `urlmaxqueryparams`/`godebugs.All` panic; the package test result is not yet considered product evidence pending toolchain diagnosis.
+Python syntax compilation and the portable lock-trace range validator passed; the Linux runner orchestration E2E is skipped on Windows. Windows Go 1.25.0 compile-only checks passed for untagged `pilotcontrol` and tagged `pilotsupervisor`/`pilotcontrol`; `gofmt` and tagged `go vet` passed. Windows behavioral test execution still panics inside the installed Go standard library because `net/url` requests `urlmaxqueryparams` absent from `internal/godebug`'s registry. This is not product test evidence.
+
+The Linux workflow was pushed at commit `7136cc8401f3b68799d34aad1d82867c33976bbd`. GitHub run [39569330877](https://github.com/l17728/en-words/actions/runs/39569330877) was rejected before starting its job because the account has failed payments or has reached its spending limit. No Linux step ran. The candidate generator has not run on Linux, canonical fixture generation has not run, and no production/private VFS behavior is accepted.
 
 ## Remaining acceptance gates
 
@@ -36,3 +39,5 @@ Python syntax compilation passed. The portable lock-trace range validator passed
 2. Design, review, and test a deterministic FD-to-callback-handle-to-inode join before accepting lock-byte-range goldens.
 3. Obtain exact-hash specialist reviews for current canonical barrier mapping and runtime goldens.
 4. Complete the later private VFS, RunRoot/logger transactional closure, API/UI, and isolated multi-user Playwright/real-classroom gates in their documented sequence.
+
+5. Restore GitHub Actions billing/limits or provide an authorized Linux runner, then rerun the pushed workflow and update this record from its artifacts.
