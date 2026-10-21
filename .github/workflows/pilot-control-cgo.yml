@@ -38,7 +38,7 @@ jobs:
         working-directory: server
     env:
       CGO_ENABLED: "1"
-      PILOT_VFS_MANIFEST_ARTIFACT_DIR: ${{ runner.temp }}/pilot-vfs-manifest-${{ github.run_id }}-${{ github.run_attempt }}
+      PILOT_VFS_MANIFEST_ARTIFACT_DIR: ${{ github.workspace }}/.test-artifacts/pilot-vfs-manifest-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
