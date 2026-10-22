@@ -40,7 +40,6 @@ jobs:
         working-directory: server
     env:
       CGO_ENABLED: "1"
-      PILOT_VFS_MANIFEST_ARTIFACT_DIR: ${{ runner.temp }}/pilot-vfs-manifest-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -61,6 +60,8 @@ jobs:
           PILOT_VFS_TEST_REAL_STRACE="$(command -v strace)"
           python3 -m unittest review.test_pilot_vfs_candidate_runner -v
       - name: Verify pinned SQLite manifest and scenario inventory
+        env:
+          PILOT_VFS_MANIFEST_ARTIFACT_DIR: ${{ runner.temp }}/pilot-vfs-manifest-${{ github.run_id }}-${{ github.run_attempt }}
         run: go test -tags=pilot_e2e ./internal/pilotcontrol -run '^(TestPinnedSQLiteRuntimeIdentity|TestPinnedVFSManifestRequiresEEXISTCases|TestPinnedVFSCallbackManifestIntegrityAndNotRunStatus|TestPilotVFSManifestArtifactDirIsolatedFromCandidateDir|TestPilotVFSRecoveryManifestIntegrityAndNotRunStatus)$' -count=1
       - name: Generate Linux callback candidates with immutable evidence
         run: python3 ../review/run_pilot_vfs_candidate.py --artifact-dir "${RUNNER_TEMP}/pilot-vfs-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
