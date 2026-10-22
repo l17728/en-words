@@ -1,0 +1,80 @@
+name: Pilot control CGO acceptance
+
+on:
+  push:
+    paths:
+      - "server/go.mod"
+      - "server/go.sum"
+      - "server/internal/pilotcontrol/**"
+      - "server/internal/pilotsupervisor/**"
+      - "server/third_party/go-sqlite3/**"
+      - "docs/4*-*"
+      - "docs/5*-*"
+      - "docs/6*-*"
+      - "review/run_pilot_vfs_candidate.py"
+      - "review/test_pilot_vfs_candidate_runner.py"
+      - ".github/workflows/pilot-control-cgo.yml"
+  pull_request:
+    paths:
+      - "server/go.mod"
+      - "server/go.sum"
+      - "server/internal/pilotcontrol/**"
+      - "server/internal/pilotsupervisor/**"
+      - "server/third_party/go-sqlite3/**"
+      - "docs/4*-*"
+      - "docs/5*-*"
+      - "docs/6*-*"
+      - "review/run_pilot_vfs_candidate.py"
+      - "review/test_pilot_vfs_candidate_runner.py"
+      - ".github/workflows/pilot-control-cgo.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux-cgo:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: server
+    env:
+      CGO_ENABLED: "1"
+      PILOT_VFS_MANIFEST_ARTIFACT_DIR: ${{ runner.temp }}/pilot-vfs-manifest-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.0"
+          cache: true
+          cache-dependency-path: server/go.sum
+      - name: Install passive syscall tracer
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes strace
+      - name: Test candidate runner provenance and evidence permissions
+        working-directory: .
+        env:
+          PILOT_VFS_TEST_SERVER_DIR: ${{ github.workspace }}/server
+        run: >-
+          PILOT_VFS_TEST_REAL_GO="$(command -v go)"
+          PILOT_VFS_TEST_REAL_STRACE="$(command -v strace)"
+          python3 -m unittest review.test_pilot_vfs_candidate_runner -v
+      - name: Verify pinned SQLite manifest and scenario inventory
+        run: go test -tags=pilot_e2e ./internal/pilotcontrol -run '^(TestPinnedSQLiteRuntimeIdentity|TestPinnedVFSManifestRequiresEEXISTCases|TestPinnedVFSCallbackManifestIntegrityAndNotRunStatus|TestPilotVFSManifestArtifactDirIsolatedFromCandidateDir|TestPilotVFSRecoveryManifestIntegrityAndNotRunStatus)$' -count=1
+      - name: Generate Linux callback candidates with immutable evidence
+        run: python3 ../review/run_pilot_vfs_candidate.py --artifact-dir "${RUNNER_TEMP}/pilot-vfs-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+      - name: Test RunRoot supervisor and SQLite package
+        run: go test ./internal/pilotcontrol -count=1
+      - name: Test Linux RunRoot supervisor contracts
+        run: go test -tags=pilot_e2e ./internal/pilotsupervisor -count=1
+      - name: Race-check RunRoot supervisor and protected SQLite driver
+        run: go test -race ./internal/pilotcontrol -count=1
+      - name: Race-check Linux RunRoot supervisor
+        run: go test -race -tags=pilot_e2e ./internal/pilotsupervisor -count=1
+      - name: Vet RunRoot supervisor and protected SQLite driver
+        run: go vet ./internal/pilotcontrol
+      - name: Vet Linux RunRoot supervisor
+        run: go vet -tags=pilot_e2e ./internal/pilotsupervisor
+      - name: Run full backend regression
+        run: go test ./...

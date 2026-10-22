@@ -1,0 +1,391 @@
+{
+  "manifest_version": 1,
+  "feature": "Pilot Control Ledger v3 schema and fault acceptance",
+  "created_utc": "2026-10-21",
+  "status": "DESIGN_ONLY_NOT_IMPLEMENTED",
+  "source_hashes": {
+    "docs/51-pilot-control-ledger-v3-sdd.md": "13e3e2d6859623f8c6f424d87e139fe684bde5cd48d4506dd3e8b9ca276b2a26",
+    "docs/52-pilot-control-ledger-v3-physical-model-decisions.md": "4a33744b224cbf5ea3c94149c451218f38598fe64bc2a42ffd10054e1f86bef5",
+    "docs/53-pilot-control-ledger-v3-physical-schema-matrix.md": "9709f5e61705e7e2089c0191021e86de4914ff621a182099734d0fa4be53cb74",
+    "docs/54-pilot-runroot-stage-a-implementation-delta.md": "c4c0dd80d56df92f265da2a0b9b18bb754267595faf6510c1899398aa2841070",
+    "docs/50-pilot-runroot-product-orchestration-sdd.md": "fa699830239aa0463c574cff4ae2ff7aa6f85b6a163d57b6abdb3907bcbaa52f"
+  },
+  "cases": [
+    {
+      "case_id": "SCHEMA-01",
+      "area": "schema-init",
+      "initial_state": "Empty SQLite file; no user objects or metadata.",
+      "named_barrier": "schema01.before_begin_immediate",
+      "action": "Initialize v3 on two independent concurrent openers.",
+      "oracle": "Exactly one complete v3 schema is created; the other validates it; one metadata singleton; no partial objects; both connections verify foreign_keys and recursive_triggers.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-02",
+      "area": "schema-reopen",
+      "initial_state": "Exact manifest v3 schema with valid metadata and rows.",
+      "named_barrier": "schema02.before_schema_inventory",
+      "action": "Open through every pooled-connection path.",
+      "oracle": "Every connection validates normalized DDL/inventory/version and pragmas; no writes or row changes.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-03",
+      "area": "schema-reject",
+      "initial_state": "Fixture database is v2 and has sentinel schema/data/metadata.",
+      "named_barrier": "schema03.after_read_only_preflight",
+      "action": "Attempt v3 open with v2 schema.",
+      "oracle": "Reject closed; before/after schema SQL, user_version, metadata, sentinel rows byte-identical; no journal-mode mutation before rejection except documented WAL side effect.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-04",
+      "area": "schema-reject",
+      "initial_state": "Fixture database is partial and has sentinel schema/data/metadata.",
+      "named_barrier": "schema04.after_read_only_preflight",
+      "action": "Attempt v3 open with partial schema.",
+      "oracle": "Reject closed; before/after schema SQL, user_version, metadata, sentinel rows byte-identical; no journal-mode mutation before rejection except documented WAL side effect.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-05",
+      "area": "schema-reject",
+      "initial_state": "Fixture database is tampered table/index/trigger and has sentinel schema/data/metadata.",
+      "named_barrier": "schema05.after_read_only_preflight",
+      "action": "Attempt v3 open with tampered table/index/trigger schema.",
+      "oracle": "Reject closed; before/after schema SQL, user_version, metadata, sentinel rows byte-identical; no journal-mode mutation before rejection except documented WAL side effect.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-06",
+      "area": "schema-reject",
+      "initial_state": "Fixture database is wrong user_version and has sentinel schema/data/metadata.",
+      "named_barrier": "schema06.after_read_only_preflight",
+      "action": "Attempt v3 open with wrong user_version schema.",
+      "oracle": "Reject closed; before/after schema SQL, user_version, metadata, sentinel rows byte-identical; no journal-mode mutation before rejection except documented WAL side effect.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-07",
+      "area": "schema-reject",
+      "initial_state": "Fixture database is extra view/virtual/temp object and has sentinel schema/data/metadata.",
+      "named_barrier": "schema07.after_read_only_preflight",
+      "action": "Attempt v3 open with extra view/virtual/temp object schema.",
+      "oracle": "Reject closed; before/after schema SQL, user_version, metadata, sentinel rows byte-identical; no journal-mode mutation before rejection except documented WAL side effect.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-08",
+      "area": "connection-pragmas",
+      "initial_state": "Pool has at least 8 independently opened physical SQLite connections.",
+      "named_barrier": "schema08.before_connection_publish",
+      "action": "Force each connection through init and query its pragmas.",
+      "oracle": "Each connection reads foreign_keys=1 and recursive_triggers=1 before any application SQL; failed connection is closed and never returned to pool.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-09",
+      "area": "replace-defense",
+      "initial_state": "Immutable identity row exists for each permanent table; collision keys prepared.",
+      "named_barrier": "schema09.before_insert_collision",
+      "action": "Attempt INSERT OR REPLACE and conflicting UPSERT on every immutable identity and unique key.",
+      "oracle": "Every operation rejects; row bytes and all dependent rows unchanged; no delete/insert trigger bypass.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-10",
+      "area": "immutability",
+      "initial_state": "Seed immutable receipts, handoffs, generation rows, evidence, cleanup dispositions.",
+      "named_barrier": "schema10.before_mutation",
+      "action": "Attempt UPDATE and DELETE per immutable table.",
+      "oracle": "Abort; exact table dumps and counts unchanged; safe event logs identify table/object only.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-11",
+      "area": "authorization-envelope",
+      "initial_state": "Frozen public-key and signed envelope vectors from docs/52; initialized auth state and fixture set.",
+      "named_barrier": "schema11.before_receipt_lookup",
+      "action": "Run frozen valid vectors and reject tampered signature, request ID changed under old signature, noncanonical CBOR, trailing bytes, unsupported version/kind, duplicate fixture ID, exact replay, same ID changed payload with valid signature, new ID at reused revision, and multi-grant account snapshot.",
+      "oracle": "Invalid signature/envelope rejects before DB access; exact replay returns identical receipt with no writes; ID conflict/stale revision reject unchanged; valid account snapshot plus grant/tombstone rows and one receipt commit atomically or all roll back. Verify signature/digest against frozen vectors.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-12",
+      "area": "foreign-keys",
+      "initial_state": "Empty valid schema; construct legal parent/child branches and wrong tuples.",
+      "named_barrier": "schema12.before_child_insert",
+      "action": "Exercise every FK, composite FK, restrict edge and required insertion order.",
+      "oracle": "Legal insertion order succeeds; each missing/mismatched/cross-tenant parent and delete/update rejects; transaction rows unchanged.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-13",
+      "area": "control-generation",
+      "initial_state": "No control generation rows.",
+      "named_barrier": "schema13.before_generation_insert",
+      "action": "Insert normal and recovery control rows for all mode/target combinations.",
+      "oracle": "Only exact normal or complete recovery tuples accepted; partial/mixed/zero/duplicate nonce combinations reject.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-14",
+      "area": "lifecycle-transitions",
+      "initial_state": "One valid handoff/lifecycle per allowed lifecycle state.",
+      "named_barrier": "schema14.before_lifecycle_cas",
+      "action": "Exhaustively attempt every documented lifecycle edge and every omitted/backward edge.",
+      "oracle": "Exactly documented edges CAS; invalid edge/mismatched generation/evidence rejects with byte-stable rows.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-15",
+      "area": "operation-transitions",
+      "initial_state": "Prepared, claimed, completed and abandoned operation fixtures, one per operation kind.",
+      "named_barrier": "schema15.before_operation_cas",
+      "action": "Exhaustively test operation CAS transition matrix and owner-generation rules including zero only for prepared/unclaimed and prepared-cancel abandoned.",
+      "oracle": "Legal state edges and exact owner predicates pass; terminal mutation, stale owner, zero claimed owner and unlisted edge reject.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-16",
+      "area": "allocation-transitions",
+      "initial_state": "Prepared, completed, abandoned, indeterminate, active, and terminal allocations.",
+      "named_barrier": "schema16.before_allocation_cas",
+      "action": "Test allocation_state and run_terminal_state matrices including active->abandoned/indeterminate exact CAS.",
+      "oracle": "Terminal allocation states and abandoned/indeterminate run states are immutable; active only takes enumerated exact terminal CAS; all other edges reject.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-17",
+      "area": "root-state-transitions",
+      "initial_state": "Created-root row plus EEXIST and no-root branches without root rows.",
+      "named_barrier": "schema17.before_root_state_cas",
+      "action": "Exercise containment and cleanup state edges for created root and forbidden mutations for no-root/EEXIST.",
+      "oracle": "Monotonic documented transitions pass only with exact receipt/evidence; EEXIST/no-root never acquires root-state row; invalid changes leave rows unchanged.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-18",
+      "area": "lease",
+      "initial_state": "Lease singleton empty and occupied fixtures.",
+      "named_barrier": "schema18.before_lease_cas",
+      "action": "Race two distinct exact owners; then attempt wrong-owner release, owner substitution, delete, and release before containment evidence.",
+      "oracle": "Exactly one acquire; wrong release/transfer/delete and premature release reject; owner retained until exact terminal predicate.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-19",
+      "area": "outbox",
+      "initial_state": "Intent/finish outbox fixtures in ready, send_authorized, acknowledged, suppressed states.",
+      "named_barrier": "schema19.before_outbox_transition",
+      "action": "Exercise delivery, ACK, cancellation race and all illegal state/correlation/digest transitions.",
+      "oracle": "Only ready->send_authorized->acknowledged and eligible intent ready->suppressed with exact receipt; ACK identity immutable; race has one linearized winner.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-20",
+      "area": "branch-created",
+      "initial_state": "Valid normal lifecycle with exact created receipt and ACK.",
+      "named_barrier": "schema20.before_finalize_created",
+      "action": "Run Prepare, Claim, verified root create, Finish, ACK, active, close, containment evidence, cleanup and finalization.",
+      "oracle": "All branch invariants pass in transaction order; lease releases only after exact empty containment and final CAS.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-21",
+      "area": "branch-eexist",
+      "initial_state": "Valid root-create returns exact EEXIST collision proof.",
+      "named_barrier": "schema21.before_finalize_eexist",
+      "action": "Run receipt/ACK and collision reconciliation paths.",
+      "oracle": "No root-state row or readiness; allocation/result indeterminate and lease held; no terminal success or release.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-22",
+      "area": "branch-prepared-cancel",
+      "initial_state": "Prepared root operation, owner_generation=0, no Claim/dispatch, exact pinned absence.",
+      "named_barrier": "schema22.before_cancel_prepared",
+      "action": "Race CancelPreparedRunRoot against AuthorizeOutboxSend for ready intent (never-authorized cancellation), then separately cancel with an already-acknowledged intent; unregister and finalize each valid branch.",
+      "oracle": "Ready intent suppresses only with exact no-send receipt; acknowledged intent remains acknowledged. Validator joins the cancellation receipt to the unique outbox row and checks ACK digest/correlation there; correlation is not encoded in canonical receipt CBOR. Both branches create no root row and retain lease until containment/finalize; send_authorized without ACK blocks cancellation.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-23",
+      "area": "branch-no-root",
+      "initial_state": "Registered lifecycle with no root operation/allocation/lease and exact close binding.",
+      "named_barrier": "schema23.before_finalize_no_root",
+      "action": "Finalize no-root abort and attempt forged allocation/lease/finish event.",
+      "oracle": "No-root finalizer succeeds only with exact contract; fabricated root-side rows/events reject; no lease ever acquired.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-24",
+      "area": "writer-crash",
+      "initial_state": "For each mutating method, snapshot exact schema+rows before call.",
+      "named_barrier": "schema24.after_commit_before_ack",
+      "action": "Inject failures before commit, during rollback, and after successful commit before caller receives result; reopen independently.",
+      "oracle": "Pre-commit leaves exact before image; post-commit is discoverable as exact durable replay; no ambiguous second operation or lease owner.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-25",
+      "area": "independent-race",
+      "initial_state": "Two SQLite handles/processes, same business key and controlled distinct keys.",
+      "named_barrier": "schema25.after_lookup_before_insert",
+      "action": "Race same-key prepare, stale auth fence vs prepare, close vs dispatch authorization, and independent opener initialization.",
+      "oracle": "Single linearization winner per contract; no duplicate operation/epoch/side effect; losers receive deterministic conflict/deny; exact row digests recorded.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "CAP-01",
+      "area": "capacity-boundary",
+      "initial_state": "Fresh isolated DB with immutable test quota parameters global=7, tenant=5, principal=3; test boundaries independently while other scopes remain below quota.",
+      "named_barrier": "cap01.before_replay_at_capacity",
+      "action": "From zero, insert valid allocations one at a time through ceil(limit*80/100) and ceil(limit*90/100), asserting one durable event for each scope/threshold, then replay an existing key and attempt a new key at N+1.",
+      "oracle": "Threshold event is inserted exactly at first count >= ceil(limit*percent/100), once per scope/threshold; limits 3 yields both 80/90 events at count 3, 5 yields 80 at 4 and 90 at 5, 7 yields 80 at 6 and 90 at 7. Replay/close/cleanup remain available at N; N+1 rejects unchanged.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "CAP-02",
+      "area": "capacity-race",
+      "initial_state": "Fresh test DB with global=7, tenant=5, principal=3; constrained principal is at 2/3, tenant at 4/5, global at 6/7; no lease is held.",
+      "named_barrier": "cap02.release_32_writers",
+      "action": "Part A: use the exact shared production helper called after current authorization fence and business-key replay lookup: counter read -> quota decision -> allocation INSERT. Run with 32 independent connections and test harness skips only lease acquire; do not use raw INSERT-only test. Part B: with no lease held, admit one full-path run at N-1, close/release lease, then submit 31 distinct new business keys.",
+      "oracle": "Part A: one transaction at N-1 inserts; others reject specifically at quota decision; trigger increments counters/events once and no lease-busy can satisfy result. Part B: first full-path run closes/releases; all 31 reject at pre-lease quota check without writes/side effects. Exact replay still bypasses quota but never bypasses current authorization fence.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "CAP-03",
+      "area": "capacity-isolation",
+      "initial_state": "Fresh isolated DB with immutable test quota parameters global=7, tenant=5, principal=3; test boundaries independently while other scopes remain below quota.",
+      "named_barrier": "cap03.before_count_queries",
+      "action": "Attempt new key, replay, and close for scopes at different quota edges; compare counters with an exact count of permanent allocation tombstones.",
+      "oracle": "Nested independent limits apply: principal usage contributes to tenant and global; unrelated scopes do not. Replay and close remain available. Counter values equal exact allocation tombstone counts.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "PERF-01",
+      "area": "million-row-benchmark",
+      "initial_state": "Linux x86-64 reference host, 4 dedicated vCPU, 16 GiB RAM, local NVMe, Ubuntu 24.04 LTS, SQLite 3.45.x pinned image; Go release; WAL/synchronous FULL; 1,000,000 allocation/business rows, 100,000 principals, 10 tenants; 64 KiB payload+receipt+event bytes per 100 rows. Benchmark-only immutable caps global=1,500,000, tenant=250,000, principal=10,000. Run warm-cache and cold-cache datasets separately.",
+      "named_barrier": "perf01.after_seed_before_measure",
+      "action": "Run 5 warm-up rounds and 30 measured rounds. Before each mutating batch, restore read-only 1,000,000-row baseline; restore excluded from timing. New-admission batch: 10,000 distinct admissions, each completed and closed. Prepare separate exact-at-capacity datasets for global, one tenant, and one principal rejection (10,000 attempts each per round); other scopes remain below cap. Prepare separate active-run dataset for 10,000 legal closes per round. Exact replay uses baseline. Capture raw samples and environment.",
+      "oracle": "Pass only if capacity lookup reads exactly three counter rows by PK (<=3 rows); allocation INSERT trigger updates those three; replay p95<=10ms; new admission and capacity rejection p95<=50ms; writer-lock p99<=100ms; no hot-path scans; quota race zero overshoot. Each workload uses prepared independent datasets and samples only the named operation; publish raw samples, p50/p95/p99, lock hold, scans, WAL peak, DB size and cache prep.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "CAP-04",
+      "area": "capacity-reconciliation",
+      "initial_state": "Persisted v3 database has exact counters; a copied fixture has one counter incremented or decremented.",
+      "named_barrier": "cap04.after_startup_reconcile_before_admission",
+      "action": "Open healthy and drifted copies separately. Drift fixtures: increment/decrement each scope, remove each scope row, add a schema-valid zero-count scope row with no allocation, and add an invalid-sentinel row by enabling ignore_check_constraints only during fixture corruption. Reconcile each copy before admission.",
+      "oracle": "Healthy counters and alert events reconcile exactly. Every drifted/missing/orphan/invalid-sentinel case fences admission, emits safe diagnostic, does no auto-repair/reseed/delete, and preserves byte-stable rows after rejected admission.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-31",
+      "area": "capacity-policy-reopen",
+      "initial_state": "v3 DB initialized with immutable global/tenant/principal caps, then closed cleanly.",
+      "named_barrier": "schema31.before_policy_compare",
+      "action": "Reopen with exact matching policy, then try one changed quota value and one missing/extra policy row.",
+      "oracle": "Exact config reopens; any mismatch, missing or extra row rejects without schema, user_version, policy, counter, or data mutation; no silent quota increase/decrease.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-32",
+      "area": "launcher-journal-anchor",
+      "initial_state": "The protected v3 ledger has a seeded sequence-zero journal anchor. A durable journal contains a valid prefix and may have a torn or one-record-ahead tail.",
+      "named_barrier": "schema32.after_journal_fdatasync_before_anchor_commit",
+      "action": "Exercise initial journal creation with parent-directory fsync fault; normal append; crash after frame fdatasync but before anchor CAS; crash after anchor commit; restore an older complete journal prefix; present a journal more than one record ahead; and change journal ID, sequence, or hash directly.",
+      "oracle": "Initial creation remains offline until both file and parent directory sync succeed. Normal and exactly-one-record-ahead recovery converge to one matching sequence/hash before ACK or side effect. Older prefix, impossible lead, journal-ID mismatch, nonconsecutive CAS, and hash mutation fence admission without reseeding or row mutation.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-33",
+      "area": "paired-snapshot-restore-marker",
+      "initial_state": "A valid ledger and launcher journal share an old restore generation. A trusted deployment-control marker is bound to a fresh boot challenge and reports a higher restore generation after a simulated platform snapshot restore.",
+      "named_barrier": "schema33.before_ledger_journal_open",
+      "action": "Present the old paired DB+journal with a valid current marker, a replayed/stale marker, an invalid signature, a wrong host/challenge, an unavailable marker service, and then the approved offline recovery marker for a new empty ledger.",
+      "oracle": "The old pair is rejected before journal lookup or admission when its restore generation mismatches or the marker cannot be verified. The approved recovery path keeps the old ledger read-only, requires old process retirement/root quarantine evidence, initializes a new empty ledger and journal under the new marker, and rejects old namespace keys. No old business rows or leases are imported.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-34",
+      "area": "production-driver-hook-fail-closed",
+      "initial_state": "The pinned production SQLite driver is registered with a deterministic test-only ConnectHook fault switch. No ledger pool or service is published; the hook can fail for a selected physical connection before authorizer installation.",
+      "named_barrier": "driver01.before_pool_publish",
+      "action": "Open the protected ledger with the hook failing on the first and then a later physical connection while forcing pool expansion. Attempt readiness publication and an RPC; afterward disable the fault and open a fresh pool.",
+      "oracle": "Every hook failure closes the physical connection and causes initialization/readiness to fail before any RPC or mutation. No unprotected connection is returned or reused; the fresh healthy pool is usable and all its connections enforce policy. Error logs identify stage/connection class without SQL payload, key, or identity.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-35",
+      "area": "production-driver-per-physical-connection-authorizer",
+      "initial_state": "A healthy protected v3 store uses the exact pinned production database/sql driver; MaxOpenConns is at least 8 and each test connection is explicitly pinned and held concurrently to force eight distinct physical connections.",
+      "named_barrier": "driver02.each_physical_connection_before_release",
+      "action": "On every pinned connection, independently attempt unauthorized INSERT/UPDATE/DELETE, CREATE/DROP including TEMP objects, ATTACH/DETACH, and mutating PRAGMA; then execute permitted reads. Include trigger-originated counter/alert writes and direct SQL that mimics trigger statements.",
+      "oracle": "All eight connections reject every unauthorized operation and allow reads. Only writes originating from the exact approved trigger succeed; equivalent direct SQL is denied. The test proves distinct physical handles were concurrently live and records the driver version and connection count.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-36",
+      "area": "production-driver-capability-scope-cleanup",
+      "initial_state": "The protected pool has at least two physical connections and only typed store methods can request an unexported per-connection capability; a test seam can inject an error and panic after capability grant but before transaction completion.",
+      "named_barrier": "driver03.before_and_after_capability_release",
+      "action": "Run one authorized typed mutation through success, returned-error, and panic paths; recover the panic at the test boundary. Reacquire the same physical connection and another pooled connection, attempt the same SQL raw and through an unrelated typed method, and verify trigger-only capabilities separately.",
+      "oracle": "The scoped operation succeeds only for its exact fixed statement/transaction. Capability is cleared before the connection is returned on all exits, including panic; rollback leaves no partial state. Raw replay and unrelated methods are denied on reused and other connections, and an approved trigger remains the only trigger-source exception.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-37",
+      "area": "init-marker",
+      "initial_state": "New empty database after WAL setup; no application schema or init marker.",
+      "named_barrier": "schema37.before_init_transaction",
+      "action": "Create the reviewed v3 schema, immutable reference seeds, mutable bootstrap rows, then insert initialization marker as final statement and commit.",
+      "oracle": "Exactly one marker row; schema/seed digests are 32-byte BLOBs tied to reviewed embedded manifests; marker is immutable; WAL setup is outside the transaction; commit is atomic.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-38",
+      "area": "init-marker-recovery",
+      "initial_state": "Partial schema, missing marker, or incomplete marker after crash.",
+      "named_barrier": "schema38.before_reopen_validation",
+      "action": "Reopen through read-only schema preflight and attempt startup validation.",
+      "oracle": "QUARANTINED; no app dispatch, DDL/DML, reseed, user_version write, or journal-mode change; no retry initialization.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-39",
+      "area": "init-marker-digest",
+      "initial_state": "Complete marker with wrong hash, wrong SQLite storage type, wrong byte length, duplicate row, or modified embedded manifest.",
+      "named_barrier": "schema39.before_ready",
+      "action": "Validate marker against build-time approved schema and seed digests and inspect embedded payload integrity.",
+      "oracle": "QUARANTINED before readiness; digest type must be BLOB of exactly 32 bytes; no mutation or app dispatch.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-40",
+      "area": "seed-reopen-semantics",
+      "initial_state": "Valid initialized DB after lease/counters/journal anchor have changed through legal operations.",
+      "named_barrier": "schema40.after_schema_preflight",
+      "action": "Reopen and validate immutable content seeds, mutable bootstrap rows, deployment anchor, and cross-table invariants.",
+      "oracle": "Accept only exact immutable seed rows; do not require mutable lease/counters to equal initial NULL/zero; validate current legal state and external anchor; dispatch remains zero until READY.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-41",
+      "area": "init-commit-uncertain",
+      "initial_state": "Creator observes uncertain initialization COMMIT result.",
+      "named_barrier": "schema41.after_commit_before_ready",
+      "action": "Restart and validate schema, marker, fixed seeds, mutable-row invariants, and all digests.",
+      "oracle": "Accept only a complete exact marker plus full validation; otherwise QUARANTINED; never reseed or dispatch application work before READY.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "review/pilot-control-ledger-v3-authz-vectors-20261021.json",
+      "sha256": "1ac497a2fa25db41bb1cfdc8b5fe568e1338df1bf7376ef7544e287ea5786968",
+      "purpose": "Deterministic signed and malformed authorization-envelope conformance vectors; public key only."
+    }
+  ]
+}

@@ -1,0 +1,577 @@
+{
+  "schema_version": 3,
+  "ddl_manifest_sha256": "54558381ea66be5305c4ba037e93ad7be53d23f6b8c28785b8e3ca0222ac2324",
+  "explicit_object_count": 95,
+  "objects": [
+    {
+      "type": "index",
+      "name": "pilot_one_close_per_epoch",
+      "table_name": "run_root_operations",
+      "sql_sha256": "4934a5e8469712dd980fef06b3c864b8eb09df1209460763f36068158eed3947"
+    },
+    {
+      "type": "index",
+      "name": "pilot_one_root_create_per_epoch",
+      "table_name": "run_root_operations",
+      "sql_sha256": "721ab2d6fdd31106caed4d81ca582bde865f37fe6717ca5a6dc790d01e422c87"
+    },
+    {
+      "type": "table",
+      "name": "pilot_authorization_state",
+      "table_name": "pilot_authorization_state",
+      "sql_sha256": "1f191c99adc36d34a3a62ff57e93361707dfba9544e381fc6efd77d71d0a7eb2"
+    },
+    {
+      "type": "table",
+      "name": "pilot_authz_update_receipts",
+      "table_name": "pilot_authz_update_receipts",
+      "sql_sha256": "15bef72485db1fa115365831a94b408e6147727f35dc4955ffbb34b706fab91c"
+    },
+    {
+      "type": "table",
+      "name": "pilot_bootstrap_handoffs",
+      "table_name": "pilot_bootstrap_handoffs",
+      "sql_sha256": "50b752bde1f06eb364e865bd5932607b96c0fccc577af5c513feac6102e1db6a"
+    },
+    {
+      "type": "table",
+      "name": "pilot_business_capacity_counts",
+      "table_name": "pilot_business_capacity_counts",
+      "sql_sha256": "f6158ba71bdca45d9e839a372366745f31ee68944e2eaf9c4fc9f4e950dad93a"
+    },
+    {
+      "type": "table",
+      "name": "pilot_capacity_alert_events",
+      "table_name": "pilot_capacity_alert_events",
+      "sql_sha256": "7dba8020851ec0b983bce6d189dba93b1d2ee5879963ce37227b19092fbd00ec"
+    },
+    {
+      "type": "table",
+      "name": "pilot_capacity_policy",
+      "table_name": "pilot_capacity_policy",
+      "sql_sha256": "7ea9a393eebe678552fb33bff6b7577d1d9c0afc41f4eb87be1014a15ced27ba"
+    },
+    {
+      "type": "table",
+      "name": "pilot_control_generations",
+      "table_name": "pilot_control_generations",
+      "sql_sha256": "3af17fab264309149109a19dc0750122739f854efed45ef3757d38c60e9c72aa"
+    },
+    {
+      "type": "table",
+      "name": "pilot_fixture_grants",
+      "table_name": "pilot_fixture_grants",
+      "sql_sha256": "afcc25012231fc1e7c97d9ea8e6c1441f9c56985b5042d66c7ef4e89018c597d"
+    },
+    {
+      "type": "table",
+      "name": "pilot_launcher_journal_anchor",
+      "table_name": "pilot_launcher_journal_anchor",
+      "sql_sha256": "59c57f2e6543a05be45aab6913d9a301dc79d7d998d2d4715a50b4aa07a4ec68"
+    },
+    {
+      "type": "table",
+      "name": "pilot_operation_evidence_receipts",
+      "table_name": "pilot_operation_evidence_receipts",
+      "sql_sha256": "2de0f3f9579c4fd297a55a93e8fef4943b425f2b8b62db494afdeefb121b7df7"
+    },
+    {
+      "type": "table",
+      "name": "pilot_prepared_cancel_receipts",
+      "table_name": "pilot_prepared_cancel_receipts",
+      "sql_sha256": "3661c36fafcf18e6428eacc5e0f63a9754f120c17d53be131c92330bee842181"
+    },
+    {
+      "type": "table",
+      "name": "pilot_principal_aliases",
+      "table_name": "pilot_principal_aliases",
+      "sql_sha256": "1e43b134efe9df4a39dbfd62dabf91bc2c8d211151eac335b5ae47194daf54a0"
+    },
+    {
+      "type": "table",
+      "name": "pilot_root_run_state",
+      "table_name": "pilot_root_run_state",
+      "sql_sha256": "d97826ea0190ec787cf3f9d73af9a62bcde6ddb55cbc23271a2f454d81b17445"
+    },
+    {
+      "type": "table",
+      "name": "pilot_run_cleanup_dispositions",
+      "table_name": "pilot_run_cleanup_dispositions",
+      "sql_sha256": "4b6c201703a1d3ee6766922dd3f18cc41b52f98b79b809046305d58e5d38bf6c"
+    },
+    {
+      "type": "table",
+      "name": "pilot_run_containment_evidence",
+      "table_name": "pilot_run_containment_evidence",
+      "sql_sha256": "7e95c300ccd20e11c0cbbe39e5c635f28bdfd265952919ff6edce6df49f9bd5b"
+    },
+    {
+      "type": "table",
+      "name": "pilot_run_lease",
+      "table_name": "pilot_run_lease",
+      "sql_sha256": "809a60ef23982f975d544baa00204d8d9c36d401722fc0d01c1603cd6e59674f"
+    },
+    {
+      "type": "table",
+      "name": "pilot_run_lifecycle",
+      "table_name": "pilot_run_lifecycle",
+      "sql_sha256": "2d90d7c6085597d7732115de58703df6aa4f1aa013180adee52b33089ae573aa"
+    },
+    {
+      "type": "table",
+      "name": "pilot_session_fences",
+      "table_name": "pilot_session_fences",
+      "sql_sha256": "fb46261d888ea708ff39e9d73883be7531f4f8140d30e6c7115670882e697fcc"
+    },
+    {
+      "type": "table",
+      "name": "run_epoch_allocations",
+      "table_name": "run_epoch_allocations",
+      "sql_sha256": "05ba7a48b26d2d7daff5d92ca907b44466e347978efe04967a82a299adf43be5"
+    },
+    {
+      "type": "table",
+      "name": "run_root_event_outbox",
+      "table_name": "run_root_event_outbox",
+      "sql_sha256": "5a62b87a5d4489a41085a1b32ae0806a2ed3d58a60b1c1b27e539479b314cdfe"
+    },
+    {
+      "type": "table",
+      "name": "run_root_ledger_meta",
+      "table_name": "run_root_ledger_meta",
+      "sql_sha256": "d72be88bbd00225182813c8cf01908a7ba4af0102bb5a83b593f388930ca3db1"
+    },
+    {
+      "type": "table",
+      "name": "run_root_operations",
+      "table_name": "run_root_operations",
+      "sql_sha256": "473db60cfc58ae3cf8dde4ed468e1478b6fe426024d954f4c9225e0ebea50fb9"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_allocation_capacity_after_insert",
+      "table_name": "run_epoch_allocations",
+      "sql_sha256": "d2ddc21934500d6bf79891e47fdc5198764a254cf5407bb6c3fff4dd7a2aab06"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_allocation_insert_guard",
+      "table_name": "run_epoch_allocations",
+      "sql_sha256": "a1b5c27e61fbc5ee2b486c529d94b8663edb371839df222a3238f3fbea9ba11c"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_allocation_no_delete",
+      "table_name": "run_epoch_allocations",
+      "sql_sha256": "ccd60189a24fb0ea6d486fc4f66e2bde5a82ab4754235d95187c71f6eefd632f"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_allocation_no_replace",
+      "table_name": "run_epoch_allocations",
+      "sql_sha256": "12afae1b71610da3237517a05f2894d5da613dc427e475086481fe483df4ba44"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_allocation_update_guard",
+      "table_name": "run_epoch_allocations",
+      "sql_sha256": "9e8191ff2b164c7833d19b3ccc4fbd80666d56e6fbee6e492682558f07ff0406"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_authz_receipts_no_delete",
+      "table_name": "pilot_authz_update_receipts",
+      "sql_sha256": "b5b8b9ddd65eb4d4a7238090a6ac567f453deb1bdabf3cc3bc2a9bd8b98f0b69"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_authz_receipts_no_replace",
+      "table_name": "pilot_authz_update_receipts",
+      "sql_sha256": "6c0cef9d06ac4e8885a702186d040170bc4cebd55ec6dfeec4251b5bef7f7161"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_authz_receipts_no_update",
+      "table_name": "pilot_authz_update_receipts",
+      "sql_sha256": "12484e5bbbb5209dbf2d9858e03f05355ac37dfb9e62c42a871c547386e707e0"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_authz_state_no_delete",
+      "table_name": "pilot_authorization_state",
+      "sql_sha256": "bf0d74804c79b31c977c0212a046c7a784abb0f1bb48cff8311aec8108b5dbf2"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_authz_state_no_replace",
+      "table_name": "pilot_authorization_state",
+      "sql_sha256": "992127c47e768f6b86e584991a6ed398180eb538a5e15cf50ef9bd9479ca8c09"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_authz_state_update_guard",
+      "table_name": "pilot_authorization_state",
+      "sql_sha256": "7e2840f70cc3207d7477742d70d93f396ce6d23170a060b7446a1d0e58f657cf"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_cancel_receipts_no_delete",
+      "table_name": "pilot_prepared_cancel_receipts",
+      "sql_sha256": "8f97ce745a0a0c643716ecb3722ca3ad23636b8495a00157337ca0461ac3f328"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_cancel_receipts_no_replace",
+      "table_name": "pilot_prepared_cancel_receipts",
+      "sql_sha256": "b8b0f86fccc09607f1d200d65963119e4a65995ad2317849f8a78d942ce95e71"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_cancel_receipts_no_update",
+      "table_name": "pilot_prepared_cancel_receipts",
+      "sql_sha256": "9b3f9232e9f75d8eb4297248a38181f3bc2c3ff71dc5b40c0c93eeb808e1154f"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_capacity_alerts_no_delete",
+      "table_name": "pilot_capacity_alert_events",
+      "sql_sha256": "4a1919fdff485a3821d22651f65df65c81f77bed28d8dbce7b987f879b89472f"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_capacity_alerts_no_replace",
+      "table_name": "pilot_capacity_alert_events",
+      "sql_sha256": "7b857ea2b7add35a8bcc1834fcd4af2f7e35f51a46f5eeb9a2c3edc2b890e1cc"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_capacity_alerts_no_update",
+      "table_name": "pilot_capacity_alert_events",
+      "sql_sha256": "01311fe397b170549ac0401a25c3346ba61a0e4a344480cd35eb94bade15be28"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_capacity_counts_no_delete",
+      "table_name": "pilot_business_capacity_counts",
+      "sql_sha256": "1f79298759e01a158c9feada2e70c8062e16a589042180369983fbcb92341ef1"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_capacity_counts_no_replace",
+      "table_name": "pilot_business_capacity_counts",
+      "sql_sha256": "9f38a704fff67bbacc18fb775a28587d507a006c039dc7e46d4c72b6a8b998dc"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_capacity_counts_update_guard",
+      "table_name": "pilot_business_capacity_counts",
+      "sql_sha256": "d3e16142ba2bd891bfa713747a95f0538babbdc348b931a5205cc06366149b0a"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_capacity_policy_no_delete",
+      "table_name": "pilot_capacity_policy",
+      "sql_sha256": "2d6e67278d0f4a102a63be356942410d3ae0125a2fac70f67fb218d19ea61faf"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_capacity_policy_no_replace",
+      "table_name": "pilot_capacity_policy",
+      "sql_sha256": "637fc063048f65978bef8bf74d77e5afea22fe30fc4d23e6ef10ff2f98d8f993"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_capacity_policy_no_update",
+      "table_name": "pilot_capacity_policy",
+      "sql_sha256": "f569531cba05293e29e127a5201baf2bc5716a38ea59bb0f4da5c6e94fdde866"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_cleanup_dispositions_no_delete",
+      "table_name": "pilot_run_cleanup_dispositions",
+      "sql_sha256": "17c156ee5beb8cb56f8f6cc64cad02ecd5ff75e1426ff5f7d95929a1de375ccf"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_cleanup_dispositions_no_replace",
+      "table_name": "pilot_run_cleanup_dispositions",
+      "sql_sha256": "ca1bdc543dbef142f70fe2a1592fb64a52c77b4434d37a31acd1a6a4e217693a"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_cleanup_dispositions_no_update",
+      "table_name": "pilot_run_cleanup_dispositions",
+      "sql_sha256": "35561670c969658107cff75ce22ae344d24b2861eea90ad021ae22046a651c52"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_containment_evidence_no_delete",
+      "table_name": "pilot_run_containment_evidence",
+      "sql_sha256": "ba68b025fdd94d1884e333c414c555c491046d3c245141dd953789513bfed0aa"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_containment_evidence_no_replace",
+      "table_name": "pilot_run_containment_evidence",
+      "sql_sha256": "30aaba06cbd9a2cabbcc686b619750684a7e3ec67965bc829eba8df412d74a9c"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_containment_evidence_no_update",
+      "table_name": "pilot_run_containment_evidence",
+      "sql_sha256": "801039d01fd7a5c699ab507da83ddac728ff4bb0c85c98f8cd1347768c32a77f"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_control_generations_no_delete",
+      "table_name": "pilot_control_generations",
+      "sql_sha256": "fd5475a1376223d3f52fe1a4b6e822904709d5fa409c171d147bf71e4cd7193b"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_control_generations_no_replace",
+      "table_name": "pilot_control_generations",
+      "sql_sha256": "7df45e4add96513f8f608e6edaae072e2559dea5da5a75264f8fa5225363538a"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_control_generations_no_update",
+      "table_name": "pilot_control_generations",
+      "sql_sha256": "c3be86ffad454004f58565a3dc1738693fa1329cf329931ab3555635618d7298"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_fixture_grant_no_delete",
+      "table_name": "pilot_fixture_grants",
+      "sql_sha256": "dabe5dc9aeca248f9c2e092ecd220f49fd894ab49d65ed2caa08f23bbac62f00"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_fixture_grant_no_replace",
+      "table_name": "pilot_fixture_grants",
+      "sql_sha256": "b9814b2927d2b8e766735804d2f27addf876a1800127bea472bc6ea4dd5d72d8"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_fixture_grant_update_guard",
+      "table_name": "pilot_fixture_grants",
+      "sql_sha256": "3b59fe6559628dc92ab40f3e803a75397c610f2ea3e2c03a2e3244bcf6ecf12f"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_handoffs_no_delete",
+      "table_name": "pilot_bootstrap_handoffs",
+      "sql_sha256": "97328d5f86276a67ea527e22bcd929831e68826091e2e6201b44103b5100c56d"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_handoffs_no_replace",
+      "table_name": "pilot_bootstrap_handoffs",
+      "sql_sha256": "1304b2c22571f84dfb8e2c801e564421c2f7bce9f155870d71d17f9ce2962b1d"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_handoffs_no_update",
+      "table_name": "pilot_bootstrap_handoffs",
+      "sql_sha256": "7ad64a7ac8da2764e23f47ed8cde24e4ad944547574302d8ad6ebf29a901ff8f"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_launcher_journal_anchor_monotonic",
+      "table_name": "pilot_launcher_journal_anchor",
+      "sql_sha256": "a363caa8744c09d59e9940b91e0f411dffdf32fc393d9248763c3eaa92d10c43"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_launcher_journal_anchor_no_delete",
+      "table_name": "pilot_launcher_journal_anchor",
+      "sql_sha256": "51a152fc67b8719f8999c8c04dd4ef5412f1a7254a7fc7b391c687937ca4572a"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_lease_no_delete",
+      "table_name": "pilot_run_lease",
+      "sql_sha256": "809470487ab2f7d1e0ffa236640db103e3ae561b1b2f7f10b720e41203ea9f0c"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_lease_no_replace",
+      "table_name": "pilot_run_lease",
+      "sql_sha256": "dd6e54f39c939276f62ae4dfd70bacf95c485f3caebd3e6f3b3c931c7f9c8e6a"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_lease_update_guard",
+      "table_name": "pilot_run_lease",
+      "sql_sha256": "e74e28d71df80bbf59fe8846b8fa9f8522cbf6a1d5206455bf31f3e02ee83b13"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_lifecycle_insert_guard",
+      "table_name": "pilot_run_lifecycle",
+      "sql_sha256": "8e42c0169aace543e6c59157f0629bcda579ac463c7e1b6bc2c8cc9dbbea6b39"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_lifecycle_no_delete",
+      "table_name": "pilot_run_lifecycle",
+      "sql_sha256": "1682a170c212724232fd3ad367b8df5d40a5199fa7a2a296454980907ce13962"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_lifecycle_no_replace",
+      "table_name": "pilot_run_lifecycle",
+      "sql_sha256": "e1339807746b9c60555f4525f122f2b89bcf2ab8704cb480f90021b8cad56fca"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_lifecycle_update_guard",
+      "table_name": "pilot_run_lifecycle",
+      "sql_sha256": "13efb6f001248d8ef2415a42191cdb3482ab697df4a4bae47af60a24d5367535"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_operation_insert_guard",
+      "table_name": "run_root_operations",
+      "sql_sha256": "aab1ce44ac0f22a808e804de429bdadf969c7da534af8cae4f66d88eb74ebe99"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_operation_no_delete",
+      "table_name": "run_root_operations",
+      "sql_sha256": "7d3c964d3999afb6ad74a3c28fd2684de8f6816a726a0168219642956f2a1abe"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_operation_no_replace",
+      "table_name": "run_root_operations",
+      "sql_sha256": "ef66ff656661f3037e51923b5b3dbdc43b484481700f52d4b5b3ec1aa7150ca1"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_operation_receipts_no_delete",
+      "table_name": "pilot_operation_evidence_receipts",
+      "sql_sha256": "c79f14fd6f5d1594c73df19409bf1324b9f02a406f45c57dc74d9c9aaad088a9"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_operation_receipts_no_replace",
+      "table_name": "pilot_operation_evidence_receipts",
+      "sql_sha256": "47d05240cfd6832fc661675126755c71db96dba53d235a54cc5beab1e81ee7cd"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_operation_receipts_no_update",
+      "table_name": "pilot_operation_evidence_receipts",
+      "sql_sha256": "c72620fe6e35fb6a1e1ec2ec12368f8a9931a7b144883b8b00ffc20550be55be"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_operation_update_guard",
+      "table_name": "run_root_operations",
+      "sql_sha256": "386ba865ebeff052c5fa0fd68ca1704ae5b737065d635e8e27a1115abeab04cb"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_outbox_insert_guard",
+      "table_name": "run_root_event_outbox",
+      "sql_sha256": "9494a20c71a496d72909a7b04653a3b277acebe5460d5acfab3e2d6d64966ee4"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_outbox_no_delete",
+      "table_name": "run_root_event_outbox",
+      "sql_sha256": "a5d5dd269bda422baeb85c417d40d22bc53d3f36755c216ba2a722741005084c"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_outbox_no_replace",
+      "table_name": "run_root_event_outbox",
+      "sql_sha256": "365ed2edce6748384a5c1906155a79101e755237b3b1c94aeb3c74aa9121a39c"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_outbox_update_guard",
+      "table_name": "run_root_event_outbox",
+      "sql_sha256": "dc18b647cea47a29b49d011070c836fa3837288de1af76df5b5e2e1c6c8d8ace"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_principal_aliases_no_delete",
+      "table_name": "pilot_principal_aliases",
+      "sql_sha256": "acbbee2bb2397d513702bb8bbdbbef4fd37af94549796eb764cab5e7752a92d3"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_principal_aliases_no_replace",
+      "table_name": "pilot_principal_aliases",
+      "sql_sha256": "35f9c39dd7a0bbaa1d2019cbebd6f6c249b98f9ab74c17f74f990b94fc580c93"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_principal_aliases_no_update",
+      "table_name": "pilot_principal_aliases",
+      "sql_sha256": "a7573aa3e62031fd5e861ef2bf01cbfb59933a7dff502fde09b606564e06252b"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_root_state_insert_guard",
+      "table_name": "pilot_root_run_state",
+      "sql_sha256": "6ae4c69e1a54664cb0cfa5e642e6c772dde8aaf49cf8328f33aa0e42a1e07753"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_root_state_no_delete",
+      "table_name": "pilot_root_run_state",
+      "sql_sha256": "ea341a46e3bed464031b3b8f5b8253f543343555d78e6ffd27f27aa5d3e41e6e"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_root_state_no_replace",
+      "table_name": "pilot_root_run_state",
+      "sql_sha256": "cf3e5a8d13cb90e27fce7fef14a339024c94ae0f799191aafde95b5ba251e4e1"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_root_state_update_guard",
+      "table_name": "pilot_root_run_state",
+      "sql_sha256": "4fa56e5e410252ce8c69c4926e5371032fc8f77e4e5bc7c98fe815bf78463f13"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_session_fence_no_delete",
+      "table_name": "pilot_session_fences",
+      "sql_sha256": "ee4d636efa345be261032542e1d0877c03a97c0d6e0fc73fff2fb1cefd6d21f0"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_session_fence_no_replace",
+      "table_name": "pilot_session_fences",
+      "sql_sha256": "3bf3636c4dfcb4d600998f81746e71457eee900c1cb7406a9b9c4ca548d11f06"
+    },
+    {
+      "type": "trigger",
+      "name": "pilot_session_fence_update_guard",
+      "table_name": "pilot_session_fences",
+      "sql_sha256": "55a6c772180cd13d1313c9b8db58ff3dd1bb5120b1bf44082d1338490b6d619b"
+    },
+    {
+      "type": "trigger",
+      "name": "run_root_ledger_meta_no_delete",
+      "table_name": "run_root_ledger_meta",
+      "sql_sha256": "0fb0e23c49d74bf3fdb024389fecb510c2c72215c18286c6fa3e8cf6d21d6628"
+    },
+    {
+      "type": "trigger",
+      "name": "run_root_ledger_meta_no_replace",
+      "table_name": "run_root_ledger_meta",
+      "sql_sha256": "5af7ce0876a2af6f853e1f24d0337476e90b437097aa5d0ae678239b90e2e760"
+    },
+    {
+      "type": "trigger",
+      "name": "run_root_ledger_meta_no_update",
+      "table_name": "run_root_ledger_meta",
+      "sql_sha256": "50e8a8bea1fef95f411d6c4a7808a15646b4ff9cf6bcd73a9ad7238af9cb5dc4"
+    }
+  ]
+}
