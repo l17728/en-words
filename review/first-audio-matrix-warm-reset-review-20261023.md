@@ -13,3 +13,9 @@ Final reviewed SHA-256: `C94398EA366B8479DEB4ED5C1697721194316EFBDFEE46A0E109B2F
 The final revision closes earlier P2 findings by requiring a dedicated Go test binary with no product reset route, a same-lock generation check and durable-side-effect admission barrier, draining of already admitted writes, fail-closed reconciliation for `outcome_uncertain`, a persistent scheduler/learning/report baseline diff, and explicit stale callback/cleanup fault cases. The control capability is treated as a secret and excluded from logs and artifacts.
 
 The 30-cold/100-warm matrix is still NOT RUN. Implementation may start against this reviewed contract; the matrix cannot pass unless reset lifecycle and baseline tests pass first.
+
+## Prototype implementation review
+
+The first test-binary prototype was rejected before measurement. Backend and security reviewers found that `Room.Drop` followed by a best-effort `agentWriteMu` drain is not the shared generation/admission fence required by §7b; an old callback can still be waiting to start a durable write. Other findings: the log parser watched `outcome` while production emits `transaction_outcome`; the harness accepted an existing database under `.test-artifacts`; reset waits were unbounded; close errors were ignored; and lexical path checks did not resolve symlinks. The targeted Go command also failed to compile because `scanner` escaped its declaration scope and `itoa64` duplicated an existing package helper.
+
+Disposition: the unsafe prototype was removed, no matrix was started, and no performance claim is made. A future implementation needs an ingress/lifecycle barrier shared with durable mutation admission, bounded drain and cleanup, a newly created private synthetic database, resolved-path validation, and regression cases before it can proceed to E2E or 30/100 measurement.
