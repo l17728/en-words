@@ -7,6 +7,7 @@ on:
       - "server/go.sum"
       - "server/internal/pilotcontrol/**"
       - "server/internal/pilotsupervisor/**"
+      - "server/internal/pilotquota/**"
       - "server/third_party/go-sqlite3/**"
       - "docs/4*-*"
       - "docs/5*-*"
@@ -28,6 +29,7 @@ on:
       - "server/go.sum"
       - "server/internal/pilotcontrol/**"
       - "server/internal/pilotsupervisor/**"
+      - "server/internal/pilotquota/**"
       - "server/third_party/go-sqlite3/**"
       - "docs/4*-*"
       - "docs/5*-*"
@@ -101,6 +103,42 @@ jobs:
         run: go test ./internal/pilotcontrol -count=1
       - name: Test Linux RunRoot supervisor contracts
         run: go test -tags=pilot_e2e ./internal/pilotsupervisor -count=1
+      - name: Enforce quota journal codec and append coordinator coverage
+        run: |
+          set -euo pipefail
+          go test -count=1 -coverprofile="$RUNNER_TEMP/pilotquota.cover" ./internal/pilotquota
+          go tool cover -func="$RUNNER_TEMP/pilotquota.cover" | tee "$RUNNER_TEMP/pilotquota-coverage.txt"
+          python3 - "$RUNNER_TEMP/pilotquota-coverage.txt" <<'PY'
+          import sys
+
+          rows = {}
+          total = None
+          minimum_displayed_coverage = 90.1  # go tool cover rounds to one decimal; this conservatively enforces 90%.
+          with open(sys.argv[1], encoding="utf-8") as report:
+              for line in report:
+                  fields = line.split()
+                  if len(fields) < 3 or not fields[-1].endswith("%"):
+                      continue
+                  value = float(fields[-1][:-1])
+                  if fields[0] == "total:":
+                      total = value
+                  else:
+                      name = fields[-2].rsplit(".", 1)[-1]
+                      if name in {"Append", "abort", "trip", "publishAckable"}:
+                          rows[name] = value
+
+          required = {"Append", "abort", "trip", "publishAckable"}
+          if total is None or total < minimum_displayed_coverage:
+              raise SystemExit(f"pilotquota package coverage {total}% does not safely clear 90%")
+          missing = required - rows.keys()
+          if missing:
+              raise SystemExit(f"coverage report missing required functions: {sorted(missing)}")
+          low = {name: value for name, value in rows.items()
+                 if value < minimum_displayed_coverage}
+          if low:
+              raise SystemExit(f"pilotquota stateful functions do not safely clear 90%: {low}")
+          print(f"pilotquota package and stateful-function coverage gate passed: {total:.1f}%")
+          PY
       - name: Race-check pilot control and verify explicit draft skips
         run: |
           set -o pipefail
@@ -108,10 +146,14 @@ jobs:
           python3 ../review/verify_pilot_draft_schema_gate.py "$RUNNER_TEMP/pilotcontrol-race.jsonl"
       - name: Race-check Linux RunRoot supervisor
         run: go test -race -tags=pilot_e2e ./internal/pilotsupervisor -count=1
+      - name: Race-check quota journal codec and append coordinator
+        run: go test -race -count=1 ./internal/pilotquota
       - name: Vet pilot control package
         run: go vet ./internal/pilotcontrol
       - name: Vet Linux RunRoot supervisor
         run: go vet -tags=pilot_e2e ./internal/pilotsupervisor
+      - name: Vet quota journal codec and append coordinator
+        run: go vet ./internal/pilotquota
       - name: Run full backend regression
         run: go test ./...
       - name: Clean dedicated ext4 filesystem fixture
