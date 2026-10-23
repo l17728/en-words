@@ -301,7 +301,14 @@ func cancelledLoggerContext() context.Context {
 
 func serveLoggerReadinessOnce(t *testing.T, readiness []byte) (string, func()) {
 	t.Helper()
-	fd, err := unix.Socket(unix.AF_UNIX, unix.SOCK_SEQPACKET|unix.SOCK_CLOEXEC, 0)
+	return serveLoggerReadinessOnceAfter(t, readiness, nil)
+}
+
+// The optional admission barrier lets the regression fill the real backlog
+// before the acceptor runs. The goroutine exclusively owns the listener.
+func serveLoggerReadinessOnceAfter(t *testing.T, readiness []byte, admission <-chan struct{}) (string, func()) {
+	t.Helper()
+	fd, err := unix.Socket(unix.AF_UNIX, unix.SOCK_SEQPACKET|unix.SOCK_CLOEXEC|unix.SOCK_NONBLOCK, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -314,47 +321,102 @@ func serveLoggerReadinessOnce(t *testing.T, readiness []byte) (string, func()) {
 		_ = unix.Close(fd)
 		t.Fatal(err)
 	}
-	accepted := make(chan error, 1)
+	stop := make(chan struct{})
+	done := make(chan error, 1)
 	go func() {
-		conn, _, acceptErr := unix.Accept4(fd, unix.SOCK_CLOEXEC)
-		if acceptErr != nil {
-			accepted <- acceptErr
+		var result error
+		defer func() {
+			if closeErr := unix.Close(fd); result == nil {
+				result = closeErr
+			}
+			done <- result
+		}()
+		if admission != nil {
+			select {
+			case <-admission:
+			case <-stop:
+				return
+			}
+		}
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+			}
+			conn, _, acceptErr := unix.Accept4(fd, unix.SOCK_CLOEXEC|unix.SOCK_NONBLOCK)
+			if errors.Is(acceptErr, unix.EINTR) {
+				continue
+			}
+			if errors.Is(acceptErr, unix.EAGAIN) {
+				select {
+				case <-stop:
+					return
+				case <-time.After(10 * time.Millisecond):
+				}
+				continue
+			}
+			if acceptErr != nil {
+				result = acceptErr
+				return
+			}
+			_, result = unix.SendmsgN(conn, readiness, nil, nil, unix.MSG_NOSIGNAL|unix.MSG_DONTWAIT)
+			if closeErr := unix.Close(conn); result == nil {
+				result = closeErr
+			}
 			return
 		}
-		defer unix.Close(conn)
-		_, sendErr := unix.SendmsgN(conn, readiness, nil, nil, unix.MSG_NOSIGNAL)
-		accepted <- sendErr
 	}()
+	var once sync.Once
 	cleanup := func() {
-		select {
-		case err := <-accepted:
-			if err != nil && !errors.Is(err, unix.ECONNRESET) && !errors.Is(err, unix.EPIPE) {
-				t.Errorf("readiness fixture: %v", err)
-			}
-		default:
-			// Closing a listening descriptor from another goroutine does not
-			// reliably interrupt Linux accept(2). Wake the acceptor with a real
-			// local connection, then close the listener after it drains.
-			wakeFD, wakeErr := unix.Socket(unix.AF_UNIX, unix.SOCK_SEQPACKET|unix.SOCK_CLOEXEC, 0)
-			if wakeErr == nil {
-				wakeErr = unix.Connect(wakeFD, &unix.SockaddrUnix{Name: endpoint})
-				_ = unix.Close(wakeFD)
-			}
-			if wakeErr != nil {
-				t.Errorf("wake readiness fixture accept: %v", wakeErr)
-			}
+		once.Do(func() {
+			close(stop)
 			select {
-			case err := <-accepted:
+			case err := <-done:
 				if err != nil && !errors.Is(err, unix.ECONNRESET) && !errors.Is(err, unix.EPIPE) {
 					t.Errorf("readiness fixture: %v", err)
 				}
 			case <-time.After(time.Second):
-				t.Error("readiness fixture did not accept client after wakeup")
+				t.Error("readiness fixture did not stop within cleanup deadline")
 			}
-		}
-		_ = unix.Close(fd)
+		})
 	}
 	return endpoint, cleanup
+}
+
+func TestLoggerReadinessFixtureCleanupWithFullBacklog(t *testing.T) {
+	// Never release admission: no accept can free a queue slot. Establish
+	// saturation using real nonblocking connections, not scheduler timing.
+	endpoint, cleanup := serveLoggerReadinessOnceAfter(t, []byte("ready"), make(chan struct{}))
+	defer cleanup()
+	full := false
+	for i := 0; i < 16; i++ {
+		fd, err := unix.Socket(unix.AF_UNIX, unix.SOCK_SEQPACKET|unix.SOCK_CLOEXEC|unix.SOCK_NONBLOCK, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer unix.Close(fd)
+		err = unix.Connect(fd, &unix.SockaddrUnix{Name: endpoint})
+		if errors.Is(err, unix.EAGAIN) {
+			full = true
+			break
+		}
+		if err != nil {
+			t.Fatalf("fill readiness backlog: %v", err)
+		}
+	}
+	if !full {
+		t.Fatal("failed to establish full listen backlog")
+	}
+	cleanup() // Joins the owner after it closes the listener, with a 1s bound.
+	probe, err := unix.Socket(unix.AF_UNIX, unix.SOCK_SEQPACKET|unix.SOCK_CLOEXEC|unix.SOCK_NONBLOCK, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer unix.Close(probe)
+	if err := unix.Connect(probe, &unix.SockaddrUnix{Name: endpoint}); !errors.Is(err, unix.ECONNREFUSED) {
+		t.Fatalf("listener survived cleanup: %v", err)
+	}
 }
 
 func filepathLoggerEndpoint() string { return "/tmp/not-an-abstract-logger-endpoint" }
