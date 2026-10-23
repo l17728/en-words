@@ -93,6 +93,61 @@ class CandidateAuthorizationGateTests(unittest.TestCase):
 
 
 class WorkflowContractTests(unittest.TestCase):
+    def assert_ext4_fixture_contract(self, workflow: str) -> None:
+        jobs_text = workflow.split("\njobs:\n", 1)[1]
+        package = re.split(r"(?m)^  (?=linux-manifest-contract:)", jobs_text, maxsplit=1)[0]
+        self.assertIn("      - name: Install passive syscall tracer\n", package)
+        self.assertIn("      - name: Prepare dedicated ext4 filesystem fixture\n", package)
+        self.assertIn("      - name: Clean dedicated ext4 filesystem fixture\n", package)
+        install = package.split("      - name: Install passive syscall tracer\n", 1)[1].split("\n      - name:", 1)[0]
+        prepare = package.split("      - name: Prepare dedicated ext4 filesystem fixture\n", 1)[1].split("\n      - name:", 1)[0]
+        cleanup = package.split("      - name: Clean dedicated ext4 filesystem fixture\n", 1)[1].split("\n      - name:", 1)[0]
+        self.assertIn("e2fsprogs", install)
+        for required in (
+            'fixture_dir="$RUNNER_TEMP/pilot-ext4-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"',
+            'mkdir -m 0700 "$fixture_dir"',
+            'run_id=%s\\nattempt=%s\\n',
+            "truncate -s 256M",
+            "mkfs.ext4 -F -q",
+            "losetup --find --show",
+            "mount -t ext4",
+            "--output TARGET --mountpoint",
+            "--output FSTYPE --mountpoint",
+            "--output SOURCE --mountpoint",
+            "--associated",
+            'test "$associated" = "$loop_device"',
+            "install -d -m 0700 -o",
+            "test -w \"$test_root\"",
+            "PILOT_FS_TEST_ROOT=%s\\n",
+            '>> "$GITHUB_ENV"',
+        ):
+            self.assertIn(required, prepare)
+        ordered = (
+            "mkfs.ext4 -F -q",
+            'sudo mount -t ext4 "$loop_device" "$mountpoint"',
+            "--output TARGET --mountpoint",
+            "--output FSTYPE --mountpoint",
+            "--output SOURCE --mountpoint",
+            'test "$associated" = "$loop_device"',
+            "install -d -m 0700 -o",
+            'test -w "$test_root"',
+            'printf \'PILOT_FS_TEST_ROOT=%s\\n\' "$test_root" >> "$GITHUB_ENV"',
+        )
+        positions = [prepare.index(item) for item in ordered]
+        self.assertEqual(positions, sorted(positions), "fixture format, mount, verify, ownership, and export must remain ordered")
+        self.assertNotIn("sed -n '1p'", prepare)
+        for forbidden in ("PILOT_FS_TEST_ROOT=/tmp", "PILOT_FS_TEST_ROOT=/dev/shm", "tmpfs", "|| true"):
+            self.assertNotIn(forbidden, prepare)
+        self.assertIn("if: always()", cleanup)
+        self.assertIn("pilot_ext4_fixture.py cleanup", cleanup)
+        self.assertNotRegex(cleanup, r"(?m)^\s*continue-on-error:")
+        self.assertNotIn("|| true", cleanup)
+        self.assertLess(package.index("Prepare dedicated ext4 filesystem fixture"), package.index("Test Linux RunRoot supervisor contracts"))
+        self.assertLess(package.index("Test Linux RunRoot supervisor contracts"), package.index("Race-check Linux RunRoot supervisor"))
+        self.assertLess(package.index("Run full backend regression"), package.index("Clean dedicated ext4 filesystem fixture"))
+        self.assertLess(package.index("Clean dedicated ext4 filesystem fixture"), package.index("Record package-only acceptance scope"))
+        self.assertIn("review.test_pilot_ext4_fixture", workflow)
+
     def test_independent_jobs_and_explicit_not_accepted_summary(self) -> None:
         workflow = (ROOT / ".github" / "workflows" / "pilot-control-cgo.yml").read_text(encoding="utf-8")
         jobs_text = workflow.split("\njobs:\n", 1)[1]
@@ -117,6 +172,28 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertIn("PACKAGE_CHECKS_ONLY; VFS_CANDIDATE=NOT_RUN; V3_DRAFT_SCHEMA_FIXTURE=NOT_RUN; PRIVATE_VFS=NOT_ACCEPTED; PRODUCT_RUNROOT=NOT_ACCEPTED", summary_step)
         self.assertIn("go test -json -race ./internal/pilotcontrol -count=1", package)
         self.assertIn("verify_pilot_draft_schema_gate.py", package)
+        self.assert_ext4_fixture_contract(workflow)
+
+    def test_ext4_workflow_contract_rejects_missing_setup_export_or_cleanup_guards(self) -> None:
+        workflow = (ROOT / ".github" / "workflows" / "pilot-control-cgo.yml").read_text(encoding="utf-8")
+        broken_cases = (
+            workflow.replace("e2fsprogs", "", 1),
+            workflow.replace("mkfs.ext4 -F -q", "mkfs.xfs", 1),
+            workflow.replace("--output FSTYPE --mountpoint", "--output SOURCE --mountpoint", 1),
+            workflow.replace("--output SOURCE --mountpoint", "--output TARGET --mountpoint", 1),
+            workflow.replace("--associated \"$image\"", "--list", 1),
+            workflow.replace("install -d -m 0700 -o", "install -d", 1),
+            workflow.replace("PILOT_FS_TEST_ROOT=%s\\n", "OTHER_ROOT=%s\\n", 1),
+            workflow.replace("          printf 'pilot-ext4-ci", "          printf 'PILOT_FS_TEST_ROOT=/tmp\\n'\n          printf 'pilot-ext4-ci", 1),
+            workflow.replace('test "$associated" = "$loop_device"', 'test "$(printf \'%s\\n\' "$associated" | sed -n \'1p\')" = "$loop_device"', 1),
+            workflow.replace('          printf \'PILOT_FS_TEST_ROOT=%s\\n\' "$test_root" >> "$GITHUB_ENV"\n', "", 1).replace('          sudo mount -t ext4 "$loop_device" "$mountpoint"\n', '          printf \'PILOT_FS_TEST_ROOT=%s\\n\' "$test_root" >> "$GITHUB_ENV"\n          sudo mount -t ext4 "$loop_device" "$mountpoint"\n', 1),
+            workflow.replace("if: always()\n        working-directory: .\n        run: python3 review/pilot_ext4_fixture.py cleanup", "if: success()\n        working-directory: .\n        run: python3 review/pilot_ext4_fixture.py cleanup", 1),
+            workflow.replace("      - name: Clean dedicated ext4 filesystem fixture", "      - name: Cleanup fixture || true", 1),
+        )
+        for broken in broken_cases:
+            with self.subTest(workflow_change=broken[-160:]):
+                with self.assertRaises(AssertionError):
+                    self.assert_ext4_fixture_contract(broken)
 
 
 @unittest.skipUnless(os.name == "posix", "artifact directory descriptor contracts require POSIX")

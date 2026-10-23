@@ -16,6 +16,8 @@ on:
       - "review/test_pilot_vfs_candidate_runner.py"
       - "review/verify_pilot_draft_schema_gate.py"
       - "review/test_pilot_draft_schema_gate.py"
+      - "review/pilot_ext4_fixture.py"
+      - "review/test_pilot_ext4_fixture.py"
       - ".github/workflows/pilot-control-cgo.yml"
   pull_request:
     paths:
@@ -32,6 +34,8 @@ on:
       - "review/test_pilot_vfs_candidate_runner.py"
       - "review/verify_pilot_draft_schema_gate.py"
       - "review/test_pilot_draft_schema_gate.py"
+      - "review/pilot_ext4_fixture.py"
+      - "review/test_pilot_ext4_fixture.py"
       - ".github/workflows/pilot-control-cgo.yml"
   workflow_dispatch:
 
@@ -57,7 +61,32 @@ jobs:
       - name: Install passive syscall tracer
         run: |
           sudo apt-get update
-          sudo apt-get install --yes strace
+          sudo apt-get install --yes e2fsprogs strace
+      - name: Prepare dedicated ext4 filesystem fixture
+        working-directory: .
+        run: |
+          set -euo pipefail
+          fixture_dir="$RUNNER_TEMP/pilot-ext4-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -m 0700 "$fixture_dir"
+          umask 077
+          printf 'pilot-ext4-ci\nrun_id=%s\nattempt=%s\n' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" > "$fixture_dir/.owner"
+          image="$fixture_dir/fs.img"
+          mountpoint="$fixture_dir/mount"
+          test_root="$mountpoint/test-root"
+          mkdir -m 0700 "$mountpoint"
+          truncate -s 256M "$image"
+          mkfs.ext4 -F -q "$image"
+          loop_device="$(sudo losetup --find --show "$image")"
+          [[ "$loop_device" =~ ^/dev/loop[0-9]+$ ]]
+          sudo mount -t ext4 "$loop_device" "$mountpoint"
+          test "$(findmnt --noheadings --raw --output TARGET --mountpoint "$mountpoint")" = "$mountpoint"
+          test "$(findmnt --noheadings --raw --output FSTYPE --mountpoint "$mountpoint")" = "ext4"
+          test "$(findmnt --noheadings --raw --output SOURCE --mountpoint "$mountpoint")" = "$loop_device"
+          associated="$(sudo losetup --list --noheadings --raw --output NAME --associated "$image")"
+          test "$associated" = "$loop_device"
+          sudo install -d -m 0700 -o "$(id -u)" -g "$(id -g)" "$test_root"
+          test -w "$test_root"
+          printf 'PILOT_FS_TEST_ROOT=%s\n' "$test_root" >> "$GITHUB_ENV"
       - name: Build Linux RunRoot supervisor for amd64 and arm64
         run: |
           GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -tags=pilot_e2e ./internal/pilotsupervisor
@@ -79,6 +108,10 @@ jobs:
         run: go vet -tags=pilot_e2e ./internal/pilotsupervisor
       - name: Run full backend regression
         run: go test ./...
+      - name: Clean dedicated ext4 filesystem fixture
+        if: always()
+        working-directory: .
+        run: python3 review/pilot_ext4_fixture.py cleanup --runner-temp "$RUNNER_TEMP" --run-id "$GITHUB_RUN_ID" --attempt "$GITHUB_RUN_ATTEMPT"
       - name: Record package-only acceptance scope
         if: always()
         working-directory: .
@@ -113,4 +146,4 @@ jobs:
         with:
           python-version: "3.12"
       - name: Verify runner authorization gate without starting candidate
-        run: python3 -m unittest review.test_pilot_vfs_candidate_runner review.test_pilot_draft_schema_gate -v
+        run: python3 -m unittest review.test_pilot_vfs_candidate_runner review.test_pilot_draft_schema_gate review.test_pilot_ext4_fixture -v
