@@ -127,7 +127,7 @@ def cleanup_fixture(
     if len(devices) > 1:
         raise CleanupError("image has ambiguous loop associations after unmount; resources retained")
     if devices:
-        _require_success(_invoke(run, ["sudo", "losetup", "--detach", "--", devices[0]]), "detach fixture loop device")
+        _require_success(_invoke(run, ["sudo", "losetup", "--detach", devices[0]]), "detach fixture loop device")
         if _loop_devices(run, paths.image):
             raise CleanupError("fixture loop device remains associated; resources retained")
 

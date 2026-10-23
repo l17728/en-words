@@ -95,7 +95,7 @@ class PilotExt4FixtureCleanupTests(unittest.TestCase):
         self.clean(fake)
         commands = fake.commands
         umount = ["sudo", "umount", "--", str(self.paths.mountpoint)]
-        detach = ["sudo", "losetup", "--detach", "--", "/dev/loop7"]
+        detach = ["sudo", "losetup", "--detach", "/dev/loop7"]
         self.assertLess(commands.index(umount), commands.index(detach))
         self.assertLess(commands.index(detach), commands.index(["rm", "--", str(self.paths.image)]))
         self.assertFalse(self.paths.directory.exists())
@@ -104,7 +104,7 @@ class PilotExt4FixtureCleanupTests(unittest.TestCase):
         fake = FakeCommands(self.paths.mountpoint, mounted=False)
         self.clean(fake)
         commands = fake.commands
-        self.assertIn(["sudo", "losetup", "--detach", "--", "/dev/loop7"], commands)
+        self.assertIn(["sudo", "losetup", "--detach", "/dev/loop7"], commands)
         self.assertNotIn(["sudo", "umount", "--", str(self.paths.mountpoint)], commands)
         self.assertFalse(self.paths.directory.exists())
 

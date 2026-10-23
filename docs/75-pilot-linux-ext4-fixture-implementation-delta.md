@@ -11,6 +11,6 @@ Design: [74-pilot-linux-ext4-ci-fixture-sdd.md](74-pilot-linux-ext4-ci-fixture-s
 
 ## Verification
 
-The latest local validation passed 29 Python tests: 25 passed and 4 POSIX-only cases were skipped on Windows. `py_compile`, `actionlint`, and scoped `git diff --check` also passed. The test artifact is `server/.test-artifacts/ext4-fixture-final-rerun-20261023T040013Z`.
+After the detach syntax correction, local validation passed 29 Python tests: 25 passed and 4 POSIX-only cases were skipped on Windows. `py_compile`, `actionlint`, and scoped `git diff --check` also passed. The latest artifact is `server/.test-artifacts/ext4-fixture-detach-fix-20261023T040830Z`.
 
-The Linux Actions rerun remains pending because Windows cannot create the POSIX ext4 mount or validate actual loopback cleanup. This workflow change must pass that hosted Linux run before the package regression is accepted. No candidate runner or VFS promotion was invoked. The prior Actions run's ext4 fixture omission is the reason for this amendment.
+The first hosted Linux run passed every build, tagged contract, race, vet, and full backend regression step, but cleanup failed: this runner's `losetup` treated the `--` separator as a device argument. The helper now uses `losetup --detach /dev/loopN`, with the exact device still constrained by the image association lookup and regression assertion. A second hosted Linux run must confirm successful unmount and detach before this package regression is accepted. No candidate runner or VFS promotion was invoked. The prior Actions run's ext4 fixture omission is the reason for this amendment.
