@@ -13,6 +13,8 @@ The fixture now uses nonblocking listener and accepted sockets, gives one gorout
 ## Verification status
 
 - `gofmt` and `git diff --check`: passed.
-- Static implementation review by the author: no P1/P2 found; independent review remains pending.
-- Linux rerun: not run. The available remote ext4 runner had 785,113,088 bytes free, below its 1 GiB preflight requirement; no files were uploaded or removed.
-- The fix still requires a GitHub Actions Linux rerun before the race gate can be marked green.
+- Independent static review: passed with no P1/P2 findings. The reviewer verified listener ownership, bounded idempotent cleanup, and the deterministic backlog-full assertion.
+- The first remote Linux runner was below its 1 GiB preflight disk requirement (785,113,088 bytes free), so it performed no upload or cleanup. The code was instead validated by the authorized GitHub Actions Linux runner.
+- GitHub Actions run [39953367533](https://github.com/l17728/en-words/actions/runs/39953367533) succeeded on commit `f9420e7855a954ac5a02dc8f62d8edafe9491aca`. Linux supervisor race passed in 46.640 seconds with no data race; quota race, three vet checks, dual-architecture builds, full 25-package backend regression, and ext4 cleanup passed.
+
+This remains package-level verification. VFS candidate and product RunRoot acceptance were explicitly outside this workflow and remain open.
