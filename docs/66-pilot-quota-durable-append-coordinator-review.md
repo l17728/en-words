@@ -12,6 +12,7 @@ The SDD is [65-pilot-quota-durable-append-coordinator-sdd.md](65-pilot-quota-dur
 | --- | --- |
 | `server/internal/pilotquota/append_coordinator.go` | `9982BC491FE3E6D534AE6BAE140605F959A755CC42CB0F90FF1515456FA5EC7A` |
 | `server/internal/pilotquota/append_coordinator_test.go` | `9FC66EB6670CA61D79FC59645E60B5FCFAEAB11E46DEBA4761F451B15E14EDA6` |
+| `review/pilot-intent-quota-frame-v1-vectors.json` | `FE276E3E22BFD89828E95EB466929838704A50F202F84D9C9F71BC2B7EF7AD36` |
 | SDD | `87925D6C2700A95EFF4589767C32241017B3D87F766D293204A7AF89AE5F143C` |
 
 ## Verification
@@ -19,3 +20,7 @@ The SDD is [65-pilot-quota-durable-append-coordinator-sdd.md](65-pilot-quota-dur
 The frozen snapshot passed `gofmt`, uncached `go test`, `go test -race`, coverage, and `go vet` for `server/internal/pilotquota`. Package statement coverage is 98.0%; `Append` 96.3%, `abort` 100%, `trip` 100%, and `publishAckable` 92.3%. Race testing used `CGO_ENABLED=1` with LLVM-MinGW clang 23.1.3. Results and logs are in `server/.test-artifacts/pilotquota-final-coverage-20261022T184740Z`.
 
 The test suite exercises the real `Append` path with injected deterministic adapters, including a breaker transition while the operation is paused before ACK publication. This is not a browser E2E or real durability test: no product route exists for this component yet. Production filesystem semantics, process crash/restart reconciliation, multi-process locking, and isolated classroom pilot E2E remain separate acceptance gates.
+
+## Linux CI follow-up
+
+The first GitHub Actions run (`39946944217`, commit `dd0fd8b`) passed the manifest and runner-preflight jobs but failed the package job because `vectors_test.go` reads the repository-level frame golden at `review/pilot-intent-quota-frame-v1-vectors.json`, which was omitted from that commit. The golden file is now included in the follow-up; this CI run does not count as Linux package acceptance. Rerun the workflow on the follow-up commit before declaring the package gate green.
