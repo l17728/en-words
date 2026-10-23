@@ -14,6 +14,9 @@ on:
       - "docs/7*-*"
       - "review/run_pilot_vfs_candidate.py"
       - "review/test_pilot_vfs_candidate_runner.py"
+      - "review/pilot_vfs_approval.py"
+      - "review/test_pilot_vfs_approval.py"
+      - "review/requirements-pilot-vfs.txt"
       - "review/verify_pilot_draft_schema_gate.py"
       - "review/test_pilot_draft_schema_gate.py"
       - "review/pilot_ext4_fixture.py"
@@ -32,6 +35,9 @@ on:
       - "docs/7*-*"
       - "review/run_pilot_vfs_candidate.py"
       - "review/test_pilot_vfs_candidate_runner.py"
+      - "review/pilot_vfs_approval.py"
+      - "review/test_pilot_vfs_approval.py"
+      - "review/requirements-pilot-vfs.txt"
       - "review/verify_pilot_draft_schema_gate.py"
       - "review/test_pilot_draft_schema_gate.py"
       - "review/pilot_ext4_fixture.py"
@@ -145,5 +151,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install pinned approval-client test dependency
+        run: python3 -m pip install --disable-pip-version-check -r review/requirements-pilot-vfs.txt
+      - name: Test approval verification and HTTPS/mTLS recovery client
+        working-directory: review
+        run: python3 -m unittest test_pilot_vfs_approval -v
       - name: Verify runner authorization gate without starting candidate
         run: python3 -m unittest review.test_pilot_vfs_candidate_runner review.test_pilot_draft_schema_gate review.test_pilot_ext4_fixture -v

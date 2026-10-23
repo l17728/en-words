@@ -1,26 +1,27 @@
-# Pilot VFS Approval Client Implementation Review
+# Pilot VFS Approval and Recovery Client Review
 
 Date: 2026-10-23
 
 ## Scope
 
-Added `review/pilot_vfs_approval.py`, a local verifier for the reviewed v2 single-reviewer approval and service-signed promotion record, plus an HTTPS/mTLS client for the reviewed `POST /v1/promotions` and read-only `GET /v1/promotions/{promotion_id}` contract. It does not create signatures, contain production keys, implement the durable promotion service, or authorize a candidate run.
+`review/pilot_vfs_approval.py` verifies the reviewed v2 single-reviewer approval, service-signed promotion record, and service-signed permanent recovery fence. Its HTTPS/mTLS client supports `POST /v1/promotions`, read-only promotion lookup, and `POST /v1/promotions/reconcile/{approval_envelope_sha256}`. It does not create signatures, contain production keys, implement the durable service or witness, or authorize a candidate run.
 
-The verifier enforces canonical JSON for payloads and envelopes, duplicate-key rejection, closed schemas, strict unpadded base64url, Ed25519 signature and trust-role checks, distinct reviewer/service keys, exact artifact and sequence bindings, and the signed promotion-time window. The client checks HTTPS hostname/CA validation, TLS 1.2+, client identity, bounded timeouts and responses, and verifies returned records locally. It rejects weak TLS contexts again before each request. A POST whose result may be ambiguous raises `PromotionServiceError(outcome_unknown=True)` and is never retried automatically.
+Verification enforces canonical JSON, closed schemas, duplicate-key rejection, Ed25519 signatures, historical reviewer role/key validity, artifact and sequence bindings, and distinct reviewer/service keys. The client validates HTTPS hostname/CA, TLS 1.2+, mTLS identity, bounded timeouts and response sizes. An ambiguous promotion outcome remains unknown; recovery returns a terminal result only after verifying the signed promotion record or signed fence. It never retries the original promotion request.
 
 ## Verification
 
-- Unit/integration protocol suite: 23/23 passed; `py_compile` passed. Evidence: `.test-artifacts/pilot-vfs-approval-final4-20261023/result.json` and `unit.stderr`.
-- `py_compile` passed for the implementation in that run.
-- Static backend/security and protocol/test-design reviews passed for the final implementation hash; see the conversation review outputs and the source hashes below.
-- `git diff --check` passed for both Python files.
+- Recovery protocol suite: 31 tests passed with `ResourceWarning` treated as an error; `py_compile` passed. This includes injected response-cleanup failure preserving `outcome_unknown` and attempting both closes. The TLS warning seen in the earlier run no longer occurs.
+- Full output and result record: `.test-artifacts/pilot-vfs-recovery-final3-20261023/result.json`, `unit.stdout`, and `unit.stderr`.
+- Test coverage includes successful promotion recovery, signed permanent fencing, historical reviewer validation, mTLS identity, and malformed, oversized, truncated, unavailable, or mismatched responses.
+- Linux CI installs the pinned test dependency from `review/requirements-pilot-vfs.txt` and runs this suite in the runner preflight job.
+- Static backend/security and test-design reviews passed with no P1/P2/P3 findings for the exact implementation and test hashes below.
+- `git diff --check` passed for the reviewed changes.
 
-Implementation SHA-256: `51527329582C9E9C1B5CCEDA19D4BC032ACAB79ADE3E5A11615DAA6E95CE6047`.
+Implementation SHA-256: `383A9F2850A6A48F9E0872A2916D9F9FD61E6AEF3B98920210D6260B4DD4AA19`
+Test SHA-256: `A480CDBB06F68A461C2EEF8DDE0B76D458C8B25E5837ED2E75B1E2EE3DD8B046`
 
-Test SHA-256: `9E39C37118B781B1C2E10CE7607438EC911137BE42BD7E02FC9B323B51E7E8F6`.
+## Design and External Acceptance Gate
 
-## Remaining External Gate
+The recovery contract and crash/reconciliation cases are specified in [docs/67](../docs/67-pilot-promotion-ambiguous-outcome-recovery-sdd.md), with the amendment linked from [docs/56](../docs/56-pinned-sqlite-golden-harness-delta.md). Architecture, backend/security, and test-design reviews approved the local client SDD. The final lifecycle patch and cleanup-failure test also passed backend/security and test-design review at the hashes above. These approvals do not establish that a remote service implements the contract.
 
-No production promotion service, anti-rollback ledger, registered reviewer/service keys, or mTLS credentials are present in this repository. The TLS test server is an ephemeral in-process fixture; its tests do not prove durable atomic consumption, crash recovery, backup-restore resistance, or deployed identity configuration. No candidate or `PASS_GOLDEN` record was produced.
-
-If a POST response is lost, the client reports an unknown outcome and requires authoritative-ledger reconciliation before any new approval. The reviewed API offers lookup by `promotion_id`, which may itself be lost with the POST response; it has no lookup by approval-envelope digest/sequence. Operational reconciliation must therefore be provided by the independently operated service until a separately reviewed recovery-query contract exists. Do not retry the same approval or infer success from a local artifact.
+No production promotion service, durable anti-rollback ledger, independent signed checkpoint witness, registered production reviewer/service keys, mTLS credentials, or authorized candidate are available here. The ephemeral HTTPS fixture does not prove atomic durable consumption, crash recovery, restore resistance, or deployed identity controls. Candidate promotion and `PASS_GOLDEN` therefore remain NOT RUN. Until the reconcile endpoint and durable witness are deployed and independently accepted, a lost POST response must be reconciled against the authoritative service ledger; do not retry the same approval or infer success from local files.

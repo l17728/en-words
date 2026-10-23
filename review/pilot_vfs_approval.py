@@ -29,6 +29,7 @@ except ImportError as exc:  # pragma: no cover - exercised by isolated packaging
 
 APPROVAL_SCHEMA = "pilot-vfs-golden-approval-v2"
 PROMOTION_RECORD_SCHEMA = "pilot-vfs-golden-promotion-record-v1"
+RECOVERY_FENCE_SCHEMA = "pilot-vfs-promotion-recovery-fence-v1"
 REPOSITORY = "l17728/en-words"
 PROMOTION_PURPOSE = "PILOT_VFS_GOLDEN_PROMOTION"
 REVIEWER_SUBJECT = "l17728"
@@ -47,6 +48,10 @@ RECORD_FIELDS = frozenset({
     "archive_sha256", "source_snapshot_sha256", "candidate_report_sha256",
     "reviewed_diff_sha256", "reviewer_subject", "reviewer_key_id",
     "approval_sequence", "promotion_time", "result",
+})
+RECOVERY_FENCE_FIELDS = frozenset({
+    "schema", "approval_envelope_sha256", "repository", "purpose", "reviewer_subject",
+    "reviewer_key_id", "approval_sequence", "reconciled_at", "result", "fence_id",
 })
 ENVELOPE_FIELDS = frozenset({"payload_b64u", "signature"})
 HEX256_RE = re.compile(r"[0-9a-f]{64}\Z", re.ASCII)
@@ -73,6 +78,11 @@ class ReviewerKey:
     subject: str
     roles: frozenset[str]
     active: bool = True
+    valid_from: datetime | None = None
+    valid_until: datetime | None = None
+    revoked_at: datetime | None = None
+    reviewer_role_valid_from: datetime | None = None
+    reviewer_role_valid_until: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -83,6 +93,13 @@ class VerifiedApproval:
 
 @dataclass(frozen=True)
 class VerifiedPromotion:
+    payload: Mapping[str, Any]
+    envelope_sha256: str
+
+
+@dataclass(frozen=True)
+class VerifiedRecovery:
+    state: str
     payload: Mapping[str, Any]
     envelope_sha256: str
 
@@ -197,7 +214,12 @@ def _verify_signature(public_key: bytes, signature: bytes, payload: bytes) -> No
         raise ApprovalError("Ed25519 signature verification failed") from exc
 
 
-def _approval_shape(payload: Mapping[str, Any], keys: Mapping[str, ReviewerKey]) -> ReviewerKey:
+def _approval_shape(
+    payload: Mapping[str, Any],
+    keys: Mapping[str, ReviewerKey],
+    *,
+    historical: bool,
+) -> ReviewerKey:
     _exact_fields(payload, APPROVAL_FIELDS, "approval payload")
     constants = {
         "schema": APPROVAL_SCHEMA,
@@ -215,11 +237,36 @@ def _approval_shape(payload: Mapping[str, Any], keys: Mapping[str, ReviewerKey])
     if not isinstance(key_id, str) or not KEY_ID_RE.fullmatch(key_id):
         raise ApprovalError("reviewer_key_id is invalid")
     key = keys.get(key_id)
-    if key is None or not key.active or key.subject != REVIEWER_SUBJECT or REVIEWER_ROLE not in key.roles:
+    if key is None or key.subject != REVIEWER_SUBJECT or REVIEWER_ROLE not in key.roles:
         raise ApprovalError("reviewer key is not authorized")
     _uint(payload.get("approval_sequence"), "approval_sequence")
     approved_at = _timestamp(payload.get("approved_at"), "approved_at")
     expires_at = _timestamp(payload.get("expires_at"), "expires_at")
+    for value, label in (
+        (key.valid_from, "reviewer key valid_from"),
+        (key.valid_until, "reviewer key valid_until"),
+        (key.revoked_at, "reviewer key revoked_at"),
+        (key.reviewer_role_valid_from, "reviewer role valid_from"),
+        (key.reviewer_role_valid_until, "reviewer role valid_until"),
+    ):
+        if value is not None and (not isinstance(value, datetime) or value.tzinfo is None
+                                  or value.utcoffset() != timedelta(0)):
+            raise ApprovalError(f"{label} must be timezone-aware UTC")
+    if key.valid_from is not None and approved_at < key.valid_from:
+        raise ApprovalError("reviewer key was not yet valid when approval was signed")
+    if key.valid_until is not None and approved_at >= key.valid_until:
+        raise ApprovalError("reviewer key had expired when approval was signed")
+    if key.revoked_at is not None and approved_at >= key.revoked_at:
+        raise ApprovalError("reviewer key was revoked when approval was signed")
+    if key.reviewer_role_valid_from is not None and approved_at < key.reviewer_role_valid_from:
+        raise ApprovalError("reviewer role was not yet valid when approval was signed")
+    if key.reviewer_role_valid_until is not None and approved_at >= key.reviewer_role_valid_until:
+        raise ApprovalError("reviewer role had ended when approval was signed")
+    if historical:
+        if not key.active and key.revoked_at is None and key.valid_until is None:
+            raise ApprovalError("inactive reviewer key has no trusted historical status")
+    elif not key.active:
+        raise ApprovalError("reviewer key is not currently active")
     if not approved_at < expires_at or expires_at - approved_at > timedelta(hours=24):
         raise ApprovalError("approval validity interval is invalid")
     return key
@@ -231,11 +278,12 @@ def verify_approval(
     *,
     promotion_time: datetime | None = None,
     expected_bindings: Mapping[str, str] | None = None,
+    historical_key_status: bool = False,
 ) -> VerifiedApproval:
     """Verify one l17728 approval and optionally bind it to promotion time/artifacts."""
     _, payload_raw, signature = _envelope(raw_envelope)
     payload = _parse_object(payload_raw, canonical=True)
-    reviewer = _approval_shape(payload, reviewer_keys)
+    reviewer = _approval_shape(payload, reviewer_keys, historical=historical_key_status)
     _verify_signature(reviewer.public_key, signature, payload_raw)
     if expected_bindings:
         for field, expected in expected_bindings.items():
@@ -290,7 +338,8 @@ def verify_promotion_record(
     promotion_time = _timestamp(payload.get("promotion_time"), "promotion_time")
     _verify_signature(service_public_key, signature, payload_raw)
 
-    approval = verify_approval(raw_approval_envelope, reviewer_keys, promotion_time=promotion_time)
+    approval = verify_approval(raw_approval_envelope, reviewer_keys, promotion_time=promotion_time,
+                               historical_key_status=True)
     approved = approval.payload
     if any(key.public_key == service_public_key for key in reviewer_keys.values()):
         raise ApprovalError("reviewer and promotion service keys must be distinct")
@@ -306,6 +355,55 @@ def verify_promotion_record(
             if payload[field] != expected:
                 raise ApprovalError("promotion record artifact binding mismatch")
     return VerifiedPromotion(payload, hashlib.sha256(raw_record_envelope).hexdigest())
+
+
+def verify_recovery_fence(
+    raw_fence_envelope: bytes,
+    raw_approval_envelope: bytes,
+    reviewer_keys: Mapping[str, ReviewerKey],
+    service_public_key: bytes,
+    *,
+    expected_bindings: Mapping[str, str] | None = None,
+) -> VerifiedRecovery:
+    """Verify a signed, durable fence for a historically authorized approval."""
+    _, payload_raw, signature = _envelope(raw_fence_envelope)
+    payload = _parse_object(payload_raw, canonical=True)
+    _exact_fields(payload, RECOVERY_FENCE_FIELDS, "recovery fence")
+    constants = {
+        "schema": RECOVERY_FENCE_SCHEMA,
+        "repository": REPOSITORY,
+        "purpose": PROMOTION_PURPOSE,
+        "reviewer_subject": REVIEWER_SUBJECT,
+        "result": "FENCED_NOT_COMMITTED",
+    }
+    for field, expected in constants.items():
+        if payload.get(field) != expected or not isinstance(payload.get(field), str):
+            raise ApprovalError(f"recovery fence {field} is invalid")
+    _digest(payload.get("approval_envelope_sha256"), "approval_envelope_sha256")
+    expected_digest = hashlib.sha256(raw_approval_envelope).hexdigest()
+    if payload["approval_envelope_sha256"] != expected_digest:
+        raise ApprovalError("recovery fence approval digest mismatch")
+    key_id = payload.get("reviewer_key_id")
+    if not isinstance(key_id, str) or not KEY_ID_RE.fullmatch(key_id):
+        raise ApprovalError("recovery fence reviewer_key_id is invalid")
+    sequence = _uint(payload.get("approval_sequence"), "approval_sequence")
+    reconciled_at = _timestamp(payload.get("reconciled_at"), "reconciled_at")
+    _decode_b64u(payload.get("fence_id"), expected_bytes=32)
+    _verify_signature(service_public_key, signature, payload_raw)
+
+    approval = verify_approval(raw_approval_envelope, reviewer_keys,
+                               expected_bindings=expected_bindings,
+                               historical_key_status=True)
+    if reconciled_at < _timestamp(approval.payload["approved_at"], "approved_at"):
+        raise ApprovalError("recovery fence predates its approval")
+    if any(key.public_key == service_public_key for key in reviewer_keys.values()):
+        raise ApprovalError("reviewer and promotion service keys must be distinct")
+    if (payload["reviewer_subject"] != approval.payload["reviewer_subject"]
+            or key_id != approval.payload["reviewer_key_id"]
+            or sequence != approval.payload["approval_sequence"]):
+        raise ApprovalError("recovery fence reviewer or sequence mismatch")
+    return VerifiedRecovery("FENCED_NOT_COMMITTED", payload,
+                            hashlib.sha256(raw_fence_envelope).hexdigest())
 
 
 class PromotionServiceClient:
@@ -360,7 +458,7 @@ class PromotionServiceClient:
         response = self._request("POST", "/v1/promotions", approval_envelope)
         if response.status != 201:
             raise PromotionServiceError("promotion service did not accept the approval",
-                                        outcome_unknown=response.status >= 500)
+                                        outcome_unknown=response.status in (200, 201) or response.status >= 500)
         try:
             return verify_promotion_record(response.body, approval_envelope, self._reviewer_keys,
                                            self._service_key, expected_bindings=expected_bindings)
@@ -381,12 +479,59 @@ class PromotionServiceClient:
             raise ApprovalError("promotion service returned a different record ID")
         return verified
 
+    def recover(
+        self,
+        approval_envelope: bytes,
+        *,
+        expected_bindings: Mapping[str, str] | None = None,
+    ) -> VerifiedRecovery:
+        """Resolve an ambiguous POST using the reviewed reconcile-and-fence route.
+
+        This method never retries promotion. Only a locally verified promotion
+        record or durable fence is conclusive; every other response remains
+        outcome_unknown.
+        """
+        verify_approval(approval_envelope, self._reviewer_keys,
+                        expected_bindings=expected_bindings,
+                        historical_key_status=True)
+        digest = hashlib.sha256(approval_envelope).hexdigest()
+        path = "/v1/promotions/reconcile/" + quote(digest, safe="")
+        try:
+            response = self._request("POST", path, approval_envelope)
+            if response.status != 200:
+                raise PromotionServiceError("reconciliation did not establish the promotion outcome",
+                                            outcome_unknown=True)
+            _, payload_raw, _ = _envelope(response.body)
+            payload = _parse_object(payload_raw, canonical=True)
+            schema = payload.get("schema")
+            if schema == PROMOTION_RECORD_SCHEMA:
+                promotion = verify_promotion_record(
+                    response.body, approval_envelope, self._reviewer_keys,
+                    self._service_key, expected_bindings=expected_bindings,
+                )
+                return VerifiedRecovery("PROMOTED", promotion.payload, promotion.envelope_sha256)
+            if schema == RECOVERY_FENCE_SCHEMA:
+                return verify_recovery_fence(
+                    response.body, approval_envelope, self._reviewer_keys,
+                    self._service_key, expected_bindings=expected_bindings,
+                )
+            raise ApprovalError("reconciliation response schema is unsupported")
+        except ApprovalError as exc:
+            raise PromotionServiceError("reconciliation response could not be verified",
+                                        outcome_unknown=True) from exc
+        except PromotionServiceError as exc:
+            if exc.outcome_unknown:
+                raise
+            raise PromotionServiceError("reconciliation response did not establish a terminal outcome",
+                                        outcome_unknown=True) from exc
+
     def _request(self, method: str, path: str, body: bytes | None) -> _ServiceResponse:
         if (self._tls.verify_mode != ssl.CERT_REQUIRED or not self._tls.check_hostname
                 or self._tls.minimum_version < ssl.TLSVersion.TLSv1_2):
             raise ApprovalError("promotion TLS context was weakened after client initialization")
         connection = http.client.HTTPSConnection(self._host, self._port, context=self._tls,
                                                  timeout=self._timeout)
+        response = None
         try:
             headers = {"Accept": "application/json"}
             if body is not None:
@@ -398,18 +543,29 @@ class PromotionServiceClient:
             if len(data) > MAX_RESPONSE_BYTES:
                 raise PromotionServiceError("promotion service response exceeded the size limit",
                                             outcome_unknown=method == "POST" and
-                                            (response.status == 201 or response.status >= 500))
+                                            (response.status in (200, 201) or response.status >= 500))
             if response.length is not None and response.length > 0:
                 raise PromotionServiceError("promotion service response body was incomplete",
                                             outcome_unknown=method == "POST" and
-                                            (response.status == 201 or response.status >= 500))
+                                            (response.status in (200, 201) or response.status >= 500))
             if response.status in (200, 201) and content_type != "application/json":
                 raise PromotionServiceError("promotion service response had an invalid content type",
                                             outcome_unknown=method == "POST" and
-                                            (response.status == 201 or response.status >= 500))
+                                            (response.status in (200, 201) or response.status >= 500))
             return _ServiceResponse(response.status, data)
         except (OSError, ssl.SSLError, http.client.HTTPException) as exc:
             raise PromotionServiceError("promotion service request failed",
                                         outcome_unknown=method == "POST") from exc
         finally:
-            connection.close()
+            try:
+                if response is not None:
+                    response.close()
+            except Exception:
+                # Cleanup must not replace the protocol result or its ambiguity classification.
+                pass
+            finally:
+                try:
+                    connection.close()
+                except Exception:
+                    # A failed close cannot make a previously received response authoritative.
+                    pass

@@ -13,6 +13,7 @@ import ssl
 import tempfile
 import threading
 import unittest
+from unittest.mock import Mock, patch
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
@@ -102,9 +103,31 @@ def make_record(approval_bytes: bytes, reviewer_key_id: str = "owner-key-1", seq
     return signed_envelope(payload, service_key), service_key, promotion_id
 
 
+def make_fence(approval_bytes: bytes, *, reviewer_key_id: str = "owner-key-1", sequence: int = 4,
+               reconciled_at: datetime = NOW, service_key: Ed25519PrivateKey) -> bytes:
+    payload = {
+        "schema": approval.RECOVERY_FENCE_SCHEMA,
+        "approval_envelope_sha256": hashlib.sha256(approval_bytes).hexdigest(),
+        "repository": approval.REPOSITORY,
+        "purpose": approval.PROMOTION_PURPOSE,
+        "reviewer_subject": "l17728",
+        "reviewer_key_id": reviewer_key_id,
+        "approval_sequence": sequence,
+        "reconciled_at": reconciled_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "result": "FENCED_NOT_COMMITTED",
+        "fence_id": b64u(bytes(range(32, 64))),
+    }
+    return signed_envelope(payload, service_key)
+
+
 def reviewer_store(key_id: str, key: Ed25519PrivateKey, *, subject: str = "l17728",
-                   roles: frozenset[str] = frozenset({approval.REVIEWER_ROLE}), active: bool = True):
-    return {key_id: approval.ReviewerKey(reviewer_public(key), subject, roles, active)}
+                   roles: frozenset[str] = frozenset({approval.REVIEWER_ROLE}), active: bool = True,
+                   valid_from: datetime | None = None, valid_until: datetime | None = None,
+                   revoked_at: datetime | None = None,
+                   role_valid_from: datetime | None = None, role_valid_until: datetime | None = None):
+    return {key_id: approval.ReviewerKey(reviewer_public(key), subject, roles, active,
+                                         valid_from, valid_until, revoked_at,
+                                         role_valid_from, role_valid_until)}
 
 
 def certificate_pair(directory: Path, common_name: str, *, ca_key: Ed25519PrivateKey,
@@ -292,6 +315,26 @@ class ApprovalProtocolTests(unittest.TestCase):
             approval.verify_promotion_record(unknown_record, self.approval_bytes,
                                               self.reviewer_keys, self.service_public)
 
+    def test_recovery_fence_verifies_historical_approval_and_exact_bindings(self) -> None:
+        fence = make_fence(self.approval_bytes, service_key=self.service_private)
+        verified = approval.verify_recovery_fence(fence, self.approval_bytes,
+                                                  self.reviewer_keys, self.service_public,
+                                                  expected_bindings=BINDINGS)
+        self.assertEqual(verified.state, "FENCED_NOT_COMMITTED")
+        altered, _ = make_approval(sequence=5, private_key=self.reviewer_private)
+        with self.assertRaises(approval.ApprovalError):
+            approval.verify_recovery_fence(fence, altered, self.reviewer_keys,
+                                            self.service_public)
+        with self.assertRaises(approval.ApprovalError):
+            approval.verify_recovery_fence(fence, self.approval_bytes, self.reviewer_keys,
+                                            reviewer_public(self.reviewer_private))
+        predating = make_fence(self.approval_bytes,
+                               reconciled_at=NOW - timedelta(minutes=11),
+                               service_key=self.service_private)
+        with self.assertRaises(approval.ApprovalError):
+            approval.verify_recovery_fence(predating, self.approval_bytes,
+                                            self.reviewer_keys, self.service_public)
+
 
 class PromotionServiceClientTests(unittest.TestCase):
     @classmethod
@@ -328,11 +371,20 @@ class PromotionServiceClientTests(unittest.TestCase):
         self.approval_bytes, self.reviewer_private = make_approval()
         self.reviewer_keys = reviewer_store("owner-key-1", self.reviewer_private)
         self.service_private = Ed25519PrivateKey.generate()
+        self.service_public = reviewer_public(self.service_private)
         self.record_bytes, _, self.promotion_id = make_record(self.approval_bytes,
                                                               service_key=self.service_private)
+        self.fence_bytes = make_fence(self.approval_bytes, service_key=self.service_private)
         self.calls: list[tuple[str, str, bytes | None]] = []
         self.ledger_mutations = 0
+        self.fence_writes = 0
         self.lookup_status = 200
+        self.reconcile_state = "COMMITTED"
+        self.reconcile_status = 200
+        self.oversize_reconcile_error = False
+        self.short_read_reconcile_error = False
+        self.oversize_reconcile_success = False
+        self.short_read_reconcile_success = False
         self.response_content_type = "application/json"
         self.drop_post_response = False
         self.post_status = 201
@@ -349,6 +401,46 @@ class PromotionServiceClientTests(unittest.TestCase):
                 body = self.rfile.read(length)
                 calls.append(("POST", self.path, body))
                 if not self.authorized_client():
+                    return
+                expected_reconcile_path = (
+                    "/v1/promotions/reconcile/" + hashlib.sha256(self_outer.approval_bytes).hexdigest()
+                )
+                if self.path.startswith("/v1/promotions/reconcile/"):
+                    if self.path != expected_reconcile_path or body != self_outer.approval_bytes:
+                        self.send_error(400)
+                        return
+                    if mutations.reconcile_status != 200:
+                        self.send_response(mutations.reconcile_status)
+                        if mutations.oversize_reconcile_error:
+                            self.send_header("Content-Length", str(approval.MAX_RESPONSE_BYTES + 10))
+                        elif mutations.short_read_reconcile_error:
+                            self.send_header("Content-Length", "4096")
+                        self.end_headers()
+                        if mutations.oversize_reconcile_error:
+                            self.wfile.write(b"x" * (approval.MAX_RESPONSE_BYTES + 10))
+                        elif mutations.short_read_reconcile_error:
+                            self.wfile.write(b"{}")
+                        return
+                    self.send_response(200)
+                    self.send_header("Content-Type", mutations.response_content_type)
+                    if mutations.oversize_reconcile_success:
+                        self.send_header("Content-Length", str(approval.MAX_RESPONSE_BYTES + 10))
+                    elif mutations.short_read_reconcile_success:
+                        self.send_header("Content-Length", "4096")
+                    self.end_headers()
+                    if mutations.oversize_reconcile_success:
+                        self.wfile.write(b"x" * (approval.MAX_RESPONSE_BYTES + 10))
+                        return
+                    if mutations.reconcile_state == "FENCED":
+                        mutations.fence_writes += 1 if mutations.fence_writes == 0 else 0
+                        response_body = self_outer.fence_bytes
+                    else:
+                        response_body = self_outer.record_bytes
+                    self.wfile.write(response_body)
+                    if mutations.short_read_reconcile_success:
+                        self.wfile.flush()
+                        self.connection.shutdown(socket.SHUT_RDWR)
+                        self.connection.close()
                     return
                 if self.path != "/v1/promotions" or body != self_outer.approval_bytes:
                     self.send_error(400)
@@ -414,12 +506,30 @@ class PromotionServiceClientTests(unittest.TestCase):
             str(self.ca_path), str(self.client_cert), str(self.client_key))
         self.client = approval.PromotionServiceClient(
             f"https://localhost:{self.server.server_port}", self.client_context,
-            self.reviewer_keys, reviewer_public(self.service_private))
+            self.reviewer_keys, self.service_public)
 
     def tearDown(self) -> None:
         self.server.shutdown()
         self.server.server_close()
         self.thread.join(timeout=3)
+
+    def test_response_close_error_preserves_unknown_outcome_and_closes_connection(self) -> None:
+        response = Mock()
+        response.status = 503
+        response.length = 0
+        response.getheader.return_value = "application/json"
+        response.read.return_value = b'{"error":"unavailable"}'
+        response.close.side_effect = OSError("response close failed")
+        connection = Mock()
+        connection.getresponse.return_value = response
+
+        with patch.object(approval.http.client, "HTTPSConnection", return_value=connection):
+            with self.assertRaises(approval.PromotionServiceError) as raised:
+                self.client.promote(self.approval_bytes, expected_bindings=BINDINGS)
+
+        self.assertTrue(raised.exception.outcome_unknown)
+        response.close.assert_called_once_with()
+        connection.close.assert_called_once_with()
 
     def test_live_mtls_post_then_read_only_get(self) -> None:
         result = self.client.promote(self.approval_bytes, expected_bindings=BINDINGS)
@@ -467,7 +577,10 @@ class PromotionServiceClientTests(unittest.TestCase):
             client.lookup(self.promotion_id, self.approval_bytes)
         with self.assertRaises(approval.PromotionServiceError):
             client.promote(self.approval_bytes)
+        with self.assertRaises(approval.PromotionServiceError):
+            client.recover(self.approval_bytes)
         self.assertEqual(self.ledger_mutations, 0)
+        self.assertEqual(self.fence_writes, 0)
 
     def test_mutually_authenticated_tls_rejects_wrong_client_identity(self) -> None:
         wrong_context = approval.PromotionServiceClient.tls_context(
@@ -479,7 +592,10 @@ class PromotionServiceClientTests(unittest.TestCase):
             client.lookup(self.promotion_id, self.approval_bytes)
         with self.assertRaises(approval.PromotionServiceError):
             client.promote(self.approval_bytes)
+        with self.assertRaises(approval.PromotionServiceError):
+            client.recover(self.approval_bytes)
         self.assertEqual(self.ledger_mutations, 0)
+        self.assertEqual(self.fence_writes, 0)
 
     def test_weakening_shared_tls_context_after_initialization_is_rejected(self) -> None:
         self.client_context.check_hostname = False
@@ -539,6 +655,149 @@ class PromotionServiceClientTests(unittest.TestCase):
         self.assertTrue(error.exception.outcome_unknown)
         self.assertEqual(self.ledger_mutations, 1)
         self.assertEqual(len([call for call in self.calls if call[0] == "POST"]), 1)
+
+        recovered = self.client.recover(self.approval_bytes, expected_bindings=BINDINGS)
+        self.assertEqual(recovered.state, "PROMOTED")
+        self.assertEqual(recovered.payload["promotion_id"], self.promotion_id)
+        self.assertEqual(self.ledger_mutations, 1)
+        self.assertEqual(self.calls[-1], (
+            "POST", "/v1/promotions/reconcile/" + hashlib.sha256(self.approval_bytes).hexdigest(),
+            self.approval_bytes,
+        ))
+
+    def test_reconcile_returns_stable_signed_fence_without_promotion(self) -> None:
+        self.reconcile_state = "FENCED"
+        first = self.client.recover(self.approval_bytes, expected_bindings=BINDINGS)
+        second = self.client.recover(self.approval_bytes, expected_bindings=BINDINGS)
+        self.assertEqual(first.state, "FENCED_NOT_COMMITTED")
+        self.assertEqual(second.envelope_sha256, first.envelope_sha256)
+        self.assertEqual(first.payload["approval_sequence"], 4)
+        self.assertEqual(self.fence_writes, 1)
+        self.assertEqual(self.ledger_mutations, 0)
+        self.assertNotEqual(first.payload.get("result"), "PASS_GOLDEN")
+
+    def test_reconcile_route_errors_remain_unknown_and_never_retry_promotion(self) -> None:
+        for status in (404, 503):
+            with self.subTest(status=status):
+                self.reconcile_status = status
+                with self.assertRaises(approval.PromotionServiceError) as error:
+                    self.client.recover(self.approval_bytes)
+                self.assertTrue(error.exception.outcome_unknown)
+        self.assertEqual(self.ledger_mutations, 0)
+        self.assertEqual(self.fence_writes, 0)
+        self.assertEqual(len([call for call in self.calls if call[1] == "/v1/promotions"]), 0)
+
+    def test_404_with_oversize_or_truncated_body_remains_unknown(self) -> None:
+        self.reconcile_status = 404
+        for flag in ("oversize_reconcile_error", "short_read_reconcile_error"):
+            with self.subTest(fault=flag):
+                setattr(self, flag, True)
+                with self.assertRaises(approval.PromotionServiceError) as error:
+                    self.client.recover(self.approval_bytes)
+                self.assertTrue(error.exception.outcome_unknown)
+                setattr(self, flag, False)
+        self.assertEqual(self.ledger_mutations, 0)
+        self.assertEqual(self.fence_writes, 0)
+
+    def test_200_with_bad_content_type_oversize_or_short_body_remains_unknown(self) -> None:
+        self.response_content_type = "text/plain"
+        with self.assertRaises(approval.PromotionServiceError) as content_type_error:
+            self.client.recover(self.approval_bytes)
+        self.assertTrue(content_type_error.exception.outcome_unknown)
+
+        self.response_content_type = "application/json"
+        for flag in ("oversize_reconcile_success", "short_read_reconcile_success"):
+            with self.subTest(fault=flag):
+                setattr(self, flag, True)
+                with self.assertRaises(approval.PromotionServiceError) as error:
+                    self.client.recover(self.approval_bytes)
+                self.assertTrue(error.exception.outcome_unknown)
+                setattr(self, flag, False)
+
+        self.assertEqual(self.ledger_mutations, 0)
+        self.assertEqual(self.fence_writes, 0)
+
+    def test_200_bad_service_key_or_mismatched_record_digest_remains_unknown(self) -> None:
+        wrong_key_client = approval.PromotionServiceClient(
+            f"https://localhost:{self.server.server_port}", self.client_context,
+            self.reviewer_keys, reviewer_public(Ed25519PrivateKey.generate()),
+        )
+        with self.assertRaises(approval.PromotionServiceError) as wrong_key_error:
+            wrong_key_client.recover(self.approval_bytes)
+        self.assertTrue(wrong_key_error.exception.outcome_unknown)
+
+        self.record_bytes, _, _ = make_record(
+            self.approval_bytes + b"altered", service_key=self.service_private,
+        )
+        with self.assertRaises(approval.PromotionServiceError) as digest_error:
+            self.client.recover(self.approval_bytes)
+        self.assertTrue(digest_error.exception.outcome_unknown)
+        self.assertEqual(self.ledger_mutations, 0)
+        self.assertEqual(self.fence_writes, 0)
+
+    def test_recovery_allows_revoked_after_approval_key_and_rejects_never_authorized_key(self) -> None:
+        approved_at = NOW - timedelta(hours=2)
+        expired_at = approved_at + timedelta(hours=1)
+        expired_approval, private_key = make_approval(approved=approved_at, expires=expired_at)
+        historical_keys = reviewer_store(
+            "owner-key-1", private_key, active=False,
+            valid_from=approved_at - timedelta(days=1), revoked_at=NOW - timedelta(minutes=30),
+        )
+        expired_record, _, expired_id = make_record(
+            expired_approval, promotion_time=approved_at + timedelta(minutes=30),
+            service_key=self.service_private,
+        )
+        self.approval_bytes = expired_approval
+        self.record_bytes = expired_record
+        self.promotion_id = expired_id
+        client = approval.PromotionServiceClient(
+            f"https://localhost:{self.server.server_port}", self.client_context,
+            historical_keys, self.service_public,
+        )
+        recovered = client.recover(expired_approval)
+        self.assertEqual(recovered.state, "PROMOTED")
+        self.assertEqual(recovered.payload["promotion_id"], expired_id)
+
+        unauthorized_keys = reviewer_store(
+            "owner-key-1", private_key, active=False,
+            subject="other",
+            revoked_at=NOW - timedelta(minutes=30),
+        )
+        invalid_client = approval.PromotionServiceClient(
+            f"https://localhost:{self.server.server_port}", self.client_context,
+            unauthorized_keys, self.service_public,
+        )
+        calls_before = len(self.calls)
+        with self.assertRaises(approval.ApprovalError):
+            invalid_client.recover(expired_approval)
+        self.assertEqual(len(self.calls), calls_before)
+
+        not_yet_valid_keys = reviewer_store(
+            "owner-key-1", private_key, active=False,
+            valid_from=approved_at + timedelta(seconds=1),
+            revoked_at=NOW - timedelta(minutes=30),
+        )
+        not_yet_valid_client = approval.PromotionServiceClient(
+            f"https://localhost:{self.server.server_port}", self.client_context,
+            not_yet_valid_keys, self.service_public,
+        )
+        with self.assertRaises(approval.ApprovalError):
+            not_yet_valid_client.recover(expired_approval)
+        self.assertEqual(len(self.calls), calls_before)
+
+        ended_role_keys = reviewer_store(
+            "owner-key-1", private_key, active=False,
+            valid_from=approved_at - timedelta(days=1),
+            role_valid_until=approved_at,
+            revoked_at=NOW - timedelta(minutes=30),
+        )
+        ended_role_client = approval.PromotionServiceClient(
+            f"https://localhost:{self.server.server_port}", self.client_context,
+            ended_role_keys, self.service_public,
+        )
+        with self.assertRaises(approval.ApprovalError):
+            ended_role_client.recover(expired_approval)
+        self.assertEqual(len(self.calls), calls_before)
 
     def test_oversize_503_is_marked_outcome_unknown(self) -> None:
         self.post_status = 503
