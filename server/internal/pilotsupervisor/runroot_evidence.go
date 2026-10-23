@@ -285,3 +285,7 @@ func validRunRootSourceKind(value string) bool {
 }
 
 func runRootDigestHex(value [sha256.Size]byte) string { return hex.EncodeToString(value[:]) }
+
+func runRootBasenameDigest(name string) string {
+	return runRootDigestHex(hashRunRootDomain("en-words-basename-v1\x00", []byte(name)))
+}

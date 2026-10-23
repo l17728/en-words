@@ -1,4 +1,4 @@
-name: Pilot control CGO acceptance
+name: Pilot Linux package and manifest acceptance
 
 on:
   push:
@@ -11,8 +11,11 @@ on:
       - "docs/4*-*"
       - "docs/5*-*"
       - "docs/6*-*"
+      - "docs/7*-*"
       - "review/run_pilot_vfs_candidate.py"
       - "review/test_pilot_vfs_candidate_runner.py"
+      - "review/verify_pilot_draft_schema_gate.py"
+      - "review/test_pilot_draft_schema_gate.py"
       - ".github/workflows/pilot-control-cgo.yml"
   pull_request:
     paths:
@@ -24,8 +27,11 @@ on:
       - "docs/4*-*"
       - "docs/5*-*"
       - "docs/6*-*"
+      - "docs/7*-*"
       - "review/run_pilot_vfs_candidate.py"
       - "review/test_pilot_vfs_candidate_runner.py"
+      - "review/verify_pilot_draft_schema_gate.py"
+      - "review/test_pilot_draft_schema_gate.py"
       - ".github/workflows/pilot-control-cgo.yml"
   workflow_dispatch:
 
@@ -33,7 +39,8 @@ permissions:
   contents: read
 
 jobs:
-  linux-cgo:
+  linux-package-regression:
+    name: Linux package checks only (not VFS or RunRoot acceptance)
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -51,31 +58,59 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes strace
-      - name: Test candidate runner provenance and evidence permissions
-        working-directory: .
-        env:
-          PILOT_VFS_TEST_SERVER_DIR: ${{ github.workspace }}/server
-        run: >-
-          PILOT_VFS_TEST_REAL_GO="$(command -v go)"
-          PILOT_VFS_TEST_REAL_STRACE="$(command -v strace)"
-          python3 -m unittest review.test_pilot_vfs_candidate_runner -v
-      - name: Verify pinned SQLite manifest and scenario inventory
-        env:
-          PILOT_VFS_MANIFEST_ARTIFACT_DIR: ${{ runner.temp }}/pilot-vfs-manifest-${{ github.run_id }}-${{ github.run_attempt }}
-        run: go test -tags=pilot_e2e ./internal/pilotcontrol -run '^(TestPinnedSQLiteRuntimeIdentity|TestPinnedVFSManifestRequiresEEXISTCases|TestPinnedVFSCallbackManifestIntegrityAndNotRunStatus|TestPilotVFSManifestArtifactDirIsolatedFromCandidateDir|TestPilotVFSRecoveryManifestIntegrityAndNotRunStatus)$' -count=1
-      - name: Generate Linux callback candidates with immutable evidence
-        run: python3 ../review/run_pilot_vfs_candidate.py --artifact-dir "${RUNNER_TEMP}/pilot-vfs-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-      - name: Test RunRoot supervisor and SQLite package
+      - name: Build Linux RunRoot supervisor for amd64 and arm64
+        run: |
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -tags=pilot_e2e ./internal/pilotsupervisor
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -tags=pilot_e2e ./internal/pilotsupervisor
+      - name: Test pilot control package
         run: go test ./internal/pilotcontrol -count=1
       - name: Test Linux RunRoot supervisor contracts
         run: go test -tags=pilot_e2e ./internal/pilotsupervisor -count=1
-      - name: Race-check RunRoot supervisor and protected SQLite driver
-        run: go test -race ./internal/pilotcontrol -count=1
+      - name: Race-check pilot control and verify explicit draft skips
+        run: |
+          set -o pipefail
+          go test -json -race ./internal/pilotcontrol -count=1 | tee "$RUNNER_TEMP/pilotcontrol-race.jsonl"
+          python3 ../review/verify_pilot_draft_schema_gate.py "$RUNNER_TEMP/pilotcontrol-race.jsonl"
       - name: Race-check Linux RunRoot supervisor
         run: go test -race -tags=pilot_e2e ./internal/pilotsupervisor -count=1
-      - name: Vet RunRoot supervisor and protected SQLite driver
+      - name: Vet pilot control package
         run: go vet ./internal/pilotcontrol
       - name: Vet Linux RunRoot supervisor
         run: go vet -tags=pilot_e2e ./internal/pilotsupervisor
       - name: Run full backend regression
         run: go test ./...
+      - name: Record package-only acceptance scope
+        if: always()
+        working-directory: .
+        run: echo 'PACKAGE_CHECKS_ONLY; VFS_CANDIDATE=NOT_RUN; V3_DRAFT_SCHEMA_FIXTURE=NOT_RUN; PRIVATE_VFS=NOT_ACCEPTED; PRODUCT_RUNROOT=NOT_ACCEPTED' >> "$GITHUB_STEP_SUMMARY"
+
+  linux-manifest-contract:
+    name: Linux manifest contract only
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: server
+    env:
+      CGO_ENABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.0"
+          cache: true
+          cache-dependency-path: server/go.sum
+      - name: Verify manifest inventory (design scenarios remain NOT RUN)
+        env:
+          PILOT_VFS_MANIFEST_ARTIFACT_DIR: ${{ runner.temp }}/pilot-vfs-manifest-${{ github.run_id }}-${{ github.run_attempt }}
+        run: go test -tags=pilot_e2e ./internal/pilotcontrol -run '^(TestPinnedSQLiteRuntimeIdentity|TestPinnedVFSManifestRequiresEEXISTCases|TestPinnedVFSCallbackManifestIntegrityAndNotRunStatus|TestPilotVFSManifestArtifactDirIsolatedFromCandidateDir|TestPilotVFSRecoveryManifestIntegrityAndNotRunStatus)$' -count=1
+
+  linux-runner-preflight:
+    name: Linux runner preflight only (candidate remains NOT RUN)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify runner authorization gate without starting candidate
+        run: python3 -m unittest review.test_pilot_vfs_candidate_runner review.test_pilot_draft_schema_gate -v

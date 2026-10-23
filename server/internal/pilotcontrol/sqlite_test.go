@@ -198,8 +198,9 @@ func TestEmbeddedSchemaInventoryMatchesPinnedContentHash(t *testing.T) {
 }
 
 func TestOpenRejectsUnexpectedPersistentView(t *testing.T) {
+	t.Skip(unapprovedDraftV3SchemaReason)
 	path := filepath.Join(t.TempDir(), "ledger.sqlite")
-	createReviewedSchemaFixture(t, path)
+	createDraftV3SchemaFixture(t, path)
 	db := sql.OpenDB(&sqliteConnector{driver: &sqlite3.SQLiteDriver{}, dsn: path})
 	if _, err := db.Exec(`CREATE VIEW unexpected_pilot_view AS SELECT schema_version FROM run_root_ledger_meta`); err != nil {
 		t.Fatal(err)
@@ -213,8 +214,9 @@ func TestOpenRejectsUnexpectedPersistentView(t *testing.T) {
 }
 
 func TestOpenRejectsUnexpectedSQLiteUserVersionWithoutMutation(t *testing.T) {
+	t.Skip(unapprovedDraftV3SchemaReason)
 	path := filepath.Join(t.TempDir(), "ledger.sqlite")
-	createReviewedSchemaFixture(t, path)
+	createDraftV3SchemaFixture(t, path)
 	db := sql.OpenDB(&sqliteConnector{driver: &sqlite3.SQLiteDriver{}, dsn: path})
 	if _, err := db.Exec("PRAGMA user_version=4"); err != nil {
 		t.Fatal(err)
@@ -314,10 +316,9 @@ func TestStoreCloseIsIdempotentAndFencesLaterCapabilities(t *testing.T) {
 }
 
 func TestOpenAcceptsExactPinnedSchemaFixture(t *testing.T) {
+	t.Skip(unapprovedDraftV3SchemaReason)
 	path := filepath.Join(t.TempDir(), "ledger.sqlite")
-	// This fixture exercises the validation path against the pinned draft DDL;
-	// it does not upgrade the draft's separate design/production approval status.
-	createReviewedSchemaFixture(t, path)
+	createDraftV3SchemaFixture(t, path)
 	s, err := Open(context.Background(), path, 2)
 	if err != nil {
 		t.Fatalf("Open rejected exact pinned schema fixture: %v", err)
@@ -328,8 +329,9 @@ func TestOpenAcceptsExactPinnedSchemaFixture(t *testing.T) {
 }
 
 func TestProtectedConnectionRevalidatesSchemaAfterReadOnlyPreflight(t *testing.T) {
+	t.Skip(unapprovedDraftV3SchemaReason)
 	path := filepath.Join(t.TempDir(), "ledger.sqlite")
-	createReviewedSchemaFixture(t, path)
+	createDraftV3SchemaFixture(t, path)
 	_, err := openWithOptions(context.Background(), path, 1, storeOptions{
 		trustedTrigger: true,
 		beforeValidate: func(conn *sqlite3.SQLiteConn) error {
@@ -342,8 +344,12 @@ func TestProtectedConnectionRevalidatesSchemaAfterReadOnlyPreflight(t *testing.T
 	}
 }
 
-func createReviewedSchemaFixture(t *testing.T, path string) {
+const unapprovedDraftV3SchemaReason = "draft schema fixture NOT RUN: 103-object candidate is not reconciled with the approved 95-object inventory; pending docs/65 canonical input approval"
+
+func createDraftV3SchemaFixture(t *testing.T, path string) {
 	t.Helper()
+	// This is only a disposable candidate fixture. Tests must not pass it to the
+	// production Open validator until the 103-object schema is approved.
 	dllPath := filepath.Join("..", "..", "..", "review", "pilot-control-ledger-v3-literal-ddl-draft-20261021.sql")
 	ddl, err := os.ReadFile(dllPath)
 	if err != nil {

@@ -3,7 +3,6 @@
 package pilotsupervisor
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -121,8 +120,4 @@ func TestRunRootEvidenceRejectsSchemaDrift(t *testing.T) {
 	if _, err := buildRunRootEvidenceItem("run-root-create-collision-v1", []any{int64(1), int64(2), int64(3)}, invalidRequest); err == nil {
 		t.Fatal("invalid UTF-8 request ID accepted")
 	}
-}
-
-func runRootBasenameDigest(name string) string {
-	return fmt.Sprintf("%x", hashRunRootDomain("en-words-basename-v1\x00", []byte(name)))
 }

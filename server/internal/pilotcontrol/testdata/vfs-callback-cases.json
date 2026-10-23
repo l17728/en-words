@@ -3,7 +3,7 @@
   "source_sdd": "docs/55-pilot-control-pinned-sqlite-vfs-sdd.md",
   "source_sdd_sha256": "fa957bfc9b2b039abfa7b7d72d831fc55e616f72074dd8dc8f8e9b4367014dea",
   "design_amendment": "docs/58-pilot-vfs-eexist-evidence-layer-sdd.md",
-  "design_amendment_sha256": "1b8538da1c5dd342e8c078db42c81dda02ee87c3a4b2246da1fa560c2c96cfe6",
+  "design_amendment_sha256": "2314050baebde4c2d8e59741b754663ca0aba17b62a2465bd5d00b0d4f24bed8",
   "status": "DESIGN_CASES_NOT_EXECUTED",
   "cases": [
     {

@@ -26,13 +26,13 @@ const (
 	pinnedVFSDesignPath      = "docs/55-pilot-control-pinned-sqlite-vfs-sdd.md"
 	pinnedVFSDesignSHA256    = "fa957bfc9b2b039abfa7b7d72d831fc55e616f72074dd8dc8f8e9b4367014dea"
 	pinnedVFSAmendmentPath   = "docs/58-pilot-vfs-eexist-evidence-layer-sdd.md"
-	pinnedVFSAmendmentSHA256 = "1b8538da1c5dd342e8c078db42c81dda02ee87c3a4b2246da1fa560c2c96cfe6"
+	pinnedVFSAmendmentSHA256 = "2314050baebde4c2d8e59741b754663ca0aba17b62a2465bd5d00b0d4f24bed8"
 	pinnedVFSRecoveryPath = "docs/62-pilot-vfs-initialization-and-recovery-amendment.md"
 	pinnedVFSRecoverySHA256 = "44333074581018d3a98d0b0cf8aab8edaf53d0c195ea3429bb71a33221e04ed8"
 	pinnedVFSRecoveryManifestPath = "server/internal/pilotcontrol/testdata/pilot-vfs-recovery-cases.json"
 	pinnedVFSRecoveryManifestSHA256 = "9e4899bac00f448a790d7d34e2fb5d720a74b2d7c839496a52ade948346ed3ea"
 	pinnedVFSRecoveryCaseCount = 50
-	pinnedVFSManifestSHA256  = "3933ca6822d6566b8d87c0224abc6419688ff4b3006472857dd9cc0892ebe6a3"
+	pinnedVFSManifestSHA256  = "c52e02a6fef62527763abb6932c4595df77c635a384be78dc0f245e3a322a70b"
 )
 
 var pinnedVFSRequiredEEXISTCases = []string{
