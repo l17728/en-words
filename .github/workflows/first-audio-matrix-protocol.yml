@@ -1,0 +1,94 @@
+﻿name: First-audio control protocol checks
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "docs/73-first-audio-matrix-control-protocol-sdd.md"
+      - "server/internal/api/first_audio_matrix_harness_test.go"
+      - "server/go.mod"
+      - "server/go.sum"
+      - "server/third_party/go-sqlite3/**"
+      - "server/internal/api/**"
+      - "server/internal/classroom/**"
+      - "server/internal/config/**"
+      - "server/internal/scheduler/**"
+      - "server/internal/store/**"
+      - "review/first_audio_matrix_control.py"
+      - "review/test_first_audio_matrix_control.py"
+      - "web/src/**"
+      - "web/e2e/**"
+      - "web/package.json"
+      - "web/package-lock.json"
+      - "web/playwright*"
+      - ".github/workflows/first-audio-matrix-protocol.yml"
+  pull_request:
+    paths:
+      - "docs/73-first-audio-matrix-control-protocol-sdd.md"
+      - "server/internal/api/first_audio_matrix_harness_test.go"
+      - "server/go.mod"
+      - "server/go.sum"
+      - "server/third_party/go-sqlite3/**"
+      - "server/internal/api/**"
+      - "server/internal/classroom/**"
+      - "server/internal/config/**"
+      - "server/internal/scheduler/**"
+      - "server/internal/store/**"
+      - "review/first_audio_matrix_control.py"
+      - "review/test_first_audio_matrix_control.py"
+      - "web/src/**"
+      - "web/e2e/**"
+      - "web/package.json"
+      - "web/package-lock.json"
+      - "web/playwright*"
+      - ".github/workflows/first-audio-matrix-protocol.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  protocol:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.0"
+          cache: true
+          cache-dependency-path: server/go.sum
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test parent process boundary helpers
+        run: python3 -m unittest discover -s review -p test_first_audio_matrix_control.py -v
+      - name: Test JSONL parser, lifecycle, replay, and terminal cleanup
+        working-directory: server
+        run: go test ./internal/api -run '^TestFirstAudioMatrix' -count=1 -timeout=5m
+      - name: Verify test-only harness is absent from production binary
+        working-directory: server
+        run: |
+          go build -o "$RUNNER_TEMP/en-words-server" ./cmd/server
+          if go tool nm "$RUNNER_TEMP/en-words-server" | grep -q 'TestFirstAudioMatrix\|firstAudioControl'; then
+            echo "test-only harness symbol leaked into production binary" >&2
+            exit 1
+          fi
+
+  windows-boundaries:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.0"
+          cache: true
+          cache-dependency-path: server/go.sum
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test Windows private DACL and process-tree boundaries
+        run: python -m unittest discover -s review -p test_first_audio_matrix_control.py -v
+      - name: Test Go harness path and lifecycle boundaries
+        working-directory: server
+        run: go test ./internal/api -run '^TestFirstAudioMatrix' -count=1 -timeout=10m
