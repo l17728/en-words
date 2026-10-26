@@ -313,7 +313,23 @@ func parseFirstAudioRequest(line []byte) (firstAudioRequest, error) {
 	if !ok1 || !ok2 || !ok3 || !ok4 || !firstAudioIDPattern.MatchString(requestID) {
 		return firstAudioRequest{}, errors.New("request field types or IDs are invalid")
 	}
+	if !validFirstAudioRequestArgs(command, args) {
+		return firstAudioRequest{}, errors.New("request args contain unknown fields")
+	}
 	return firstAudioRequest{RequestID: requestID, Capability: capability, Command: command, Args: args, Raw: append([]byte(nil), line...)}, nil
+}
+
+func validFirstAudioRequestArgs(command string, args map[string]any) bool {
+	switch command {
+	case "bind":
+		return exactFirstAudioFields(args, "fixture")
+	case "metadata", "shutdown":
+		return len(args) == 0
+	case "reset":
+		return exactFirstAudioFields(args, "reset_id", "lesson_id")
+	default:
+		return len(args) == 0
+	}
 }
 
 func decodeFirstAudioJSON(raw []byte) (any, error) {
