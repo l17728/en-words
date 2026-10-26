@@ -45,7 +45,7 @@ type firstAudioState string
 
 const (
 	firstAudioUnbound        firstAudioState = "UNBOUND"
-	firstAudioBound          firstAudioState = "BOUND"
+	firstAudioStateBound     firstAudioState = "BOUND"
 	firstAudioResetting      firstAudioState = "RESETTING"
 	firstAudioTerminalFailed firstAudioState = "TERMINAL_FAILED"
 	firstAudioShutdown       firstAudioState = "SHUTDOWN"
@@ -469,7 +469,7 @@ func (c *firstAudioControl) handle(request firstAudioRequest) (firstAudioRespons
 			return response, replayable, nil, nil
 		}
 		c.bound = bound
-		c.state = firstAudioBound
+		c.state = firstAudioStateBound
 		return firstAudioResponse{RequestID: request.RequestID, Status: "ok", Data: bound, Error: nil}, false, nil, nil
 
 	case "metadata":
@@ -480,7 +480,7 @@ func (c *firstAudioControl) handle(request firstAudioRequest) (firstAudioRespons
 
 	case "reset":
 		resetID, lessonID, _ := parseFirstAudioResetArgs(request.Args) // validated before replay lookup
-		if c.state != firstAudioBound {
+		if c.state != firstAudioStateBound {
 			return c.reject(request.RequestID, "invalid_state"), false, nil, nil
 		}
 		if lessonID != c.bound.LessonID {
@@ -504,7 +504,7 @@ func (c *firstAudioControl) handle(request firstAudioRequest) (firstAudioRespons
 		}
 		c.bound = updated
 		c.resetCount++
-		c.state = firstAudioBound
+		c.state = firstAudioStateBound
 		result := firstAudioResult{status: "ok", data: map[string]any{"lesson_id": updated.LessonID, "generation": updated.Generation}}
 		c.resets[resetID] = firstAudioResetRecord{lessonID: lessonID, result: result}
 		return firstAudioResultResponse(request.RequestID, result), true, nil, nil
@@ -519,12 +519,12 @@ func (c *firstAudioControl) handle(request firstAudioRequest) (firstAudioRespons
 			c.state = firstAudioShutdown
 			return firstAudioResponse{RequestID: request.RequestID, Status: "failed", Data: nil, Error: &firstAudioError{Code: code}}, false, nil, errFirstAudioRunFailed
 		}
-		if c.state == firstAudioUnbound || (c.state == firstAudioBound && c.resetCount == 0) {
+		if c.state == firstAudioUnbound || (c.state == firstAudioStateBound && c.resetCount == 0) {
 			c.closeBackend()
 			c.state = firstAudioShutdown
 			return firstAudioResponse{RequestID: request.RequestID, Status: "failed", Data: nil, Error: &firstAudioError{Code: "shutdown_incomplete"}}, false, nil, errFirstAudioRunFailed
 		}
-		if c.state != firstAudioBound {
+		if c.state != firstAudioStateBound {
 			return c.reject(request.RequestID, "invalid_state"), false, nil, nil
 		}
 		if err := c.closeBackend(); err != nil {
@@ -587,7 +587,7 @@ func (c *firstAudioControl) metadata() map[string]any {
 	var generation uint64
 	if c.bound.LessonID > 0 {
 		studentID, bookID, lessonID, generation = c.bound.StudentID, c.bound.BookID, c.bound.LessonID, c.bound.Generation
-		if c.state == firstAudioBound || c.state == firstAudioResetting {
+		if c.state == firstAudioStateBound || c.state == firstAudioResetting {
 			origin = c.bound.Origin
 		}
 	}
@@ -916,7 +916,7 @@ func TestFirstAudioMatrixResetFailureIsRecordedAndTerminal(t *testing.T) {
 	control := newFirstAudioControl(capability, func() (firstAudioBackend, error) { return backend, nil })
 	control.backend = backend
 	control.bound = backend.bound
-	control.state = firstAudioBound
+	control.state = firstAudioStateBound
 	reset := firstAudioRequestLine(t, "reset-1", encodedCapability, "reset", map[string]any{"reset_id": "reset_uncertain", "lesson_id": 201})
 	replay := firstAudioRequestLine(t, "reset-2", encodedCapability, "reset", map[string]any{"reset_id": "reset_uncertain", "lesson_id": 201})
 	shutdown := firstAudioRequestLine(t, "shutdown-1", encodedCapability, "shutdown", map[string]any{})

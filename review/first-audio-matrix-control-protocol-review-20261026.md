@@ -28,8 +28,8 @@ The implementation review below covers only the isolated parent/child control bo
 | --- | --- |
 | `review/first_audio_matrix_control.py` | `DD2D0C89A643A7956EA3BAAFF3855E9EB4994108E92CDC91B4159B38D023B01B` |
 | `review/test_first_audio_matrix_control.py` | `4A28C988C85FBC4BADFF16B5D47724E63B7636E9F300F74DD04EC44363C724D3` |
-| `server/internal/api/first_audio_matrix_harness_test.go` | `9464BBB0968739315797A2F5DCB9EB7A391660D199E193F6BBD077000FD38DC2` |
+| `server/internal/api/first_audio_matrix_harness_test.go` | `B970E5BC8F98F204C16A935E264B881046681769AD622E5CF3FA8B60BBB1ED13` |
 | `server/internal/api/first_audio_matrix_security_windows_test.go` | `7A6286682B5C6AF10E2E57D56DEF9AA6D2320A7B2031B65CE778E2DFC35EC780` |
 | `.github/workflows/first-audio-matrix-protocol.yml` | `64E37A2EEE08E95374B0D7E04BCD837284BFE383F03562C93731FC5F2E5A9273` |
 
-The parent helper suite passed **10/10** on 2026-10-26 (0.320 seconds). Linux and Windows Go checks are delegated to GitHub Actions; no local Go result is claimed. The Go harness still uses `unavailableFirstAudioBackend`, so `bind` fails closed. The dedicated Playwright journey is absent; generic E2E files deliberately produce `browser_journey_status=NOT_IMPLEMENTED`. SQLite fixture/guard implementation, browser journeys, latency matrix, and real-classroom pilot remain **NOT RUN**.
+The parent helper suite passed **10/10** on 2026-10-26 (0.320 seconds). The first GitHub Actions run caught a duplicate Go identifier at compile time; the state constant was renamed to `firstAudioStateBound`, and Linux/Windows Go checks are being rerun. No Go pass is claimed yet. The Go harness still uses `unavailableFirstAudioBackend`, so `bind` fails closed. The dedicated Playwright journey is absent; generic E2E files deliberately produce `browser_journey_status=NOT_IMPLEMENTED`. SQLite fixture/guard implementation, browser journeys, latency matrix, and real-classroom pilot remain **NOT RUN**.
