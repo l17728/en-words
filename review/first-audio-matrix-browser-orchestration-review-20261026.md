@@ -31,6 +31,8 @@ Reviewers examined the current runner hash above. The architecture reviewer rech
 - Playwright discovery: one dedicated test found; browser journey not executed.
 - Web production build: passed (3,134 modules).
 - Focused Go synthetic-login test: passed on Windows/amd64 with `CGO_ENABLED=0`; this does not exercise SQLite CGO hooks.
-- Linux process-group behavior still requires the Linux CI job. The actual two-journey acceptance remains **NOT RUN** because the guarded SQLite backend, reset-race cases, and canonical snapshot gate are not implemented.
+- GitHub Actions [run 40302739423](https://github.com/l17728/en-words/actions/runs/40302739423) passed on Ubuntu 24.04 and Windows. Ubuntu ran all 19 Python tests with only the Windows Job Object case skipped; Windows ran all 19 with four Linux/POSIX-specific cases skipped. Both jobs passed the focused Go harness boundary tests; production test-symbol exclusion passed on Linux. This closes the Linux process-group behavior check for this orchestration slice.
+- GitHub Actions [run 40301602981](https://github.com/l17728/en-words/actions/runs/40301602981) passed its Linux package/manifest-only checks. Its scope does not include first-audio backend or matrix acceptance.
+- The actual two-journey acceptance remains **NOT RUN** because the guarded SQLite backend, reset-race cases, and canonical snapshot gate are not implemented.
 
 This review approves only the parent/browser orchestration delta. It is not evidence of acoustic onset, classroom latency, reset correctness, or pilot readiness.
