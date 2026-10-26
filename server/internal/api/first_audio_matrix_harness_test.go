@@ -222,7 +222,9 @@ func firstAudioCapabilityFromEnvironment() ([]byte, error) {
 
 func firstAudioSamePath(a, b string) bool {
 	if runtime.GOOS == "windows" {
-		return strings.EqualFold(normalizeFirstAudioWindowsPath(a), normalizeFirstAudioWindowsPath(b))
+		infoA, errA := os.Stat(a)
+		infoB, errB := os.Stat(b)
+		return errA == nil && errB == nil && os.SameFile(infoA, infoB)
 	}
 	return filepath.Clean(a) == filepath.Clean(b)
 }
@@ -832,14 +834,19 @@ func TestFirstAudioMatrixWindowsCanonicalPathComparison(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		t.Skip("Windows extended path prefixes are platform-specific")
 	}
-	if !firstAudioSamePath(`\\?\C:\matrix\run`, `c:\matrix\run`) {
-		t.Fatal("extended drive path did not match its canonical path")
+	if got := normalizeFirstAudioWindowsPath(`\\?\C:\matrix\run`); !strings.EqualFold(got, `C:\matrix\run`) {
+		t.Fatalf("extended drive path normalization=%q", got)
 	}
-	if !firstAudioSamePath(`\\?\UNC\server\share\matrix`, `\\SERVER\SHARE\matrix`) {
-		t.Fatal("extended UNC path did not match its canonical path")
+	if got := normalizeFirstAudioWindowsPath(`\\?\UNC\server\share\matrix`); !strings.EqualFold(got, `\\server\share\matrix`) {
+		t.Fatalf("extended UNC path normalization=%q", got)
 	}
-	if firstAudioSamePath(`\\?\C:\matrix\other`, `C:\matrix\run`) {
-		t.Fatal("different Windows paths compared equal")
+	directory := t.TempDir()
+	extended := `\\?\` + directory
+	if !firstAudioSamePath(extended, directory) {
+		t.Fatal("extended drive path did not identify the same directory")
+	}
+	if firstAudioSamePath(directory, t.TempDir()) {
+		t.Fatal("different Windows directories compared equal")
 	}
 }
 
