@@ -80,14 +80,13 @@ class MatrixControlBoundaryTests(unittest.TestCase):
             groups = _read_detached_process_groups(manifest)
             self.assertEqual(1, len(groups), "spawn preload must persist the detached PGID synchronously")
             group = next(iter(groups))
-            try:
-                os.killpg(group, signal.SIGKILL)
-                deadline = time.monotonic() + 5
-                while time.monotonic() < deadline and _linux_process_group_exists(group):
-                    time.sleep(0.025)
-                self.assertFalse(_linux_process_group_exists(group), "detached group survived manifest cleanup")
-            except ProcessLookupError:
-                pass
+            self.assertTrue(_linux_process_group_exists(group),
+                            "manifested detached process group was not live after parent exit")
+            os.killpg(group, signal.SIGKILL)
+            deadline = time.monotonic() + 5
+            while time.monotonic() < deadline and _linux_process_group_exists(group):
+                time.sleep(0.025)
+            self.assertFalse(_linux_process_group_exists(group), "detached group survived manifest cleanup")
 
     def test_matrix_runner_platform_allowlist_is_explicit(self):
         with patch("first_audio_matrix_control.os.name", "posix"), \
@@ -136,9 +135,11 @@ class MatrixControlBoundaryTests(unittest.TestCase):
                     child_pid = int(pid_file.read_text(encoding="ascii"))
                     self.assertIn(child_pid, _read_detached_process_groups(group_manifest),
                                   "spawn preload did not synchronously register the detached process group")
-                    child_group = os.getpgid(child_pid)
+                    child_group = child_pid
                     self.assertNotEqual(process.pid, child_group,
                                         "fixture did not create a detached process group")
+                    self.assertTrue(_linux_process_group_exists(child_group),
+                                    "registered detached process group is not live")
                     groups = _linux_descendant_groups(process.pid)
                     self.assertIn(child_group, groups,
                                   "monitor failed to discover a detached descendant process group")

@@ -8,7 +8,7 @@ This review covers the dedicated synthetic Playwright journey, its parent runner
 | --- | --- |
 | `docs/73-first-audio-matrix-control-protocol-sdd.md` | `9E1639863558D6B19A12BF46E4860B6BCFC72C2B998DC09758F44CF01543E3B9` |
 | `review/first_audio_matrix_control.py` | `E019A9CB12117300C2DCA24A78E3AE9B2FB1219A1471DB1BE6E358BD463E718F` |
-| `review/test_first_audio_matrix_control.py` | `352DA77236B5609D74DB21AEB6F8E968EAAC7908AF23F68DB226AA1631188CA0` |
+| `review/test_first_audio_matrix_control.py` | `B2EBFCC6E175C8CB6986A980E515C4F1B8F08C424743BAFA950C8D25DED06C2B` |
 | `web/e2e/first-audio-contained-spawn.cjs` | `1C6C2FF88826B738027C8A28BFE9A529EC9A64238EEFBB1BB76DEC3DE981E139` |
 | `web/e2e/first-audio-matrix.spec.ts` | `477602D86F896467769B1B6DA83490337776B4FC619487C42C8003885C24F57A` |
 | `web/playwright.first-audio-matrix.config.ts` | `E1E55EFC515988207C694F246F833A01F835FAB93163ACC8D2FB56A5CDF23D5F` |
