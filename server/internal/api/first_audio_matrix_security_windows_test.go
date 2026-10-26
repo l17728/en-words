@@ -20,7 +20,6 @@ func verifyFirstAudioPrivateDirectory(path string) error {
 	if err != nil || sd == nil {
 		return fmt.Errorf("read run-root security descriptor")
 	}
-	defer windows.LocalFree(windows.Handle(uintptr(unsafe.Pointer(sd))))
 
 	tokenUser, err := windows.GetCurrentProcessToken().GetTokenUser()
 	if err != nil || tokenUser == nil || tokenUser.User.Sid == nil {
@@ -62,7 +61,6 @@ func createFirstAudioPrivateTestDirectory(path string) error {
 	if err != nil {
 		return fmt.Errorf("create private test DACL")
 	}
-	defer windows.LocalFree(windows.Handle(uintptr(unsafe.Pointer(sd))))
 	attributes := &windows.SecurityAttributes{
 		Length:             uint32(unsafe.Sizeof(windows.SecurityAttributes{})),
 		SecurityDescriptor: sd,
