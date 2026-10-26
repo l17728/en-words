@@ -222,9 +222,21 @@ func firstAudioCapabilityFromEnvironment() ([]byte, error) {
 
 func firstAudioSamePath(a, b string) bool {
 	if runtime.GOOS == "windows" {
-		return strings.EqualFold(filepath.Clean(a), filepath.Clean(b))
+		return strings.EqualFold(normalizeFirstAudioWindowsPath(a), normalizeFirstAudioWindowsPath(b))
 	}
 	return filepath.Clean(a) == filepath.Clean(b)
+}
+
+func normalizeFirstAudioWindowsPath(path string) string {
+	clean := filepath.Clean(path)
+	upper := strings.ToUpper(clean)
+	const extendedUNC = `\\?\UNC\`
+	if strings.HasPrefix(upper, extendedUNC) {
+		clean = `\\` + clean[len(extendedUNC):]
+	} else if strings.HasPrefix(upper, `\\?\`) {
+		clean = clean[len(`\\?\`):]
+	}
+	return filepath.Clean(clean)
 }
 
 func (c *firstAudioControl) serve(input io.Reader, output io.Writer) error {
@@ -813,6 +825,21 @@ func TestFirstAudioMatrixEnvironmentGateAndCapability(t *testing.T) {
 	}
 	if _, err := firstAudioCapabilityFromEnvironment(); err == nil {
 		t.Fatal("pre-existing SQLite sidecar accepted")
+	}
+}
+
+func TestFirstAudioMatrixWindowsCanonicalPathComparison(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("Windows extended path prefixes are platform-specific")
+	}
+	if !firstAudioSamePath(`\\?\C:\matrix\run`, `c:\matrix\run`) {
+		t.Fatal("extended drive path did not match its canonical path")
+	}
+	if !firstAudioSamePath(`\\?\UNC\server\share\matrix`, `\\SERVER\SHARE\matrix`) {
+		t.Fatal("extended UNC path did not match its canonical path")
+	}
+	if firstAudioSamePath(`\\?\C:\matrix\other`, `C:\matrix\run`) {
+		t.Fatal("different Windows paths compared equal")
 	}
 }
 
