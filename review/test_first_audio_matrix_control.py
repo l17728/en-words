@@ -67,8 +67,8 @@ class MatrixControlBoundaryTests(unittest.TestCase):
             manifest.write_text("", encoding="ascii")
             script = (
                 "const cp=require('node:child_process'); "
-                "cp.spawn(process.execPath,['-e','setInterval(()=>{},1000)'],"
-                "{detached:true,shell:true,stdio:'ignore'}); process.exit(0);"
+                "const command='\\\"'+process.execPath+'\\\" -e \\\"setInterval(()=>{},1000)\\\"'; "
+                "cp.spawn(command,{detached:true,shell:true,stdio:'ignore'}); process.exit(0);"
             )
             env = {"PATH": os.environ.get("PATH", ""),
                    "NODE_OPTIONS": f'--require "{preload.as_posix()}"',
@@ -107,8 +107,8 @@ class MatrixControlBoundaryTests(unittest.TestCase):
             group_manifest.write_text("", encoding="ascii")
             script = (
                 "const cp=require('node:child_process'); const fs=require('node:fs'); "
-                "const child=cp.spawn(process.execPath,['-e','setInterval(()=>{},1000)'],"
-                "{detached:true,shell:true,stdio:'ignore'}); "
+                "const command='\\\"'+process.execPath+'\\\" -e \\\"setInterval(()=>{},1000)\\\"'; "
+                "const child=cp.spawn(command,{detached:true,shell:true,stdio:'ignore'}); "
                 "fs.writeFileSync(process.argv[1],String(child.pid),{flag:'wx'}); "
                 "setInterval(()=>{},1000);"
             )
