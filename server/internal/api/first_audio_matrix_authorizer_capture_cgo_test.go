@@ -107,7 +107,11 @@ func TestFirstAudioMatrixAuditTriggerUsesExactSQLiteAuthorizerTuples(t *testing.
 	policy.phase.Store(uint32(firstAudioStartupPreflight))
 	seenSelect, seenIDRead, seenTableRead := false, false, false
 	for _, tuple := range capture.snapshot() {
-		if tuple.triggerName != firstAudioAuditNoReplaceTrigger {
+		if tuple.triggerName != "" && tuple.triggerName != firstAudioAuditNoReplaceTrigger {
+			t.Errorf("EXPLAIN requested an unexpected nonempty trigger source: %#v", tuple)
+			continue
+		}
+		if tuple.triggerName == "" {
 			continue
 		}
 		if !policy.authorize(tuple.action, tuple.arg1, tuple.arg2, tuple.databaseName, tuple.triggerName) {
