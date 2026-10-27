@@ -1,1 +1,378 @@
-{"format_version":1,"sha256":"","objects":[]}
+{
+  "format_version": 1,
+  "sha256": "abb8f1d99044e097c58290b82f61d466381fcced381346a1bec64fb32e2e1bcb",
+  "objects": [
+    {
+      "type": "index",
+      "name": "idx_audit_logs_ts",
+      "table": "audit_logs",
+      "sql": "CREATE INDEX `idx_audit_logs_ts` ON `audit_logs`(`ts`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_book_norm",
+      "table": "word_entries",
+      "sql": "CREATE UNIQUE INDEX idx_book_norm ON word_entries(book_id, norm_key)"
+    },
+    {
+      "type": "index",
+      "name": "idx_book_word",
+      "table": "word_entries",
+      "sql": "CREATE UNIQUE INDEX `idx_book_word` ON `word_entries`(`book_id`,`word`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_card_due",
+      "table": "memory_cards",
+      "sql": "CREATE INDEX `idx_card_due` ON `memory_cards`(`next_due_at`,`status`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_card_stu_word",
+      "table": "memory_cards",
+      "sql": "CREATE UNIQUE INDEX `idx_card_stu_word` ON `memory_cards`(`student_id`,`book_id`,`word_id`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_classroom_events_lesson_id",
+      "table": "classroom_events",
+      "sql": "CREATE INDEX `idx_classroom_events_lesson_id` ON `classroom_events`(`lesson_id`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_feedback_notice",
+      "table": "feedback_notices",
+      "sql": "CREATE UNIQUE INDEX `idx_feedback_notice` ON `feedback_notices`(`task_id`,`intent_index`,`recipient`,`kind`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_feedback_submission",
+      "table": "feedback_tasks",
+      "sql": "CREATE UNIQUE INDEX `idx_feedback_submission` ON `feedback_tasks`(`student_id`,`submission_id`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_feedback_tasks_task_id",
+      "table": "feedback_tasks",
+      "sql": "CREATE UNIQUE INDEX `idx_feedback_tasks_task_id` ON `feedback_tasks`(`task_id`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_feedback_todo",
+      "table": "feedback_todos",
+      "sql": "CREATE UNIQUE INDEX `idx_feedback_todo` ON `feedback_todos`(`task_id`,`intent_index`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_feedbacks_status",
+      "table": "feedbacks",
+      "sql": "CREATE INDEX `idx_feedbacks_status` ON `feedbacks`(`status`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_feedbacks_student_id",
+      "table": "feedbacks",
+      "sql": "CREATE INDEX `idx_feedbacks_student_id` ON `feedbacks`(`student_id`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_lessons_book_id",
+      "table": "lessons",
+      "sql": "CREATE INDEX `idx_lessons_book_id` ON `lessons`(`book_id`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_lessons_status",
+      "table": "lessons",
+      "sql": "CREATE INDEX `idx_lessons_status` ON `lessons`(`status`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_lessons_student_id",
+      "table": "lessons",
+      "sql": "CREATE INDEX `idx_lessons_student_id` ON `lessons`(`student_id`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_mem",
+      "table": "agent_memories",
+      "sql": "CREATE INDEX `idx_mem` ON `agent_memories`(`owner_role`,`student_id`,`book_id`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_notifications_user_id",
+      "table": "notifications",
+      "sql": "CREATE INDEX `idx_notifications_user_id` ON `notifications`(`user_id`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_ovr",
+      "table": "config_overrides",
+      "sql": "CREATE UNIQUE INDEX `idx_ovr` ON `config_overrides`(`student_id`,`key`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_users_username",
+      "table": "users",
+      "sql": "CREATE UNIQUE INDEX `idx_users_username` ON `users`(`username`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_word_books_name",
+      "table": "word_books",
+      "sql": "CREATE UNIQUE INDEX `idx_word_books_name` ON `word_books`(`name`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_ws_tickets_ticket",
+      "table": "ws_tickets",
+      "sql": "CREATE UNIQUE INDEX `idx_ws_tickets_ticket` ON `ws_tickets`(`ticket`)"
+    },
+    {
+      "type": "index",
+      "name": "sqlite_autoindex_config_globals_1",
+      "table": "config_globals",
+      "sql": ""
+    },
+    {
+      "type": "index",
+      "name": "sqlite_autoindex_config_revisions_1",
+      "table": "config_revisions",
+      "sql": ""
+    },
+    {
+      "type": "index",
+      "name": "sqlite_autoindex_feedback_intents_1",
+      "table": "feedback_intents",
+      "sql": ""
+    },
+    {
+      "type": "index",
+      "name": "sqlite_autoindex_overdue_tasks_1",
+      "table": "overdue_tasks",
+      "sql": ""
+    },
+    {
+      "type": "index",
+      "name": "sqlite_autoindex_placement_drafts_1",
+      "table": "placement_drafts",
+      "sql": ""
+    },
+    {
+      "type": "index",
+      "name": "sqlite_autoindex_runtime_records_1",
+      "table": "runtime_records",
+      "sql": ""
+    },
+    {
+      "type": "table",
+      "name": "agent_memories",
+      "table": "agent_memories",
+      "sql": "CREATE TABLE `agent_memories` (`id` integer PRIMARY KEY AUTOINCREMENT,`owner_role` text,`student_id` integer,`book_id` integer,`kind` text,`content` text,`importance` integer,`source_lesson_id` integer,`created_at` datetime,`updated_at` datetime)"
+    },
+    {
+      "type": "table",
+      "name": "audit_logs",
+      "table": "audit_logs",
+      "sql": "CREATE TABLE `audit_logs` (`id` integer PRIMARY KEY AUTOINCREMENT,`ts` datetime,`actor_type` text,`actor_id` text,`actor_role` text,`tool` text,`risk` text,`ok` numeric,`result` text,`args` text,`duration_ms` integer,`trace_id` text)"
+    },
+    {
+      "type": "table",
+      "name": "classroom_events",
+      "table": "classroom_events",
+      "sql": "CREATE TABLE `classroom_events` (`id` integer PRIMARY KEY AUTOINCREMENT,`lesson_id` integer,`ts` datetime,`event` text,`payload` text,`trace_id` text)"
+    },
+    {
+      "type": "table",
+      "name": "config_globals",
+      "table": "config_globals",
+      "sql": "CREATE TABLE `config_globals` (`key` text,`value` text,`updated_by` text,`reason` text,`updated_at` datetime,PRIMARY KEY (`key`))"
+    },
+    {
+      "type": "table",
+      "name": "config_overrides",
+      "table": "config_overrides",
+      "sql": "CREATE TABLE `config_overrides` (`id` integer PRIMARY KEY AUTOINCREMENT,`student_id` integer,`key` text,`value` text,`updated_by` text,`reason` text,`updated_at` datetime)"
+    },
+    {
+      "type": "table",
+      "name": "config_revisions",
+      "table": "config_revisions",
+      "sql": "CREATE TABLE `config_revisions` (`student_id` integer,`key` text,`revision` integer,PRIMARY KEY (`student_id`,`key`))"
+    },
+    {
+      "type": "table",
+      "name": "durable_memories",
+      "table": "durable_memories",
+      "sql": "CREATE TABLE `durable_memories` (`id` integer PRIMARY KEY AUTOINCREMENT,`owner_role` text,`student_id` integer,`book_id` integer,`kind` text,`content` text,`importance` integer,`source_lesson_id` integer,`revised_from` integer,`created_at` datetime,`updated_at` datetime)"
+    },
+    {
+      "type": "table",
+      "name": "feedback_intents",
+      "table": "feedback_intents",
+      "sql": "CREATE TABLE `feedback_intents` (`task_id` text,`intent_index` integer,`kind` text,`frozen_json` text,`result_json` text,`status` text,`attempt_count` integer,`completed_at` datetime,PRIMARY KEY (`task_id`,`intent_index`))"
+    },
+    {
+      "type": "table",
+      "name": "feedback_notices",
+      "table": "feedback_notices",
+      "sql": "CREATE TABLE `feedback_notices` (`id` integer PRIMARY KEY AUTOINCREMENT,`task_id` text,`intent_index` integer,`recipient` integer,`kind` text,`title` text,`body` text,`read` numeric,`created_at` datetime,`updated_at` datetime)"
+    },
+    {
+      "type": "table",
+      "name": "feedback_tasks",
+      "table": "feedback_tasks",
+      "sql": "CREATE TABLE `feedback_tasks` (`id` integer PRIMARY KEY AUTOINCREMENT,`student_id` integer,`submission_id` text,`task_id` text,`schema_version` integer,`input_text` text,`input_hash` text,`channel` text,`idempotency` text,`plan_json` text,`legacy_json` text,`error_code` text,`retryable` numeric,`parent_submission_id` text,`conversation_id` text,`clarification_child_task_id` text,`version` integer,`created_at` datetime,`updated_at` datetime)"
+    },
+    {
+      "type": "table",
+      "name": "feedback_todos",
+      "table": "feedback_todos",
+      "sql": "CREATE TABLE `feedback_todos` (`id` integer PRIMARY KEY AUTOINCREMENT,`task_id` text,`intent_index` integer,`student_id` integer,`status` text,`legacy` numeric,`created_at` datetime)"
+    },
+    {
+      "type": "table",
+      "name": "feedbacks",
+      "table": "feedbacks",
+      "sql": "CREATE TABLE `feedbacks` (`id` integer PRIMARY KEY AUTOINCREMENT,`student_id` integer,`channel` text,`text` text,`status` text,`intents` text,`reply` text,`created_at` datetime,`updated_at` datetime)"
+    },
+    {
+      "type": "table",
+      "name": "lessons",
+      "table": "lessons",
+      "sql": "CREATE TABLE `lessons` (`id` integer PRIMARY KEY AUTOINCREMENT,`student_id` integer,`book_id` integer,`seq` integer,`status` text,`open_at` datetime,`started_at` datetime,`finished_at` datetime,`batch_word_ids` text,`phase` text,`group_idx` integer,`word_idx` integer,`repeat_count` integer,`tts_seg_idx` integer,`quiz_state` text,`cumulative_ids` text,`result` text,`state_upd_at` datetime)"
+    },
+    {
+      "type": "table",
+      "name": "memory_cards",
+      "table": "memory_cards",
+      "sql": "CREATE TABLE `memory_cards` (`id` integer PRIMARY KEY AUTOINCREMENT,`student_id` integer,`book_id` integer,`word_id` integer,`status` text,`ladder_step` integer,`consecutive_correct` integer,`wrong_count` integer,`boost_flag` numeric,`boost_sequence` integer,`first_learned_at` datetime,`last_review_at` datetime,`next_due_at` datetime)"
+    },
+    {
+      "type": "table",
+      "name": "notifications",
+      "table": "notifications",
+      "sql": "CREATE TABLE `notifications` (`id` integer PRIMARY KEY AUTOINCREMENT,`user_id` integer,`type` text,`title` text,`body` text,`ref_id` integer,`read` numeric,`created_at` datetime)"
+    },
+    {
+      "type": "table",
+      "name": "overdue_tasks",
+      "table": "overdue_tasks",
+      "sql": "CREATE TABLE `overdue_tasks` (`task_id` text,`lesson_id` integer,`student_id` integer,`book_id` integer,`original_open_at` datetime,`plan_json` text,`plan_history_json` text,`version` integer,`status` text,`new_lesson_id` integer,`created_at` datetime,`planned_at` datetime,`completed_at` datetime,PRIMARY KEY (`task_id`))"
+    },
+    {
+      "type": "table",
+      "name": "placement_drafts",
+      "table": "placement_drafts",
+      "sql": "CREATE TABLE `placement_drafts` (`student_id` integer,`book_id` integer,`known_ids` text,`updated_at` datetime,PRIMARY KEY (`student_id`,`book_id`))"
+    },
+    {
+      "type": "table",
+      "name": "runtime_records",
+      "table": "runtime_records",
+      "sql": "CREATE TABLE `runtime_records` (`key` text,`value` text,PRIMARY KEY (`key`))"
+    },
+    {
+      "type": "table",
+      "name": "sqlite_sequence",
+      "table": "sqlite_sequence",
+      "sql": "CREATE TABLE sqlite_sequence(name,seq)"
+    },
+    {
+      "type": "table",
+      "name": "users",
+      "table": "users",
+      "sql": "CREATE TABLE `users` (`id` integer PRIMARY KEY AUTOINCREMENT,`username` text,`nickname` text,`role` text,`status` text,`salt` text,`hash` text,`created_at` datetime,`updated_at` datetime)"
+    },
+    {
+      "type": "table",
+      "name": "word_books",
+      "table": "word_books",
+      "sql": "CREATE TABLE `word_books` (`id` integer PRIMARY KEY AUTOINCREMENT,`name` text,`grade` text,`description` text,`source` text,`status` text,`created_by` text,`created_at` datetime,`updated_at` datetime)"
+    },
+    {
+      "type": "table",
+      "name": "word_entries",
+      "table": "word_entries",
+      "sql": "CREATE TABLE `word_entries` (`id` integer PRIMARY KEY AUTOINCREMENT,`book_id` integer,`word` text,`norm_key` text,`phonetic` text,`meanings` text,`unit` text,`is_phrase` numeric,`freq_rank` integer)"
+    },
+    {
+      "type": "table",
+      "name": "ws_tickets",
+      "table": "ws_tickets",
+      "sql": "CREATE TABLE `ws_tickets` (`id` integer PRIMARY KEY AUTOINCREMENT,`ticket` text,`lesson_id` integer,`student_id` integer,`expires_at` datetime,`created_at` datetime)"
+    },
+    {
+      "type": "trigger",
+      "name": "fa_config_globals_no_delete",
+      "table": "config_globals",
+      "sql": "CREATE TRIGGER fa_config_globals_no_delete BEFORE DELETE ON config_globals BEGIN SELECT CASE WHEN first_audio_row_guard()=0 THEN RAISE(ABORT,'first_audio_guard') END; END"
+    },
+    {
+      "type": "trigger",
+      "name": "fa_config_globals_no_insert",
+      "table": "config_globals",
+      "sql": "CREATE TRIGGER fa_config_globals_no_insert BEFORE INSERT ON config_globals BEGIN SELECT CASE WHEN first_audio_row_guard()=0 THEN RAISE(ABORT,'first_audio_guard') END; END"
+    },
+    {
+      "type": "trigger",
+      "name": "fa_config_globals_no_update",
+      "table": "config_globals",
+      "sql": "CREATE TRIGGER fa_config_globals_no_update BEFORE UPDATE ON config_globals BEGIN SELECT CASE WHEN first_audio_row_guard()=0 THEN RAISE(ABORT,'first_audio_guard') END; END"
+    },
+    {
+      "type": "trigger",
+      "name": "fa_users_no_delete",
+      "table": "users",
+      "sql": "CREATE TRIGGER fa_users_no_delete BEFORE DELETE ON users BEGIN SELECT CASE WHEN first_audio_row_guard()=0 THEN RAISE(ABORT,'first_audio_guard') END; END"
+    },
+    {
+      "type": "trigger",
+      "name": "fa_users_no_insert",
+      "table": "users",
+      "sql": "CREATE TRIGGER fa_users_no_insert BEFORE INSERT ON users BEGIN SELECT CASE WHEN first_audio_row_guard()=0 THEN RAISE(ABORT,'first_audio_guard') END; END"
+    },
+    {
+      "type": "trigger",
+      "name": "fa_users_no_update",
+      "table": "users",
+      "sql": "CREATE TRIGGER fa_users_no_update BEFORE UPDATE ON users BEGIN SELECT CASE WHEN first_audio_row_guard()=0 THEN RAISE(ABORT,'first_audio_guard') END; END"
+    },
+    {
+      "type": "trigger",
+      "name": "rev_config_globals_DELETE",
+      "table": "config_globals",
+      "sql": "CREATE TRIGGER rev_config_globals_DELETE AFTER DELETE ON config_globals BEGIN INSERT INTO config_revisions(student_id,key,revision) VALUES(0,OLD.key,1) ON CONFLICT(student_id,key) DO UPDATE SET revision=revision+1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "rev_config_globals_INSERT",
+      "table": "config_globals",
+      "sql": "CREATE TRIGGER rev_config_globals_INSERT AFTER INSERT ON config_globals BEGIN INSERT INTO config_revisions(student_id,key,revision) VALUES(0,NEW.key,1) ON CONFLICT(student_id,key) DO UPDATE SET revision=revision+1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "rev_config_globals_UPDATE",
+      "table": "config_globals",
+      "sql": "CREATE TRIGGER rev_config_globals_UPDATE AFTER UPDATE ON config_globals BEGIN INSERT INTO config_revisions(student_id,key,revision) VALUES(0,NEW.key,1) ON CONFLICT(student_id,key) DO UPDATE SET revision=revision+1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "rev_config_overrides_DELETE",
+      "table": "config_overrides",
+      "sql": "CREATE TRIGGER rev_config_overrides_DELETE AFTER DELETE ON config_overrides BEGIN INSERT INTO config_revisions(student_id,key,revision) VALUES(OLD.student_id,OLD.key,1) ON CONFLICT(student_id,key) DO UPDATE SET revision=revision+1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "rev_config_overrides_INSERT",
+      "table": "config_overrides",
+      "sql": "CREATE TRIGGER rev_config_overrides_INSERT AFTER INSERT ON config_overrides BEGIN INSERT INTO config_revisions(student_id,key,revision) VALUES(NEW.student_id,NEW.key,1) ON CONFLICT(student_id,key) DO UPDATE SET revision=revision+1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "rev_config_overrides_UPDATE",
+      "table": "config_overrides",
+      "sql": "CREATE TRIGGER rev_config_overrides_UPDATE AFTER UPDATE ON config_overrides BEGIN INSERT INTO config_revisions(student_id,key,revision) VALUES(NEW.student_id,NEW.key,1) ON CONFLICT(student_id,key) DO UPDATE SET revision=revision+1; END"
+    }
+  ]
+}
