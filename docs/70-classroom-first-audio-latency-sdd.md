@@ -1,4 +1,4 @@
-﻿# Classroom First-Audio Latency Investigation SDD
+# Classroom First-Audio Latency Investigation SDD
 
 ## Status and intent
 
@@ -59,4 +59,3 @@ The current clock-order SUB03 run reached the browser but the test WebSocket bar
 ## 2026-10-26 isolated matrix design status
 
 The reviewed design baseline is `docs/74-first-audio-matrix-isolated-backend-sdd.md`; its initial architecture, backend, and security review is recorded in `review/first-audio-matrix-isolated-backend-review-20261026.md`. Partial test-only setup, SQLite connection-hook, startup, and fixed user/config row-fence checks pass Linux and Windows CGO CI. Windows explicitly enables CGO and installs MinGW GCC; Linux also passes strict formatting, `go vet`, and production-binary symbol checks. Architecture and security review approved the startup-policy slice; see `review/first-audio-matrix-startup-policy-review-20261027.md`. The complete guarded backend is not yet implemented or independently reviewed. The dedicated two-journey Playwright run has not been run. Keep the warm-reset matrix **NOT RUN** until the full backend and its acceptance gates pass. The 30-cold/100-warm workload and human-run classroom pilot remain later, separate acceptance stages.
-

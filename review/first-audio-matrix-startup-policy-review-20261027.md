@@ -1,4 +1,4 @@
-﻿# First-audio startup policy implementation review — 2026-10-27
+# First-audio startup policy implementation review — 2026-10-27
 
 ## Scope and evidence
 

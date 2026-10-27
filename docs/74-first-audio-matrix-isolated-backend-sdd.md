@@ -1,4 +1,4 @@
-﻿# First-Audio Matrix Isolated Backend SDD
+# First-Audio Matrix Isolated Backend SDD
 
 Date: 2026-10-26  
 Status: design reviewed; implementation may proceed behind the test-binary boundary. Matrix execution remains pending implementation acceptance.
@@ -69,4 +69,3 @@ Architecture, backend, and security reviewers must approve this SDD and the impl
 ## 8. Current status
 
 The JSONL controller, test-only entry point, guarded run-root checks, source/build manifests, protocol CI, and parent-driven two-journey Playwright entry point are implemented. CGO-only tests create the synthetic accounts/book/entries/lesson, validate derived login and salted credential storage, assert exact fixture row counts, restore through `NewApp`, verify setup-pool closure, and exercise a custom GORM SQLite driver's `ConnectHook` on three physical connections with DDL/DML denial and phase tightening. An additional test starts `NewApp` on the hooked pool, confirms synthetic account/config reads, and proves matching user/config writes abort in fixed BEFORE triggers without creating a config revision. It also locks SQLite's `SQLITE_READ` tuple for `COUNT(*)` (empty database and column) to manifested tables only. Linux and Windows CGO tests passed in CI run [40438989866](https://github.com/l17728/en-words/actions/runs/40438989866) at commit `5dbd47772b0c96b5171c4a78a12a94c0e112db6f`; Windows explicitly enabled `CGO_ENABLED=1` and installed MinGW GCC. Linux also passed strict `gofmt`, `go vet`, and production-binary symbol checks. Architecture and security review of the startup-policy slice passed after narrowing SQLite authorizer exceptions; see `review/first-audio-matrix-startup-policy-review-20261027.md`. This is startup-policy integration evidence, not full guarded-backend acceptance. The checked-in schema digest/object inventory, complete immutable context/policy, lesson/runtime/audit row guards, full snapshots, reset backend, implementation review, and stale-operation/reset-race acceptance remain incomplete. The warm-reset matrix is **NOT RUN** and performance/readiness claims remain open.
-
