@@ -14,6 +14,8 @@ COMMIT failure and classify the outcome as uncertain.
 
 `commit_cleanup_test.go` locks the clean/unclean cleanup classification,
 including `errors.Is(err, driver.ErrBadConn)` when cleanup cannot be proven.
+The upstream `embed.db` and `embed2.db` fixtures are retained for its existing
+embedded-VFS tests.
 The application regression is
 `server/internal/api/TestDeferredCommitFailureStopsTeacherContinuationAndSnapshot`.
 It verifies the failed write does not leak and a connection-scoped TEMP table
