@@ -109,6 +109,11 @@ export class ClassroomWS {
       this.handlers.onClose?.()
       const code = (error as { code?: number }).code
       if (!current()) { this.close(); return }
+      if ((error as { error_code?: string }).error_code === 'transaction_outcome_uncertain') {
+        this.close()
+        this.handlers.onError?.('课堂状态无法确认，为避免重复操作已停止本课。请返回课程表查看进度。', false)
+        return
+      }
       if (code === 401 || code === 403 || code === 404) {
         this.close()
         this.handlers.onError?.('课堂暂不可进入，请返回课程表确认当前账号和课程。', false)

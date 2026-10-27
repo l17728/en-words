@@ -302,6 +302,10 @@ func (a *App) Router() *gin.Engine {
 		}
 		room, snap, err := a.Rooms.Enter(id, claimsOf(c).UID)
 		if err != nil {
+			if errors.Is(err, errToolOutcomeUncertain) {
+				c.JSON(http.StatusOK, gin.H{"code": errInternal, "msg": "课堂状态无法确认，为避免重复操作已停止本课。请返回课程表查看进度。", "error_code": "transaction_outcome_uncertain", "retryable": false})
+				return
+			}
 			code := errBadRequest
 			if errors.Is(err, errLessonUnavailable) {
 				code = errForbidden

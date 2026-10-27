@@ -17,6 +17,74 @@ import (
 	"gorm.io/gorm"
 )
 
+type fakeToolTxFinalizer struct {
+	commitErr   error
+	rollbackErr error
+	commits     int
+	rollbacks   int
+}
+
+func (f *fakeToolTxFinalizer) Commit() error {
+	f.commits++
+	return f.commitErr
+}
+
+func (f *fakeToolTxFinalizer) Rollback() error {
+	f.rollbacks++
+	return f.rollbackErr
+}
+
+func TestToolTransactionOutcomeRequiresKnownCommitOrRollback(t *testing.T) {
+	callbackErr := errors.New("handler failed")
+	commitErr := errors.New("commit ambiguous")
+	rollbackErr := errors.New("rollback cleanup failed")
+	cases := []struct {
+		name          string
+		callbackErr   error
+		commitErr     error
+		rollbackErr   error
+		want          toolTransactionOutcome
+		wantCommit    int
+		wantRollback  int
+		wantCallback  bool
+		wantFinalizer bool
+	}{
+		{name: "commit", want: toolTransactionCommitted, wantCommit: 1},
+		{name: "rollback confirmed", callbackErr: callbackErr, want: toolTransactionRollbackConfirmed, wantRollback: 1, wantCallback: true},
+		{name: "rollback uncertain", callbackErr: callbackErr, rollbackErr: rollbackErr, want: toolTransactionOutcomeUncertain, wantRollback: 1, wantCallback: true, wantFinalizer: true},
+		{name: "commit uncertain", commitErr: commitErr, want: toolTransactionOutcomeUncertain, wantCommit: 1, wantRollback: 1, wantFinalizer: true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			finalizer := &fakeToolTxFinalizer{commitErr: tc.commitErr, rollbackErr: tc.rollbackErr}
+			outcome, err := classifyToolTransaction(finalizer, tc.callbackErr)
+			require.Equal(t, tc.want, outcome)
+			require.Equal(t, tc.wantCommit, finalizer.commits)
+			require.Equal(t, tc.wantRollback, finalizer.rollbacks)
+			require.Equal(t, tc.wantCallback, errors.Is(err, callbackErr))
+			if tc.wantFinalizer {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestObservedToolTransactionPanicIsUncertainAndDoesNotLeakPayload(t *testing.T) {
+	db, err := store.Open(filepath.Join(t.TempDir(), "panic-outcome.db"))
+	require.NoError(t, err)
+	pool, err := db.DB()
+	require.NoError(t, err)
+	defer pool.Close()
+
+	outcome, txErr := runObservedToolTransaction(db, context.Background(), func(*gorm.DB) error {
+		panic("sensitive panic payload")
+	})
+
+	require.Equal(t, toolTransactionOutcomeUncertain, outcome)
+	require.Error(t, txErr)
+	require.NotContains(t, txErr.Error(), "sensitive panic payload")
+}
+
 var toolTimingKeys = []string{"lock_wait_ms", "transaction_ms", "begin_wait_ms", "config_load_ms", "audit_write_ms", "finalize_ms", "rollback_audit_write_ms"}
 
 func TestToolTransactionTimingIsBoundedAndSeparatesAuditStages(t *testing.T) {
@@ -97,12 +165,14 @@ func TestToolTransactionTimingIsBoundedAndSeparatesAuditStages(t *testing.T) {
 				require.GreaterOrEqual(t, event["audit_write_ms"].(float64), float64(20))
 			}
 			if mode == "rollback" {
-				require.Equal(t, "rolled_back", event["transaction_outcome"])
+				require.Equal(t, "rollback_confirmed", event["transaction_outcome"])
 				require.GreaterOrEqual(t, event["rollback_audit_write_ms"].(float64), float64(20))
 			}
 			if mode == "canceled_before_begin" {
+				require.Equal(t, "outcome_uncertain", event["transaction_outcome"])
 				require.Equal(t, event["transaction_ms"], event["begin_wait_ms"])
 				require.Zero(t, event["finalize_ms"])
+				require.Zero(t, event["rollback_audit_write_ms"])
 			}
 			if mode == "lock_wait" {
 				require.GreaterOrEqual(t, event["lock_wait_ms"].(float64), float64(25))

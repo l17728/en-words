@@ -20,6 +20,8 @@ from first_audio_matrix_control import (
     _read_detached_process_groups,
     _require_matrix_process_containment_platform,
     _read_matrix_timing_evidence,
+    _discard_matrix_browser_output,
+    _finalize_matrix_browser_output,
     _assert_db_absent,
     _child_environment,
     _collect_source_hashes,
@@ -35,6 +37,35 @@ from first_audio_matrix_control import (
 
 
 class MatrixControlBoundaryTests(unittest.TestCase):
+    def test_playwright_output_is_discarded_and_paths_cannot_escape_run_root(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            run_root = base / "run"
+            run_root.mkdir()
+            output = run_root / "journey-1-browser"
+            output.mkdir()
+            (output / "error-context.md").write_text("synthetic caption", encoding="utf-8")
+            with self.assertRaisesRegex(MatrixProtocolError, "cleanup_incomplete"):
+                _finalize_matrix_browser_output(
+                    output, run_root, process_tree_stopped=False, monitor_error=None)
+            self.assertTrue(output.exists(), "do not race a live writer while reaping")
+            monitor_output = run_root / "journey-2-browser"
+            monitor_output.mkdir()
+            (monitor_output / "error-context.md").write_text("synthetic caption", encoding="utf-8")
+            with patch("first_audio_matrix_control._discard_matrix_browser_output",
+                       wraps=_discard_matrix_browser_output) as discard:
+                with self.assertRaisesRegex(MatrixProtocolError, "cleanup_incomplete"):
+                    _finalize_matrix_browser_output(
+                        monitor_output, run_root, process_tree_stopped=True,
+                        monitor_error=RuntimeError("descendant scan failed"))
+                discard.assert_not_called()
+            self.assertTrue(monitor_output.exists(), "monitor failure means detached writers may be unknown")
+            _finalize_matrix_browser_output(output, run_root, process_tree_stopped=True, monitor_error=None)
+            self.assertFalse(output.exists())
+            with self.assertRaisesRegex(MatrixProtocolError, "escaped"):
+                _finalize_matrix_browser_output(
+                    base / "outside", run_root, process_tree_stopped=True, monitor_error=None)
+
     @unittest.skipUnless(sys.platform == "linux", "Linux process table failure contract")
     def test_linux_process_table_failure_is_not_reported_as_empty(self):
         with patch("first_audio_matrix_control.os.scandir", side_effect=PermissionError("denied")):
@@ -233,17 +264,34 @@ class MatrixControlBoundaryTests(unittest.TestCase):
 
     def test_first_audio_timing_evidence_is_minimal_bound_and_under_budget(self):
         sample = {"lesson_id": 41, "generation": 2, "first_frame_ms": 375.5,
-                  "audio_start_ms": 416.0, "websocket_closed": True}
+                  "audio_start_ms": 416.0, "websocket_closed": True,
+                  "interrupted_after_start": True, "delayed_onend_ignored": True,
+                  "playback_start_count_after_cancel": 1, "cancel_count_before_interruption": 1,
+                  "cancel_count_after_interruption": 2, "terminal_error_rendered": True,
+                  "retry_control_hidden": True}
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "sample.json"
             path.write_text(json.dumps(sample), encoding="utf-8")
             self.assertEqual(sample, _read_matrix_timing_evidence(path, 41, 2))
+            duplicate_key = json.dumps(sample).replace('"generation": 2,', '"generation": 2, "generation": 2,', 1)
+            path.write_text(duplicate_key, encoding="utf-8")
+            with self.assertRaises(MatrixProtocolError):
+                _read_matrix_timing_evidence(path, 41, 2)
             for invalid in (
                 {**sample, "lesson_id": 42},
+                {**sample, "lesson_id": True},
+                {**sample, "generation": True},
                 {**sample, "audio_start_ms": 10_000},
                 {**sample, "audio_start_ms": 200},
                 {**sample, "first_frame_ms": True},
                 {**sample, "websocket_closed": False},
+                {**sample, "delayed_onend_ignored": False},
+                {**sample, "terminal_error_rendered": False},
+                {**sample, "retry_control_hidden": False},
+                {**sample, "playback_start_count_after_cancel": 2},
+                {**sample, "playback_start_count_after_cancel": True},
+                {**sample, "cancel_count_after_interruption": 1},
+                {**sample, "cancel_count_before_interruption": -1},
                 {**sample, "transcript": "fixture answer"},
             ):
                 path.write_text(json.dumps(invalid), encoding="utf-8")

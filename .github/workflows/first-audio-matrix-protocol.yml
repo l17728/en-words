@@ -73,11 +73,26 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - name: Install browser-runner dependencies
         run: npm ci --prefix web --no-audit --no-fund
+      - name: Build and typecheck the web application
+        working-directory: web
+        run: npm run build
+      - name: Discover the isolated Playwright journey
+        working-directory: web
+        env:
+          FIRST_AUDIO_MATRIX_API_ORIGIN: http://127.0.0.1:18080
+          FIRST_AUDIO_MATRIX_WEB_PORT: "18081"
+          FIRST_AUDIO_MATRIX_OUTPUT_DIR: ${{ runner.temp }}/first-audio-matrix/list-output
+          FIRST_AUDIO_MATRIX_REPORT: ${{ runner.temp }}/first-audio-matrix/list-report.json
+          FIRST_AUDIO_MATRIX_EVIDENCE: ${{ runner.temp }}/first-audio-matrix/list-evidence.json
+        run: npx playwright test --list --config=playwright.first-audio-matrix.config.ts
       - name: Test parent process boundary helpers
         run: python3 -m unittest discover -s review -p test_first_audio_matrix_control.py -v
       - name: Test JSONL parser, lifecycle, replay, and terminal cleanup
         working-directory: server
         run: go test ./internal/api -run '^TestFirstAudio(Matrix|Guard(Context|Probe|Controller|Publisher))' -count=1 -timeout=5m
+      - name: Test classroom tool transaction outcome handling
+        working-directory: server
+        run: go test ./internal/api -run '^(TestToolTransaction|TestObservedToolTransaction|TestUncertainToolTransaction|TestRetiredRoomRejectsPublicProgressionEntrypoints|TestDeferredCommitFailureStopsTeacherContinuationAndSnapshot)' -count=1 -timeout=5m
       - name: Race-test immutable guard context publication
         working-directory: server
         run: go test -race ./internal/api -run '^TestFirstAudioGuard(Context|Probe|Controller|Publisher)' -count=1 -timeout=5m
@@ -134,6 +149,18 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - name: Install browser-runner dependencies
         run: npm ci --prefix web --no-audit --no-fund
+      - name: Build and typecheck the web application
+        working-directory: web
+        run: npm.cmd run build
+      - name: Discover the isolated Playwright journey
+        working-directory: web
+        env:
+          FIRST_AUDIO_MATRIX_API_ORIGIN: http://127.0.0.1:18080
+          FIRST_AUDIO_MATRIX_WEB_PORT: "18081"
+          FIRST_AUDIO_MATRIX_OUTPUT_DIR: ${{ runner.temp }}/first-audio-matrix/list-output
+          FIRST_AUDIO_MATRIX_REPORT: ${{ runner.temp }}/first-audio-matrix/list-report.json
+          FIRST_AUDIO_MATRIX_EVIDENCE: ${{ runner.temp }}/first-audio-matrix/list-evidence.json
+        run: npm.cmd exec -- playwright test --list --config=playwright.first-audio-matrix.config.ts
       - name: Test Windows private DACL and process-tree boundaries
         run: python -m unittest discover -s review -p test_first_audio_matrix_control.py -v
       - name: Confirm CGO compiler is active
@@ -143,3 +170,6 @@ jobs:
       - name: Test Go harness path and lifecycle boundaries
         working-directory: server
         run: go test ./internal/api -run '^TestFirstAudio(Matrix|Guard(Context|Probe|Controller|Publisher))' -count=1 -timeout=10m
+      - name: Test classroom tool transaction outcome handling
+        working-directory: server
+        run: go test ./internal/api -run '^(TestToolTransaction|TestObservedToolTransaction|TestUncertainToolTransaction|TestRetiredRoomRejectsPublicProgressionEntrypoints|TestDeferredCommitFailureStopsTeacherContinuationAndSnapshot)' -count=1 -timeout=10m

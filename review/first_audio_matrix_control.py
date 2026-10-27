@@ -15,6 +15,7 @@ import json
 import os
 import re
 import signal
+import shutil
 import socket
 import subprocess
 import sys
@@ -163,6 +164,36 @@ def _create_private_directory(path: Path) -> None:
             kernel.LocalFree(descriptor)
     finally:
         kernel.CloseHandle(token)
+
+
+def _discard_matrix_browser_output(path: Path, run_root: Path, *, process_tree_stopped: bool) -> None:
+    if process_tree_stopped is not True:
+        raise MatrixProtocolError(
+            "cleanup_incomplete; private browser output retained; do not archive"
+        )
+    root = run_root.resolve(strict=True)
+    if path.is_symlink():
+        path.unlink()
+        raise MatrixProtocolError("Playwright output directory became a symbolic link")
+    resolved = path.resolve(strict=False)
+    if resolved.parent != root or resolved.name != path.name:
+        raise MatrixProtocolError("Playwright output directory escaped its private run root")
+    if path.exists():
+        shutil.rmtree(resolved)
+
+
+def _require_matrix_monitor_healthy(monitor_error: BaseException | None) -> None:
+    if monitor_error is not None:
+        raise MatrixProtocolError(
+            "cleanup_incomplete; private browser output retained; do not archive"
+        ) from monitor_error
+
+
+def _finalize_matrix_browser_output(path: Path, run_root: Path, *,
+                                    process_tree_stopped: bool,
+                                    monitor_error: BaseException | None) -> None:
+    _require_matrix_monitor_healthy(monitor_error)
+    _discard_matrix_browser_output(path, run_root, process_tree_stopped=process_tree_stopped)
 
 
 def _assert_db_absent(db_path: Path) -> None:
@@ -747,25 +778,30 @@ async def _run_matrix_browser_journey(node_binary: Path, repository_root: Path,
         stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
     except BaseException as exc:
         monitor_error: BaseException | None = None
-        if process is not None:
-            if os.name != "nt" and process.returncode is None:
-                await _request_posix_group_stop(process, grace_seconds=0.5)
-            if monitor is not None:
-                monitor.cancel()
-                monitor_result = await asyncio.gather(monitor, return_exceptions=True)
-                if monitor_result and isinstance(monitor_result[0], BaseException) and not isinstance(monitor_result[0], asyncio.CancelledError):
-                    monitor_error = monitor_result[0]
-                try:
-                    descendant_groups.update(_new_live_detached_groups(
-                        detached_groups_file, seen_detached_groups))
-                    descendant_groups.update(_linux_descendant_groups(process.pid))
-                except BaseException as scan_error:
-                    monitor_error = monitor_error or scan_error
-            await _kill_process_tree(process, job, descendant_groups)
-        elif job is not None:
-            job.close()
-        if monitor_error is not None:
-            raise MatrixProtocolError("Linux descendant process monitor failed; known groups were reaped") from monitor_error
+        try:
+            if process is not None:
+                if os.name != "nt" and process.returncode is None:
+                    await _request_posix_group_stop(process, grace_seconds=0.5)
+                if monitor is not None:
+                    monitor.cancel()
+                    monitor_result = await asyncio.gather(monitor, return_exceptions=True)
+                    if monitor_result and isinstance(monitor_result[0], BaseException) and not isinstance(monitor_result[0], asyncio.CancelledError):
+                        monitor_error = monitor_result[0]
+                    try:
+                        descendant_groups.update(_new_live_detached_groups(
+                            detached_groups_file, seen_detached_groups))
+                        descendant_groups.update(_linux_descendant_groups(process.pid))
+                    except BaseException as scan_error:
+                        monitor_error = monitor_error or scan_error
+                await _kill_process_tree(process, job, descendant_groups)
+            elif job is not None:
+                job.close()
+        except BaseException as cleanup_error:
+            raise MatrixProtocolError(
+                "cleanup_incomplete; private browser output retained; do not archive"
+            ) from cleanup_error
+        _finalize_matrix_browser_output(output_dir, run_root,
+                                        process_tree_stopped=True, monitor_error=monitor_error)
         if isinstance(exc, asyncio.TimeoutError):
             raise MatrixProtocolError("Playwright journey deadline") from exc
         raise
@@ -781,18 +817,29 @@ async def _run_matrix_browser_journey(node_binary: Path, repository_root: Path,
         except BaseException as scan_error:
             monitor_error = monitor_error or scan_error
         if monitor_error is not None:
-            await _kill_process_tree(process, None, descendant_groups)
-            raise MatrixProtocolError("Linux descendant process monitor failed; known groups were reaped") from monitor_error
+            try:
+                await _kill_process_tree(process, None, descendant_groups)
+            except BaseException as cleanup_error:
+                raise MatrixProtocolError(
+                    "cleanup_incomplete; private browser output retained; do not archive"
+                ) from cleanup_error
+            _finalize_matrix_browser_output(output_dir, run_root,
+                                            process_tree_stopped=True, monitor_error=monitor_error)
     if job is not None:
         had_descendants = job.active_processes() > 0
         empty = await job.wait_empty(5.0)
         if not empty:
             job.terminate()
-            await job.wait_empty(5.0)
-        job.close()
+            empty = await job.wait_empty(5.0)
         if not empty:
-            raise MatrixProtocolError("Playwright process tree did not exit")
+            job.close()
+            raise MatrixProtocolError(
+                "cleanup_incomplete; private browser output retained; do not archive"
+            )
+        job.close()
         if had_descendants:
+            _finalize_matrix_browser_output(output_dir, run_root,
+                                            process_tree_stopped=True, monitor_error=None)
             raise MatrixProtocolError("Playwright exited with child processes still alive")
     else:
         # A successful Node exit is insufficient if Chromium/Vite process
@@ -800,8 +847,17 @@ async def _run_matrix_browser_journey(node_binary: Path, repository_root: Path,
         # Node controller is alive, then verified after its normal shutdown.
         remaining_groups = {group for group in descendant_groups if _linux_process_group_exists(group)}
         if remaining_groups:
-            await _kill_process_tree(process, None, remaining_groups)
+            try:
+                await _kill_process_tree(process, None, remaining_groups)
+            except BaseException as cleanup_error:
+                raise MatrixProtocolError(
+                    "cleanup_incomplete; private browser output retained; do not archive"
+                ) from cleanup_error
+            _finalize_matrix_browser_output(output_dir, run_root,
+                                            process_tree_stopped=True, monitor_error=None)
             raise MatrixProtocolError("Playwright exited with child process groups still alive")
+    _finalize_matrix_browser_output(output_dir, run_root,
+                                    process_tree_stopped=True, monitor_error=None)
     # Do not persist raw command output; it may include browser diagnostics.
     del stdout, stderr
     if process.returncode != 0 or not report.is_file() or not evidence.is_file():
@@ -817,6 +873,11 @@ async def _run_matrix_browser_journey(node_binary: Path, repository_root: Path,
     sample = _read_matrix_timing_evidence(evidence, lesson_id, generation)
     return {"journey": journey_number, "lesson_id": lesson_id, "generation": generation,
             "first_frame_ms": sample["first_frame_ms"], "audio_start_ms": sample["audio_start_ms"],
+            "interrupted_after_start": sample["interrupted_after_start"],
+            "delayed_onend_ignored": sample["delayed_onend_ignored"],
+            "playback_start_count_after_cancel": sample["playback_start_count_after_cancel"],
+            "terminal_error_rendered": sample["terminal_error_rendered"],
+            "retry_control_hidden": sample["retry_control_hidden"],
             "websocket_closed": True, "expected": 1, "unexpected": 0, "flaky": 0, "skipped": 0}
 
 
@@ -837,14 +898,34 @@ def valid_first_audio_origin_for_runner(origin: str) -> bool:
             and not parsed.path and not parsed.query and not parsed.fragment)
 
 
-def _read_matrix_timing_evidence(path: Path, lesson_id: int, generation: int) -> dict[str, int | float]:
+def _read_matrix_timing_evidence(path: Path, lesson_id: int, generation: int) -> dict[str, int | float | bool]:
     try:
-        sample = json.loads(path.read_text(encoding="utf-8"))
+        sample = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_pairs_no_duplicates)
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise MatrixProtocolError("first-audio evidence is invalid") from exc
-    if (not isinstance(sample, dict) or set(sample) != {"lesson_id", "generation", "first_frame_ms", "audio_start_ms", "websocket_closed"}
-            or sample["lesson_id"] != lesson_id or sample["generation"] != generation
+    if (not isinstance(sample, dict) or set(sample) != {"lesson_id", "generation", "first_frame_ms", "audio_start_ms",
+                                                        "websocket_closed", "interrupted_after_start",
+                                                        "delayed_onend_ignored", "playback_start_count_after_cancel",
+                                                        "cancel_count_before_interruption", "cancel_count_after_interruption",
+                                                        "terminal_error_rendered", "retry_control_hidden"}
+            or isinstance(sample["lesson_id"], bool) or not isinstance(sample["lesson_id"], int)
+            or sample["lesson_id"] != lesson_id
+            or isinstance(sample["generation"], bool) or not isinstance(sample["generation"], int)
+            or sample["generation"] != generation
             or sample["websocket_closed"] is not True
+            or sample["interrupted_after_start"] is not True
+            or sample["delayed_onend_ignored"] is not True
+            or sample["terminal_error_rendered"] is not True
+            or sample["retry_control_hidden"] is not True
+            or isinstance(sample["playback_start_count_after_cancel"], bool)
+            or not isinstance(sample["playback_start_count_after_cancel"], int)
+            or sample["playback_start_count_after_cancel"] != 1
+            or isinstance(sample["cancel_count_before_interruption"], bool)
+            or not isinstance(sample["cancel_count_before_interruption"], int)
+            or sample["cancel_count_before_interruption"] < 0
+            or isinstance(sample["cancel_count_after_interruption"], bool)
+            or not isinstance(sample["cancel_count_after_interruption"], int)
+            or sample["cancel_count_after_interruption"] <= sample["cancel_count_before_interruption"]
             or isinstance(sample["first_frame_ms"], bool) or not isinstance(sample["first_frame_ms"], (int, float))
             or isinstance(sample["audio_start_ms"], bool) or not isinstance(sample["audio_start_ms"], (int, float))
             or not 0 <= sample["first_frame_ms"] < 10_000

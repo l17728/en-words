@@ -363,6 +363,11 @@ export default function ClassroomPage() {
       }
       if (f.type === 'classroom_error') {
         cancelTts(); stopListening()
+        const terminal = f.retryable === false || f.code === 'transaction_outcome_uncertain'
+        if (terminal) {
+          setConnectionError({ message: '课堂状态无法确认，为避免重复操作已停止本课。请返回课程表查看进度。', retryable: false })
+          return
+        }
         setConnectionError({ message: '课堂动作暂未完成，请重新连接继续当前进度。', retryable: true })
         return
       }
@@ -753,7 +758,7 @@ export default function ClassroomPage() {
       {snapshot?.paused && <Alert type="info" title="课堂已暂停" description={resumeError || '休息好了就继续当前学习进度。'}
         action={<Button loading={resuming} disabled={resuming} onClick={() => void resumeClassroom()}>继续课堂</Button>} />}
       {connectionError && <Alert type="error" title={connectionError.message} action={<>
-        <Button onClick={() => window.location.reload()}>重新连接课堂</Button>
+        <Button style={{ display: connectionError.retryable ? undefined : 'none' }} onClick={() => window.location.reload()}>重新连接课堂</Button>
         <Button onClick={() => nav('/dashboard')}>返回课程表</Button>
       </>} />}
       {localStage !== 'idle' && <div role="status">{localStage === 'preparing' ? '正在准备麦克风' : localStage === 'recording' ? '正在录音' : '正在识别，请稍候'}</div>}

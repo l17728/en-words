@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -21,6 +22,76 @@ type committedToolError struct{ cause error }
 
 func (e *committedToolError) Error() string { return "tool committed; configuration refresh pending" }
 func (e *committedToolError) Unwrap() error { return e.cause }
+
+type uncertainToolTransactionError struct{ cause error }
+
+func (e *uncertainToolTransactionError) Error() string { return "tool transaction outcome uncertain" }
+func (e *uncertainToolTransactionError) Unwrap() error { return e.cause }
+
+type toolTransactionOutcome string
+
+const (
+	toolTransactionCommitted         toolTransactionOutcome = "committed"
+	toolTransactionRollbackConfirmed toolTransactionOutcome = "rollback_confirmed"
+	toolTransactionOutcomeUncertain  toolTransactionOutcome = "outcome_uncertain"
+)
+
+type toolTxFinalizer interface {
+	Commit() error
+	Rollback() error
+}
+
+type gormToolTxFinalizer struct{ tx *gorm.DB }
+
+func (f gormToolTxFinalizer) Commit() error   { return f.tx.Commit().Error }
+func (f gormToolTxFinalizer) Rollback() error { return f.tx.Rollback().Error }
+
+func rollbackAfterToolPanic(tx *gorm.DB) (err error) {
+	defer func() {
+		if recover() != nil {
+			err = errors.New("rollback panicked")
+		}
+	}()
+	return tx.Rollback().Error
+}
+
+func classifyToolTransaction(tx toolTxFinalizer, callbackErr error) (toolTransactionOutcome, error) {
+	if callbackErr != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return toolTransactionOutcomeUncertain, errors.Join(callbackErr, fmt.Errorf("rollback: %w", rollbackErr))
+		}
+		return toolTransactionRollbackConfirmed, callbackErr
+	}
+	if commitErr := tx.Commit(); commitErr != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return toolTransactionOutcomeUncertain, errors.Join(fmt.Errorf("commit: %w", commitErr), fmt.Errorf("rollback cleanup: %w", rollbackErr))
+		}
+		return toolTransactionOutcomeUncertain, fmt.Errorf("commit: %w", commitErr)
+	}
+	return toolTransactionCommitted, nil
+}
+
+func runObservedToolTransaction(db *gorm.DB, ctx context.Context, callback func(*gorm.DB) error) (outcome toolTransactionOutcome, resultErr error) {
+	tx := db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return toolTransactionOutcomeUncertain, fmt.Errorf("begin: %w", tx.Error)
+	}
+	defer func() {
+		if recover() != nil {
+			// Do not expose panic payloads or attempt any follow-up write. A panic
+			// makes the transaction outcome uncertain even if rollback succeeds.
+			rollbackErr := rollbackAfterToolPanic(tx)
+			outcome = toolTransactionOutcomeUncertain
+			if rollbackErr != nil {
+				resultErr = errors.New("transaction callback panicked; rollback cleanup failed")
+			} else {
+				resultErr = errors.New("transaction callback panicked; outcome uncertain")
+			}
+		}
+	}()
+	callbackErr := callback(tx)
+	return classifyToolTransaction(gormToolTxFinalizer{tx: tx}, callbackErr)
+}
 
 // callAgentTool gives each persistent mutation and its audit one unit of work.
 // A future multi-action executor must bind the same definitions to its outer tx.
@@ -55,7 +126,8 @@ func (a *App) callAgentTool(ctx context.Context, name string, args any) (any, er
 	var result any
 	transactionStarted := time.Now()
 	var callbackFinished time.Time
-	err = a.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	var outcome toolTransactionOutcome
+	outcome, err = runObservedToolTransaction(a.DB, ctx, func(tx *gorm.DB) error {
 		timings["begin_wait_ms"] = time.Since(transactionStarted).Milliseconds()
 		defer func() { callbackFinished = time.Now() }()
 		configStarted := time.Now()
@@ -88,9 +160,7 @@ func (a *App) callAgentTool(ctx context.Context, name string, args any) (any, er
 		timings["finalize_ms"] = transactionFinished.Sub(callbackFinished).Milliseconds()
 	}
 	entries := buffer.Snapshot()
-	outcome := "committed"
-	if err != nil {
-		outcome = "rolled_back"
+	if outcome == toolTransactionRollbackConfirmed {
 		for i := range entries {
 			entries[i].OK = false
 			entries[i].Result = "rolled_back_" + entries[i].Result
@@ -103,10 +173,14 @@ func (a *App) callAgentTool(ctx context.Context, name string, args any) (any, er
 		}
 		timings["rollback_audit_write_ms"] = time.Since(rollbackAuditStarted).Milliseconds()
 	}
+	if outcome == toolTransactionOutcomeUncertain {
+		logCall(string(outcome), false)
+		return nil, &uncertainToolTransactionError{cause: err}
+	}
 	for _, entry := range entries {
 		a.ToolAudit.ToolCalled(entry)
 	}
-	logCall(outcome, err == nil)
+	logCall(string(outcome), err == nil)
 	if err != nil {
 		return nil, err
 	}

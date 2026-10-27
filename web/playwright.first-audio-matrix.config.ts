@@ -43,10 +43,10 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:${webPort}`,
     headless: true,
     trace: 'off',
-    screenshot: 'only-on-failure',
+    screenshot: 'off',
   },
   outputDir: resolve(outputDir),
-  reporter: [['list'], ['json', { outputFile: resolve(reportPath) }]],
+  reporter: [['list'], [resolve('e2e/first-audio-matrix-reporter.ts'), { outputFile: resolve(reportPath) }]],
   webServer: [{
     command: 'npm run e2e:serve',
     env: webServerEnv,

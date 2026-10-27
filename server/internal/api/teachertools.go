@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -74,6 +75,9 @@ func (r *Room) teacherInputLocked(event string, wordID int64) agent.TeacherInput
 }
 
 func (r *Room) teacherUtteranceLocked(ctx context.Context, in agent.TeacherInput) []Msg {
+	if r.retired {
+		return nil
+	}
 	taskID := ""
 	if task, err := taskFromContext(ctx, tools.Caller{Role: tools.RoleTeacherAgent}); err == nil {
 		taskID = task.taskID
@@ -86,6 +90,10 @@ func (r *Room) teacherUtteranceLocked(ctx context.Context, in agent.TeacherInput
 	text := r.app.Teacher.Render(in, u)
 	result, err := r.app.callAgentTool(ctx, "classroom.say", map[string]any{"text": text, "category": u.Category})
 	if err != nil {
+		var uncertain *uncertainToolTransactionError
+		if errors.As(err, &uncertain) {
+			return r.uncertainToolTransactionLocked("classroom.say")
+		}
 		r.app.Log.ErrorCtx(ctx, "agent", "agent_action_failed", map[string]any{"lesson_id": r.lessonID, "tool": "classroom.say", "error": err.Error()})
 		return nil
 	}
@@ -105,12 +113,18 @@ func (r *Room) teacherUtteranceLocked(ctx context.Context, in agent.TeacherInput
 }
 
 func (r *Room) teacherTaskLocked() (context.Context, error) {
+	if r.retired {
+		return nil, errToolOutcomeUncertain
+	}
 	// Room turn is the causal trace; each group receives one shared call budget.
 	ctx := r.traceContext()
 	return r.app.newAgentTaskContext(ctx, r.studentID, r.bookID, r.lessonID, "classroom_event", tools.RoleTeacherAgent)
 }
 
 func (r *Room) teacherLifecycleLocked(event string) []Msg {
+	if r.retired {
+		return nil
+	}
 	ctx, err := r.teacherTaskLocked()
 	if err != nil {
 		r.app.Log.Error("agent", "agent_action_failed", map[string]any{"lesson_id": r.lessonID, "error": err.Error()})
