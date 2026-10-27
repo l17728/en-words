@@ -78,7 +78,7 @@ func TestFirstAudioMatrixDriverInstallsPolicyOnEveryPhysicalConnection(t *testin
 	name := fmt.Sprintf("first_audio_matrix_probe_%d", firstAudioProbeDriverSequence.Add(1))
 	policy := &firstAudioProbePolicy{}
 	policy.phase.Store(uint32(firstAudioProbeDriver))
-	if err := registerFirstAudioProbeDriver(name, policy); err != nil {
+	if err := registerFirstAudioProbeDriver(name, policy.install); err != nil {
 		t.Fatal("guarded driver registration failed", err)
 	}
 	db, err := gorm.Open(gormsqlite.Dialector{DriverName: name, DSN: path}, &gorm.Config{DisableAutomaticPing: true})
@@ -135,10 +135,11 @@ func TestFirstAudioMatrixDriverInstallsPolicyOnEveryPhysicalConnection(t *testin
 	}
 }
 
-func registerFirstAudioProbeDriver(name string, policy *firstAudioProbePolicy) error {
-	if name == "" || policy == nil {
+
+func registerFirstAudioProbeDriver(name string, hook func(*sqlite3.SQLiteConn) error) error {
+	if name == "" || hook == nil {
 		return fmt.Errorf("driver name and policy are required")
 	}
-	sql.Register(name, &sqlite3.SQLiteDriver{ConnectHook: policy.install})
+	sql.Register(name, &sqlite3.SQLiteDriver{ConnectHook: hook})
 	return nil
 }
