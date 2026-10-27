@@ -122,9 +122,6 @@ func (p *firstAudioStartupPolicy) authorize(action int, arg1, arg2, databaseName
 		if fn == "sqlite_version" {
 			return phase == firstAudioStartupDriverProbe && triggerName == ""
 		}
-		if fn == "substr" {
-			return phase == firstAudioStartupApp && arg1 == "" && triggerName == ""
-		}
 		if fn == "count" || fn == "coalesce" || fn == "max" {
 			return (phase == firstAudioStartupApp || phase == firstAudioStartupPreflight) && arg1 == "" && triggerName == ""
 		}
@@ -189,28 +186,6 @@ func TestFirstAudioMatrixStartupManifestAllowsOnlySQLiteCountWithoutDatabaseName
 	}
 }
 
-func TestFirstAudioMatrixSubstrFunctionIsStartupOnly(t *testing.T) {
-	policy := newFirstAudioStartupPolicy()
-	policy.phase.Store(uint32(firstAudioStartupApp))
-	if !policy.authorize(sqlite3.SQLITE_FUNCTION, "", "substr", "", "") {
-		t.Fatal("NewApp schema probe substr function was denied")
-	}
-	for _, tuple := range []struct {
-		arg1, arg2, database, trigger string
-		phase                         firstAudioStartupPhase
-	}{
-		{arg1: "", arg2: "substr", phase: firstAudioStartupPreflight},
-		{arg1: "", arg2: "substr", trigger: "unapproved_trigger", phase: firstAudioStartupApp},
-		{arg1: "unexpected", arg2: "substr", phase: firstAudioStartupApp},
-		{arg1: "", arg2: "unknown_function", phase: firstAudioStartupApp},
-	} {
-		policy.phase.Store(uint32(tuple.phase))
-		if policy.authorize(sqlite3.SQLITE_FUNCTION, tuple.arg1, tuple.arg2, tuple.database, tuple.trigger) {
-			t.Fatalf("unapproved function tuple was allowed: %#v", tuple)
-		}
-	}
-}
-
 func TestFirstAudioMatrixStartupPolicyScopesSQLAndReservationExceptions(t *testing.T) {
 	policy := newFirstAudioStartupPolicy()
 	if policy.authorize(sqlite3.SQLITE_FUNCTION, "", "count", "", "") {
@@ -242,9 +217,6 @@ func TestFirstAudioMatrixStartupPolicyScopesSQLAndReservationExceptions(t *testi
 	if !policy.authorize(sqlite3.SQLITE_FUNCTION, "", "count", "", "") ||
 		!policy.authorize(sqlite3.SQLITE_UPDATE, "config_globals", "key", "main", "") {
 		t.Fatal("application-phase reservation tuples were denied after startup")
-	}
-	if policy.authorize(sqlite3.SQLITE_FUNCTION, "", "substr", "", "") {
-		t.Fatal("startup-only substr remained allowed in preflight")
 	}
 }
 
