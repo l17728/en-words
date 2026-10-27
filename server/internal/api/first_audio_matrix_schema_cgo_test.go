@@ -1,4 +1,4 @@
-﻿//go:build cgo
+//go:build cgo
 
 package api
 
@@ -84,4 +84,3 @@ func TestFirstAudioMatrixSchemaObjectManifest(t *testing.T) {
 		t.Fatalf("SQLite schema drift: expected sha256=%s (%d objects), actual sha256=%s (%d objects)\nexpected:\n%s\nactual:\n%s", expected.SHA256, len(expected.Objects), actual.SHA256, len(actual.Objects), expectedJSON, actualJSON)
 	}
 }
-
