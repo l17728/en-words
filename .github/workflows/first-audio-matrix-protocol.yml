@@ -50,6 +50,8 @@ jobs:
   protocol:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
+    env:
+      CGO_ENABLED: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -72,6 +74,10 @@ jobs:
       - name: Test JSONL parser, lifecycle, replay, and terminal cleanup
         working-directory: server
         run: go test ./internal/api -run '^TestFirstAudioMatrix' -count=1 -timeout=5m
+      - name: Confirm Linux CGO compiler is active
+        run: |
+          test "$(go env CGO_ENABLED)" = "1"
+          gcc --version
       - name: Check Go formatting and API package vet
         working-directory: server
         run: |
