@@ -23,8 +23,8 @@ type firstAudioSQLiteObject struct {
 }
 
 type firstAudioSchemaManifest struct {
-	FormatVersion int                     `json:"format_version"`
-	SHA256        string                  `json:"sha256"`
+	FormatVersion int                      `json:"format_version"`
+	SHA256        string                   `json:"sha256"`
 	Objects       []firstAudioSQLiteObject `json:"objects"`
 }
 
