@@ -695,7 +695,7 @@ func TestFirstAudioGuardPreflightPublishWaitsForProbeActivityAndTimesOutTerminal
 				t.Fatalf("receipt %d remained open after drain timeout", i)
 			}
 		}
-		if receipts[0].Consume([]byte("late"), bindings[0]) == nil {
+		if (&firstAudioGuardProbeChallenge{binding: bindings[0], digest: receipts[0].digest, receipt: receipts[0]}).Consume([]byte("late"), bindings[0]) == nil {
 			t.Fatal("callback accepted after probe admission closed")
 		}
 	})
