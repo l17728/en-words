@@ -28,6 +28,8 @@ type firstAudioProbePolicy struct {
 	denials atomic.Uint64
 }
 
+var firstAudioProbeDriverSequence atomic.Uint64
+
 func (p *firstAudioProbePolicy) install(conn *sqlite3.SQLiteConn) error {
 	p.hooks.Add(1)
 	conn.RegisterAuthorizerWithTriggerName(func(action int, arg1, arg2, databaseName, triggerName string) int {
@@ -73,8 +75,7 @@ func TestFirstAudioMatrixDriverInstallsPolicyOnEveryPhysicalConnection(t *testin
 		t.Fatal("unprotected test setup close failed", err)
 	}
 
-	var names atomic.Uint64
-	name := fmt.Sprintf("first_audio_matrix_probe_%d", names.Add(1))
+	name := fmt.Sprintf("first_audio_matrix_probe_%d", firstAudioProbeDriverSequence.Add(1))
 	policy := &firstAudioProbePolicy{}
 	policy.phase.Store(uint32(firstAudioProbeDriver))
 	if err := registerFirstAudioProbeDriver(name, policy); err != nil {
