@@ -220,7 +220,7 @@ func TestFirstAudioMatrixAuditNoReplaceAuthorizerExceptionIsExact(t *testing.T) 
 		t.Fatal("audit collision trigger RAISE was denied")
 	}
 	for _, tuple := range []struct {
-		action                               int
+		action                           int
 		table, column, database, trigger string
 	}{
 		{sqlite3.SQLITE_SELECT, "", "", "", "unapproved_trigger"},
