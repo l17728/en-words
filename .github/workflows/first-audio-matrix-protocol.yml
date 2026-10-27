@@ -72,6 +72,15 @@ jobs:
       - name: Test JSONL parser, lifecycle, replay, and terminal cleanup
         working-directory: server
         run: go test ./internal/api -run '^TestFirstAudioMatrix' -count=1 -timeout=5m
+      - name: Check Go formatting and API package vet
+        working-directory: server
+        run: |
+          unformatted=$(gofmt -l internal/api/first_audio_matrix_*_test.go)
+          if [ -n "$unformatted" ]; then
+            printf 'gofmt required for:\n%s\n' "$unformatted" >&2
+            exit 1
+          fi
+          go vet ./internal/api
       - name: Verify test-only harness is absent from production binary
         working-directory: server
         run: |
