@@ -154,7 +154,7 @@ func runFirstAudioSnapshotUpsert(db *gorm.DB, observation *firstAudioUpsertObser
 	return nil
 }
 
-func TestFirstAudioSnapshotUpsertGuardCallbackSequence(t *testing.T) {
+func TestFirstAudioMatrixSnapshotUpsertGuardCallbackSequence(t *testing.T) {
 	db, observation := openFirstAudioUpsertGuardDB(t)
 	const key = "snapshot/101"
 	if err := runFirstAudioSnapshotUpsert(db, observation, key, nil, "initial-state"); err != nil {
@@ -176,7 +176,7 @@ func TestFirstAudioSnapshotUpsertGuardCallbackSequence(t *testing.T) {
 	}
 }
 
-func TestFirstAudioSnapshotUpsertRejectsMissingOldRowWithoutInsertFallback(t *testing.T) {
+func TestFirstAudioMatrixSnapshotUpsertRejectsMissingOldRowWithoutInsertFallback(t *testing.T) {
 	db, observation := openFirstAudioUpsertGuardDB(t)
 	old := "expected-old"
 	err := runFirstAudioSnapshotUpsert(db, observation, "snapshot/missing", &old, "new-state")
@@ -192,7 +192,7 @@ func TestFirstAudioSnapshotUpsertRejectsMissingOldRowWithoutInsertFallback(t *te
 	}
 }
 
-func TestFirstAudioSnapshotUpsertRollsBackWhenConflictUpdateGuardIsMissing(t *testing.T) {
+func TestFirstAudioMatrixSnapshotUpsertRollsBackWhenConflictUpdateGuardIsMissing(t *testing.T) {
 	db, observation := openFirstAudioUpsertGuardDB(t)
 	const key = "snapshot/101"
 	if err := runFirstAudioSnapshotUpsert(db, observation, key, nil, "initial-state"); err != nil {
