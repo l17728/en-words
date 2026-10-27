@@ -249,6 +249,10 @@ func TestFirstAudioMatrixNewAppStartsOnGuardedSQLitePool(t *testing.T) {
 		_ = setupPool.Close()
 		t.Fatal("fixed row guards installation failed", err)
 	}
+	if err := firstAudioValidateSchemaManifest(setup); err != nil {
+		_ = setupPool.Close()
+		t.Fatal("schema baseline must pass before guarded app pool opens:", err)
+	}
 	if err := setupPool.Close(); err != nil {
 		t.Fatal("setup pool close failed", err)
 	}

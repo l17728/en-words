@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -44,6 +45,30 @@ func firstAudioReadSchemaManifest(db *gorm.DB) (firstAudioSchemaManifest, []byte
 	return manifest, encoded, err
 }
 
+func firstAudioValidateSchemaManifest(db *gorm.DB) error {
+	actual, actualJSON, err := firstAudioReadSchemaManifest(db)
+	if err != nil {
+		return fmt.Errorf("read SQLite schema inventory: %w", err)
+	}
+	manifestPath := filepath.Join("testdata", "first_audio_matrix_schema_manifest.json")
+	baselineJSON, err := os.ReadFile(manifestPath)
+	if err != nil {
+		return fmt.Errorf("read checked-in schema inventory %s: %w\nactual manifest follows:\n%s", manifestPath, err, actualJSON)
+	}
+	var expected firstAudioSchemaManifest
+	if err := json.Unmarshal(baselineJSON, &expected); err != nil {
+		return fmt.Errorf("decode checked-in schema inventory: %w", err)
+	}
+	if expected.FormatVersion != 1 || expected.SHA256 == "" || len(expected.Objects) == 0 {
+		return fmt.Errorf("checked-in schema inventory is incomplete\nactual manifest follows:\n%s", actualJSON)
+	}
+	if !reflect.DeepEqual(expected, actual) {
+		expectedJSON, _ := json.MarshalIndent(expected, "", "  ")
+		return fmt.Errorf("SQLite schema drift: expected sha256=%s (%d objects), actual sha256=%s (%d objects)\nexpected:\n%s\nactual:\n%s", expected.SHA256, len(expected.Objects), actual.SHA256, len(actual.Objects), expectedJSON, actualJSON)
+	}
+	return nil
+}
+
 func TestFirstAudioMatrixSchemaObjectManifest(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "schema-inventory.db")
 	db, err := store.Open(dbPath)
@@ -63,24 +88,29 @@ func TestFirstAudioMatrixSchemaObjectManifest(t *testing.T) {
 		t.Fatal("install reviewed startup guards:", err)
 	}
 
-	actual, actualJSON, err := firstAudioReadSchemaManifest(db)
+	if err := firstAudioValidateSchemaManifest(db); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestFirstAudioMatrixSchemaManifestRejectsUnexpectedObject(t *testing.T) {
+	db, err := store.Open(filepath.Join(t.TempDir(), "schema-drift.db"))
 	if err != nil {
-		t.Fatal("read SQLite schema inventory:", err)
+		t.Fatal("open migrated schema fixture:", err)
 	}
-	manifestPath := filepath.Join("testdata", "first_audio_matrix_schema_manifest.json")
-	baselineJSON, err := os.ReadFile(manifestPath)
+	pool, err := db.DB()
 	if err != nil {
-		t.Fatalf("read checked-in schema inventory %s: %v\nactual manifest follows:\n%s", manifestPath, err, actualJSON)
+		t.Fatal("get migrated schema pool:", err)
 	}
-	var expected firstAudioSchemaManifest
-	if err := json.Unmarshal(baselineJSON, &expected); err != nil {
-		t.Fatalf("decode checked-in schema inventory: %v", err)
+	defer func() {
+		if err := pool.Close(); err != nil {
+			t.Errorf("close migrated schema pool: %v", err)
+		}
+	}()
+	if err := db.Exec(`CREATE TABLE unreviewed_matrix_object (id INTEGER PRIMARY KEY)`).Error; err != nil {
+		t.Fatal("create drift probe:", err)
 	}
-	if expected.FormatVersion != 1 || expected.SHA256 == "" || len(expected.Objects) == 0 {
-		t.Fatalf("checked-in schema inventory is incomplete; actual manifest follows:\n%s", actualJSON)
-	}
-	if !reflect.DeepEqual(expected, actual) {
-		expectedJSON, _ := json.MarshalIndent(expected, "", "  ")
-		t.Fatalf("SQLite schema drift: expected sha256=%s (%d objects), actual sha256=%s (%d objects)\nexpected:\n%s\nactual:\n%s", expected.SHA256, len(expected.Objects), actual.SHA256, len(actual.Objects), expectedJSON, actualJSON)
+	if err := firstAudioValidateSchemaManifest(db); err == nil {
+		t.Fatal("schema validator accepted an unreviewed SQLite object")
 	}
 }
