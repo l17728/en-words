@@ -83,6 +83,9 @@ jobs:
         run: |
           unformatted=$(gofmt -l internal/api/first_audio_matrix_*_test.go)
           if [ -n "$unformatted" ]; then
+            while IFS= read -r file; do
+              gofmt -d "$file"
+            done <<< "$unformatted"
             printf 'gofmt required for:\n%s\n' "$unformatted" >&2
             exit 1
           fi
