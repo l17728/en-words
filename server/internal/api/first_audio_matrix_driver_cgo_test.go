@@ -135,7 +135,6 @@ func TestFirstAudioMatrixDriverInstallsPolicyOnEveryPhysicalConnection(t *testin
 	}
 }
 
-
 func registerFirstAudioProbeDriver(name string, hook func(*sqlite3.SQLiteConn) error) error {
 	if name == "" || hook == nil {
 		return fmt.Errorf("driver name and policy are required")

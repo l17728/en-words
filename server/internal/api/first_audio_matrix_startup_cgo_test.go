@@ -31,12 +31,12 @@ const (
 )
 
 type firstAudioStartupPolicy struct {
-	phase   atomic.Uint32
-	hooks   atomic.Uint64
-	denials atomic.Uint64
+	phase         atomic.Uint32
+	hooks         atomic.Uint64
+	denials       atomic.Uint64
 	rowGuardCalls atomic.Uint64
-	reads   map[string]map[string]struct{}
-	lastDenial atomic.Value
+	reads         map[string]map[string]struct{}
+	lastDenial    atomic.Value
 }
 
 func newFirstAudioStartupPolicy() *firstAudioStartupPolicy {
@@ -270,4 +270,3 @@ func TestFirstAudioMatrixNewAppStartsOnGuardedSQLitePool(t *testing.T) {
 		t.Fatal("startup-only user update reservation remained authorized after phase tightening")
 	}
 }
-
