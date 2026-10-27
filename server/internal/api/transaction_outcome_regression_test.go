@@ -71,6 +71,7 @@ func TestDeferredCommitFailureStopsTeacherContinuationAndSnapshot(t *testing.T) 
 	app.DB = db
 	require.NoError(t, db.Exec("CREATE TABLE tx_commit_parent (id INTEGER PRIMARY KEY)").Error)
 	require.NoError(t, db.Exec("CREATE TABLE tx_commit_child (parent_id INTEGER, FOREIGN KEY(parent_id) REFERENCES tx_commit_parent(id) DEFERRABLE INITIALLY DEFERRED)").Error)
+	require.NoError(t, db.Exec("CREATE TEMP TABLE tx_connection_identity (id INTEGER PRIMARY KEY)").Error)
 	require.NoError(t, db.Exec("CREATE TRIGGER tx_force_deferred_commit_failure AFTER INSERT ON audit_logs BEGIN INSERT INTO tx_commit_child(parent_id) VALUES (999999); END").Error)
 	var logOutput bytes.Buffer
 	app.SetLogger(obs.NewWithSink(&logOutput))
@@ -88,6 +89,24 @@ func TestDeferredCommitFailureStopsTeacherContinuationAndSnapshot(t *testing.T) 
 	require.Equal(t, toolTransactionOutcomeUncertain, outcome)
 	require.Error(t, commitErr)
 	require.True(t, strings.Contains(strings.ToLower(commitErr.Error()), "foreign key"), "expected the deferred foreign-key COMMIT error: %v", commitErr)
+	var probeAuditCount int64
+	require.NoError(t, db.Model(&store.AuditLog{}).Where("tool = ?", "synthetic-commit-probe").Count(&probeAuditCount).Error)
+	require.Zero(t, probeAuditCount, "the failed preflight COMMIT must not leave its audit row")
+	// store.Open caps the pool at one connection. A TEMP table is scoped to one
+	// physical SQLite connection, so this follow-up also proves the successful
+	// cleanup kept that same connection reusable.
+	require.NoError(t, db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec("INSERT INTO tx_commit_parent(id) VALUES (7)").Error; err != nil {
+			return err
+		}
+		return tx.Exec("INSERT INTO tx_connection_identity(id) VALUES (1)").Error
+	}))
+	var recoveryRowCount int64
+	require.NoError(t, db.Table("tx_commit_parent").Where("id = ?", 7).Count(&recoveryRowCount).Error)
+	require.EqualValues(t, 1, recoveryRowCount, "a follow-up transaction must succeed after the deferred COMMIT failure")
+	var sameConnectionRowCount int64
+	require.NoError(t, db.Raw("SELECT count(*) FROM tx_connection_identity WHERE id = 1").Scan(&sameConnectionRowCount).Error)
+	require.EqualValues(t, 1, sameConnectionRowCount, "the same physical SQLite connection must remain usable after successful rollback cleanup")
 
 	beforeState := app.lessonState(lessonID)
 	beforeMemoryAudits := len(app.ToolAudit.Snapshot())

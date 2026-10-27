@@ -11,6 +11,7 @@ on:
       - "server/go.mod"
       - "server/go.sum"
       - "server/third_party/go-sqlite3/**"
+      - "server/third_party/glebarez-go-sqlite/**"
       - "server/internal/api/**"
       - "server/internal/classroom/**"
       - "server/internal/config/**"
@@ -33,6 +34,7 @@ on:
       - "server/go.mod"
       - "server/go.sum"
       - "server/third_party/go-sqlite3/**"
+      - "server/third_party/glebarez-go-sqlite/**"
       - "server/internal/api/**"
       - "server/internal/classroom/**"
       - "server/internal/config/**"
@@ -93,6 +95,9 @@ jobs:
       - name: Test classroom tool transaction outcome handling
         working-directory: server
         run: go test ./internal/api -run '^(TestToolTransaction|TestObservedToolTransaction|TestUncertainToolTransaction|TestRetiredRoomRejectsPublicProgressionEntrypoints|TestDeferredCommitFailureStopsTeacherContinuationAndSnapshot)' -count=1 -timeout=5m
+      - name: Test local SQLite failed-COMMIT cleanup policy
+        working-directory: server/third_party/glebarez-go-sqlite
+        run: go test . -run '^TestFailedCommitCleanupError' -count=1 -timeout=1m
       - name: Race-test immutable guard context publication
         working-directory: server
         run: go test -race ./internal/api -run '^TestFirstAudioGuard(Context|Probe|Controller|Publisher)' -count=1 -timeout=5m
@@ -173,3 +178,6 @@ jobs:
       - name: Test classroom tool transaction outcome handling
         working-directory: server
         run: go test ./internal/api -run '^(TestToolTransaction|TestObservedToolTransaction|TestUncertainToolTransaction|TestRetiredRoomRejectsPublicProgressionEntrypoints|TestDeferredCommitFailureStopsTeacherContinuationAndSnapshot)' -count=1 -timeout=10m
+      - name: Test local SQLite failed-COMMIT cleanup policy
+        working-directory: server/third_party/glebarez-go-sqlite
+        run: go test . -run '^TestFailedCommitCleanupError' -count=1 -timeout=2m
