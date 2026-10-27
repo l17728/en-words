@@ -50,7 +50,7 @@ After the fixed schema digest is accepted on the setup pool, derive physical col
 
 ### Trigger-side read exceptions
 
-The config revision AFTER trigger's UPSERT may request `SQLITE_READ` for `main.config_revisions.student_id`, `.key`, and `.revision` with source `rev_config_globals_UPDATE`; permit only those exact tuples. The audit collision trigger may read only `main.audit_logs.id` from source `fa_audit_no_replace`. These trigger-source `SELECT`, `READ`, and `RAISE` exceptions are limited to `STARTUP_APP` and `PREFLIGHT`; `DRIVER_PROBE` and every other phase deny them. All other nonempty trigger-source reads are denied, even when their table/column is present in the top-level snapshot read manifest. Add tuple tests and exercise the config reservation statement through the hooked pool so prepare-time authorizer behavior is pinned.
+The config revision AFTER trigger may request `SQLITE_READ` for `main.config_globals.key` (`NEW.key`) and `main.config_revisions.student_id`, `.key`, and `.revision` with source `rev_config_globals_UPDATE`; permit only those exact tuples. The audit collision trigger may read only `main.audit_logs.id` from source `fa_audit_no_replace`. These trigger-source `SELECT`, `READ`, and `RAISE` exceptions are limited to `STARTUP_APP` and `PREFLIGHT`; `DRIVER_PROBE` and every other phase deny them. All other nonempty trigger-source reads are denied, even when their table/column is present in the top-level snapshot read manifest. Add tuple tests and exercise the config reservation statement through the hooked pool so prepare-time authorizer behavior is pinned.
 
 ## 5. Guard and snapshot verification
 

@@ -129,8 +129,11 @@ func (p *firstAudioStartupPolicy) authorize(action int, arg1, arg2, databaseName
 			if triggerName == firstAudioAuditNoReplaceTrigger {
 				return arg1 == "audit_logs" && arg2 == "id"
 			}
-			if triggerName == "rev_config_globals_UPDATE" && arg1 == "config_revisions" {
-				return arg2 == "student_id" || arg2 == "key" || arg2 == "revision"
+			if triggerName == "rev_config_globals_UPDATE" {
+				if arg1 == "config_globals" && arg2 == "key" {
+					return true // The fixed AFTER trigger reads NEW.key.
+				}
+				return arg1 == "config_revisions" && (arg2 == "student_id" || arg2 == "key" || arg2 == "revision")
 			}
 			return false
 		}
@@ -240,6 +243,9 @@ func TestFirstAudioMatrixConfigRevisionTriggerReadExceptionIsExact(t *testing.T)
 		t.Fatal("config revision trigger read was allowed during driver probing")
 	}
 	policy.phase.Store(uint32(firstAudioStartupApp))
+	if !policy.authorize(sqlite3.SQLITE_READ, "config_globals", "key", "main", "rev_config_globals_UPDATE") {
+		t.Fatal("config revision trigger NEW.key read denied")
+	}
 	for _, column := range []string{"student_id", "key", "revision"} {
 		if !policy.authorize(sqlite3.SQLITE_READ, "config_revisions", column, "main", "rev_config_globals_UPDATE") {
 			t.Fatalf("config revision trigger read denied: %s", column)
@@ -253,6 +259,7 @@ func TestFirstAudioMatrixConfigRevisionTriggerReadExceptionIsExact(t *testing.T)
 		table, column, database, trigger string
 	}{
 		{"config_revisions", "created_at", "main", "rev_config_globals_UPDATE"},
+		{"config_globals", "value", "main", "rev_config_globals_UPDATE"},
 		{"audit_logs", "id", "main", "rev_config_globals_UPDATE"},
 		{"config_revisions", "revision", "temp", "rev_config_globals_UPDATE"},
 		{"config_revisions", "revision", "main", "rev_config_globals_INSERT"},
