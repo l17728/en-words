@@ -6,6 +6,7 @@ on:
     paths:
       - "docs/73-first-audio-matrix-control-protocol-sdd.md"
       - "docs/75-first-audio-immutable-guard-context-sdd.md"
+      - "docs/76-first-audio-context-authority-and-probe-lifecycle-sdd.md"
       - "server/internal/api/first_audio_matrix_harness_test.go"
       - "server/go.mod"
       - "server/go.sum"
@@ -27,6 +28,7 @@ on:
     paths:
       - "docs/73-first-audio-matrix-control-protocol-sdd.md"
       - "docs/75-first-audio-immutable-guard-context-sdd.md"
+      - "docs/76-first-audio-context-authority-and-probe-lifecycle-sdd.md"
       - "server/internal/api/first_audio_matrix_harness_test.go"
       - "server/go.mod"
       - "server/go.sum"
