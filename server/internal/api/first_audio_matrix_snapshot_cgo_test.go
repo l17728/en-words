@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
@@ -44,6 +45,9 @@ type firstAudioSnapshotSpec struct {
 }
 
 func firstAudioCaptureDatabaseSnapshot(db *gorm.DB) (firstAudioDatabaseSnapshot, error) {
+	if err := firstAudioValidateSchemaManifest(db); err != nil {
+		return firstAudioDatabaseSnapshot{}, fmt.Errorf("validate schema before snapshot: %w", err)
+	}
 	cache := &sync.Map{}
 	specs := make([]firstAudioSnapshotSpec, 0, 24)
 	for _, model := range firstAudioStartupModels() {
@@ -75,6 +79,13 @@ func firstAudioCaptureDatabaseSnapshot(db *gorm.DB) (firstAudioDatabaseSnapshot,
 		orderBy: []string{"name", "seq"},
 	})
 	sort.Slice(specs, func(i, j int) bool { return specs[i].name < specs[j].name })
+	actualSchema, _, err := firstAudioReadSchemaManifest(db)
+	if err != nil {
+		return firstAudioDatabaseSnapshot{}, fmt.Errorf("read schema table set for snapshot: %w", err)
+	}
+	if err := firstAudioCheckSnapshotTableCoverage(specs, actualSchema.Objects); err != nil {
+		return firstAudioDatabaseSnapshot{}, err
+	}
 
 	snapshot := firstAudioDatabaseSnapshot{Tables: make([]firstAudioSnapshotTable, 0, len(specs))}
 	for _, spec := range specs {
@@ -142,6 +153,73 @@ func firstAudioCaptureDatabaseSnapshot(db *gorm.DB) (firstAudioDatabaseSnapshot,
 	return snapshot, nil
 }
 
+func firstAudioCheckSnapshotTableCoverage(specs []firstAudioSnapshotSpec, objects []firstAudioSQLiteObject) error {
+	schemaTables := make(map[string]struct{})
+	for _, object := range objects {
+		if object.Type == "table" {
+			schemaTables[object.Name] = struct{}{}
+		}
+	}
+	snapshotTables := make(map[string]struct{}, len(specs))
+	duplicates := make([]string, 0)
+	for _, spec := range specs {
+		if _, exists := snapshotTables[spec.name]; exists {
+			duplicates = append(duplicates, spec.name)
+		}
+		snapshotTables[spec.name] = struct{}{}
+	}
+	missing := make([]string, 0)
+	for table := range schemaTables {
+		if _, ok := snapshotTables[table]; !ok {
+			missing = append(missing, table)
+		}
+	}
+	extra := make([]string, 0)
+	for table := range snapshotTables {
+		if _, ok := schemaTables[table]; !ok {
+			extra = append(extra, table)
+		}
+	}
+	sort.Strings(missing)
+	sort.Strings(extra)
+	sort.Strings(duplicates)
+	if len(missing) != 0 || len(extra) != 0 || len(duplicates) != 0 {
+		return fmt.Errorf("snapshot table coverage differs from schema: missing=%v extra=%v duplicate_specs=%v", missing, extra, duplicates)
+	}
+	return nil
+}
+
+func TestFirstAudioMatrixSnapshotTableCoverageRejectsUnmodeledTable(t *testing.T) {
+	specs := []firstAudioSnapshotSpec{{name: "users"}, {name: "sqlite_sequence"}}
+	objects := []firstAudioSQLiteObject{
+		{Type: "table", Name: "users"},
+		{Type: "table", Name: "sqlite_sequence"},
+		{Type: "table", Name: "new_startup_model"},
+	}
+	if err := firstAudioCheckSnapshotTableCoverage(specs, objects); err == nil {
+		t.Fatal("snapshot coverage accepted a schema table with no row snapshot")
+	}
+}
+
+func TestFirstAudioMatrixSnapshotTableCoverageRejectsDuplicateSpec(t *testing.T) {
+	specs := []firstAudioSnapshotSpec{{name: "users"}, {name: "users"}}
+	objects := []firstAudioSQLiteObject{{Type: "table", Name: "users"}}
+	if err := firstAudioCheckSnapshotTableCoverage(specs, objects); err == nil {
+		t.Fatal("snapshot coverage accepted duplicate table specs")
+	}
+}
+
+func TestFirstAudioMatrixSnapshotNormalizesTimeAsUTC(t *testing.T) {
+	value := time.Date(2026, time.October, 27, 12, 30, 0, 123000000, time.FixedZone("test", 8*60*60))
+	cell, err := normalizeFirstAudioSnapshotCell(value)
+	if err != nil {
+		t.Fatalf("normalize time: %v", err)
+	}
+	if cell.Type != "text" || cell.Value != "2026-10-27T04:30:00.123Z" {
+		t.Fatalf("unexpected normalized time: %#v", cell)
+	}
+}
+
 func normalizeFirstAudioSnapshotCell(value any) (firstAudioSnapshotCell, error) {
 	switch value := value.(type) {
 	case nil:
@@ -154,6 +232,8 @@ func normalizeFirstAudioSnapshotCell(value any) (firstAudioSnapshotCell, error) 
 		return firstAudioSnapshotCell{Type: "text", Value: value}, nil
 	case []byte:
 		return firstAudioSnapshotCell{Type: "blob", Value: base64.StdEncoding.EncodeToString(value)}, nil
+	case time.Time:
+		return firstAudioSnapshotCell{Type: "text", Value: value.UTC().Format(time.RFC3339Nano)}, nil
 	default:
 		return firstAudioSnapshotCell{}, fmt.Errorf("unsupported SQLite value type %T", value)
 	}
