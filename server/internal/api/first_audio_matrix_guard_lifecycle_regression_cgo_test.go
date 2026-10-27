@@ -794,7 +794,7 @@ func TestFirstAudioGuardControllerResetRequiresVerifiedNextGeneration(t *testing
 	if err := transition.Publish(context.Background(), reset, firstAudioGuardTransitionEvidence{}); err != nil {
 		t.Fatal("publish reset context:", err)
 	}
-	next, err := newFirstAudioGuardContext(firstAudioValidJourneySpec(5, 202, 2, 5))
+	next, err := newFirstAudioGuardContext(firstAudioValidFreshJourneySpec(5, 202, 2, 5))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -127,9 +127,11 @@ func TestFirstAudioGuardContextRejectsMalformedShapes(t *testing.T) {
 			s.priorLessonID--
 			return s
 		}()},
-		{"reset insert has old row", func() firstAudioGuardContextSpec {
+		{"reset unexpectedly inserts next snapshot", func() firstAudioGuardContextSpec {
 			s := validReset
-			s.rowContracts[2].oldRow = []byte("old")
+			s.rowContracts = append(s.rowContracts, firstAudioGuardRowContract{
+				table: "runtime_records", operation: "INSERT", identity: "snapshot:202", newRow: []byte("new-snapshot"),
+			})
 			return s
 		}()},
 		{"reset extra row", func() firstAudioGuardContextSpec {
@@ -435,6 +437,12 @@ func firstAudioValidJourneySpec(version uint64, lessonID int64, generation uint6
 	}
 }
 
+func firstAudioValidFreshJourneySpec(version uint64, lessonID int64, generation uint64, record int) firstAudioGuardContextSpec {
+	spec := firstAudioValidJourneySpec(version, lessonID, generation, record)
+	spec.rowContracts[0].oldRow = nil
+	return spec
+}
+
 func firstAudioValidResetSpec(version uint64) firstAudioGuardContextSpec {
 	return firstAudioGuardContextSpec{
 		runID: "run-0001", currentLessonID: 101, priorLessonID: 101, nextLessonID: 202,
@@ -443,8 +451,28 @@ func firstAudioValidResetSpec(version uint64) firstAudioGuardContextSpec {
 		rowContracts: []firstAudioGuardRowContract{
 			{table: "lessons", operation: "UPDATE", identity: "lesson:101-to-202", oldRow: []byte("old-lesson"), newRow: []byte("new-lesson")},
 			{table: "runtime_records", operation: "DELETE", identity: "snapshot:101", oldRow: []byte("old-snapshot")},
-			{table: "runtime_records", operation: "INSERT", identity: "snapshot:202", newRow: []byte("new-snapshot")},
 		},
+	}
+}
+
+func TestFirstAudioGuardResetTransitionRequiresFreshSnapshotContract(t *testing.T) {
+	reset, err := newFirstAudioGuardContext(firstAudioValidResetSpec(4))
+	if err != nil {
+		t.Fatal("create reset context:", err)
+	}
+	resumed, err := newFirstAudioGuardContext(firstAudioValidJourneySpec(5, 202, 2, 5))
+	if err != nil {
+		t.Fatal("create resumed snapshot contract:", err)
+	}
+	if firstAudioGuardContextTransitionAllowed(reset, resumed) {
+		t.Fatal("reset successor accepted a snapshot update that could restore interrupted state")
+	}
+	fresh, err := newFirstAudioGuardContext(firstAudioValidFreshJourneySpec(5, 202, 2, 5))
+	if err != nil {
+		t.Fatal("create fresh snapshot contract:", err)
+	}
+	if !firstAudioGuardContextTransitionAllowed(reset, fresh) {
+		t.Fatal("reset successor rejected a fresh-insert snapshot contract")
 	}
 }
 

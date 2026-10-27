@@ -189,7 +189,7 @@ func (c *firstAudioGuardContext) validateShape() error {
 			return errFirstAudioGuardContextInvalid
 		}
 	case firstAudioGuardResetApply:
-		if c.priorLessonID != c.currentLessonID || c.nextLessonID <= 0 || c.nextLessonID == c.currentLessonID || !noConnections || c.oldRuntimeKey != firstAudioSnapshotKey(c.currentLessonID) || c.newRuntimeKey != firstAudioSnapshotKey(c.nextLessonID) || len(c.rows) != 3 {
+		if c.priorLessonID != c.currentLessonID || c.nextLessonID <= 0 || c.nextLessonID == c.currentLessonID || !noConnections || c.oldRuntimeKey != firstAudioSnapshotKey(c.currentLessonID) || c.newRuntimeKey != firstAudioSnapshotKey(c.nextLessonID) || len(c.rows) != 2 {
 			return errFirstAudioGuardContextInvalid
 		}
 		expected := []struct {
@@ -198,7 +198,6 @@ func (c *firstAudioGuardContext) validateShape() error {
 		}{
 			{"lessons", "UPDATE", fmt.Sprintf("lesson:%d-to-%d", c.currentLessonID, c.nextLessonID), true, true},
 			{"runtime_records", "DELETE", "snapshot:" + strconv.FormatInt(c.currentLessonID, 10), true, false},
-			{"runtime_records", "INSERT", "snapshot:" + strconv.FormatInt(c.nextLessonID, 10), false, true},
 		}
 		for _, want := range expected {
 			row, ok := c.rows[firstAudioGuardRowKey(want.table, want.operation, want.identity)]
@@ -318,7 +317,13 @@ func firstAudioGuardContextTransitionAllowed(active, candidate *firstAudioGuardC
 		sameIdentity := active.currentLessonID == candidate.currentLessonID && active.generation == candidate.generation
 		return candidate.phase == firstAudioGuardJourney && sameIdentity || candidate.phase == firstAudioGuardResetApply && sameIdentity && candidate.priorLessonID == active.currentLessonID
 	case firstAudioGuardResetApply:
-		return candidate.phase == firstAudioGuardJourney && candidate.currentLessonID == active.nextLessonID && candidate.generation == active.generation+1
+		if candidate.phase != firstAudioGuardJourney || candidate.currentLessonID != active.nextLessonID || candidate.generation != active.generation+1 {
+			return false
+		}
+		initialSnapshot, ok := candidate.rows[firstAudioGuardRowKey(
+			"runtime_records", "UPSERT", "snapshot:"+strconv.FormatInt(candidate.currentLessonID, 10),
+		)]
+		return ok && len(initialSnapshot.oldRow) == 0 && len(initialSnapshot.newRow) > 0 && initialSnapshot.traceID == ""
 	default:
 		return false
 	}

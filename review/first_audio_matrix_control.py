@@ -274,6 +274,7 @@ def _collect_source_hashes(server_dir: Path) -> list[dict[str, str]]:
         "docs/70-classroom-first-audio-latency-sdd.md",
         "docs/74-first-audio-matrix-isolated-backend-sdd.md",
         "docs/73-first-audio-matrix-control-protocol-sdd.md",
+        "docs/75-first-audio-immutable-guard-context-sdd.md",
         "docs/76-first-audio-context-authority-and-probe-lifecycle-sdd.md",
         "docs/77-first-audio-write-callsite-inventory-sdd.md",
         "review/first-audio-matrix-isolated-backend-review-20261026.md",
