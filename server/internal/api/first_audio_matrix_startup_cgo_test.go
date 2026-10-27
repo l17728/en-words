@@ -257,6 +257,10 @@ func TestFirstAudioMatrixNewAppStartsOnGuardedSQLitePool(t *testing.T) {
 		_ = setupPool.Close()
 		t.Fatal("schema baseline must pass before guarded app pool opens:", err)
 	}
+	if err := firstAudioValidateStartupReadManifest(setup); err != nil {
+		_ = setupPool.Close()
+		t.Fatal("startup read manifest must match pinned schema before guarded app pool opens:", err)
+	}
 	baselineSnapshot, err := firstAudioCaptureDatabaseSnapshot(setup)
 	if err != nil {
 		_ = setupPool.Close()
