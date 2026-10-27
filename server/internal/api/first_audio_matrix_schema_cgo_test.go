@@ -243,11 +243,11 @@ func TestFirstAudioMatrixSchemaManifestRejectsUnexpectedObject(t *testing.T) {
 
 func TestFirstAudioMatrixReadManifestMatchesPhysicalColumns(t *testing.T) {
 	readManifest := map[string]map[string]struct{}{
-		"users":        {"": {}, "id": {}, "username": {}},
+		"users":         {"": {}, "id": {}, "username": {}},
 		"sqlite_master": {"": {}, "type": {}, "name": {}},
 	}
 	physical := map[string]map[string]struct{}{
-		"users":        {"id": {}, "username": {}},
+		"users":         {"id": {}, "username": {}},
 		"sqlite_master": {"type": {}, "name": {}},
 	}
 	if err := firstAudioCheckReadManifestColumns(readManifest, physical); err != nil {
@@ -263,31 +263,31 @@ func TestFirstAudioMatrixReadManifestRejectsColumnDrift(t *testing.T) {
 		want         string
 	}{
 		{
-			name: "missing authorized physical column",
+			name:         "missing authorized physical column",
 			readManifest: map[string]map[string]struct{}{"users": {"": {}, "id": {}, "username": {}}},
 			physical:     map[string]map[string]struct{}{"users": {"id": {}}},
 			want:         "missing=[username]",
 		},
 		{
-			name: "physical column is not authorized",
+			name:         "physical column is not authorized",
 			readManifest: map[string]map[string]struct{}{"users": {"": {}, "id": {}}},
 			physical:     map[string]map[string]struct{}{"users": {"id": {}, "secret": {}}},
 			want:         "unauthorized=[secret]",
 		},
 		{
-			name: "missing count sentinel",
+			name:         "missing count sentinel",
 			readManifest: map[string]map[string]struct{}{"users": {"id": {}}},
 			physical:     map[string]map[string]struct{}{"users": {"id": {}}},
 			want:         "missing_count_sentinel=[users]",
 		},
 		{
-			name: "unmodeled physical table",
+			name:         "unmodeled physical table",
 			readManifest: map[string]map[string]struct{}{"users": {"": {}, "id": {}}},
 			physical:     map[string]map[string]struct{}{"users": {"id": {}}, "new_table": {"id": {}}},
 			want:         "missing_tables=[new_table]",
 		},
 		{
-			name: "read manifest names absent physical table",
+			name:         "read manifest names absent physical table",
 			readManifest: map[string]map[string]struct{}{"users": {"": {}, "id": {}}, "missing_table": {"": {}, "id": {}}},
 			physical:     map[string]map[string]struct{}{"users": {"id": {}}},
 			want:         "extra_tables=[missing_table]",
