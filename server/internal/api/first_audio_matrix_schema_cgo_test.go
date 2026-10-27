@@ -108,6 +108,9 @@ func TestFirstAudioMatrixSchemaManifestRejectsUnexpectedObject(t *testing.T) {
 			t.Errorf("close migrated schema pool: %v", err)
 		}
 	}()
+	if err := installFirstAudioStartupGuards(db); err != nil {
+		t.Fatal("install expected schema guards:", err)
+	}
 	if err := db.Exec(`CREATE TABLE unreviewed_matrix_object (id INTEGER PRIMARY KEY)`).Error; err != nil {
 		t.Fatal("create drift probe:", err)
 	}
