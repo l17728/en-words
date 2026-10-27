@@ -104,7 +104,11 @@ func (p *firstAudioStartupPolicy) authorize(action int, arg1, arg2, databaseName
 	phase := firstAudioStartupPhase(p.phase.Load())
 	switch action {
 	case sqlite3.SQLITE_SELECT:
-		return true
+		if triggerName == "" {
+			return true
+		}
+		_, ok := firstAudioApprovedGuardTriggers[triggerName]
+		return ok
 	case sqlite3.SQLITE_READ:
 		_, ok := p.reads[arg1][arg2]
 		// SQLite omits the database name for COUNT(*)'s table-existence
@@ -118,15 +122,18 @@ func (p *firstAudioStartupPolicy) authorize(action int, arg1, arg2, databaseName
 		if fn == "sqlite_version" {
 			return phase == firstAudioStartupDriverProbe && triggerName == ""
 		}
-		if fn == "count" || fn == "substr" || fn == "coalesce" || fn == "max" {
-			return true
+		if fn == "substr" {
+			return phase == firstAudioStartupApp && arg1 == "" && triggerName == ""
+		}
+		if fn == "count" || fn == "coalesce" || fn == "max" {
+			return (phase == firstAudioStartupApp || phase == firstAudioStartupPreflight) && arg1 == "" && triggerName == ""
 		}
 		if fn == "first_audio_row_guard" {
 			_, ok := firstAudioApprovedGuardTriggers[triggerName]
 			return ok
 		}
 	case sqlite3.SQLITE_UPDATE:
-		if databaseName == "main" && triggerName == "rev_config_globals_UPDATE" && arg1 == "config_revisions" {
+		if (phase == firstAudioStartupApp || phase == firstAudioStartupPreflight) && databaseName == "main" && triggerName == "rev_config_globals_UPDATE" && arg1 == "config_revisions" {
 			return true
 		}
 		if databaseName != "main" {
@@ -135,11 +142,11 @@ func (p *firstAudioStartupPolicy) authorize(action int, arg1, arg2, databaseName
 		if phase == firstAudioStartupApp && triggerName == "" && arg1 == "users" && arg2 == "id" {
 			return true // NewApp's exact UPDATE users SET id=id WHERE 1=0 reservation.
 		}
-		if triggerName == "" && arg1 == "config_globals" && arg2 == "key" {
+		if (phase == firstAudioStartupApp || phase == firstAudioStartupPreflight) && triggerName == "" && arg1 == "config_globals" && arg2 == "key" {
 			return true // WithAtomicWriteObserved's zero-row reservation; row guard rejects effects.
 		}
-	case sqlite3.SQLITE_INSERT, sqlite3.SQLITE_DELETE:
-		if databaseName == "main" && triggerName == "rev_config_globals_UPDATE" && arg1 == "config_revisions" {
+	case sqlite3.SQLITE_INSERT:
+		if (phase == firstAudioStartupApp || phase == firstAudioStartupPreflight) && databaseName == "main" && triggerName == "rev_config_globals_UPDATE" && arg1 == "config_revisions" {
 			return true
 		}
 	}
@@ -179,6 +186,65 @@ func TestFirstAudioMatrixStartupManifestAllowsOnlySQLiteCountWithoutDatabaseName
 		if policy.authorize(sqlite3.SQLITE_READ, tuple.table, tuple.column, tuple.database, "") {
 			t.Fatalf("unmanifested read tuple was allowed: %#v", tuple)
 		}
+	}
+}
+
+func TestFirstAudioMatrixSubstrFunctionIsStartupOnly(t *testing.T) {
+	policy := newFirstAudioStartupPolicy()
+	policy.phase.Store(uint32(firstAudioStartupApp))
+	if !policy.authorize(sqlite3.SQLITE_FUNCTION, "", "substr", "", "") {
+		t.Fatal("NewApp schema probe substr function was denied")
+	}
+	for _, tuple := range []struct {
+		arg1, arg2, database, trigger string
+		phase                         firstAudioStartupPhase
+	}{
+		{arg1: "", arg2: "substr", phase: firstAudioStartupPreflight},
+		{arg1: "", arg2: "substr", trigger: "unapproved_trigger", phase: firstAudioStartupApp},
+		{arg1: "unexpected", arg2: "substr", phase: firstAudioStartupApp},
+		{arg1: "", arg2: "unknown_function", phase: firstAudioStartupApp},
+	} {
+		policy.phase.Store(uint32(tuple.phase))
+		if policy.authorize(sqlite3.SQLITE_FUNCTION, tuple.arg1, tuple.arg2, tuple.database, tuple.trigger) {
+			t.Fatalf("unapproved function tuple was allowed: %#v", tuple)
+		}
+	}
+}
+
+func TestFirstAudioMatrixStartupPolicyScopesSQLAndReservationExceptions(t *testing.T) {
+	policy := newFirstAudioStartupPolicy()
+	if policy.authorize(sqlite3.SQLITE_FUNCTION, "", "count", "", "") {
+		t.Fatal("application count function was allowed during driver probing")
+	}
+	if policy.authorize(sqlite3.SQLITE_UPDATE, "config_globals", "key", "main", "") {
+		t.Fatal("config reservation write was allowed during driver probing")
+	}
+	if policy.authorize(sqlite3.SQLITE_INSERT, "config_revisions", "", "main", "rev_config_globals_UPDATE") ||
+		policy.authorize(sqlite3.SQLITE_UPDATE, "config_revisions", "revision", "main", "rev_config_globals_UPDATE") {
+		t.Fatal("config revision trigger tuple was allowed during driver probing")
+	}
+	policy.phase.Store(uint32(firstAudioStartupApp))
+	if !policy.authorize(sqlite3.SQLITE_FUNCTION, "", "count", "", "") ||
+		!policy.authorize(sqlite3.SQLITE_UPDATE, "config_globals", "key", "main", "") {
+		t.Fatal("startup application reservation tuples were denied")
+	}
+	if policy.authorize(sqlite3.SQLITE_DELETE, "config_revisions", "", "main", "rev_config_globals_UPDATE") {
+		t.Fatal("config revision DELETE was allowed from a trigger")
+	}
+	if !policy.authorize(sqlite3.SQLITE_INSERT, "config_revisions", "", "main", "rev_config_globals_UPDATE") ||
+		!policy.authorize(sqlite3.SQLITE_UPDATE, "config_revisions", "revision", "main", "rev_config_globals_UPDATE") {
+		t.Fatal("approved config revision trigger tuple was denied during application phase")
+	}
+	if policy.authorize(sqlite3.SQLITE_FUNCTION, "", "count", "", "unapproved_trigger") {
+		t.Fatal("trigger-sourced count function was allowed")
+	}
+	policy.phase.Store(uint32(firstAudioStartupPreflight))
+	if !policy.authorize(sqlite3.SQLITE_FUNCTION, "", "count", "", "") ||
+		!policy.authorize(sqlite3.SQLITE_UPDATE, "config_globals", "key", "main", "") {
+		t.Fatal("application-phase reservation tuples were denied after startup")
+	}
+	if policy.authorize(sqlite3.SQLITE_FUNCTION, "", "substr", "", "") {
+		t.Fatal("startup-only substr remained allowed in preflight")
 	}
 }
 
