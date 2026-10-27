@@ -8,7 +8,7 @@ The architecture reviewer approved the narrowed authorizer policy and current do
 
 ## Findings and resolution
 
-Earlier review found overly broad SQLite function/action exceptions, including an unnecessary `substr` permission. The implementation removed `substr` and constrained the remaining function/action permissions by phase, database object, and trigger source. User and config writes are additionally rejected by fixed `BEFORE` row triggers; the regression asserts blocked config writes do not emit a revision. These findings are closed for startup policy only.
+Earlier review found overly broad SQLite function/action exceptions, including an unscoped/undocumented `substr` permission. The implementation removed `substr` and constrained the remaining function/action permissions by phase, database object, and trigger source. User and config writes are additionally rejected by fixed `BEFORE` row triggers; the regression asserts blocked config writes do not emit a revision. These findings are closed for startup policy only.
 
 ## Limits
 
