@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - "docs/73-first-audio-matrix-control-protocol-sdd.md"
+      - "docs/75-first-audio-immutable-guard-context-sdd.md"
       - "server/internal/api/first_audio_matrix_harness_test.go"
       - "server/go.mod"
       - "server/go.sum"
@@ -25,6 +26,7 @@ on:
   pull_request:
     paths:
       - "docs/73-first-audio-matrix-control-protocol-sdd.md"
+      - "docs/75-first-audio-immutable-guard-context-sdd.md"
       - "server/internal/api/first_audio_matrix_harness_test.go"
       - "server/go.mod"
       - "server/go.sum"
@@ -73,7 +75,10 @@ jobs:
         run: python3 -m unittest discover -s review -p test_first_audio_matrix_control.py -v
       - name: Test JSONL parser, lifecycle, replay, and terminal cleanup
         working-directory: server
-        run: go test ./internal/api -run '^TestFirstAudioMatrix' -count=1 -timeout=5m
+        run: go test ./internal/api -run '^TestFirstAudio(Matrix|GuardContext)' -count=1 -timeout=5m
+      - name: Race-test immutable guard context publication
+        working-directory: server
+        run: go test -race ./internal/api -run '^TestFirstAudioGuardContext' -count=1 -timeout=5m
       - name: Confirm Linux CGO compiler is active
         run: |
           test "$(go env CGO_ENABLED)" = "1"
@@ -94,7 +99,7 @@ jobs:
         working-directory: server
         run: |
           go build -o "$RUNNER_TEMP/en-words-server" ./cmd/server
-          if go tool nm "$RUNNER_TEMP/en-words-server" | grep -q 'TestFirstAudioMatrix\|firstAudioControl'; then
+          if go tool nm "$RUNNER_TEMP/en-words-server" | grep -q 'TestFirstAudioMatrix\|TestFirstAudioGuardContext\|firstAudioControl\|firstAudioGuardContext'; then
             echo "test-only harness symbol leaked into production binary" >&2
             exit 1
           fi
@@ -135,4 +140,4 @@ jobs:
           gcc --version
       - name: Test Go harness path and lifecycle boundaries
         working-directory: server
-        run: go test ./internal/api -run '^TestFirstAudioMatrix' -count=1 -timeout=10m
+        run: go test ./internal/api -run '^TestFirstAudio(Matrix|GuardContext)' -count=1 -timeout=10m
