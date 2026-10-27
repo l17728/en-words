@@ -59,7 +59,10 @@ func firstAudioStartupReadManifest() map[string]map[string]struct{} {
 		if err != nil {
 			panic("first-audio model manifest parse failed")
 		}
-		columns := make(map[string]struct{}, len(parsed.Fields))
+		// SQLite reports an empty column name for SQLITE_READ callbacks that
+		// implement COUNT(*) over a table. This sentinel grants row counting,
+		// not access to an undeclared physical column.
+		columns := map[string]struct{}{"": {}}
 		for _, field := range parsed.Fields {
 			if field.DBName != "" {
 				columns[field.DBName] = struct{}{}
@@ -67,8 +70,8 @@ func firstAudioStartupReadManifest() map[string]map[string]struct{} {
 		}
 		manifest[parsed.Table] = columns
 	}
-	manifest["sqlite_master"] = map[string]struct{}{"type": {}, "name": {}, "tbl_name": {}, "rootpage": {}, "sql": {}}
-	manifest["sqlite_sequence"] = map[string]struct{}{"name": {}, "seq": {}}
+	manifest["sqlite_master"] = map[string]struct{}{"": {}, "type": {}, "name": {}, "tbl_name": {}, "rootpage": {}, "sql": {}}
+	manifest["sqlite_sequence"] = map[string]struct{}{"": {}, "name": {}, "seq": {}}
 	return manifest
 }
 
@@ -118,7 +121,7 @@ func (p *firstAudioStartupPolicy) authorize(action int, arg1, arg2, databaseName
 			return ok
 		}
 	case sqlite3.SQLITE_UPDATE:
-		if triggerName == "rev_config_globals_UPDATE" && arg1 == "config_revisions" {
+		if databaseName == "main" && triggerName == "rev_config_globals_UPDATE" && arg1 == "config_revisions" {
 			return true
 		}
 		if databaseName != "main" {
@@ -131,7 +134,7 @@ func (p *firstAudioStartupPolicy) authorize(action int, arg1, arg2, databaseName
 			return true // WithAtomicWriteObserved's zero-row reservation; row guard rejects effects.
 		}
 	case sqlite3.SQLITE_INSERT, sqlite3.SQLITE_DELETE:
-		if triggerName == "rev_config_globals_UPDATE" && arg1 == "config_revisions" {
+		if databaseName == "main" && triggerName == "rev_config_globals_UPDATE" && arg1 == "config_revisions" {
 			return true
 		}
 	}
