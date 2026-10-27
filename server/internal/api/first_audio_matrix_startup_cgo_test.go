@@ -46,13 +46,7 @@ func newFirstAudioStartupPolicy() *firstAudioStartupPolicy {
 }
 
 func firstAudioStartupReadManifest() map[string]map[string]struct{} {
-	models := []any{
-		&store.OverdueTask{}, &store.FeedbackTask{}, &store.FeedbackIntent{}, &store.FeedbackTodo{},
-		&store.FeedbackNotice{}, &store.ConfigRevision{}, &store.RuntimeRecord{}, &store.DurableMemory{},
-		&store.User{}, &store.WordBook{}, &store.WordEntry{}, &store.MemoryCard{}, &store.Lesson{},
-		&store.ClassroomEvent{}, &store.WsTicket{}, &store.ConfigGlobal{}, &store.ConfigOverride{},
-		&store.Feedback{}, &store.Notification{}, &store.AgentMemory{}, &store.AuditLog{}, &store.PlacementDraft{},
-	}
+	models := firstAudioStartupModels()
 	cache := &sync.Map{}
 	manifest := make(map[string]map[string]struct{}, len(models)+2)
 	for _, model := range models {
@@ -74,6 +68,16 @@ func firstAudioStartupReadManifest() map[string]map[string]struct{} {
 	manifest["sqlite_master"] = map[string]struct{}{"": {}, "type": {}, "name": {}, "tbl_name": {}, "rootpage": {}, "sql": {}}
 	manifest["sqlite_sequence"] = map[string]struct{}{"": {}, "name": {}, "seq": {}}
 	return manifest
+}
+
+func firstAudioStartupModels() []any {
+	return []any{
+		&store.OverdueTask{}, &store.FeedbackTask{}, &store.FeedbackIntent{}, &store.FeedbackTodo{},
+		&store.FeedbackNotice{}, &store.ConfigRevision{}, &store.RuntimeRecord{}, &store.DurableMemory{},
+		&store.User{}, &store.WordBook{}, &store.WordEntry{}, &store.MemoryCard{}, &store.Lesson{},
+		&store.ClassroomEvent{}, &store.WsTicket{}, &store.ConfigGlobal{}, &store.ConfigOverride{},
+		&store.Feedback{}, &store.Notification{}, &store.AgentMemory{}, &store.AuditLog{}, &store.PlacementDraft{},
+	}
 }
 
 func (p *firstAudioStartupPolicy) install(conn *sqlite3.SQLiteConn) error {
@@ -253,6 +257,25 @@ func TestFirstAudioMatrixNewAppStartsOnGuardedSQLitePool(t *testing.T) {
 		_ = setupPool.Close()
 		t.Fatal("schema baseline must pass before guarded app pool opens:", err)
 	}
+	baselineSnapshot, err := firstAudioCaptureDatabaseSnapshot(setup)
+	if err != nil {
+		_ = setupPool.Close()
+		t.Fatal("capture complete fixture snapshot:", err)
+	}
+	if len(baselineSnapshot.Tables) != len(firstAudioStartupModels())+1 || baselineSnapshot.SHA256 == "" {
+		_ = setupPool.Close()
+		t.Fatalf("fixture snapshot incomplete: tables=%d want=%d digest=%q", len(baselineSnapshot.Tables), len(firstAudioStartupModels())+1, baselineSnapshot.SHA256)
+	}
+	fixtureRows := make(map[string]int, len(baselineSnapshot.Tables))
+	for _, table := range baselineSnapshot.Tables {
+		fixtureRows[table.Name] = len(table.Rows)
+	}
+	for table, minimum := range map[string]int{"users": 3, "word_books": 1, "word_entries": 2, "lessons": 1} {
+		if fixtureRows[table] < minimum {
+			_ = setupPool.Close()
+			t.Fatalf("fixture snapshot omitted synthetic %s rows: got=%d want-at-least=%d", table, fixtureRows[table], minimum)
+		}
+	}
 	if err := setupPool.Close(); err != nil {
 		t.Fatal("setup pool close failed", err)
 	}
@@ -310,5 +333,12 @@ func TestFirstAudioMatrixNewAppStartsOnGuardedSQLitePool(t *testing.T) {
 	policy.phase.Store(uint32(firstAudioStartupPreflight))
 	if err := appDB.Exec("UPDATE users SET id=id WHERE id=?", identity.StudentID).Error; err == nil {
 		t.Fatal("startup-only user update reservation remained authorized after phase tightening")
+	}
+	startupSnapshot, err := firstAudioCaptureDatabaseSnapshot(appDB)
+	if err != nil {
+		t.Fatal("capture complete post-startup snapshot:", err)
+	}
+	if baselineSnapshot.SHA256 != startupSnapshot.SHA256 || string(baselineSnapshot.Canonical) != string(startupSnapshot.Canonical) {
+		t.Fatalf("guarded NewApp startup changed the synthetic database\nbefore:\n%s\nafter:\n%s", baselineSnapshot.Canonical, startupSnapshot.Canonical)
 	}
 }
