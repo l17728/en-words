@@ -279,6 +279,7 @@ def _collect_source_hashes(server_dir: Path) -> list[dict[str, str]]:
         "review/first-audio-matrix-isolated-backend-review-20261026.md",
         "review/first-audio-matrix-control-protocol-review-20261026.md",
         "review/first-audio-transaction-outcome-review-20261027.md",
+        "review/first-audio-write-inventory-review-20261027.md",
         "review/first_audio_matrix_control.py",
         "review/test_first_audio_matrix_control.py",
         ".github/workflows/first-audio-matrix-protocol.yml",
