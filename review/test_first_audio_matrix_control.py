@@ -417,12 +417,20 @@ class MatrixControlBoundaryTests(unittest.TestCase):
             (root / "web" / "e2e").mkdir()
             (root / "web" / "e2e" / "smoke.spec.ts").write_text("test('smoke', () => {})\n", encoding="utf-8")
             (root / "web" / "playwright.config.ts").write_text("export default {}\n", encoding="utf-8")
+            (root / "docs").mkdir()
+            (root / "docs" / "76-first-audio-context-authority-and-probe-lifecycle-sdd.md").write_text("lease spec\n", encoding="utf-8")
+            (root / "docs" / "77-first-audio-write-callsite-inventory-sdd.md").write_text("write inventory\n", encoding="utf-8")
+            (root / "review").mkdir()
+            (root / "review" / "first-audio-transaction-outcome-review-20261027.md").write_text("review\n", encoding="utf-8")
             sources = _collect_source_hashes(server)
             _write_source_manifest(binary, server, run_root, sources, "toolchain-hash")
             manifest = __import__("json").loads((run_root / "source-manifest.json").read_text(encoding="utf-8"))
             self.assertEqual(64, len(manifest["binary_sha256"]))
             manifest_paths = [item["path"] for item in manifest["sources"]]
-            self.assertEqual(["server/go.mod", "server/main.go", "web/e2e/smoke.spec.ts", "web/package.json",
+            self.assertEqual(["docs/76-first-audio-context-authority-and-probe-lifecycle-sdd.md",
+                              "docs/77-first-audio-write-callsite-inventory-sdd.md",
+                              "review/first-audio-transaction-outcome-review-20261027.md",
+                              "server/go.mod", "server/main.go", "web/e2e/smoke.spec.ts", "web/package.json",
                               "web/playwright.config.ts", "web/src/App.tsx"], manifest_paths)
             self.assertEqual("NOT_IMPLEMENTED", manifest["browser_journey_status"])
             self.assertEqual([], manifest["browser_journey_sources"])

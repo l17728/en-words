@@ -274,8 +274,11 @@ def _collect_source_hashes(server_dir: Path) -> list[dict[str, str]]:
         "docs/70-classroom-first-audio-latency-sdd.md",
         "docs/74-first-audio-matrix-isolated-backend-sdd.md",
         "docs/73-first-audio-matrix-control-protocol-sdd.md",
+        "docs/76-first-audio-context-authority-and-probe-lifecycle-sdd.md",
+        "docs/77-first-audio-write-callsite-inventory-sdd.md",
         "review/first-audio-matrix-isolated-backend-review-20261026.md",
         "review/first-audio-matrix-control-protocol-review-20261026.md",
+        "review/first-audio-transaction-outcome-review-20261027.md",
         "review/first_audio_matrix_control.py",
         "review/test_first_audio_matrix_control.py",
         ".github/workflows/first-audio-matrix-protocol.yml",
@@ -944,9 +947,14 @@ async def run_first_audio_matrix_browser_journeys(control: MatrixControlProcess,
         control.run_root.name.removeprefix("first-audio-matrix-"))
     initial = await control.bind()
     initial_meta = await control.metadata()
+    initial_word_ids = initial.get("word_ids")
     if (not valid_first_audio_origin_for_runner(initial_meta.get("loopback_origin", ""))
             or initial.get("lesson_id") != initial_meta.get("lesson_id")
-            or initial.get("generation") != initial_meta.get("generation")):
+            or initial.get("generation") != initial_meta.get("generation")
+            or initial.get("student_id") != initial_meta.get("student_id")
+            or initial.get("book_id") != initial_meta.get("book_id")
+            or not isinstance(initial_word_ids, list) or not initial_word_ids
+            or initial_word_ids != initial_meta.get("word_ids")):
         raise MatrixProtocolError("bind metadata does not identify the same fixture")
     initial_binding = {**initial, **initial_meta}
     first = await _run_matrix_browser_journey(node_binary, repository_root, control.run_root,
@@ -962,6 +970,8 @@ async def run_first_audio_matrix_browser_journeys(control: MatrixControlProcess,
             or current.get("loopback_origin") != initial_meta.get("loopback_origin")
             or current.get("student_id") != initial_meta.get("student_id")
             or current.get("book_id") != initial_meta.get("book_id")
+            or current.get("word_ids") != initial_word_ids
+            or reset.get("word_ids") != initial_word_ids
             or current.get("source_build_identity") != initial_meta.get("source_build_identity")):
         raise MatrixProtocolError("reset metadata does not prove a new lesson generation")
     second = await _run_matrix_browser_journey(node_binary, repository_root, control.run_root,

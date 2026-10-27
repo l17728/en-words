@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -498,9 +499,9 @@ func (c *firstAudioControl) handle(request firstAudioRequest) (firstAudioRespons
 			response, replayable, _ := c.failBind(request.RequestID)
 			return response, replayable, nil, nil
 		}
-		c.bound = bound
+		c.bound = cloneFirstAudioBound(bound)
 		c.state = firstAudioStateBound
-		return firstAudioResponse{RequestID: request.RequestID, Status: "ok", Data: bound, Error: nil}, false, nil, nil
+		return firstAudioResponse{RequestID: request.RequestID, Status: "ok", Data: cloneFirstAudioBound(bound), Error: nil}, false, nil, nil
 
 	case "metadata":
 		if len(request.Args) != 0 {
@@ -528,14 +529,18 @@ func (c *firstAudioControl) handle(request firstAudioRequest) (firstAudioRespons
 			// shutdown command. Never expose provider/SQL error text on the wire.
 			return response, replayable, nil, nil
 		}
-		if !validFirstAudioBound(updated) || updated.StudentID != c.bound.StudentID || updated.BookID != c.bound.BookID || updated.LessonID == lessonID || updated.Generation <= c.bound.Generation {
+		if !validFirstAudioBound(updated) || updated.StudentID != c.bound.StudentID || updated.BookID != c.bound.BookID ||
+			!equalFirstAudioWordIDs(updated.WordIDs, c.bound.WordIDs) || updated.LessonID == lessonID || updated.Generation <= c.bound.Generation {
 			response, replayable, err := c.failReset(request.RequestID, resetID, lessonID, true)
 			return response, replayable, nil, err
 		}
-		c.bound = updated
+		c.bound = cloneFirstAudioBound(updated)
 		c.resetCount++
 		c.state = firstAudioStateBound
-		result := firstAudioResult{status: "ok", data: map[string]any{"lesson_id": updated.LessonID, "generation": updated.Generation}}
+		result := firstAudioResult{status: "ok", data: map[string]any{
+			"lesson_id": updated.LessonID, "generation": updated.Generation,
+			"word_ids": append([]int64(nil), updated.WordIDs...),
+		}}
 		c.resets[resetID] = firstAudioResetRecord{lessonID: lessonID, result: result}
 		return firstAudioResultResponse(request.RequestID, result), true, nil, nil
 
@@ -630,6 +635,7 @@ func (c *firstAudioControl) metadata() map[string]any {
 		"lifecycle_state":        c.state,
 		"successful_reset_count": c.resetCount,
 		"source_build_identity":  c.bound.SourceBuildIdentity,
+		"word_ids":               append([]int64(nil), c.bound.WordIDs...),
 	}
 	if c.terminal != "" {
 		data["terminal_code"] = c.terminal
@@ -671,6 +677,23 @@ func validFirstAudioBound(bound firstAudioBound) bool {
 		seen[wordID] = struct{}{}
 	}
 	return true
+}
+
+func equalFirstAudioWordIDs(a, b []int64) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func cloneFirstAudioBound(bound firstAudioBound) firstAudioBound {
+	bound.WordIDs = append([]int64(nil), bound.WordIDs...)
+	return bound
 }
 
 func validFirstAudioOrigin(origin string) bool {
@@ -715,6 +738,34 @@ func (b *firstAudioFakeBackend) Reset(_ context.Context, lessonID int64) (firstA
 }
 
 func (b *firstAudioFakeBackend) Close() error {
+	b.closeCalls++
+	return nil
+}
+
+type firstAudioMutatingWordSetBackend struct {
+	bound      firstAudioBound
+	closeCalls int
+}
+
+func (b *firstAudioMutatingWordSetBackend) Bind(_ context.Context, fixture string) (firstAudioBound, error) {
+	if fixture != firstAudioFixture {
+		return firstAudioBound{}, errors.New("unexpected fixture")
+	}
+	return b.bound, nil
+}
+
+func (b *firstAudioMutatingWordSetBackend) Reset(_ context.Context, lessonID int64) (firstAudioBound, error) {
+	if lessonID != b.bound.LessonID {
+		return firstAudioBound{}, errors.New("unexpected lesson")
+	}
+	// Simulate a backend reusing and mutating the exact slice returned by Bind.
+	b.bound.WordIDs[1] = 15
+	b.bound.LessonID = 102
+	b.bound.Generation = 2
+	return b.bound, nil
+}
+
+func (b *firstAudioMutatingWordSetBackend) Close() error {
 	b.closeCalls++
 	return nil
 }
@@ -879,18 +930,76 @@ func TestFirstAudioMatrixResetReplayAndShutdownStateMachine(t *testing.T) {
 	if responses[2].RequestID != "reset-1" || responses[3].RequestID != "reset-2" {
 		t.Fatalf("replay did not echo each request ID: %#v", responses[2:4])
 	}
+	wantWordIDs := []any{float64(13), float64(14)}
+	if got := responses[0].Data.(map[string]any)["word_ids"]; !reflect.DeepEqual(got, wantWordIDs) {
+		t.Fatalf("bind did not return the frozen word IDs: got=%#v want=%#v", got, wantWordIDs)
+	}
 	if responses[1].Data.(map[string]any)["lesson_id"] != float64(102) || responses[3].Data.(map[string]any)["lesson_id"] != float64(102) {
 		t.Fatalf("replay did not return the recorded replacement lesson: reset=%#v replay=%#v", responses[1], responses[3])
+	}
+	if got := responses[1].Data.(map[string]any)["word_ids"]; !reflect.DeepEqual(got, wantWordIDs) {
+		t.Fatalf("reset result changed frozen word IDs: got=%#v want=%#v", got, wantWordIDs)
 	}
 	if responses[4].Status != "rejected" || responses[4].Error == nil || responses[4].Error.Code != "reset_id_payload_conflict" {
 		t.Fatalf("changed reset payload was not rejected: %#v", responses[4])
 	}
 	metadataData := responses[5].Data.(map[string]any)
-	if metadataData["successful_reset_count"] != float64(1) || metadataData["lesson_id"] != float64(102) {
+	if metadataData["successful_reset_count"] != float64(1) || metadataData["lesson_id"] != float64(102) ||
+		!reflect.DeepEqual(metadataData["word_ids"], wantWordIDs) {
 		t.Fatalf("metadata after replay is inconsistent: %#v", metadataData)
 	}
 	if responses[6].Status != "ok" || control.state != firstAudioShutdown || backend.resetCalls != 1 || backend.closeCalls != 1 {
 		t.Fatalf("shutdown/reset accounting mismatch: response=%#v state=%s resets=%d closes=%d", responses[6], control.state, backend.resetCalls, backend.closeCalls)
+	}
+}
+
+func TestFirstAudioMatrixResetRejectsChangedFrozenWordIDs(t *testing.T) {
+	capability := firstAudioTestCapability()
+	encodedCapability := base64.RawURLEncoding.EncodeToString(capability)
+	backend := &firstAudioFakeBackend{
+		bound:       firstAudioBound{Origin: "http://127.0.0.1:12345", SourceBuildIdentity: "unit-test-only", StudentID: 11, BookID: 12, WordIDs: []int64{13, 14}, LessonID: 101, Generation: 1},
+		resetResult: firstAudioBound{Origin: "http://127.0.0.1:12345", SourceBuildIdentity: "unit-test-only", StudentID: 11, BookID: 12, WordIDs: []int64{13, 15}, LessonID: 102, Generation: 2},
+	}
+	control := newFirstAudioControl(capability, func() (firstAudioBackend, error) { return backend, nil })
+	bind := firstAudioRequestLine(t, "bind-1", encodedCapability, "bind", map[string]any{"fixture": firstAudioFixture})
+	reset := firstAudioRequestLine(t, "reset-1", encodedCapability, "reset", map[string]any{"reset_id": "reset_bad_words", "lesson_id": 101})
+	shutdown := firstAudioRequestLine(t, "shutdown-1", encodedCapability, "shutdown", map[string]any{})
+	var output bytes.Buffer
+	err := control.serve(bytes.NewReader(bytes.Join([][]byte{bind, reset, shutdown}, nil)), &output)
+	if !errors.Is(err, errFirstAudioRunFailed) {
+		t.Fatalf("changed reset word IDs did not make the run terminal: %v", err)
+	}
+	responses := decodeFirstAudioTestResponses(t, output.Bytes())
+	if len(responses) != 3 || responses[1].Status != "outcome_uncertain" || responses[1].Error == nil || responses[1].Error.Code != "reset_outcome_uncertain" {
+		t.Fatalf("changed reset word IDs were not rejected: %#v", responses)
+	}
+	if control.state != firstAudioShutdown || backend.closeCalls != 1 {
+		t.Fatalf("changed reset word IDs did not close terminally: state=%s closes=%d", control.state, backend.closeCalls)
+	}
+}
+
+func TestFirstAudioMatrixResetRejectsAliasedInPlaceWordIDMutation(t *testing.T) {
+	capability := firstAudioTestCapability()
+	encodedCapability := base64.RawURLEncoding.EncodeToString(capability)
+	backend := &firstAudioMutatingWordSetBackend{bound: firstAudioBound{
+		Origin: "http://127.0.0.1:12345", SourceBuildIdentity: "unit-test-only", StudentID: 11, BookID: 12,
+		WordIDs: []int64{13, 14}, LessonID: 101, Generation: 1,
+	}}
+	control := newFirstAudioControl(capability, func() (firstAudioBackend, error) { return backend, nil })
+	bind := firstAudioRequestLine(t, "bind-alias", encodedCapability, "bind", map[string]any{"fixture": firstAudioFixture})
+	reset := firstAudioRequestLine(t, "reset-alias", encodedCapability, "reset", map[string]any{"reset_id": "reset_alias", "lesson_id": 101})
+	shutdown := firstAudioRequestLine(t, "shutdown-alias", encodedCapability, "shutdown", map[string]any{})
+	var output bytes.Buffer
+	err := control.serve(bytes.NewReader(bytes.Join([][]byte{bind, reset, shutdown}, nil)), &output)
+	if !errors.Is(err, errFirstAudioRunFailed) {
+		t.Fatalf("in-place aliased word ID mutation did not make the run terminal: %v", err)
+	}
+	responses := decodeFirstAudioTestResponses(t, output.Bytes())
+	if len(responses) != 3 || responses[1].Status != "outcome_uncertain" || responses[1].Error == nil || responses[1].Error.Code != "reset_outcome_uncertain" {
+		t.Fatalf("in-place aliased word ID mutation was not rejected: %#v", responses)
+	}
+	if control.state != firstAudioShutdown || backend.closeCalls != 1 {
+		t.Fatalf("aliased word ID mutation did not close terminally: state=%s closes=%d", control.state, backend.closeCalls)
 	}
 }
 
