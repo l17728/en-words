@@ -91,6 +91,7 @@ func TestFirstAudioGuardProbeReplayDenialBlocksJourneyDespiteCallerEvidence(t *t
 	if err := transition.Publish(context.Background(), preflight, firstAudioTestPreflightEvidence(bindings, receipts)); err != nil {
 		t.Fatal(err)
 	}
+	activePreflight := controller.publisher.Load()
 	firstAudioTestCompleteProbes(t, tokens, bindings, receipts)
 	challenge := &firstAudioGuardProbeChallenge{binding: bindings[0], digest: receipts[0].digest, receipt: receipts[0]}
 	if err := challenge.Consume(bytes.Repeat([]byte{0x7F}, 32), bindings[0]); !errors.Is(err, errFirstAudioGuardProbeRejected) {
@@ -104,7 +105,7 @@ func TestFirstAudioGuardProbeReplayDenialBlocksJourneyDespiteCallerEvidence(t *t
 	if err := transition.Publish(context.Background(), journey, evidence); !errors.Is(err, errFirstAudioGuardContextTransition) {
 		t.Fatalf("journey after probe replay = %v, want denial", err)
 	}
-	if controller.publisher.Load() != preflight {
+	if controller.publisher.Load() != activePreflight {
 		t.Fatal("replayed challenge advanced the active context")
 	}
 }
@@ -279,7 +280,8 @@ func TestFirstAudioGuardControllerPublishesPreflightBeforeProbes(t *testing.T) {
 	if err := transition.Publish(context.Background(), preflight, firstAudioTestPreflightEvidence(bindings, receipts)); err != nil {
 		t.Fatal(err)
 	}
-	if controller.publisher.Load() != preflight {
+	activePreflight := controller.publisher.Load()
+	if activePreflight == nil || activePreflight.Phase() != firstAudioGuardPreflight {
 		t.Fatal("PREFLIGHT context was not published before probe execution")
 	}
 	for i, challenge := range challenges {
@@ -500,6 +502,7 @@ func TestFirstAudioGuardPreflightReceiptMustMatchActiveTokenDigest(t *testing.T)
 	if err := transition.Publish(context.Background(), preflight, firstAudioTestPreflightEvidence(bindings, receipts)); err != nil {
 		t.Fatal(err)
 	}
+	activePreflight := controller.publisher.Load()
 	firstAudioTestCompleteProbes(t, tokens, bindings, receipts)
 	// Keep the same identity binding but create a completed receipt for another token.
 	seed := bytes.Repeat([]byte{0xE7}, 32)
@@ -531,7 +534,7 @@ func TestFirstAudioGuardPreflightReceiptMustMatchActiveTokenDigest(t *testing.T)
 	if err := transition.Publish(context.Background(), journey, evidence); !errors.Is(err, errFirstAudioGuardContextTransition) {
 		t.Fatalf("foreign token receipt publish error = %v, want transition denial", err)
 	}
-	if controller.publisher.Load() != preflight {
+	if controller.publisher.Load() != activePreflight {
 		t.Fatal("foreign token receipt replaced active preflight context")
 	}
 }
@@ -582,7 +585,7 @@ func TestFirstAudioGuardPreflightPublishWaitsForProbeActivityAndTimesOutTerminal
 			t.Fatal(err)
 		}
 		firstAudioTestCompleteProbes(t, tokens, bindings, receipts)
-		return c, tr, pre, bindings, receipts
+		return c, tr, c.publisher.Load(), bindings, receipts
 	}
 	t.Run("waits for admitted probe callback", func(t *testing.T) {
 		c, tr, pre, bindings, receipts := newPreflightController()

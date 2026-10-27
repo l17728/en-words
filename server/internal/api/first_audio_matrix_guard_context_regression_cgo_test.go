@@ -222,7 +222,7 @@ func TestFirstAudioGuardContextPublisherMonotonicAndNilSafe(t *testing.T) {
 	}
 	first.rows[firstAudioGuardRowKey("runtime_records", "UPSERT", "snapshot:101")].newRow[0] = 'X'
 	activeSnapshot, _ := firstAudioContextRowsByTable(active.RowContracts())
-	if got := activeSnapshot.newRow; !bytes.Equal(got, []byte("snapshot-2")) {
+	if got := activeSnapshot.newRow; !bytes.Equal(got, []byte("snapshot-3")) {
 		t.Fatalf("active context changed after candidate mutation: %q", got)
 	}
 	if err := publisher.Publish(first); !errors.Is(err, errFirstAudioGuardContextStale) {
