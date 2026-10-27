@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"enwords/internal/store"
@@ -112,5 +113,7 @@ func TestFirstAudioMatrixSchemaManifestRejectsUnexpectedObject(t *testing.T) {
 	}
 	if err := firstAudioValidateSchemaManifest(db); err == nil {
 		t.Fatal("schema validator accepted an unreviewed SQLite object")
+	} else if !strings.Contains(err.Error(), "SQLite schema drift") {
+		t.Fatalf("schema mismatch failed for the wrong reason: %v", err)
 	}
 }
