@@ -107,7 +107,10 @@ func (p *firstAudioStartupPolicy) authorize(action int, arg1, arg2, databaseName
 		return true
 	case sqlite3.SQLITE_READ:
 		_, ok := p.reads[arg1][arg2]
-		return databaseName == "main" && ok
+		// SQLite omits the database name for COUNT(*)'s table-existence
+		// authorization callback. Accept that tuple only for the empty-column
+		// sentinel of an explicitly manifested main-schema table.
+		return ok && (databaseName == "main" || (databaseName == "" && arg2 == ""))
 	case sqlite3.SQLITE_TRANSACTION:
 		return triggerName == "" && (arg1 == "BEGIN" || arg1 == "COMMIT" || arg1 == "ROLLBACK")
 	case sqlite3.SQLITE_FUNCTION:
@@ -158,6 +161,25 @@ func installFirstAudioStartupGuards(db *gorm.DB) error {
 		}
 	}
 	return nil
+}
+
+func TestFirstAudioStartupManifestAllowsOnlySQLiteCountWithoutDatabaseName(t *testing.T) {
+	policy := newFirstAudioStartupPolicy()
+	policy.phase.Store(uint32(firstAudioStartupApp))
+	if !policy.authorize(sqlite3.SQLITE_READ, "config_revisions", "", "", "") {
+		t.Fatal("SQLite COUNT(*) callback on a manifested main table was denied")
+	}
+	for _, tuple := range []struct {
+		table, column, database string
+	}{
+		{table: "unlisted_table", database: ""},
+		{table: "config_revisions", column: "unknown_column", database: ""},
+		{table: "config_revisions", database: "temp"},
+	} {
+		if policy.authorize(sqlite3.SQLITE_READ, tuple.table, tuple.column, tuple.database, "") {
+			t.Fatalf("unmanifested read tuple was allowed: %#v", tuple)
+		}
+	}
 }
 
 func TestFirstAudioMatrixNewAppStartsOnGuardedSQLitePool(t *testing.T) {
