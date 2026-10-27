@@ -2,7 +2,7 @@
 
 ## Scope and evidence
 
-Reviewed only the isolated matrix startup/SQLite policy slice at commit `5dbd47772b0c96b5171c4a78a12a94c0e112db6f`. CI run [40438989866](https://github.com/l17728/en-words/actions/runs/40438989866) passed the targeted Go tests on Linux and Windows. Windows explicitly ran with `CGO_ENABLED=1` and MinGW GCC; Linux also passed strict `gofmt`, `go vet`, and production-binary symbol exclusion.
+Reviewed only the isolated matrix startup/SQLite policy slice at commit `5dbd47772b0c96b5171c4a78a12a94c0e112db6f`. CI run [40438989866](https://github.com/l17728/en-words/actions/runs/40438989866) passed the targeted Go tests on Linux and Windows. Windows explicitly ran with `CGO_ENABLED=1` and MinGW GCC; Linux also passed strict `gofmt`, `go vet`, and production-binary symbol exclusion. Follow-up CI run [40439867703](https://github.com/l17728/en-words/actions/runs/40439867703) at `0fd938991f2318369dfe13fa514dee4bdf8d63c6` explicitly enabled Linux CGO and passed both jobs.
 
 The architecture reviewer approved the narrowed authorizer policy and current docs. The security reviewer approved the same startup-policy scope. The backend test review confirmed the fixture and startup guard tests are included by the CI filter; its earlier concern about Windows CGO coverage was closed by the explicit compiler setup and successful Windows test step.
 
