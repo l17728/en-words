@@ -36,6 +36,7 @@ type firstAudioStartupPolicy struct {
 	denials atomic.Uint64
 	rowGuardCalls atomic.Uint64
 	reads   map[string]map[string]struct{}
+	lastDenial atomic.Value
 }
 
 func newFirstAudioStartupPolicy() *firstAudioStartupPolicy {
@@ -88,6 +89,7 @@ func (p *firstAudioStartupPolicy) install(conn *sqlite3.SQLiteConn) error {
 			return sqlite3.SQLITE_OK
 		}
 		p.denials.Add(1)
+		p.lastDenial.Store(fmt.Sprintf("action=%d arg1=%q arg2=%q database=%q trigger=%q phase=%d", action, arg1, arg2, databaseName, triggerName, p.phase.Load()))
 		return sqlite3.SQLITE_DENY
 	})
 	return nil
@@ -236,7 +238,7 @@ func TestFirstAudioMatrixNewAppStartsOnGuardedSQLitePool(t *testing.T) {
 	}
 	var revisionCount int64
 	if err := appDB.Model(&store.ConfigRevision{}).Count(&revisionCount).Error; err != nil || revisionCount != setupRevisionCount {
-		t.Fatalf("blocked config row change emitted revision side effect: count=%d baseline=%d err=%v", revisionCount, setupRevisionCount, err)
+		t.Fatalf("blocked config row change emitted revision side effect: count=%d baseline=%d err=%v last_denial=%v", revisionCount, setupRevisionCount, err, policy.lastDenial.Load())
 	}
 	if policy.rowGuardCalls.Load() < 2 {
 		t.Fatalf("row guard calls = %d, want at least the blocked users and config writes", policy.rowGuardCalls.Load())
