@@ -4,6 +4,7 @@ package api
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"strconv"
@@ -66,14 +67,19 @@ func TestFirstAudioGuardContextRejectsMalformedShapes(t *testing.T) {
 			s.connectionIDs = append(s.connectionIDs, s.connectionIDs[0])
 			return s
 		}()},
-		{"preflight duplicate probe", func() firstAudioGuardContextSpec {
+		{"preflight duplicate probe connection", func() firstAudioGuardContextSpec {
 			s := validPreflight
 			s.probeContracts = append(s.probeContracts, s.probeContracts[0])
 			return s
 		}()},
-		{"preflight token too short", func() firstAudioGuardContextSpec {
+		{"preflight duplicate probe ID", func() firstAudioGuardContextSpec {
 			s := validPreflight
-			s.probeContracts[0].token = []byte("short")
+			s.probeContracts[1].probeID = s.probeContracts[0].probeID
+			return s
+		}()},
+		{"preflight digest missing", func() firstAudioGuardContextSpec {
+			s := validPreflight
+			s.probeContracts[0].tokenDigest = [sha256.Size]byte{}
 			return s
 		}()},
 		{"preflight token wrong version", func() firstAudioGuardContextSpec {
@@ -183,14 +189,18 @@ func TestFirstAudioGuardContextDeepCopiesInputsAndAccessors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	preflight.probeContracts[0].token[0] = 'X'
-	probes := preflightCtx.ProbeContracts()
-	if probes[0].token[0] != 0xA5 {
-		t.Fatalf("published token changed after caller mutation: %x", probes[0].token[0])
+	preflight.probeContracts[0].tokenDigest[0] = 'X'
+	if preflightCtx.probes["conn-a"].tokenDigest[0] == 'X' {
+		t.Fatalf("published token digest changed after caller mutation: %x", preflightCtx.probes["conn-a"].tokenDigest[0])
 	}
-	probes[0].token[0] = 'Y'
-	if got := preflightCtx.ProbeContracts()[0].token[0]; got != 0xA5 {
-		t.Fatalf("accessor mutation changed stored token: %x", got)
+	clone, err := preflightCtx.clone()
+	if err != nil {
+		t.Fatal(err)
+	}
+	probeCopy := clone.probes["conn-a"]
+	probeCopy.tokenDigest[0] = 'Y'
+	if got := preflightCtx.probes["conn-a"].tokenDigest[0]; got == 'Y' {
+		t.Fatalf("cloned context mutation changed stored token digest: %x", got)
 	}
 }
 
@@ -202,13 +212,10 @@ func TestFirstAudioGuardContextPublisherMonotonicAndNilSafe(t *testing.T) {
 	if publisher.Load() != nil {
 		t.Fatal("nil publish changed empty active pointer")
 	}
-	first, _ := newFirstAudioGuardContext(firstAudioValidJourneySpec(2, 101, 1, 2))
-	if err := publisher.Publish(first); err != nil {
-		t.Fatal("publish first context:", err)
-	}
+	first := firstAudioPublishJourney(t, &publisher, 3)
 	active := publisher.Load()
-	if active == nil || active.Version() != 2 {
-		t.Fatalf("active context = %#v, want version 2", active)
+	if active == nil || active.Version() != 3 {
+		t.Fatalf("active context = %#v, want version 3", active)
 	}
 	if err := publisher.Publish(nil); !errors.Is(err, errFirstAudioGuardContextInvalid) || publisher.Load() != active {
 		t.Fatalf("nil publish changed active context or returned wrong error: err=%v", err)
@@ -224,7 +231,7 @@ func TestFirstAudioGuardContextPublisherMonotonicAndNilSafe(t *testing.T) {
 	if publisher.Load() != active {
 		t.Fatal("nil or stale publish replaced active pointer")
 	}
-	stale, _ := newFirstAudioGuardContext(firstAudioValidJourneySpec(1, 101, 1, 1))
+	stale, _ := newFirstAudioGuardContext(firstAudioValidJourneySpec(2, 101, 1, 2))
 	if err := publisher.Publish(stale); !errors.Is(err, errFirstAudioGuardContextStale) {
 		t.Fatalf("older-version publish error = %v, want stale", err)
 	}
@@ -235,12 +242,9 @@ func TestFirstAudioGuardContextPublisherMonotonicAndNilSafe(t *testing.T) {
 
 func TestFirstAudioGuardContextPublisherConcurrentVersionsDoNotRegress(t *testing.T) {
 	var publisher firstAudioGuardContextPublisher
-	initial, _ := newFirstAudioGuardContext(firstAudioValidJourneySpec(1, 101, 1, 1))
-	if err := publisher.Publish(initial); err != nil {
-		t.Fatal(err)
-	}
+	firstAudioPublishJourney(t, &publisher, 3)
 	candidates := make([]*firstAudioGuardContext, 2)
-	for i, version := range []uint64{2, 3} {
+	for i, version := range []uint64{4, 5} {
 		candidate, err := newFirstAudioGuardContext(firstAudioValidJourneySpec(version, 101, 1, int(version)))
 		if err != nil {
 			t.Fatal(err)
@@ -275,20 +279,14 @@ func TestFirstAudioGuardContextPublisherConcurrentVersionsDoNotRegress(t *testin
 	if !succeeded {
 		t.Fatal("all concurrent context publications failed")
 	}
-	if got := publisher.Load().Version(); got != 3 {
-		t.Fatalf("concurrent publication regressed or dropped newest version: got %d want 3", got)
+	if got := publisher.Load().Version(); got != 5 {
+		t.Fatalf("concurrent publication regressed or dropped newest version: got %d want 5", got)
 	}
 }
 
 func TestFirstAudioGuardContextPublisherReadersSeeWholeJourneySnapshots(t *testing.T) {
 	var publisher firstAudioGuardContextPublisher
-	initial, err := newFirstAudioGuardContext(firstAudioValidJourneySpec(1, 101, 1, 1))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := publisher.Publish(initial); err != nil {
-		t.Fatal(err)
-	}
+	firstAudioPublishJourney(t, &publisher, 3)
 
 	done := make(chan struct{})
 	var failures atomic.Int64
@@ -310,7 +308,7 @@ func TestFirstAudioGuardContextPublisherReadersSeeWholeJourneySnapshots(t *testi
 			ready <- struct{}{}
 			<-start
 			initial := publisher.Load()
-			if initial == nil || initial.Version() != 1 {
+			if initial == nil || initial.Version() != 3 {
 				failures.Add(1)
 				observed <- observation{readerID: readerID}
 			} else {
@@ -360,13 +358,13 @@ func TestFirstAudioGuardContextPublisherReadersSeeWholeJourneySnapshots(t *testi
 	seenInitial := make(map[int]struct{}, readerCount)
 	for len(seenInitial) < readerCount {
 		observation := <-observed
-		if observation.version != 1 {
-			t.Fatalf("reader %d initial version = %d, want 1", observation.readerID, observation.version)
+		if observation.version != 3 {
+			t.Fatalf("reader %d initial version = %d, want 3", observation.readerID, observation.version)
 		}
 		seenInitial[observation.readerID] = struct{}{}
 	}
 	close(initialRelease)
-	for version := uint64(2); version <= 250; version++ {
+	for version := uint64(4); version <= 252; version++ {
 		candidate, err := newFirstAudioGuardContext(firstAudioValidJourneySpec(version, 101, 1, int(version)))
 		if err != nil {
 			t.Fatal(err)
@@ -387,13 +385,39 @@ func TestFirstAudioGuardContextPublisherReadersSeeWholeJourneySnapshots(t *testi
 	}
 }
 
+func firstAudioPublishJourney(t *testing.T, publisher *firstAudioGuardContextPublisher, version uint64) *firstAudioGuardContext {
+	t.Helper()
+	startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: "run-0001", currentLessonID: 101, generation: 1, phase: firstAudioGuardStartupProbe, version: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	preflight, err := newFirstAudioGuardContext(firstAudioValidPreflightSpec(2))
+	if err != nil {
+		t.Fatal(err)
+	}
+	journey, err := newFirstAudioGuardContext(firstAudioValidJourneySpec(version, 101, 1, int(version)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, candidate := range []*firstAudioGuardContext{startup, preflight, journey} {
+		if err := publisher.Publish(candidate); err != nil {
+			t.Fatalf("publish phase %s version %d: %v", candidate.Phase(), candidate.Version(), err)
+		}
+	}
+	return journey
+}
+
 func firstAudioValidPreflightSpec(version uint64) firstAudioGuardContextSpec {
 	connections := []string{"conn-a", "conn-b"}
 	probes := make([]firstAudioGuardProbeContract, 0, len(connections))
 	rows := make([]firstAudioGuardRowContract, 0, len(connections))
 	for _, connectionID := range connections {
 		token := bytes.Repeat([]byte{0xA5}, 32)
-		probes = append(probes, firstAudioGuardProbeContract{connectionID: connectionID, token: token, runID: "run-0001", lessonID: 101, generation: 1, version: version})
+		digest := sha256.Sum256(token)
+		for i := range token {
+			token[i] = 0
+		}
+		probes = append(probes, firstAudioGuardProbeContract{connectionID: connectionID, probeID: "probe-" + connectionID, tokenDigest: digest, runID: "run-0001", lessonID: 101, generation: 1, version: version})
 		rows = append(rows, firstAudioGuardRowContract{table: "lessons", operation: "UPDATE", identity: "lesson:101/conn:" + connectionID, oldRow: []byte("lesson-row"), newRow: []byte("lesson-row")})
 	}
 	return firstAudioGuardContextSpec{runID: "run-0001", currentLessonID: 101, generation: 1, phase: firstAudioGuardPreflight, version: version, connectionIDs: connections, probeContracts: probes, rowContracts: rows}

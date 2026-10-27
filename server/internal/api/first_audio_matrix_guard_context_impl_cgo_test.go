@@ -4,6 +4,7 @@ package api
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"runtime"
@@ -14,8 +15,9 @@ import (
 )
 
 var (
-	errFirstAudioGuardContextInvalid = errors.New("invalid first-audio guard context")
-	errFirstAudioGuardContextStale   = errors.New("stale first-audio guard context version")
+	errFirstAudioGuardContextInvalid    = errors.New("invalid first-audio guard context")
+	errFirstAudioGuardContextStale      = errors.New("stale first-audio guard context version")
+	errFirstAudioGuardContextTransition = errors.New("invalid first-audio guard context transition")
 )
 
 type firstAudioGuardContextPhase string
@@ -45,7 +47,8 @@ type firstAudioGuardContextSpec struct {
 
 type firstAudioGuardProbeContract struct {
 	connectionID string
-	token        []byte
+	probeID      string
+	tokenDigest  [sha256.Size]byte
 	runID        string
 	lessonID     int64
 	generation   uint64
@@ -89,6 +92,7 @@ func newFirstAudioGuardContext(spec firstAudioGuardContextSpec) (*firstAudioGuar
 		probes:        make(map[string]firstAudioGuardProbeContract, len(spec.probeContracts)),
 		rows:          make(map[string]firstAudioGuardRowContract, len(spec.rowContracts)),
 	}
+	probeIDs := make(map[string]struct{}, len(spec.probeContracts))
 	for _, probe := range spec.probeContracts {
 		if probe.connectionID == "" || !firstAudioIDPattern.MatchString(probe.connectionID) {
 			return nil, errFirstAudioGuardContextInvalid
@@ -96,7 +100,13 @@ func newFirstAudioGuardContext(spec firstAudioGuardContextSpec) (*firstAudioGuar
 		if _, exists := ctx.probes[probe.connectionID]; exists {
 			return nil, fmt.Errorf("%w: duplicate probe connection", errFirstAudioGuardContextInvalid)
 		}
-		probe.token = append([]byte(nil), probe.token...)
+		if probe.probeID == "" || !firstAudioIDPattern.MatchString(probe.probeID) || probe.tokenDigest == ([sha256.Size]byte{}) {
+			return nil, errFirstAudioGuardContextInvalid
+		}
+		if _, exists := probeIDs[probe.probeID]; exists {
+			return nil, fmt.Errorf("%w: duplicate probe ID", errFirstAudioGuardContextInvalid)
+		}
+		probeIDs[probe.probeID] = struct{}{}
 		ctx.probes[probe.connectionID] = probe
 	}
 	for _, row := range spec.rowContracts {
@@ -146,7 +156,7 @@ func (c *firstAudioGuardContext) validateShape() error {
 			}
 			registered[connectionID] = struct{}{}
 			probe, ok := c.probes[connectionID]
-			if !ok || len(probe.token) < 32 || probe.runID != c.runID || probe.lessonID != c.currentLessonID || probe.generation != c.generation || probe.version != c.version {
+			if !ok || probe.runID != c.runID || probe.lessonID != c.currentLessonID || probe.generation != c.generation || probe.version != c.version {
 				return fmt.Errorf("%w: preflight probe binding mismatch", errFirstAudioGuardContextInvalid)
 			}
 			row, ok := c.rows[firstAudioGuardRowKey("lessons", "UPDATE", fmt.Sprintf("lesson:%d/conn:%s", c.currentLessonID, connectionID))]
@@ -249,17 +259,11 @@ func (c *firstAudioGuardContext) RowContracts() []firstAudioGuardRowContract {
 	return out
 }
 
-func (c *firstAudioGuardContext) ProbeContracts() []firstAudioGuardProbeContract {
+func (c *firstAudioGuardContext) ProbeCount() int {
 	if c == nil {
-		return nil
+		return 0
 	}
-	out := make([]firstAudioGuardProbeContract, 0, len(c.probes))
-	for _, probe := range c.probes {
-		probe.token = append([]byte(nil), probe.token...)
-		out = append(out, probe)
-	}
-	sort.Slice(out, func(i, j int) bool { return out[i].connectionID < out[j].connectionID })
-	return out
+	return len(c.probes)
 }
 
 type firstAudioGuardContextPublisher struct {
@@ -281,12 +285,43 @@ func (p *firstAudioGuardContextPublisher) Publish(candidate *firstAudioGuardCont
 		if active != nil && detached.version <= active.version {
 			return errFirstAudioGuardContextStale
 		}
+		if !firstAudioGuardContextTransitionAllowed(active, detached) {
+			return errFirstAudioGuardContextTransition
+		}
 		if p.current.CompareAndSwap(active, detached) {
 			return nil
 		}
 		runtime.Gosched()
 	}
 	return fmt.Errorf("%w: publisher CAS contention", errFirstAudioGuardContextStale)
+}
+
+func firstAudioGuardContextTransitionAllowed(active, candidate *firstAudioGuardContext) bool {
+	if candidate == nil {
+		return false
+	}
+	if active == nil {
+		return candidate.phase == firstAudioGuardStartupProbe && candidate.version == 1
+	}
+	if active.phase == firstAudioGuardTerminal || active.runID != candidate.runID {
+		return false
+	}
+	if candidate.phase == firstAudioGuardTerminal {
+		return active.currentLessonID == candidate.currentLessonID && active.generation == candidate.generation
+	}
+	switch active.phase {
+	case firstAudioGuardStartupProbe:
+		return candidate.phase == firstAudioGuardPreflight && active.currentLessonID == candidate.currentLessonID && active.generation == candidate.generation
+	case firstAudioGuardPreflight:
+		return candidate.phase == firstAudioGuardJourney && active.currentLessonID == candidate.currentLessonID && active.generation == candidate.generation
+	case firstAudioGuardJourney:
+		sameIdentity := active.currentLessonID == candidate.currentLessonID && active.generation == candidate.generation
+		return candidate.phase == firstAudioGuardJourney && sameIdentity || candidate.phase == firstAudioGuardResetApply && sameIdentity && candidate.priorLessonID == active.currentLessonID
+	case firstAudioGuardResetApply:
+		return candidate.phase == firstAudioGuardJourney && candidate.currentLessonID == active.nextLessonID && candidate.generation == active.generation+1
+	default:
+		return false
+	}
 }
 
 func (p *firstAudioGuardContextPublisher) Load() *firstAudioGuardContext {
