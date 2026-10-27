@@ -163,7 +163,7 @@ func installFirstAudioStartupGuards(db *gorm.DB) error {
 	return nil
 }
 
-func TestFirstAudioStartupManifestAllowsOnlySQLiteCountWithoutDatabaseName(t *testing.T) {
+func TestFirstAudioMatrixStartupManifestAllowsOnlySQLiteCountWithoutDatabaseName(t *testing.T) {
 	policy := newFirstAudioStartupPolicy()
 	policy.phase.Store(uint32(firstAudioStartupApp))
 	if !policy.authorize(sqlite3.SQLITE_READ, "config_revisions", "", "", "") {
