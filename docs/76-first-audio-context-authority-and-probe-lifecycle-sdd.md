@@ -1,6 +1,6 @@
 # First-Audio Context Authority and Probe Lifecycle SDD
 
-Date: 2026-10-27  
+Date: 2026-10-27
 Status: design reviewed; the isolated no-SQL controller slice may proceed. SQL/backend integration remains separately blocked on an operation inventory and field-level trusted builders.
 
 ## 1. Scope
