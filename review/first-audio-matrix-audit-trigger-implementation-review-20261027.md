@@ -8,7 +8,7 @@ This slice adds a fixed test-schema audit ID collision trigger and exact SQLite 
 
 The pinned SQLite schema contains 63 objects, with canonical schema digest `797ffcb2b01d472f29fc73ee42c9ba8874e86aa38e6102cd2f9a3fb4329ddb78`. `fa_audit_no_replace` aborts duplicate IDs in a `BEFORE INSERT` trigger, including attempts using `INSERT OR REPLACE`.
 
-The authorizer permits the trigger's `SELECT` and `RAISE` only when source is exactly `fa_audit_no_replace` and phase is `STARTUP_APP` or `PREFLIGHT`. Its `SQLITE_READ` exception additionally requires database `main`, table `audit_logs`, and column `id`. The config revision trigger may read only `main.config_globals.key` and `main.config_revisions.student_id/key/revision` from `rev_config_globals_UPDATE` in those same phases. Other trigger reads and all trigger exceptions in `DRIVER_PROBE` are denied. No audit DML exception was added.
+The pinned SQLite runtime emits `SELECT`, `main.audit_logs.id`, and an empty-database/empty-column table-existence read from `fa_audit_no_replace`; policy allows only these observed tuples in `STARTUP_APP` or `PREFLIGHT`. It emits no `SQLITE_FUNCTION` callback for special `RAISE()` syntax, so the policy grants no synthetic `raise` tuple. The config revision trigger may read only `main.config_globals.key` and `main.config_revisions.student_id/key/revision` from `rev_config_globals_UPDATE` in those same phases. Other trigger reads and all trigger exceptions in `DRIVER_PROBE` are denied. No audit DML exception was added.
 
 ## Verification
 

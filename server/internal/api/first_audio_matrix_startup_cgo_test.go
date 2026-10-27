@@ -152,13 +152,6 @@ func (p *firstAudioStartupPolicy) authorize(action int, arg1, arg2, databaseName
 		return triggerName == "" && (arg1 == "BEGIN" || arg1 == "COMMIT" || arg1 == "ROLLBACK")
 	case sqlite3.SQLITE_FUNCTION:
 		fn := strings.ToLower(arg2)
-		if fn == "raise" {
-			if phase != firstAudioStartupApp && phase != firstAudioStartupPreflight {
-				return false
-			}
-			_, guardTrigger := firstAudioApprovedGuardTriggers[triggerName]
-			return guardTrigger || triggerName == firstAudioAuditNoReplaceTrigger
-		}
 		if fn == "sqlite_version" {
 			return phase == firstAudioStartupDriverProbe && triggerName == ""
 		}
@@ -212,7 +205,7 @@ func TestFirstAudioMatrixAuditNoReplaceAuthorizerExceptionIsExact(t *testing.T) 
 	policy := newFirstAudioStartupPolicy()
 	if policy.authorize(sqlite3.SQLITE_SELECT, "", "", "", firstAudioAuditNoReplaceTrigger) ||
 		policy.authorize(sqlite3.SQLITE_READ, "audit_logs", "id", "main", firstAudioAuditNoReplaceTrigger) ||
-		policy.authorize(sqlite3.SQLITE_FUNCTION, "", "raise", "", firstAudioAuditNoReplaceTrigger) {
+		policy.authorize(sqlite3.SQLITE_READ, "audit_logs", "", "", firstAudioAuditNoReplaceTrigger) {
 		t.Fatal("audit collision trigger exceptions were allowed during driver probing")
 	}
 	policy.phase.Store(uint32(firstAudioStartupPreflight))
@@ -225,8 +218,8 @@ func TestFirstAudioMatrixAuditNoReplaceAuthorizerExceptionIsExact(t *testing.T) 
 	if !policy.authorize(sqlite3.SQLITE_READ, "audit_logs", "", "", firstAudioAuditNoReplaceTrigger) {
 		t.Fatal("audit collision trigger table-existence read was denied")
 	}
-	if !policy.authorize(sqlite3.SQLITE_FUNCTION, "", "raise", "", firstAudioAuditNoReplaceTrigger) {
-		t.Fatal("audit collision trigger RAISE was denied")
+	if policy.authorize(sqlite3.SQLITE_FUNCTION, "", "raise", "", firstAudioAuditNoReplaceTrigger) {
+		t.Fatal("unobserved RAISE function callback must remain denied")
 	}
 	for _, tuple := range []struct {
 		action                           int
