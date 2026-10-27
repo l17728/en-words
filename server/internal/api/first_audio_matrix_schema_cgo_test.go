@@ -18,7 +18,7 @@ import (
 type firstAudioSQLiteObject struct {
 	Type  string `json:"type"`
 	Name  string `json:"name"`
-	Table string `json:"table"`
+	Table string `json:"table" gorm:"column:tbl_name"`
 	SQL   string `json:"sql"`
 }
 
@@ -30,7 +30,7 @@ type firstAudioSchemaManifest struct {
 
 func firstAudioReadSchemaManifest(db *gorm.DB) (firstAudioSchemaManifest, []byte, error) {
 	objects := make([]firstAudioSQLiteObject, 0)
-	err := db.Raw(`SELECT type, name, tbl_name AS table, COALESCE(sql, '') AS sql FROM sqlite_master ORDER BY type, name, tbl_name`).Scan(&objects).Error
+	err := db.Raw(`SELECT type, name, tbl_name, COALESCE(sql, '') AS sql FROM sqlite_master ORDER BY type, name, tbl_name`).Scan(&objects).Error
 	if err != nil {
 		return firstAudioSchemaManifest{}, nil, err
 	}
