@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
-	"strings"
 	"sync"
 	"testing"
 
@@ -106,7 +105,7 @@ func TestFirstAudioMatrixAuditTriggerUsesExactSQLiteAuthorizerTuples(t *testing.
 
 	policy := newFirstAudioStartupPolicy()
 	policy.phase.Store(uint32(firstAudioStartupPreflight))
-	seenSelect, seenIDRead, seenRaise := false, false, false
+	seenSelect, seenIDRead, seenTableRead := false, false, false
 	for _, tuple := range capture.snapshot() {
 		if tuple.triggerName != firstAudioAuditNoReplaceTrigger {
 			continue
@@ -119,12 +118,12 @@ func TestFirstAudioMatrixAuditTriggerUsesExactSQLiteAuthorizerTuples(t *testing.
 			seenSelect = true
 		case tuple.action == sqlite3.SQLITE_READ && tuple.databaseName == "main" && tuple.arg1 == "audit_logs" && tuple.arg2 == "id":
 			seenIDRead = true
-		case tuple.action == sqlite3.SQLITE_FUNCTION && strings.EqualFold(tuple.arg2, "raise"):
-			seenRaise = true
+		case tuple.action == sqlite3.SQLITE_READ && tuple.databaseName == "" && tuple.arg1 == "audit_logs" && tuple.arg2 == "":
+			seenTableRead = true
 		}
 	}
-	if !seenSelect || !seenIDRead || !seenRaise {
-		t.Fatalf("actual authorizer callbacks omitted expected audit trigger tuple: select=%v id_read=%v raise=%v callbacks=%#v", seenSelect, seenIDRead, seenRaise, capture.snapshot())
+	if !seenSelect || !seenIDRead || !seenTableRead {
+		t.Fatalf("actual authorizer callbacks omitted expected audit trigger tuple: select=%v id_read=%v table_read=%v callbacks=%#v", seenSelect, seenIDRead, seenTableRead, capture.snapshot())
 	}
 	if policy.authorize(sqlite3.SQLITE_INSERT, "audit_logs", "", "main", "") {
 		t.Fatal("phase/source exception authorized a top-level audit INSERT")

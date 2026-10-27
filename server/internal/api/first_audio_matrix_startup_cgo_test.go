@@ -124,6 +124,12 @@ func (p *firstAudioStartupPolicy) authorize(action int, arg1, arg2, databaseName
 				return false
 			}
 			if databaseName != "main" {
+				// SQLite reports table-existence reads from EXISTS(SELECT 1 ...)
+				// with an empty database and column name, even for a fixed main DB trigger.
+				// Keep this exception limited to the audit collision trigger and table.
+				if triggerName == firstAudioAuditNoReplaceTrigger {
+					return arg1 == "audit_logs" && arg2 == "" && databaseName == ""
+				}
 				return false
 			}
 			if triggerName == firstAudioAuditNoReplaceTrigger {
@@ -216,6 +222,9 @@ func TestFirstAudioMatrixAuditNoReplaceAuthorizerExceptionIsExact(t *testing.T) 
 	if !policy.authorize(sqlite3.SQLITE_READ, "audit_logs", "id", "main", firstAudioAuditNoReplaceTrigger) {
 		t.Fatal("audit collision trigger ID read was denied")
 	}
+	if !policy.authorize(sqlite3.SQLITE_READ, "audit_logs", "", "", firstAudioAuditNoReplaceTrigger) {
+		t.Fatal("audit collision trigger table-existence read was denied")
+	}
 	if !policy.authorize(sqlite3.SQLITE_FUNCTION, "", "raise", "", firstAudioAuditNoReplaceTrigger) {
 		t.Fatal("audit collision trigger RAISE was denied")
 	}
@@ -225,6 +234,9 @@ func TestFirstAudioMatrixAuditNoReplaceAuthorizerExceptionIsExact(t *testing.T) 
 	}{
 		{sqlite3.SQLITE_SELECT, "", "", "", "unapproved_trigger"},
 		{sqlite3.SQLITE_READ, "audit_logs", "actor_id", "main", firstAudioAuditNoReplaceTrigger},
+		{sqlite3.SQLITE_READ, "audit_logs", "", "temp", firstAudioAuditNoReplaceTrigger},
+		{sqlite3.SQLITE_READ, "audit_logs", "", "main", firstAudioAuditNoReplaceTrigger},
+		{sqlite3.SQLITE_READ, "users", "", "", firstAudioAuditNoReplaceTrigger},
 		{sqlite3.SQLITE_READ, "users", "id", "main", firstAudioAuditNoReplaceTrigger},
 		{sqlite3.SQLITE_READ, "audit_logs", "id", "temp", firstAudioAuditNoReplaceTrigger},
 		{sqlite3.SQLITE_READ, "audit_logs", "id", "main", "unapproved_trigger"},
