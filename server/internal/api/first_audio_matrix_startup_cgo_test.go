@@ -104,6 +104,8 @@ var firstAudioApprovedGuardTriggers = map[string]struct{}{
 	"fa_config_globals_no_insert": {}, "fa_config_globals_no_update": {}, "fa_config_globals_no_delete": {},
 }
 
+const firstAudioAuditNoReplaceTrigger = "fa_audit_no_replace"
+
 func (p *firstAudioStartupPolicy) authorize(action int, arg1, arg2, databaseName, triggerName string) bool {
 	phase := firstAudioStartupPhase(p.phase.Load())
 	switch action {
@@ -111,9 +113,27 @@ func (p *firstAudioStartupPolicy) authorize(action int, arg1, arg2, databaseName
 		if triggerName == "" {
 			return true
 		}
+		if phase != firstAudioStartupApp && phase != firstAudioStartupPreflight {
+			return false
+		}
 		_, ok := firstAudioApprovedGuardTriggers[triggerName]
-		return ok
+		return ok || triggerName == firstAudioAuditNoReplaceTrigger
 	case sqlite3.SQLITE_READ:
+		if triggerName != "" {
+			if phase != firstAudioStartupApp && phase != firstAudioStartupPreflight {
+				return false
+			}
+			if databaseName != "main" {
+				return false
+			}
+			if triggerName == firstAudioAuditNoReplaceTrigger {
+				return arg1 == "audit_logs" && arg2 == "id"
+			}
+			if triggerName == "rev_config_globals_UPDATE" && arg1 == "config_revisions" {
+				return arg2 == "student_id" || arg2 == "key" || arg2 == "revision"
+			}
+			return false
+		}
 		_, ok := p.reads[arg1][arg2]
 		// SQLite omits the database name for COUNT(*)'s table-existence
 		// authorization callback. Accept that tuple only for the empty-column
@@ -123,6 +143,13 @@ func (p *firstAudioStartupPolicy) authorize(action int, arg1, arg2, databaseName
 		return triggerName == "" && (arg1 == "BEGIN" || arg1 == "COMMIT" || arg1 == "ROLLBACK")
 	case sqlite3.SQLITE_FUNCTION:
 		fn := strings.ToLower(arg2)
+		if fn == "raise" {
+			if phase != firstAudioStartupApp && phase != firstAudioStartupPreflight {
+				return false
+			}
+			_, guardTrigger := firstAudioApprovedGuardTriggers[triggerName]
+			return guardTrigger || triggerName == firstAudioAuditNoReplaceTrigger
+		}
 		if fn == "sqlite_version" {
 			return phase == firstAudioStartupDriverProbe && triggerName == ""
 		}
@@ -162,6 +189,7 @@ func installFirstAudioStartupGuards(db *gorm.DB) error {
 		`CREATE TRIGGER fa_config_globals_no_insert BEFORE INSERT ON config_globals BEGIN SELECT CASE WHEN first_audio_row_guard()=0 THEN RAISE(ABORT,'first_audio_guard') END; END`,
 		`CREATE TRIGGER fa_config_globals_no_update BEFORE UPDATE ON config_globals BEGIN SELECT CASE WHEN first_audio_row_guard()=0 THEN RAISE(ABORT,'first_audio_guard') END; END`,
 		`CREATE TRIGGER fa_config_globals_no_delete BEFORE DELETE ON config_globals BEGIN SELECT CASE WHEN first_audio_row_guard()=0 THEN RAISE(ABORT,'first_audio_guard') END; END`,
+		`CREATE TRIGGER fa_audit_no_replace BEFORE INSERT ON audit_logs WHEN EXISTS (SELECT 1 FROM audit_logs WHERE id=NEW.id) BEGIN SELECT RAISE(ABORT,'first_audio_audit_id_collision'); END`,
 	}
 	for _, statement := range statements {
 		if err := db.Exec(statement).Error; err != nil {
@@ -169,6 +197,104 @@ func installFirstAudioStartupGuards(db *gorm.DB) error {
 		}
 	}
 	return nil
+}
+
+func TestFirstAudioMatrixAuditNoReplaceAuthorizerExceptionIsExact(t *testing.T) {
+	policy := newFirstAudioStartupPolicy()
+	if policy.authorize(sqlite3.SQLITE_SELECT, "", "", "", firstAudioAuditNoReplaceTrigger) ||
+		policy.authorize(sqlite3.SQLITE_READ, "audit_logs", "id", "main", firstAudioAuditNoReplaceTrigger) ||
+		policy.authorize(sqlite3.SQLITE_FUNCTION, "", "raise", "", firstAudioAuditNoReplaceTrigger) {
+		t.Fatal("audit collision trigger exceptions were allowed during driver probing")
+	}
+	policy.phase.Store(uint32(firstAudioStartupPreflight))
+	if !policy.authorize(sqlite3.SQLITE_SELECT, "", "", "", firstAudioAuditNoReplaceTrigger) {
+		t.Fatal("audit collision trigger SELECT was denied")
+	}
+	if !policy.authorize(sqlite3.SQLITE_READ, "audit_logs", "id", "main", firstAudioAuditNoReplaceTrigger) {
+		t.Fatal("audit collision trigger ID read was denied")
+	}
+	if !policy.authorize(sqlite3.SQLITE_FUNCTION, "", "raise", "", firstAudioAuditNoReplaceTrigger) {
+		t.Fatal("audit collision trigger RAISE was denied")
+	}
+	for _, tuple := range []struct {
+		action, table, column, database, trigger string
+	}{
+		{sqlite3.SQLITE_SELECT, "", "", "", "unapproved_trigger"},
+		{sqlite3.SQLITE_READ, "audit_logs", "actor_id", "main", firstAudioAuditNoReplaceTrigger},
+		{sqlite3.SQLITE_READ, "users", "id", "main", firstAudioAuditNoReplaceTrigger},
+		{sqlite3.SQLITE_READ, "audit_logs", "id", "temp", firstAudioAuditNoReplaceTrigger},
+		{sqlite3.SQLITE_READ, "audit_logs", "id", "main", "unapproved_trigger"},
+		{sqlite3.SQLITE_FUNCTION, "", "raise", "", "unapproved_trigger"},
+	} {
+		if policy.authorize(tuple.action, tuple.table, tuple.column, tuple.database, tuple.trigger) {
+			t.Fatalf("unapproved audit authorizer tuple was allowed: %#v", tuple)
+		}
+	}
+}
+
+func TestFirstAudioMatrixConfigRevisionTriggerReadExceptionIsExact(t *testing.T) {
+	policy := newFirstAudioStartupPolicy()
+	policy.phase.Store(uint32(firstAudioStartupDriverProbe))
+	if policy.authorize(sqlite3.SQLITE_READ, "config_revisions", "revision", "main", "rev_config_globals_UPDATE") {
+		t.Fatal("config revision trigger read was allowed during driver probing")
+	}
+	policy.phase.Store(uint32(firstAudioStartupApp))
+	for _, column := range []string{"student_id", "key", "revision"} {
+		if !policy.authorize(sqlite3.SQLITE_READ, "config_revisions", column, "main", "rev_config_globals_UPDATE") {
+			t.Fatalf("config revision trigger read denied: %s", column)
+		}
+	}
+	policy.phase.Store(uint32(firstAudioStartupPreflight))
+	if !policy.authorize(sqlite3.SQLITE_READ, "config_revisions", "revision", "main", "rev_config_globals_UPDATE") {
+		t.Fatal("config revision trigger read was denied during preflight")
+	}
+	for _, tuple := range []struct {
+		table, column, database, trigger string
+	}{
+		{"config_revisions", "created_at", "main", "rev_config_globals_UPDATE"},
+		{"audit_logs", "id", "main", "rev_config_globals_UPDATE"},
+		{"config_revisions", "revision", "temp", "rev_config_globals_UPDATE"},
+		{"config_revisions", "revision", "main", "rev_config_globals_INSERT"},
+	} {
+		if policy.authorize(sqlite3.SQLITE_READ, tuple.table, tuple.column, tuple.database, tuple.trigger) {
+			t.Fatalf("unapproved config revision read tuple was allowed: %#v", tuple)
+		}
+	}
+}
+
+func TestFirstAudioMatrixAuditNoReplaceTriggerRejectsReplace(t *testing.T) {
+	db, err := store.Open(filepath.Join(t.TempDir(), "audit-no-replace.db"))
+	if err != nil {
+		t.Fatal("open audit trigger fixture:", err)
+	}
+	pool, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+	if err := installFirstAudioStartupGuards(db); err != nil {
+		t.Fatal("install fixed audit trigger:", err)
+	}
+	original := store.AuditLog{ID: 7001, TS: time.Date(2026, 10, 27, 0, 0, 0, 0, time.UTC), ActorType: "matrix", Result: "original", TraceID: "lesson-7001"}
+	if err := db.Create(&original).Error; err != nil {
+		t.Fatal("insert unused audit ID:", err)
+	}
+	for _, query := range []string{
+		`INSERT INTO audit_logs (id, ts, actor_type, result, trace_id) VALUES (?, ?, ?, ?, ?)`,
+		`INSERT OR REPLACE INTO audit_logs (id, ts, actor_type, result, trace_id) VALUES (?, ?, ?, ?, ?)`,
+	} {
+		if err := db.Exec(query, original.ID, original.TS, "matrix", "replacement", original.TraceID).Error; err == nil || !strings.Contains(err.Error(), "first_audio_audit_id_collision") {
+			t.Fatalf("duplicate audit ID was not rejected by BEFORE trigger: query=%q err=%v", query, err)
+		}
+		var current store.AuditLog
+		if err := db.First(&current, original.ID).Error; err != nil || current.Result != "original" {
+			t.Fatalf("duplicate/replace attempt changed original audit row: row=%#v err=%v", current, err)
+		}
+		var count int64
+		if err := db.Model(&store.AuditLog{}).Count(&count).Error; err != nil || count != 1 {
+			t.Fatalf("duplicate/replace attempt changed audit row count: count=%d err=%v", count, err)
+		}
+	}
 }
 
 func TestFirstAudioMatrixStartupManifestAllowsOnlySQLiteCountWithoutDatabaseName(t *testing.T) {

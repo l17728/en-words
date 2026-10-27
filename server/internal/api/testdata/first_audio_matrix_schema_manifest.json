@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "sha256": "abb8f1d99044e097c58290b82f61d466381fcced381346a1bec64fb32e2e1bcb",
+  "sha256": "797ffcb2b01d472f29fc73ee42c9ba8874e86aa38e6102cd2f9a3fb4329ddb78",
   "objects": [
     {
       "type": "index",
@@ -301,6 +301,12 @@
       "name": "ws_tickets",
       "table": "ws_tickets",
       "sql": "CREATE TABLE `ws_tickets` (`id` integer PRIMARY KEY AUTOINCREMENT,`ticket` text,`lesson_id` integer,`student_id` integer,`expires_at` datetime,`created_at` datetime)"
+    },
+    {
+      "type": "trigger",
+      "name": "fa_audit_no_replace",
+      "table": "audit_logs",
+      "sql": "CREATE TRIGGER fa_audit_no_replace BEFORE INSERT ON audit_logs WHEN EXISTS (SELECT 1 FROM audit_logs WHERE id=NEW.id) BEGIN SELECT RAISE(ABORT,'first_audio_audit_id_collision'); END"
     },
     {
       "type": "trigger",
