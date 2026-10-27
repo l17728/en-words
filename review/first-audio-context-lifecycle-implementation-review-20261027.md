@@ -1,4 +1,4 @@
-﻿# First-Audio Context Lifecycle Implementation Review
+# First-Audio Context Lifecycle Implementation Review
 
 Date: 2026-10-27
 Scope: no-SQL, CGO-only controller/receipt lifecycle in `docs/76`. This is not approval of SQLite or production integration.
@@ -20,4 +20,3 @@ The final implementation review covered lifecycle SHA-256 `0FBAFA8BDC06F43AA8EB9
 ## Deferred Acceptance
 
 Before SQL wiring, complete the real write-callsite inventory and field-level trusted builders, then review the guarded App/pool integration. Actual connection callbacks, SQLite row guards and rollback, fixture snapshots, reset fencing, two-journey Playwright E2E, cold/warm performance, and a human classroom pilot remain NOT RUN. Effect-level poison/permit checks for already-admitted leases are an explicit integration requirement.
-
