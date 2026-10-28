@@ -19,6 +19,7 @@ Scope: test-only SQLite probe calling `persistToolAudits`; no `api.App`, `callAg
 
 - First CI attempt: `40683241073` failed. The focused journey suite exposed the generated-ID helper regression; subsequent steps were skipped.
 - Re-run after the fix: PASS, GitHub Actions `40684151449` on commit `df1fd3c`. Linux and Windows jobs both passed the strict SQLite audit guard suite, broader first-audio harness, transaction outcome checks, Playwright journey discovery, web build, and toolchain checks. Linux also passed race checks, API `go vet`, and production-binary test-symbol exclusion.
+- Final documentation-triggered run: PASS, GitHub Actions `40684883311` on commit `16a428f`; Linux and Windows jobs both succeeded with the same gates.
 - Local Windows Go execution remains unavailable: repeated focused `go test` invocations produced no output and were stopped. GitHub Actions is the execution environment for CGO Linux/Windows, race, vet, build, and browser-list checks.
 
 The first failing run (`40683241073`) and the passing rerun are retained as review evidence. The workflow now triggers on this SDD as well as the test/code paths.
