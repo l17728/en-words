@@ -306,6 +306,80 @@ func TestFirstAudioRealSQLDiscardPinnedConnectionRetiresPhysicalIdentity(t *test
 	}
 }
 
+func TestFirstAudioRealSQLRollbackPreconditionFailureTerminalizesAndDiscardsActiveTransaction(t *testing.T) {
+	registry := newFirstAudioSQLiteConnectionRegistry()
+	driverName := fmt.Sprintf("first_audio_rollback_precondition_%d", firstAudioProbeDriverSequence.Add(1))
+	if err := registerFirstAudioTrackedSQLiteDriver(driverName, func(conn *sqlite3.SQLiteConn) error {
+		_, err := registry.Register(conn)
+		return err
+	}, registry.Retire); err != nil {
+		t.Fatal("register tracked SQLite driver:", err)
+	}
+	pool, err := sql.Open(driverName, filepath.Join(t.TempDir(), "rollback-precondition.db"))
+	if err != nil {
+		t.Fatal("open isolated SQLite pool:", err)
+	}
+	defer pool.Close()
+	pinned, err := pool.Conn(context.Background())
+	if err != nil {
+		t.Fatal("pin isolated SQLite connection:", err)
+	}
+	defer pinned.Close()
+	var tracked *firstAudioTrackedSQLiteConn
+	if err := pinned.Raw(func(driverConn any) error {
+		var ok bool
+		tracked, ok = driverConn.(*firstAudioTrackedSQLiteConn)
+		if !ok || tracked == nil || tracked.raw == nil {
+			return fmt.Errorf("unexpected tracked connection %T", driverConn)
+		}
+		return nil
+	}); err != nil {
+		t.Fatal("resolve isolated SQLite connection:", err)
+	}
+	registration, live := registry.Lookup(tracked.raw)
+	if !live {
+		t.Fatal("new physical connection is absent from registry")
+	}
+	tx, err := pinned.BeginTx(context.Background(), nil)
+	if err != nil {
+		t.Fatal("begin physical probe transaction:", err)
+	}
+	epoch := tracked.txEpoch.Load()
+	if !tracked.txActive.Load() || epoch == 0 {
+		t.Fatal("tracked physical transaction did not enter an active epoch")
+	}
+	controller := newFirstAudioGuardController()
+	preflight, err := newFirstAudioGuardContext(firstAudioValidPreflightSpec(2))
+	if err != nil {
+		t.Fatal("construct PREFLIGHT context:", err)
+	}
+	controller.publisher.current.Store(preflight)
+	authorizer := &firstAudioRealSQLAuthorizer{
+		controller:  controller,
+		connections: registry,
+		registryID:  registration.ID,
+		raw:         tracked.raw,
+		tracked:     tracked,
+		pinned:      pinned,
+	}
+	authorizer.activeTx.Store(tx)
+	authorizer.txEpoch.Store(epoch)
+	// cleanupPreflight is deliberately absent while a transaction is active.
+	// The helper must fail closed rather than leave this connection reusable.
+	if err := authorizer.rollbackProbeTransaction(); !errors.Is(err, errFirstAudioGuardProbeRejected) {
+		t.Fatalf("rollback with missing cleanup authority = %v, want rejected probe after terminal cleanup", err)
+	}
+	if !controller.IsTerminal() || controller.IsActivePhase(firstAudioGuardPreflight) {
+		t.Fatal("uncertain rollback left PREFLIGHT active or failed to terminalize")
+	}
+	if registry.IsLive(registration.ID, tracked.raw) || !tracked.closeOK.Load() {
+		t.Fatal("uncertain active transaction connection was not retired after successful Close")
+	}
+	if !tracked.txActive.Load() {
+		t.Fatal("test did not exercise an active transaction at the cleanup rejection point")
+	}
+}
+
 func (p *firstAudioRealSQLAuthorizer) readTargetLessonProjection(tx *sql.Tx, lessonID int64) ([]any, error) {
 	session := p.sessionRef.session.Load()
 	if tx == nil || lessonID <= 0 || session == nil || session.binding.lessonID != lessonID {
