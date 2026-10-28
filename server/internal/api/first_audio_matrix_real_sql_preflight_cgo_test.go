@@ -226,11 +226,21 @@ func (p *firstAudioRealSQLAuthorizer) terminalizeAndDiscardUncertainConnection()
 	if p == nil {
 		return errFirstAudioGuardProbeRejected
 	}
+	if p.sessionRef != nil {
+		if session := p.sessionRef.session.Load(); session != nil && session.challenge != nil && session.challenge.receipt != nil {
+			session.challenge.receipt.deny()
+		}
+	}
+	var terminalErr error
 	if p.controller != nil {
+		terminalErr = p.controller.TerminalizeFromSQLiteCallback()
 		p.controller.Terminalize()
 	}
 	if err := p.discardPinnedConnection(); err != nil {
 		return fmt.Errorf("uncertain probe cleanup; physical connection retirement unconfirmed: %w", err)
+	}
+	if terminalErr != nil {
+		return fmt.Errorf("uncertain probe cleanup; terminal context publication failed after connection retirement: %w", terminalErr)
 	}
 	return errFirstAudioGuardProbeRejected
 }
@@ -306,7 +316,7 @@ func TestFirstAudioRealSQLDiscardPinnedConnectionRetiresPhysicalIdentity(t *test
 	}
 }
 
-func TestFirstAudioRealSQLRollbackPreconditionFailureTerminalizesAndDiscardsActiveTransaction(t *testing.T) {
+func TestFirstAudioRealSQLMissingCleanupAuthorityTerminalizesAndDiscardsActiveTransaction(t *testing.T) {
 	registry := newFirstAudioSQLiteConnectionRegistry()
 	driverName := fmt.Sprintf("first_audio_rollback_precondition_%d", firstAudioProbeDriverSequence.Add(1))
 	if err := registerFirstAudioTrackedSQLiteDriver(driverName, func(conn *sqlite3.SQLiteConn) error {
@@ -349,16 +359,41 @@ func TestFirstAudioRealSQLRollbackPreconditionFailureTerminalizesAndDiscardsActi
 		t.Fatal("tracked physical transaction did not enter an active epoch")
 	}
 	controller := newFirstAudioGuardController()
-	preflight, err := newFirstAudioGuardContext(firstAudioValidPreflightSpec(2))
+	binding := firstAudioGuardProbeBinding{
+		runID: "run-0001", lessonID: 101, generation: 1, version: 2,
+		connection: registration.ID, probeID: "probe-" + registration.ID,
+	}
+	token, challenge, err := newFirstAudioPhysicalProbeChallenge(binding)
+	if err != nil {
+		t.Fatal("construct real-SQL cleanup candidate:", err)
+	}
+	defer zeroFirstAudioSecret(token)
+	if err := challenge.BindTransactionEpoch(epoch); err != nil {
+		t.Fatal("bind challenge to active SQLite transaction:", err)
+	}
+	if !challenge.receipt.arm() {
+		t.Fatal("arm cleanup candidate receipt")
+	}
+	preflightSpec := firstAudioValidPreflightSpec(2)
+	preflightSpec.connectionIDs[0] = binding.connection
+	preflightSpec.probeContracts[0] = challenge.Contract()
+	preflightSpec.rowContracts[0].identity = fmt.Sprintf("lesson:%d/conn:%s", binding.lessonID, binding.connection)
+	preflight, err := newFirstAudioGuardContext(preflightSpec)
 	if err != nil {
 		t.Fatal("construct PREFLIGHT context:", err)
 	}
 	controller.publisher.current.Store(preflight)
+	controller.mu.Lock()
+	controller.probeReceipts[registration.ID] = challenge.receipt
+	controller.mu.Unlock()
+	sessionRef := &firstAudioRealSQLProbeSessionRef{}
+	sessionRef.session.Store(&firstAudioRealSQLProbeSession{challenge: challenge, binding: binding, tracked: tracked})
 	authorizer := &firstAudioRealSQLAuthorizer{
 		controller:  controller,
 		connections: registry,
 		registryID:  registration.ID,
 		raw:         tracked.raw,
+		sessionRef:  sessionRef,
 		tracked:     tracked,
 		pinned:      pinned,
 	}
@@ -371,6 +406,19 @@ func TestFirstAudioRealSQLRollbackPreconditionFailureTerminalizesAndDiscardsActi
 	}
 	if !controller.IsTerminal() || controller.IsActivePhase(firstAudioGuardPreflight) {
 		t.Fatal("uncertain rollback left PREFLIGHT active or failed to terminalize")
+	}
+	if active := controller.publisher.Load(); active == nil || active.phase != firstAudioGuardTerminal {
+		t.Fatalf("terminalized controller context=%#v; want TERMINAL", active)
+	}
+	if firstAudioGuardProbeReceiptState(challenge.receipt.state.Load()) != firstAudioGuardProbeFailed || challenge.receipt.completeFor(binding, challenge.digest) {
+		t.Fatal("terminal cleanup left its real-SQL receipt reusable or complete")
+	}
+	journey, err := newFirstAudioGuardContext(firstAudioValidJourneySpec(4, binding.lessonID, binding.generation, 1))
+	if err != nil {
+		t.Fatal("construct forbidden post-terminal JOURNEY:", err)
+	}
+	if err := controller.publisher.Publish(journey); !errors.Is(err, errFirstAudioGuardContextTransition) {
+		t.Fatalf("JOURNEY publication after uncertain cleanup = %v, want terminal rejection", err)
 	}
 	if registry.IsLive(registration.ID, tracked.raw) || !tracked.closeOK.Load() {
 		t.Fatal("uncertain active transaction connection was not retired after successful Close")
