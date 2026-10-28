@@ -1,0 +1,419 @@
+{
+  "format_version": 1,
+  "tuples": [
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 18,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "",
+      "permit": "AUDIT_INSERT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 20,
+      "database": "",
+      "arg1": "audit_logs",
+      "arg2": "",
+      "permit": "AUDIT_ID_DERIVE"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "actor_id",
+      "permit": "AUDIT_READBACK"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "actor_role",
+      "permit": "AUDIT_READBACK"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "actor_type",
+      "permit": "AUDIT_READBACK"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "args",
+      "permit": "AUDIT_READBACK"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "duration_ms",
+      "permit": "AUDIT_READBACK"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "id",
+      "permit": "AUDIT_ID_DERIVE"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "id",
+      "permit": "AUDIT_INSERT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "id",
+      "permit": "AUDIT_READBACK"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "ok",
+      "permit": "AUDIT_READBACK"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "result",
+      "permit": "AUDIT_READBACK"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "risk",
+      "permit": "AUDIT_READBACK"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "tool",
+      "permit": "AUDIT_READBACK"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "trace_id",
+      "permit": "AUDIT_READBACK"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "ts",
+      "permit": "AUDIT_READBACK"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 20,
+      "database": "main",
+      "arg1": "sqlite_sequence",
+      "arg2": "name",
+      "permit": "AUDIT_ID_DERIVE"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 20,
+      "database": "main",
+      "arg1": "sqlite_sequence",
+      "arg2": "seq",
+      "permit": "AUDIT_ID_DERIVE"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 21,
+      "database": "",
+      "arg1": "",
+      "arg2": "",
+      "permit": "AUDIT_BOOTSTRAP"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 21,
+      "database": "",
+      "arg1": "",
+      "arg2": "",
+      "permit": "AUDIT_ID_DERIVE"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 21,
+      "database": "",
+      "arg1": "",
+      "arg2": "",
+      "permit": "AUDIT_READBACK"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 22,
+      "database": "",
+      "arg1": "BEGIN",
+      "arg2": "",
+      "permit": "AUDIT_BEGIN"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 22,
+      "database": "",
+      "arg1": "COMMIT",
+      "arg2": "",
+      "permit": "AUDIT_COMMIT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 22,
+      "database": "",
+      "arg1": "ROLLBACK",
+      "arg2": "",
+      "permit": "AUDIT_CLEANUP"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 31,
+      "database": "",
+      "arg1": "",
+      "arg2": "coalesce",
+      "permit": "AUDIT_ID_DERIVE"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 31,
+      "database": "",
+      "arg1": "",
+      "arg2": "max",
+      "permit": "AUDIT_ID_DERIVE"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 31,
+      "database": "",
+      "arg1": "",
+      "arg2": "sqlite_version",
+      "permit": "AUDIT_BOOTSTRAP"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "",
+      "action": 31,
+      "database": "",
+      "arg1": "",
+      "arg2": "typeof",
+      "permit": "AUDIT_READBACK"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "fa_audit_guard_insert",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "actor_id",
+      "permit": "AUDIT_INSERT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "fa_audit_guard_insert",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "actor_role",
+      "permit": "AUDIT_INSERT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "fa_audit_guard_insert",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "actor_type",
+      "permit": "AUDIT_INSERT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "fa_audit_guard_insert",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "args",
+      "permit": "AUDIT_INSERT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "fa_audit_guard_insert",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "duration_ms",
+      "permit": "AUDIT_INSERT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "fa_audit_guard_insert",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "id",
+      "permit": "AUDIT_INSERT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "fa_audit_guard_insert",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "ok",
+      "permit": "AUDIT_INSERT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "fa_audit_guard_insert",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "result",
+      "permit": "AUDIT_INSERT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "fa_audit_guard_insert",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "risk",
+      "permit": "AUDIT_INSERT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "fa_audit_guard_insert",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "tool",
+      "permit": "AUDIT_INSERT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "fa_audit_guard_insert",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "trace_id",
+      "permit": "AUDIT_INSERT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "fa_audit_guard_insert",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "ts",
+      "permit": "AUDIT_INSERT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "fa_audit_guard_insert",
+      "action": 21,
+      "database": "",
+      "arg1": "",
+      "arg2": "",
+      "permit": "AUDIT_INSERT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "fa_audit_guard_insert",
+      "action": 31,
+      "database": "",
+      "arg1": "",
+      "arg2": "first_audio_row_guard",
+      "permit": "AUDIT_INSERT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "fa_audit_guard_insert",
+      "action": 31,
+      "database": "",
+      "arg1": "",
+      "arg2": "typeof",
+      "permit": "AUDIT_INSERT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "fa_audit_no_replace",
+      "action": 20,
+      "database": "",
+      "arg1": "audit_logs",
+      "arg2": "",
+      "permit": "AUDIT_INSERT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "fa_audit_no_replace",
+      "action": 20,
+      "database": "main",
+      "arg1": "audit_logs",
+      "arg2": "id",
+      "permit": "AUDIT_INSERT"
+    },
+    {
+      "phase": "AUDIT_GUARD_PROBE",
+      "source": "fa_audit_no_replace",
+      "action": 21,
+      "database": "",
+      "arg1": "",
+      "arg2": "",
+      "permit": "AUDIT_INSERT"
+    }
+  ]
+}

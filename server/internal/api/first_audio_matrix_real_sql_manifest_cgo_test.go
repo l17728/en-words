@@ -77,6 +77,9 @@ func validateFirstAudioLessonProbeTriggerDDL(db *gorm.DB) error {
 			actual = append(actual, object)
 		}
 	}
+	if len(actual) == 0 {
+		return nil // The base schema may be validated before this extension is installed.
+	}
 	sort.Slice(actual, func(i, j int) bool { return actual[i].Name < actual[j].Name })
 	canonical, err := json.Marshal(actual)
 	if err != nil {

@@ -83,19 +83,21 @@ func firstAudioValidateSchemaManifest(db *gorm.DB) error {
 		return fmt.Errorf("checked-in schema inventory is incomplete\nactual manifest follows:\n%s", actualJSON)
 	}
 	if !reflect.DeepEqual(expected, actual) {
-		// The reviewed lesson probe triggers are a separately pinned extension
-		// to the application schema manifest. Accept only when removing that
-		// exact trigger namespace restores the base manifest and the dedicated
-		// trigger manifest validates all three objects and their complete DDL.
+		// Reviewed lesson and journey-audit guard triggers are separately pinned
+		// extensions to the application schema manifest. Accept only when
+		// removing both exact namespaces restores the base manifest and each
+		// dedicated trigger manifest validates its complete DDL.
 		core := firstAudioSchemaManifest{FormatVersion: actual.FormatVersion}
 		for _, object := range actual.Objects {
-			if object.Type == "trigger" && strings.HasPrefix(object.Name, "fa_lessons_guard_") {
+			if object.Type == "trigger" && (strings.HasPrefix(object.Name, "fa_lessons_guard_") || strings.HasPrefix(object.Name, "fa_audit_guard_")) {
 				continue
 			}
 			core.Objects = append(core.Objects, object)
 		}
 		if reflect.DeepEqual(expected.Objects, core.Objects) {
-			if err := validateFirstAudioLessonProbeTriggerDDL(db); err == nil {
+			lessonErr := validateFirstAudioLessonProbeTriggerDDL(db)
+			auditErr := validateFirstAudioJourneyAuditTriggerDDL(db)
+			if lessonErr == nil && auditErr == nil {
 				return nil
 			}
 		}

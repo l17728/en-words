@@ -8,6 +8,7 @@ on:
       - "docs/75-first-audio-immutable-guard-context-sdd.md"
       - "docs/76-first-audio-context-authority-and-probe-lifecycle-sdd.md"
       - "docs/77-first-audio-write-callsite-inventory-sdd.md"
+      - "docs/80-first-audio-audit-row-guard-sdd.md"
       - "review/first-audio-transaction-outcome-review-20261027.md"
       - "review/first-audio-write-inventory-review-20261027.md"
       - "server/internal/api/first_audio_matrix_harness_test.go"
@@ -34,6 +35,7 @@ on:
       - "docs/75-first-audio-immutable-guard-context-sdd.md"
       - "docs/76-first-audio-context-authority-and-probe-lifecycle-sdd.md"
       - "docs/77-first-audio-write-callsite-inventory-sdd.md"
+      - "docs/80-first-audio-audit-row-guard-sdd.md"
       - "review/first-audio-transaction-outcome-review-20261027.md"
       - "review/first-audio-write-inventory-review-20261027.md"
       - "server/internal/api/first_audio_matrix_harness_test.go"
@@ -98,6 +100,9 @@ jobs:
       - name: Test JSONL parser, lifecycle, replay, and terminal cleanup
         working-directory: server
         run: go test ./internal/api -run '^TestFirstAudio(Matrix|Guard(Context|Probe|Controller|Publisher|CallbackTerminal|SQLiteCallback))' -count=1 -timeout=5m
+      - name: Test strict SQLite journey audit row guard
+        working-directory: server
+        run: go test ./internal/api -run '^TestFirstAudioJourney' -count=1 -timeout=5m
       - name: Test classroom tool transaction outcome handling
         working-directory: server
         run: go test ./internal/api -run '^(TestToolTransaction|TestObservedToolTransaction|TestUncertainToolTransaction|TestRetiredRoomRejectsPublicProgressionEntrypoints|TestDeferredCommitFailureStopsTeacherContinuationAndSnapshot)' -count=1 -timeout=5m
@@ -107,6 +112,9 @@ jobs:
       - name: Race-test immutable guard context publication
         working-directory: server
         run: go test -race ./internal/api -run '^TestFirstAudioGuard(Context|Probe|Controller|Publisher)' -count=1 -timeout=5m
+      - name: Race-test SQLite journey audit row guard
+        working-directory: server
+        run: go test -race ./internal/api -run '^TestFirstAudioJourneyAuditGuard' -count=1 -timeout=5m
       - name: Confirm Linux CGO compiler is active
         run: |
           test "$(go env CGO_ENABLED)" = "1"
@@ -181,6 +189,9 @@ jobs:
       - name: Test Go harness path and lifecycle boundaries
         working-directory: server
         run: go test ./internal/api -run '^TestFirstAudio(Matrix|Guard(Context|Probe|Controller|Publisher|CallbackTerminal|SQLiteCallback))' -count=1 -timeout=10m
+      - name: Test strict SQLite journey audit row guard
+        working-directory: server
+        run: go test ./internal/api -run '^TestFirstAudioJourney' -count=1 -timeout=5m
       - name: Test classroom tool transaction outcome handling
         working-directory: server
         run: go test ./internal/api -run '^(TestToolTransaction|TestObservedToolTransaction|TestUncertainToolTransaction|TestRetiredRoomRejectsPublicProgressionEntrypoints|TestDeferredCommitFailureStopsTeacherContinuationAndSnapshot)' -count=1 -timeout=10m
