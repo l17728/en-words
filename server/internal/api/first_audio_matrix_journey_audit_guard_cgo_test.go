@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"enwords/internal/store"
+	"enwords/internal/tools"
 
 	sqlite3 "github.com/mattn/go-sqlite3"
 	gormsqlite "gorm.io/driver/sqlite"
@@ -64,33 +65,34 @@ type firstAudioJourneyAuthorizerManifest struct {
 }
 
 type firstAudioAuditProbe struct {
-	mu                   sync.Mutex
-	connections          *firstAudioSQLiteConnectionRegistry
-	registryID           string
-	raw                  *sqlite3.SQLiteConn
-	trackedConn          *firstAudioTrackedSQLiteConn
-	retirementErr        error
-	permit               atomic.Value // string
-	leaseActive          atomic.Bool
-	txEpoch              atomic.Uint64
-	contextVersion       uint64
-	captureOnly          bool
-	manifest             map[firstAudioJourneyAuthorizerTuple]struct{}
-	tuples               []firstAudioJourneyAuthorizerTuple
-	denials              atomic.Uint64
-	callbacks            atomic.Uint64
-	terminal             atomic.Bool
-	forceCommitFailure   atomic.Bool
-	forceIDQueryFailure  atomic.Bool
-	forceRollbackFailure atomic.Bool
-	transactionActive    atomic.Bool
-	expected             atomic.Pointer[firstAudioAuditExpectedRow]
-	rowPermit            atomic.Bool
-	permitMu             sync.Mutex
-	usedPermits          map[uint64]map[string]bool
-	databasePath         string
-	predictedID          atomic.Int64
-	closePool            func() error
+	mu                    sync.Mutex
+	connections           *firstAudioSQLiteConnectionRegistry
+	registryID            string
+	raw                   *sqlite3.SQLiteConn
+	trackedConn           *firstAudioTrackedSQLiteConn
+	retirementErr         error
+	permit                atomic.Value // string
+	leaseActive           atomic.Bool
+	txEpoch               atomic.Uint64
+	contextVersion        uint64
+	captureOnly           bool
+	manifest              map[firstAudioJourneyAuthorizerTuple]struct{}
+	tuples                []firstAudioJourneyAuthorizerTuple
+	denials               atomic.Uint64
+	callbacks             atomic.Uint64
+	terminal              atomic.Bool
+	forceCommitFailure    atomic.Bool
+	forceIDQueryFailure   atomic.Bool
+	forceRollbackFailure  atomic.Bool
+	forceReadbackMismatch atomic.Bool
+	transactionActive     atomic.Bool
+	expected              atomic.Pointer[firstAudioAuditExpectedRow]
+	rowPermit             atomic.Bool
+	permitMu              sync.Mutex
+	usedPermits           map[uint64]map[string]bool
+	databasePath          string
+	predictedID           atomic.Int64
+	closePool             func() error
 }
 
 type firstAudioAuditExpectedRow struct {
@@ -411,6 +413,17 @@ func firstAudioFixtureAuditRow(tool string, ts time.Time) store.AuditLog {
 	}
 }
 
+func firstAudioFixtureAuditEntry(tool string, ts time.Time) tools.AuditEntry {
+	return tools.AuditEntry{TS: ts, ActorID: "teacher_agent", ActorRole: tools.Role("teacher_agent"), Tool: tool, Risk: tools.Risk("low"), OK: true, Result: "ok", Args: `{"bytes":12}`, DurationMs: 17, TraceID: "lesson-7001"}
+}
+
+func assertFirstAudioAuditProbeRolledBack(t *testing.T, probe *firstAudioAuditProbe) {
+	t.Helper()
+	if probe.transactionActive.Load() || !probe.connections.IsLive(probe.registryID, probe.raw) || probe.retirementErr != nil || probe.closePool == nil {
+		t.Fatalf("probe rollback outcome invalid: txActive=%t connectionLive=%t retirementErr=%v poolOpen=%t", probe.transactionActive.Load(), probe.connections.IsLive(probe.registryID, probe.raw), probe.retirementErr, probe.closePool != nil)
+	}
+}
+
 func firstAudioAuditTypedProjection(row store.AuditLog, id int64) []any {
 	values := make([]any, 0, 24)
 	appendText := func(value string) { values = append(values, "text", value) }
@@ -564,6 +577,82 @@ func TestFirstAudioJourneyAuditGuardAcceptsExactGeneratedAuditRow(t *testing.T) 
 			}
 		})
 	}
+}
+
+func TestFirstAudioJourneyAuditGuardUsesProductionAuditWriter(t *testing.T) {
+	manifest, err := firstAudioLoadJourneyAuthorizerManifest()
+	if err != nil {
+		t.Fatal("load reviewed journey authorizer manifest:", err)
+	}
+	for _, toolName := range firstAudioJourneyAuditToolNames {
+		t.Run(toolName, func(t *testing.T) {
+			probe, db, closeDB := openFirstAudioAuditProbe(t, false, manifest)
+			defer closeDB()
+			row := firstAudioFixtureAuditRow(toolName, time.Date(2026, 10, 28, 12, 0, 0, 123456000, time.UTC))
+			var writerCalls atomic.Int64
+			entry := firstAudioFixtureAuditEntry(toolName, time.Date(2026, 10, 28, 12, 0, 0, 123456000, time.UTC))
+			writer := func(tx *gorm.DB) error {
+				writerCalls.Add(1)
+				return persistToolAudits(tx, []tools.AuditEntry{entry}, false)
+			}
+			if err := firstAudioExecuteAuditProbeWithWriter(t, probe, db, row, nil, writer); err != nil {
+				t.Fatal("production audit writer rejected exact row:", err)
+			}
+			if writerCalls.Load() != 1 || probe.callbacks.Load() != 1 {
+				t.Fatalf("writer/callback count: writer=%d callback=%d", writerCalls.Load(), probe.callbacks.Load())
+			}
+			assertFirstAudioAuditRowCount(t, probe, 1)
+		})
+	}
+}
+
+func TestFirstAudioJourneyAuditGuardProductionWriterTerminalizesAfterUnlistedTool(t *testing.T) {
+	manifest, err := firstAudioLoadJourneyAuthorizerManifest()
+	if err != nil {
+		t.Fatal(err)
+	}
+	probe, db, closeDB := openFirstAudioAuditProbe(t, false, manifest)
+	defer closeDB()
+	expected := firstAudioFixtureAuditRow("classroom.say", time.Date(2026, 10, 28, 12, 0, 0, 123456000, time.UTC))
+	entry := firstAudioFixtureAuditEntry("classroom.answer", expected.TS)
+	var calls atomic.Int64
+	writer := func(tx *gorm.DB) error {
+		calls.Add(1)
+		return persistToolAudits(tx, []tools.AuditEntry{entry}, false)
+	}
+	if err := firstAudioExecuteAuditProbeWithWriter(t, probe, db, expected, nil, writer); err == nil {
+		t.Fatal("unlisted production audit tool was accepted")
+	}
+	if calls.Load() != 2 || probe.callbacks.Load() != 1 || !probe.terminal.Load() || probe.denials.Load() < 2 {
+		t.Fatalf("writer/callback/terminal/denial evidence: calls=%d callbacks=%d terminal=%t denials=%d", calls.Load(), probe.callbacks.Load(), probe.terminal.Load(), probe.denials.Load())
+	}
+	assertFirstAudioAuditRowCount(t, probe, 0)
+	assertFirstAudioAuditProbeRolledBack(t, probe)
+}
+
+func TestFirstAudioJourneyAuditGuardProductionWriterReadbackMismatchDeniesSecondWrite(t *testing.T) {
+	manifest, err := firstAudioLoadJourneyAuthorizerManifest()
+	if err != nil {
+		t.Fatal(err)
+	}
+	probe, db, closeDB := openFirstAudioAuditProbe(t, false, manifest)
+	defer closeDB()
+	probe.forceReadbackMismatch.Store(true)
+	row := firstAudioFixtureAuditRow("classroom.say", time.Date(2026, 10, 28, 12, 0, 0, 123456000, time.UTC))
+	var calls atomic.Int64
+	entry := firstAudioFixtureAuditEntry("classroom.say", row.TS)
+	writer := func(tx *gorm.DB) error {
+		calls.Add(1)
+		return persistToolAudits(tx, []tools.AuditEntry{entry}, false)
+	}
+	if err := firstAudioExecuteAuditProbeWithWriter(t, probe, db, row, nil, writer); err == nil {
+		t.Fatal("injected readback mismatch was accepted")
+	}
+	if calls.Load() != 2 || probe.callbacks.Load() != 1 || !probe.terminal.Load() || probe.denials.Load() == 0 {
+		t.Fatalf("writer/callback/terminal/denial evidence: calls=%d callbacks=%d terminal=%t denials=%d", calls.Load(), probe.callbacks.Load(), probe.terminal.Load(), probe.denials.Load())
+	}
+	assertFirstAudioAuditRowCount(t, probe, 0)
+	assertFirstAudioAuditProbeRolledBack(t, probe)
 }
 
 func TestFirstAudioJourneyAuditGuardRejectsUnlistedToolBeforeSQL(t *testing.T) {
@@ -1145,6 +1234,10 @@ func openFirstAudioAuditProbeWithSetup(t *testing.T, captureOnly bool, manifest 
 }
 
 func firstAudioExecuteAuditProbe(t *testing.T, probe *firstAudioAuditProbe, db *gorm.DB, expected store.AuditLog, firstActual *store.AuditLog) (retErr error) {
+	return firstAudioExecuteAuditProbeWithWriter(t, probe, db, expected, firstActual, nil)
+}
+
+func firstAudioExecuteAuditProbeWithWriter(t *testing.T, probe *firstAudioAuditProbe, db *gorm.DB, expected store.AuditLog, firstActual *store.AuditLog, productionWriter func(*gorm.DB) error) (retErr error) {
 	t.Helper()
 	if err := firstAudioValidateExpectedAuditRow(expected); err != nil {
 		return err
@@ -1201,7 +1294,22 @@ func firstAudioExecuteAuditProbe(t *testing.T, probe *firstAudioAuditProbe, db *
 	if firstActual != nil {
 		actual = *firstActual
 	}
-	if err := probe.withPermit(firstAudioAuditInsertPermit, func() error { return tx.Create(&actual).Error }); err != nil {
+	write := func(row store.AuditLog) error {
+		if productionWriter != nil {
+			return productionWriter(tx)
+		}
+		return tx.Create(&row).Error
+	}
+	if err := probe.withPermit(firstAudioAuditInsertPermit, func() error { return write(actual) }); err != nil {
+		if productionWriter != nil {
+			if !probe.terminal.Load() {
+				return fmt.Errorf("production writer rejection did not terminalize: %w", err)
+			}
+			if retryErr := write(actual); retryErr == nil {
+				return errors.New("terminal probe unexpectedly accepted second production-writer invocation")
+			}
+			return fmt.Errorf("production writer insert rejected and terminal retry denied: %w", err)
+		}
 		if firstActual == nil {
 			return fmt.Errorf("insert exact audit row: %w", err)
 		}
@@ -1223,7 +1331,7 @@ func firstAudioExecuteAuditProbe(t *testing.T, probe *firstAudioAuditProbe, db *
 		probe.transactionActive.Store(false)
 		return fmt.Errorf("first mismatched row rejected as required: %w", err)
 	}
-	if actual.ID != expectedID {
+	if productionWriter == nil && actual.ID != expectedID {
 		return fmt.Errorf("GORM generated ID=%d, controller predicted %d", actual.ID, expectedID)
 	}
 	if probe.callbacks.Load() == 0 || probe.rowPermit.Load() {
@@ -1237,7 +1345,16 @@ func firstAudioExecuteAuditProbe(t *testing.T, probe *firstAudioAuditProbe, db *
 	}); err != nil {
 		return fmt.Errorf("read back inserted audit row: %w", err)
 	}
+	if probe.forceReadbackMismatch.Load() && len(readback) > 1 {
+		readback[1] = "injected_readback_mismatch"
+		probe.terminal.Store(true)
+	}
 	if !reflect.DeepEqual(readback, firstAudioAuditTypedProjection(actual, expectedID)) {
+		if productionWriter != nil && probe.terminal.Load() {
+			if retryErr := write(actual); retryErr == nil {
+				return errors.New("terminal probe unexpectedly accepted second production-writer invocation after readback mismatch")
+			}
+		}
 		return fmt.Errorf("same-transaction audit readback mismatch: got=%#v want=%#v", readback, firstAudioAuditTypedProjection(actual, expectedID))
 	}
 	if probe.callbacks.Load() != 1 || probe.rowPermit.Load() {
