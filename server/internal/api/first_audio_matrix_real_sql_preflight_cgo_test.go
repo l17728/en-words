@@ -736,6 +736,11 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 	connectionIDs := make([]string, 0, physicalConnections)
 	probeContracts := make([]firstAudioGuardProbeContract, 0, physicalConnections)
 	rowContracts := make([]firstAudioGuardRowContract, 0, physicalConnections)
+	defer func() {
+		for _, token := range tokens {
+			zeroFirstAudioSecret(token)
+		}
+	}()
 	for _, pinnedIdentity := range identities {
 		binding := firstAudioGuardProbeBinding{
 			runID: "preflight_20261028", lessonID: identity.LessonID, generation: 1,
@@ -756,11 +761,6 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 			oldRow:   []byte("typed-projection"), newRow: []byte("typed-projection"),
 		})
 	}
-	defer func() {
-		for _, token := range tokens {
-			zeroFirstAudioSecret(token)
-		}
-	}()
 	preflight, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
 		runID: bindings[0].runID, currentLessonID: bindings[0].lessonID, generation: 1,
 		phase: firstAudioGuardPreflight, version: bindings[0].version, requirePhysicalProbes: true,
