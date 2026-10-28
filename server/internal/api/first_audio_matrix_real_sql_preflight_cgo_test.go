@@ -343,6 +343,184 @@ func TestFirstAudioMatrixRealSQLDiscardPinnedConnectionRetiresPhysicalIdentity(t
 	}
 }
 
+func TestFirstAudioMatrixRealSQLRejectsCrossConnectionTokenAndAllowsCleanupRollback(t *testing.T) {
+	registry := newFirstAudioSQLiteConnectionRegistry()
+	controller := newFirstAudioGuardController()
+	type candidate struct {
+		pinned     *sql.Conn
+		tracked    *firstAudioTrackedSQLiteConn
+		authorizer *firstAudioRealSQLAuthorizer
+		sessionRef *firstAudioRealSQLProbeSessionRef
+		binding    firstAudioGuardProbeBinding
+		token      []byte
+		challenge  *firstAudioGuardProbeChallenge
+	}
+	harnesses := make(map[string]*candidate)
+	var harnessMu sync.Mutex
+	driverName := fmt.Sprintf("first_audio_cross_token_%d", firstAudioProbeDriverSequence.Add(1))
+	if err := registerFirstAudioTrackedSQLiteDriver(driverName, func(raw *sqlite3.SQLiteConn) error {
+		registration, err := registry.Register(raw)
+		if err != nil {
+			return err
+		}
+		sessionRef := &firstAudioRealSQLProbeSessionRef{}
+		authorizer := newFirstAudioRealSQLAuthorizer(controller, sessionRef, firstAudioDatabaseSnapshot{})
+		harnessMu.Lock()
+		harnesses[registration.ID] = &candidate{authorizer: authorizer, sessionRef: sessionRef}
+		harnessMu.Unlock()
+		if err := raw.RegisterFunc("first_audio_probe", func(token []byte) bool {
+			session := sessionRef.session.Load()
+			if session == nil || session.challenge == nil || session.tracked == nil || !session.tracked.txActive.Load() || session.txEpoch.Load() == 0 || session.txEpoch.Load() != session.tracked.txEpoch.Load() {
+				return false
+			}
+			return session.challenge.ConsumeInTransaction(token, session.binding, session.txEpoch.Load()) == nil
+		}, true); err != nil {
+			return err
+		}
+		return nil
+	}, registry.Retire); err != nil {
+		t.Fatal("register tracked SQLite driver:", err)
+	}
+	pool, err := sql.Open(driverName, filepath.Join(t.TempDir(), "cross-connection-token.db"))
+	if err != nil {
+		t.Fatal("open isolated SQLite pool:", err)
+	}
+	defer pool.Close()
+	pool.SetMaxOpenConns(2)
+	pool.SetMaxIdleConns(2)
+	candidates := make([]*candidate, 0, 2)
+	for range 2 {
+		pinned, pinErr := pool.Conn(context.Background())
+		if pinErr != nil {
+			t.Fatal("pin physical SQLite connection:", pinErr)
+		}
+		var tracked *firstAudioTrackedSQLiteConn
+		if rawErr := pinned.Raw(func(conn any) error {
+			var ok bool
+			tracked, ok = conn.(*firstAudioTrackedSQLiteConn)
+			if !ok || tracked == nil || tracked.raw == nil {
+				return fmt.Errorf("unexpected tracked connection %T", conn)
+			}
+			return nil
+		}); rawErr != nil {
+			_ = pinned.Close()
+			t.Fatal("resolve tracked physical connection:", rawErr)
+		}
+		registration, live := registry.Lookup(tracked.raw)
+		if !live || !registry.IsLive(registration.ID, tracked.raw) {
+			_ = pinned.Close()
+			t.Fatal("physical connection missing from registry")
+		}
+		harnessMu.Lock()
+		current := harnesses[registration.ID]
+		harnessMu.Unlock()
+		if current == nil {
+			_ = pinned.Close()
+			t.Fatal("physical connection has no authorizer harness")
+		}
+		current.pinned, current.tracked = pinned, tracked
+		current.binding = firstAudioGuardProbeBinding{
+			runID: "cross_token_20261028", lessonID: 501, generation: 1, version: 2,
+			connection: registration.ID, probeID: "probe-" + strings.TrimPrefix(registration.ID, "conn-"),
+		}
+		current.token, current.challenge, err = newFirstAudioPhysicalProbeChallenge(current.binding)
+		if err != nil {
+			_ = pinned.Close()
+			t.Fatal("issue isolated connection challenge:", err)
+		}
+		candidates = append(candidates, current)
+	}
+	defer func() {
+		for _, item := range candidates {
+			zeroFirstAudioSecret(item.token)
+			_ = item.pinned.Close()
+		}
+	}()
+	if candidates[0].binding.connection == candidates[1].binding.connection {
+		t.Fatal("test did not pin two distinct physical connections")
+	}
+	preflightSpec := firstAudioValidPreflightSpec(2)
+	preflightSpec.runID = candidates[0].binding.runID
+	preflightSpec.currentLessonID = candidates[0].binding.lessonID
+	preflightSpec.connectionIDs = make([]string, 0, 2)
+	preflightSpec.probeContracts = make([]firstAudioGuardProbeContract, 0, 2)
+	preflightSpec.rowContracts = make([]firstAudioGuardRowContract, 0, 2)
+	for _, item := range candidates {
+		if !item.challenge.receipt.arm() {
+			t.Fatal("arm fresh connection receipt")
+		}
+		preflightSpec.connectionIDs = append(preflightSpec.connectionIDs, item.binding.connection)
+		preflightSpec.probeContracts = append(preflightSpec.probeContracts, item.challenge.Contract())
+		preflightSpec.rowContracts = append(preflightSpec.rowContracts, firstAudioGuardRowContract{
+			table: "lessons", operation: "UPDATE", identity: fmt.Sprintf("lesson:%d/conn:%s", item.binding.lessonID, item.binding.connection),
+			oldRow: []byte("typed-projection"), newRow: []byte("typed-projection"),
+		})
+		controller.probeReceipts[item.binding.connection] = item.challenge.receipt
+	}
+	preflight, err := newFirstAudioGuardContext(preflightSpec)
+	if err != nil {
+		t.Fatal("construct isolated two-connection PREFLIGHT:", err)
+	}
+	controller.publisher.current.Store(preflight)
+	for _, item := range candidates {
+		item.authorizer.tracked, item.authorizer.pinned = item.tracked, item.pinned
+		item.authorizer.probeChallenge.Store(item.challenge)
+		if err := item.authorizer.install(item.tracked.raw); err != nil {
+			t.Fatal("install per-connection SQLite authorizer:", err)
+		}
+	}
+	owner, foreign := candidates[0], candidates[1]
+	owner.sessionRef.session.Store(&firstAudioRealSQLProbeSession{challenge: owner.challenge, binding: owner.binding, tracked: owner.tracked})
+	var tx *sql.Tx
+	if err := owner.authorizer.withPermit(firstAudioSQLPermitProbeSQL, false, func() error {
+		var beginErr error
+		tx, beginErr = owner.pinned.BeginTx(context.Background(), nil)
+		return beginErr
+	}); err != nil {
+		t.Fatal("begin owner physical transaction:", err)
+	}
+	epoch := owner.tracked.txEpoch.Load()
+	if !owner.tracked.txActive.Load() || epoch == 0 {
+		t.Fatal("owner physical transaction did not enter active epoch")
+	}
+	owner.authorizer.activeTx.Store(tx)
+	owner.authorizer.txEpoch.Store(epoch)
+	owner.sessionRef.session.Load().txEpoch.Store(epoch)
+	if err := owner.challenge.BindTransactionEpoch(epoch); err != nil {
+		t.Fatal("bind owner challenge transaction epoch:", err)
+	}
+	var accepted bool
+	err = owner.authorizer.withPermit(firstAudioSQLPermitTokenConsumption, true, func() error {
+		return tx.QueryRowContext(context.Background(), "SELECT first_audio_probe(?)", foreign.token).Scan(&accepted)
+	})
+	if err != nil {
+		t.Fatalf("real SQLite cross-connection token query: %v", err)
+	}
+	if accepted {
+		t.Fatal("connection A accepted connection B's challenge token")
+	}
+	if got := firstAudioGuardProbeReceiptState(owner.challenge.receipt.state.Load()); got != firstAudioGuardProbeFailed {
+		t.Fatalf("owner receipt state=%d, want FAILED after mismatched token", got)
+	}
+	if got := firstAudioGuardProbeReceiptState(foreign.challenge.receipt.state.Load()); got != firstAudioGuardProbeIssued {
+		t.Fatalf("foreign receipt state=%d, want ISSUED and untouched", got)
+	}
+	if owner.challenge.receipt.denials.Load() == 0 {
+		t.Fatal("rejected owner challenge lacks denial evidence")
+	}
+	owner.authorizer.cleanupPreflight.Store(true)
+	owner.authorizer.cleanupAvailable.Store(true)
+	if err := owner.authorizer.rollbackProbeTransaction(); err != nil {
+		t.Fatalf("authorized rollback after rejected callback: %v", err)
+	}
+	if owner.tracked.txActive.Load() || !owner.tracked.raw.AutoCommit() || owner.authorizer.denials.Load() != 0 {
+		t.Fatal("ordinary token rejection did not permit exactly the cleanup rollback")
+	}
+	if firstAudioGuardProbeReceiptState(foreign.challenge.receipt.state.Load()) != firstAudioGuardProbeIssued || !registry.IsLive(foreign.binding.connection, candidates[1].tracked.raw) {
+		t.Fatal("cross-connection rejection damaged the foreign candidate connection or receipt")
+	}
+}
+
 func TestFirstAudioMatrixRealSQLMissingCleanupAuthorityTerminalizesAndDiscardsActiveTransaction(t *testing.T) {
 	registry := newFirstAudioSQLiteConnectionRegistry()
 	driverName := fmt.Sprintf("first_audio_missing_cleanup_authority_%d", firstAudioProbeDriverSequence.Add(1))
