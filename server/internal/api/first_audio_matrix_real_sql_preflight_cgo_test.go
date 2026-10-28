@@ -84,6 +84,7 @@ type firstAudioRealSQLAuthorizer struct {
 	cleanupPreflight        atomic.Bool
 	tracked                 *firstAudioTrackedSQLiteConn
 	pinned                  *sql.Conn
+	probeChallenge          atomic.Pointer[firstAudioGuardProbeChallenge]
 	activeTx                atomic.Pointer[sql.Tx]
 	txEpoch                 atomic.Uint64
 	denials                 atomic.Uint64
@@ -226,11 +227,7 @@ func (p *firstAudioRealSQLAuthorizer) terminalizeAndDiscardUncertainConnection()
 	if p == nil {
 		return errFirstAudioGuardProbeRejected
 	}
-	if p.sessionRef != nil {
-		if session := p.sessionRef.session.Load(); session != nil && session.challenge != nil && session.challenge.receipt != nil {
-			session.challenge.receipt.deny()
-		}
-	}
+	p.failBoundProbeReceipt()
 	var terminalErr error
 	if p.controller != nil {
 		terminalErr = p.controller.TerminalizeFromSQLiteCallback()
@@ -243,6 +240,25 @@ func (p *firstAudioRealSQLAuthorizer) terminalizeAndDiscardUncertainConnection()
 		return fmt.Errorf("uncertain probe cleanup; terminal context publication failed after connection retirement: %w", terminalErr)
 	}
 	return errFirstAudioGuardProbeRejected
+}
+
+func (p *firstAudioRealSQLAuthorizer) failBoundProbeReceipt() {
+	if p == nil || p.sessionRef == nil || p.connections == nil || p.tracked == nil || p.raw == nil || p.registryID == "" || !p.connections.IsLive(p.registryID, p.raw) {
+		return
+	}
+	expected := p.probeChallenge.Load()
+	if expected == nil || expected.receipt == nil || expected.binding.connection != p.registryID {
+		return
+	}
+	session := p.sessionRef.session.Load()
+	if session == nil || session.challenge != expected || session.tracked != p.tracked || session.tracked.raw != p.raw || session.binding.connection != p.registryID || !sameFirstAudioProbeBinding(session.binding, expected.binding) {
+		return
+	}
+	epoch := p.txEpoch.Load()
+	if epoch == 0 || p.tracked.txEpoch.Load() != epoch || session.txEpoch.Load() != epoch || expected.txEpoch.Load() != epoch || expected.receipt.txEpoch.Load() != epoch || !sameFirstAudioProbeBinding(expected.receipt.binding, expected.binding) {
+		return
+	}
+	expected.receipt.deny()
 }
 
 func (p *firstAudioRealSQLAuthorizer) discardPinnedConnection() error {
@@ -318,14 +334,14 @@ func TestFirstAudioRealSQLDiscardPinnedConnectionRetiresPhysicalIdentity(t *test
 
 func TestFirstAudioRealSQLMissingCleanupAuthorityTerminalizesAndDiscardsActiveTransaction(t *testing.T) {
 	registry := newFirstAudioSQLiteConnectionRegistry()
-	driverName := fmt.Sprintf("first_audio_rollback_precondition_%d", firstAudioProbeDriverSequence.Add(1))
+	driverName := fmt.Sprintf("first_audio_missing_cleanup_authority_%d", firstAudioProbeDriverSequence.Add(1))
 	if err := registerFirstAudioTrackedSQLiteDriver(driverName, func(conn *sqlite3.SQLiteConn) error {
 		_, err := registry.Register(conn)
 		return err
 	}, registry.Retire); err != nil {
 		t.Fatal("register tracked SQLite driver:", err)
 	}
-	pool, err := sql.Open(driverName, filepath.Join(t.TempDir(), "rollback-precondition.db"))
+	pool, err := sql.Open(driverName, filepath.Join(t.TempDir(), "missing-cleanup-authority.db"))
 	if err != nil {
 		t.Fatal("open isolated SQLite pool:", err)
 	}
@@ -387,7 +403,9 @@ func TestFirstAudioRealSQLMissingCleanupAuthorityTerminalizesAndDiscardsActiveTr
 	controller.probeReceipts[registration.ID] = challenge.receipt
 	controller.mu.Unlock()
 	sessionRef := &firstAudioRealSQLProbeSessionRef{}
-	sessionRef.session.Store(&firstAudioRealSQLProbeSession{challenge: challenge, binding: binding, tracked: tracked})
+	session := &firstAudioRealSQLProbeSession{challenge: challenge, binding: binding, tracked: tracked}
+	session.txEpoch.Store(epoch)
+	sessionRef.session.Store(session)
 	authorizer := &firstAudioRealSQLAuthorizer{
 		controller:  controller,
 		connections: registry,
@@ -397,15 +415,32 @@ func TestFirstAudioRealSQLMissingCleanupAuthorityTerminalizesAndDiscardsActiveTr
 		tracked:     tracked,
 		pinned:      pinned,
 	}
+	authorizer.probeChallenge.Store(challenge)
 	authorizer.activeTx.Store(tx)
 	authorizer.txEpoch.Store(epoch)
+	foreignBinding := binding
+	foreignBinding.connection = "conn-foreign"
+	foreignBinding.probeID = "probe-foreign"
+	foreignToken, foreignChallenge, err := newFirstAudioPhysicalProbeChallenge(foreignBinding)
+	if err != nil {
+		t.Fatal("construct foreign connection challenge:", err)
+	}
+	defer zeroFirstAudioSecret(foreignToken)
+	foreignSession := &firstAudioRealSQLProbeSession{challenge: foreignChallenge, binding: foreignBinding, tracked: tracked}
+	foreignSession.txEpoch.Store(epoch)
+	sessionRef.session.Store(foreignSession)
+	authorizer.failBoundProbeReceipt()
+	if firstAudioGuardProbeReceiptState(foreignChallenge.receipt.state.Load()) != firstAudioGuardProbeIssued || firstAudioGuardProbeReceiptState(challenge.receipt.state.Load()) != firstAudioGuardProbeIssued {
+		t.Fatal("mismatched session invalidated a foreign or unverified challenge receipt")
+	}
+	sessionRef.session.Store(session)
 	// cleanupPreflight is deliberately absent while a transaction is active.
 	// The helper must fail closed rather than leave this connection reusable.
 	if err := authorizer.rollbackProbeTransaction(); !errors.Is(err, errFirstAudioGuardProbeRejected) {
 		t.Fatalf("rollback with missing cleanup authority = %v, want rejected probe after terminal cleanup", err)
 	}
 	if !controller.IsTerminal() || controller.IsActivePhase(firstAudioGuardPreflight) {
-		t.Fatal("uncertain rollback left PREFLIGHT active or failed to terminalize")
+		t.Fatal("missing cleanup authority left PREFLIGHT active or failed to terminalize")
 	}
 	if active := controller.publisher.Load(); active == nil || active.phase != firstAudioGuardTerminal {
 		t.Fatalf("terminalized controller context=%#v; want TERMINAL", active)
@@ -1098,6 +1133,7 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 func runFirstAudioRealSQLConnectionProbe(t *testing.T, authorizer *firstAudioRealSQLAuthorizer, pinned firstAudioPinnedRealSQLConnection, challenge *firstAudioGuardProbeChallenge, binding firstAudioGuardProbeBinding, token []byte, session *firstAudioRealSQLProbeSession, sessionRef *firstAudioRealSQLProbeSessionRef, tokenCalls, rowGuardCalls *atomic.Uint64, callbackErr *atomic.Value) {
 	t.Helper()
 	defer zeroFirstAudioSecret(token)
+	authorizer.probeChallenge.Store(challenge)
 	sessionRef.session.Store(session)
 	var tx *sql.Tx
 	var err error
