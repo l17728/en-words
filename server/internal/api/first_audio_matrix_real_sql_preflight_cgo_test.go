@@ -370,6 +370,13 @@ func TestFirstAudioMatrixRealSQLMissingCleanupAuthorityTerminalizesAndDiscardsAc
 	if err != nil {
 		t.Fatal("begin physical probe transaction:", err)
 	}
+	defer func() {
+		// The failure path below evicts the physical driver connection while
+		// database/sql.Tx still owns the Conn lease. Rollback releases that Go
+		// lease during teardown; the underlying physical connection is already
+		// closed and cannot return to the pool.
+		_ = tx.Rollback()
+	}()
 	epoch := tracked.txEpoch.Load()
 	if !tracked.txActive.Load() || epoch == 0 {
 		t.Fatal("tracked physical transaction did not enter an active epoch")
