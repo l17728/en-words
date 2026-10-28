@@ -68,6 +68,8 @@ type firstAudioAuditProbe struct {
 	connections          *firstAudioSQLiteConnectionRegistry
 	registryID           string
 	raw                  *sqlite3.SQLiteConn
+	trackedConn          *firstAudioTrackedSQLiteConn
+	retirementErr        error
 	permit               atomic.Value // string
 	leaseActive          atomic.Bool
 	txEpoch              atomic.Uint64
@@ -354,8 +356,20 @@ func (p *firstAudioAuditProbe) retireConnection() {
 	p.connections.Retire(p.raw)
 	p.transactionActive.Store(false)
 	if p.closePool != nil {
-		_ = p.closePool()
+		closeErr := p.closePool()
 		p.closePool = nil
+		p.retirementErr = errors.Join(p.retirementErr, closeErr)
+	}
+	if p.trackedConn == nil {
+		p.retirementErr = errors.Join(p.retirementErr, errors.New("tracked SQLite connection close was not observed"))
+		return
+	}
+	if p.trackedConn.raw != p.raw {
+		p.retirementErr = errors.Join(p.retirementErr, errors.New("tracked SQLite connection close observer references a different handle"))
+		return
+	}
+	if !p.trackedConn.closeOK.Load() {
+		p.retirementErr = errors.Join(p.retirementErr, fmt.Errorf("tracked SQLite physical connection close was not confirmed: %v", p.trackedConn.closeErr))
 	}
 }
 
@@ -987,8 +1001,8 @@ func TestFirstAudioJourneyAuditGuardRollbackFailureRetiresConnection(t *testing.
 	if err == nil || !strings.Contains(err.Error(), "rollback failed") {
 		t.Fatalf("forced rollback failure not surfaced to probe: %v", err)
 	}
-	if !probe.terminal.Load() || probe.transactionActive.Load() || probe.connections.IsLive(probe.registryID, probe.raw) || probe.closePool != nil {
-		t.Fatalf("rollback failure did not terminalize and retire the connection: terminal=%t txActive=%t live=%t poolOpen=%t", probe.terminal.Load(), probe.transactionActive.Load(), probe.connections.IsLive(probe.registryID, probe.raw), probe.closePool != nil)
+	if !probe.terminal.Load() || probe.transactionActive.Load() || probe.connections.IsLive(probe.registryID, probe.raw) || probe.closePool != nil || probe.retirementErr != nil || probe.trackedConn == nil || !probe.trackedConn.closeOK.Load() || probe.trackedConn.raw != probe.raw {
+		t.Fatalf("rollback failure did not confirm retirement of the same physical connection: terminal=%t txActive=%t live=%t poolOpen=%t retirementErr=%v tracked=%p closeOK=%t sameRaw=%t", probe.terminal.Load(), probe.transactionActive.Load(), probe.connections.IsLive(probe.registryID, probe.raw), probe.closePool != nil, probe.retirementErr, probe.trackedConn, probe.trackedConn != nil && probe.trackedConn.closeOK.Load(), probe.trackedConn != nil && probe.trackedConn.raw == probe.raw)
 	}
 	assertFirstAudioAuditRowCount(t, probe, 0)
 	if err := probe.withPermit(firstAudioAuditCleanupPermit, func() error { return nil }); err == nil {
@@ -1081,7 +1095,11 @@ func openFirstAudioAuditProbeWithSetup(t *testing.T, captureOnly bool, manifest 
 			return err
 		}
 		return probe.install(conn)
-	}, probe.connections.Retire); err != nil {
+	}, probe.connections.Retire, func(conn *firstAudioTrackedSQLiteConn) {
+		if probe.trackedConn == nil {
+			probe.trackedConn = conn
+		}
+	}); err != nil {
 		t.Fatal("register journey audit SQLite driver:", err)
 	}
 	// GORM's SQLite dialector probes sqlite_version during initialization.
@@ -1145,6 +1163,7 @@ func firstAudioExecuteAuditProbe(t *testing.T, probe *firstAudioAuditProbe, db *
 		rollbackErr := probe.withPermit(firstAudioAuditCleanupPermit, func() error { return tx.Rollback().Error })
 		if rollbackErr != nil {
 			probe.retireConnection()
+			rollbackErr = errors.Join(rollbackErr, probe.retirementErr)
 		} else {
 			probe.transactionActive.Store(false)
 		}
@@ -1158,6 +1177,7 @@ func firstAudioExecuteAuditProbe(t *testing.T, probe *firstAudioAuditProbe, db *
 			rollbackErr := probe.withPermit(firstAudioAuditCleanupPermit, func() error { return tx.Rollback().Error })
 			if rollbackErr != nil {
 				probe.retireConnection()
+				retErr = errors.Join(retErr, probe.retirementErr)
 				retErr = errors.Join(retErr, fmt.Errorf("rollback failed; guarded connection retired: %w", rollbackErr))
 			} else {
 				probe.transactionActive.Store(false)

@@ -19,6 +19,7 @@ var errFirstAudioSQLiteRegistrationNotLive = errors.New("first-audio SQLite regi
 type firstAudioTrackedSQLiteDriver struct {
 	inner  *sqlite3.SQLiteDriver
 	retire func(*sqlite3.SQLiteConn)
+	onOpen func(*firstAudioTrackedSQLiteConn)
 }
 
 type firstAudioSQLiteConnectionRegistration struct {
@@ -118,11 +119,17 @@ func (r *firstAudioSQLiteConnectionRegistry) Retire(raw *sqlite3.SQLiteConn) {
 	}
 }
 
-func registerFirstAudioTrackedSQLiteDriver(name string, hook func(*sqlite3.SQLiteConn) error, retire func(*sqlite3.SQLiteConn)) error {
+func registerFirstAudioTrackedSQLiteDriver(name string, hook func(*sqlite3.SQLiteConn) error, retire func(*sqlite3.SQLiteConn), onOpen ...func(*firstAudioTrackedSQLiteConn)) error {
 	if name == "" || hook == nil || retire == nil {
 		return errors.New("tracked sqlite driver requires name, hook, and retirement callback")
 	}
+	if len(onOpen) > 1 {
+		return errors.New("tracked sqlite driver accepts at most one connection observer")
+	}
 	tracked := &firstAudioTrackedSQLiteDriver{retire: retire}
+	if len(onOpen) == 1 {
+		tracked.onOpen = onOpen[0]
+	}
 	tracked.inner = &sqlite3.SQLiteDriver{ConnectHook: func(conn *sqlite3.SQLiteConn) error {
 		if err := hook(conn); err != nil {
 			// SQLiteDriver.Open closes the raw connection itself when a hook
@@ -149,7 +156,11 @@ func (d *firstAudioTrackedSQLiteDriver) Open(name string) (driver.Conn, error) {
 		_ = conn.Close()
 		return nil, fmt.Errorf("unexpected sqlite driver connection type %T", conn)
 	}
-	return &firstAudioTrackedSQLiteConn{Conn: conn, raw: sqliteConn, retire: d.retire}, nil
+	trackedConn := &firstAudioTrackedSQLiteConn{Conn: conn, raw: sqliteConn, retire: d.retire}
+	if d.onOpen != nil {
+		d.onOpen(trackedConn)
+	}
+	return trackedConn, nil
 }
 
 type firstAudioTrackedSQLiteConn struct {
