@@ -343,7 +343,7 @@ func TestFirstAudioMatrixRealSQLDiscardPinnedConnectionRetiresPhysicalIdentity(t
 	}
 }
 
-func TestFirstAudioMatrixRealSQLRejectsCrossConnectionAndWrongTokensAndAllowsCleanupRollback(t *testing.T) {
+func TestFirstAudioMatrixRealSQLRejectsCrossConnectionWrongAndReplayedTokens(t *testing.T) {
 	registry := newFirstAudioSQLiteConnectionRegistry()
 	controller := newFirstAudioGuardController()
 	controller.connections = registry
@@ -387,10 +387,28 @@ func TestFirstAudioMatrixRealSQLRejectsCrossConnectionAndWrongTokensAndAllowsCle
 		t.Fatal("open isolated SQLite pool:", err)
 	}
 	defer pool.Close()
-	pool.SetMaxOpenConns(3)
-	pool.SetMaxIdleConns(3)
-	candidates := make([]*candidate, 0, 3)
-	for range 3 {
+	pool.SetMaxOpenConns(4)
+	pool.SetMaxIdleConns(4)
+	candidates := make([]*candidate, 0, 4)
+	defer func() {
+		for _, item := range candidates {
+			zeroFirstAudioSecret(item.token)
+			_ = item.pinned.Close()
+		}
+	}()
+	defer func() {
+		for _, item := range candidates {
+			if item.tracked == nil || !item.tracked.txActive.Load() {
+				continue
+			}
+			item.authorizer.cleanupPreflight.Store(true)
+			item.authorizer.cleanupAvailable.Store(true)
+			if cleanupErr := item.authorizer.rollbackProbeTransaction(); cleanupErr != nil {
+				t.Errorf("candidate %s deferred transaction cleanup failed: %v", item.binding.connection, cleanupErr)
+			}
+		}
+	}()
+	for range 4 {
 		pinned, pinErr := pool.Conn(context.Background())
 		if pinErr != nil {
 			t.Fatal("pin physical SQLite connection:", pinErr)
@@ -431,12 +449,6 @@ func TestFirstAudioMatrixRealSQLRejectsCrossConnectionAndWrongTokensAndAllowsCle
 		}
 		candidates = append(candidates, current)
 	}
-	defer func() {
-		for _, item := range candidates {
-			zeroFirstAudioSecret(item.token)
-			_ = item.pinned.Close()
-		}
-	}()
 	seenConnectionIDs := make(map[string]struct{}, len(candidates))
 	seenRawConnections := make(map[*sqlite3.SQLiteConn]struct{}, len(candidates))
 	for _, item := range candidates {
@@ -452,9 +464,9 @@ func TestFirstAudioMatrixRealSQLRejectsCrossConnectionAndWrongTokensAndAllowsCle
 	preflightSpec := firstAudioValidPreflightSpec(2)
 	preflightSpec.runID = candidates[0].binding.runID
 	preflightSpec.currentLessonID = candidates[0].binding.lessonID
-	preflightSpec.connectionIDs = make([]string, 0, 3)
-	preflightSpec.probeContracts = make([]firstAudioGuardProbeContract, 0, 3)
-	preflightSpec.rowContracts = make([]firstAudioGuardRowContract, 0, 3)
+	preflightSpec.connectionIDs = make([]string, 0, 4)
+	preflightSpec.probeContracts = make([]firstAudioGuardProbeContract, 0, 4)
+	preflightSpec.rowContracts = make([]firstAudioGuardRowContract, 0, 4)
 	for _, item := range candidates {
 		if !item.challenge.receipt.arm() {
 			t.Fatal("arm fresh connection receipt")
@@ -469,7 +481,7 @@ func TestFirstAudioMatrixRealSQLRejectsCrossConnectionAndWrongTokensAndAllowsCle
 	}
 	preflight, err := newFirstAudioGuardContext(preflightSpec)
 	if err != nil {
-		t.Fatal("construct isolated three-connection PREFLIGHT:", err)
+		t.Fatal("construct isolated four-connection PREFLIGHT:", err)
 	}
 	controller.publisher.current.Store(preflight)
 	for _, item := range candidates {
@@ -489,11 +501,11 @@ func TestFirstAudioMatrixRealSQLRejectsCrossConnectionAndWrongTokensAndAllowsCle
 	}); err != nil {
 		t.Fatal("begin owner physical transaction:", err)
 	}
+	owner.authorizer.activeTx.Store(tx)
 	epoch := owner.tracked.txEpoch.Load()
 	if !owner.tracked.txActive.Load() || epoch == 0 {
 		t.Fatal("owner physical transaction did not enter active epoch")
 	}
-	owner.authorizer.activeTx.Store(tx)
 	owner.authorizer.txEpoch.Store(epoch)
 	owner.sessionRef.session.Load().txEpoch.Store(epoch)
 	if err := owner.challenge.BindTransactionEpoch(epoch); err != nil {
@@ -540,11 +552,11 @@ func TestFirstAudioMatrixRealSQLRejectsCrossConnectionAndWrongTokensAndAllowsCle
 	}); err != nil {
 		t.Fatal("begin fresh wrong-token candidate transaction:", err)
 	}
+	wrongOwner.authorizer.activeTx.Store(wrongTokenTx)
 	wrongTokenEpoch := wrongOwner.tracked.txEpoch.Load()
 	if !wrongOwner.tracked.txActive.Load() || wrongTokenEpoch == 0 {
 		t.Fatal("wrong-token candidate transaction did not enter active epoch")
 	}
-	wrongOwner.authorizer.activeTx.Store(wrongTokenTx)
 	wrongOwner.authorizer.txEpoch.Store(wrongTokenEpoch)
 	wrongOwner.sessionRef.session.Load().txEpoch.Store(wrongTokenEpoch)
 	if err := wrongOwner.challenge.BindTransactionEpoch(wrongTokenEpoch); err != nil {
@@ -573,6 +585,52 @@ func TestFirstAudioMatrixRealSQLRejectsCrossConnectionAndWrongTokensAndAllowsCle
 	}
 	if firstAudioGuardProbeReceiptState(foreign.challenge.receipt.state.Load()) != firstAudioGuardProbeIssued {
 		t.Fatal("unrelated-token rejection changed the other connection's receipt")
+	}
+
+	replayOwner := candidates[3]
+	replayOwner.sessionRef.session.Store(&firstAudioRealSQLProbeSession{challenge: replayOwner.challenge, binding: replayOwner.binding, tracked: replayOwner.tracked})
+	var replayTx *sql.Tx
+	if err := replayOwner.authorizer.withPermit(firstAudioSQLPermitProbeSQL, false, func() error {
+		var beginErr error
+		replayTx, beginErr = replayOwner.pinned.BeginTx(context.Background(), nil)
+		return beginErr
+	}); err != nil {
+		t.Fatal("begin fresh replay-candidate transaction:", err)
+	}
+	replayOwner.authorizer.activeTx.Store(replayTx)
+	replayEpoch := replayOwner.tracked.txEpoch.Load()
+	if !replayOwner.tracked.txActive.Load() || replayEpoch == 0 {
+		t.Fatal("replay candidate transaction did not enter active epoch")
+	}
+	replayOwner.authorizer.txEpoch.Store(replayEpoch)
+	replayOwner.sessionRef.session.Load().txEpoch.Store(replayEpoch)
+	if err := replayOwner.challenge.BindTransactionEpoch(replayEpoch); err != nil {
+		t.Fatal("bind replay challenge transaction epoch:", err)
+	}
+	var firstUseAccepted bool
+	err = replayOwner.authorizer.withPermit(firstAudioSQLPermitTokenConsumption, true, func() error {
+		return replayTx.QueryRowContext(context.Background(), "SELECT first_audio_probe(?)", replayOwner.token).Scan(&firstUseAccepted)
+	})
+	if err != nil || !firstUseAccepted || firstAudioGuardProbeReceiptState(replayOwner.challenge.receipt.state.Load()) != firstAudioGuardProbeTokenConsumed {
+		t.Fatalf("fresh replay candidate first token use accepted=%v receipt=%d err=%v", firstUseAccepted, replayOwner.challenge.receipt.state.Load(), err)
+	}
+	var replayAccepted bool
+	err = replayOwner.authorizer.withPermit(firstAudioSQLPermitTokenConsumption, true, func() error {
+		return replayTx.QueryRowContext(context.Background(), "SELECT first_audio_probe(?)", replayOwner.token).Scan(&replayAccepted)
+	})
+	if err != nil {
+		t.Fatalf("real SQLite replay-token query: %v", err)
+	}
+	if replayAccepted || firstAudioGuardProbeReceiptState(replayOwner.challenge.receipt.state.Load()) != firstAudioGuardProbeFailed || replayOwner.challenge.receipt.denials.Load() == 0 {
+		t.Fatal("replayed token was accepted or failed without explicit receipt denial")
+	}
+	replayOwner.authorizer.cleanupPreflight.Store(true)
+	replayOwner.authorizer.cleanupAvailable.Store(true)
+	if err := replayOwner.authorizer.rollbackProbeTransaction(); err != nil {
+		t.Fatalf("authorized rollback after replay rejection: %v", err)
+	}
+	if replayOwner.tracked.txActive.Load() || !replayOwner.tracked.raw.AutoCommit() || replayOwner.authorizer.denials.Load() != 0 {
+		t.Fatal("replay rejection did not finish through the authorized cleanup rollback")
 	}
 }
 
