@@ -1,7 +1,7 @@
 # First-Audio Journey Audit Row Guard SDD
 
 Date: 2026-10-28
-Status: design and test-only implementation approved by architecture, backend/testability, and security reviewers. Focused `TestFirstAudio*` regressions pass in Linux and Windows CGO CI run [40669687960](https://github.com/l17728/en-words/actions/runs/40669687960), including the Linux audit-guard race test and API vet. This remains a test-only probe; the later App/E2E gates are unverified.
+Status: design and test-only implementation approved by architecture, backend/testability, and security reviewers. Focused `TestFirstAudio*` regressions pass in Linux and Windows CGO CI run [40672825320](https://github.com/l17728/en-words/actions/runs/40672825320), including exact tracked-connection close confirmation, the Linux audit-guard race test, and API vet. This remains a test-only probe; the later App/E2E gates are unverified.
 
 ## Scope
 
