@@ -346,6 +346,7 @@ func TestFirstAudioMatrixRealSQLDiscardPinnedConnectionRetiresPhysicalIdentity(t
 func TestFirstAudioMatrixRealSQLRejectsCrossConnectionTokenAndAllowsCleanupRollback(t *testing.T) {
 	registry := newFirstAudioSQLiteConnectionRegistry()
 	controller := newFirstAudioGuardController()
+	controller.connections = registry
 	type candidate struct {
 		pinned     *sql.Conn
 		tracked    *firstAudioTrackedSQLiteConn
