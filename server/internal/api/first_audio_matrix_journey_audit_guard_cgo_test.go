@@ -64,30 +64,31 @@ type firstAudioJourneyAuthorizerManifest struct {
 }
 
 type firstAudioAuditProbe struct {
-	mu                  sync.Mutex
-	connections         *firstAudioSQLiteConnectionRegistry
-	registryID          string
-	raw                 *sqlite3.SQLiteConn
-	permit              atomic.Value // string
-	leaseActive         atomic.Bool
-	txEpoch             atomic.Uint64
-	contextVersion      uint64
-	captureOnly         bool
-	manifest            map[firstAudioJourneyAuthorizerTuple]struct{}
-	tuples              []firstAudioJourneyAuthorizerTuple
-	denials             atomic.Uint64
-	callbacks           atomic.Uint64
-	terminal            atomic.Bool
-	forceCommitFailure  atomic.Bool
-	forceIDQueryFailure atomic.Bool
-	transactionActive   atomic.Bool
-	expected            atomic.Pointer[firstAudioAuditExpectedRow]
-	rowPermit           atomic.Bool
-	permitMu            sync.Mutex
-	usedPermits         map[uint64]map[string]bool
-	databasePath        string
-	predictedID         atomic.Int64
-	closePool           func() error
+	mu                   sync.Mutex
+	connections          *firstAudioSQLiteConnectionRegistry
+	registryID           string
+	raw                  *sqlite3.SQLiteConn
+	permit               atomic.Value // string
+	leaseActive          atomic.Bool
+	txEpoch              atomic.Uint64
+	contextVersion       uint64
+	captureOnly          bool
+	manifest             map[firstAudioJourneyAuthorizerTuple]struct{}
+	tuples               []firstAudioJourneyAuthorizerTuple
+	denials              atomic.Uint64
+	callbacks            atomic.Uint64
+	terminal             atomic.Bool
+	forceCommitFailure   atomic.Bool
+	forceIDQueryFailure  atomic.Bool
+	forceRollbackFailure atomic.Bool
+	transactionActive    atomic.Bool
+	expected             atomic.Pointer[firstAudioAuditExpectedRow]
+	rowPermit            atomic.Bool
+	permitMu             sync.Mutex
+	usedPermits          map[uint64]map[string]bool
+	databasePath         string
+	predictedID          atomic.Int64
+	closePool            func() error
 }
 
 type firstAudioAuditExpectedRow struct {
@@ -249,6 +250,11 @@ func (p *firstAudioAuditProbe) install(conn *sqlite3.SQLiteConn) error {
 			return sqlite3.SQLITE_OK
 		}
 		_, allowed := p.manifest[tuple]
+		if p.forceRollbackFailure.Load() && permit == firstAudioAuditCleanupPermit && action == sqlite3.SQLITE_TRANSACTION && arg1 == "ROLLBACK" {
+			p.denials.Add(1)
+			p.terminal.Store(true)
+			return sqlite3.SQLITE_DENY
+		}
 		validPhase := permit == firstAudioAuditBootstrapPermit && !p.transactionActive.Load() && p.txEpoch.Load() == 0 || permit == firstAudioAuditBeginPermit && !p.transactionActive.Load() || permit != firstAudioAuditBootstrapPermit && permit != firstAudioAuditBeginPermit && p.transactionActive.Load()
 		if !allowed || !p.leaseActive.Load() || !validPhase || (p.terminal.Load() && permit != firstAudioAuditCleanupPermit) || !p.connections.IsLive(p.registryID, p.raw) {
 			p.denials.Add(1)
@@ -346,6 +352,7 @@ func (p *firstAudioAuditProbe) retireConnection() {
 		return
 	}
 	p.connections.Retire(p.raw)
+	p.transactionActive.Store(false)
 	if p.closePool != nil {
 		_ = p.closePool()
 		p.closePool = nil
@@ -964,6 +971,29 @@ func TestFirstAudioJourneyAuditGuardIDQueryFailureRollsBack(t *testing.T) {
 		t.Fatalf("ID query failure was not rolled back or retired: txActive=%t connectionLive=%t terminal=%t", probe.transactionActive.Load(), probe.connections.IsLive(probe.registryID, probe.raw), probe.terminal.Load())
 	}
 	assertFirstAudioAuditRowCount(t, probe, 0)
+}
+
+func TestFirstAudioJourneyAuditGuardRollbackFailureRetiresConnection(t *testing.T) {
+	manifest, err := firstAudioLoadJourneyAuthorizerManifest()
+	if err != nil {
+		t.Fatal("load reviewed journey authorizer manifest:", err)
+	}
+	probe, db, closeDB := openFirstAudioAuditProbe(t, false, manifest)
+	defer closeDB()
+	probe.forceIDQueryFailure.Store(true)
+	probe.forceRollbackFailure.Store(true)
+	row := firstAudioFixtureAuditRow("classroom.say", time.Date(2026, 10, 28, 12, 0, 0, 123456000, time.UTC))
+	err = firstAudioExecuteAuditProbe(t, probe, db, row, nil)
+	if err == nil || !strings.Contains(err.Error(), "rollback failed") {
+		t.Fatalf("forced rollback failure not surfaced to probe: %v", err)
+	}
+	if !probe.terminal.Load() || probe.transactionActive.Load() || probe.connections.IsLive(probe.registryID, probe.raw) || probe.closePool != nil {
+		t.Fatalf("rollback failure did not terminalize and retire the connection: terminal=%t txActive=%t live=%t poolOpen=%t", probe.terminal.Load(), probe.transactionActive.Load(), probe.connections.IsLive(probe.registryID, probe.raw), probe.closePool != nil)
+	}
+	assertFirstAudioAuditRowCount(t, probe, 0)
+	if err := probe.withPermit(firstAudioAuditCleanupPermit, func() error { return nil }); err == nil {
+		t.Fatal("retired candidate allowed follow-up cleanup SQL")
+	}
 }
 
 func TestFirstAudioJourneyAuditGuardEpochOverflowRollsBack(t *testing.T) {
