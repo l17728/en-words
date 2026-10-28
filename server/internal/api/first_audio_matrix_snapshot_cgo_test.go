@@ -4,6 +4,7 @@ package api
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -34,9 +35,10 @@ type firstAudioSnapshotTable struct {
 }
 
 type firstAudioDatabaseSnapshot struct {
-	SHA256    string                    `json:"sha256"`
-	Tables    []firstAudioSnapshotTable `json:"tables"`
-	Canonical []byte                    `json:"-"`
+	SHA256       string                    `json:"sha256"`
+	SchemaSHA256 string                    `json:"schema_sha256"`
+	Tables       []firstAudioSnapshotTable `json:"tables"`
+	Canonical    []byte                    `json:"-"`
 }
 
 type firstAudioSnapshotSpec struct {
@@ -49,6 +51,15 @@ func firstAudioCaptureDatabaseSnapshot(db *gorm.DB) (firstAudioDatabaseSnapshot,
 	if err := firstAudioValidateSchemaManifest(db); err != nil {
 		return firstAudioDatabaseSnapshot{}, fmt.Errorf("validate schema before snapshot: %w", err)
 	}
+	return firstAudioCaptureDatabaseSnapshotWithKnownSchema(db)
+}
+
+// firstAudioCaptureDatabaseSnapshotWithKnownSchema is used only after the
+// immutable schema manifest has been verified and the reviewed lesson guard
+// triggers have been added. The actual sqlite_master digest remains part of
+// every snapshot even though the extra trigger objects are validated by their
+// dedicated manifest.
+func firstAudioCaptureDatabaseSnapshotWithKnownSchema(db *gorm.DB) (firstAudioDatabaseSnapshot, error) {
 	cache := &sync.Map{}
 	specs := make([]firstAudioSnapshotSpec, 0, 24)
 	for _, model := range firstAudioStartupModels() {
@@ -88,7 +99,7 @@ func firstAudioCaptureDatabaseSnapshot(db *gorm.DB) (firstAudioDatabaseSnapshot,
 		return firstAudioDatabaseSnapshot{}, err
 	}
 
-	snapshot := firstAudioDatabaseSnapshot{Tables: make([]firstAudioSnapshotTable, 0, len(specs))}
+	snapshot := firstAudioDatabaseSnapshot{SchemaSHA256: actualSchema.SHA256, Tables: make([]firstAudioSnapshotTable, 0, len(specs))}
 	for _, spec := range specs {
 		selected := make([]string, len(spec.columns))
 		for i, column := range spec.columns {
@@ -138,20 +149,48 @@ func firstAudioCaptureDatabaseSnapshot(db *gorm.DB) (firstAudioDatabaseSnapshot,
 		}
 		snapshot.Tables = append(snapshot.Tables, table)
 	}
-	canonical, err := json.Marshal(snapshot.Tables)
+	canonical, err := json.Marshal(struct {
+		SchemaSHA256 string                    `json:"schema_sha256"`
+		Tables       []firstAudioSnapshotTable `json:"tables"`
+	}{SchemaSHA256: snapshot.SchemaSHA256, Tables: snapshot.Tables})
 	if err != nil {
-		return firstAudioDatabaseSnapshot{}, fmt.Errorf("encode canonical database snapshot: %w", err)
+		return firstAudioDatabaseSnapshot{}, fmt.Errorf("encode schema and data snapshot digest input: %w", err)
 	}
 	digest := sha256.Sum256(canonical)
 	snapshot.SHA256 = hex.EncodeToString(digest[:])
 	snapshot.Canonical, err = json.MarshalIndent(struct {
-		SHA256 string                    `json:"sha256"`
-		Tables []firstAudioSnapshotTable `json:"tables"`
-	}{SHA256: snapshot.SHA256, Tables: snapshot.Tables}, "", "  ")
+		SHA256       string                    `json:"sha256"`
+		SchemaSHA256 string                    `json:"schema_sha256"`
+		Tables       []firstAudioSnapshotTable `json:"tables"`
+	}{SHA256: snapshot.SHA256, SchemaSHA256: snapshot.SchemaSHA256, Tables: snapshot.Tables}, "", "  ")
 	if err != nil {
 		return firstAudioDatabaseSnapshot{}, fmt.Errorf("encode diagnostic database snapshot: %w", err)
 	}
 	return snapshot, nil
+}
+
+// firstAudioCaptureDatabaseSnapshotOnPinnedConn forces every GORM query onto
+// the supplied sql.Conn. It is used after the whole application pool has been
+// pinned so readback cannot reacquire from an exhausted *sql.DB pool.
+func firstAudioCaptureDatabaseSnapshotOnPinnedConn(base *gorm.DB, conn *sql.Conn) (firstAudioDatabaseSnapshot, error) {
+	if base == nil || base.Config == nil || base.Statement == nil || conn == nil {
+		return firstAudioDatabaseSnapshot{}, fmt.Errorf("pinned snapshot requires base DB and sql.Conn")
+	}
+	baseConfig := base.Config
+	baseStatement := base.Statement
+	baseConfigPool := base.Config.ConnPool
+	baseStatementPool := base.Statement.ConnPool
+	local := base.Session(&gorm.Session{NewDB: true, Initialized: true})
+	if local.Config == baseConfig || local.Statement == baseStatement {
+		return firstAudioDatabaseSnapshot{}, fmt.Errorf("pinned snapshot requires isolated GORM config and statement")
+	}
+	local.Config.ConnPool = conn
+	local.Statement.ConnPool = conn
+	snapshot, err := firstAudioCaptureDatabaseSnapshotWithKnownSchema(local)
+	if base.Config != baseConfig || base.Statement != baseStatement || base.Config.ConnPool != baseConfigPool || base.Statement.ConnPool != baseStatementPool {
+		return firstAudioDatabaseSnapshot{}, fmt.Errorf("pinned snapshot mutated shared GORM pool configuration")
+	}
+	return snapshot, err
 }
 
 func firstAudioCheckSnapshotTableCoverage(specs []firstAudioSnapshotSpec, objects []firstAudioSQLiteObject) error {

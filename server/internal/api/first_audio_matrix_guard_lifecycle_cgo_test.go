@@ -12,7 +12,10 @@ import (
 	"io"
 	"sync"
 	"sync/atomic"
+	"testing"
 	"time"
+
+	sqlite3 "github.com/mattn/go-sqlite3"
 )
 
 var (
@@ -29,6 +32,64 @@ type firstAudioGuardProbeBinding struct {
 	version    uint64
 	connection string
 	probeID    string
+}
+
+// A driver probe receipt can only be completed by observing both callbacks of
+// the exact synchronous dialector query on one ConnectHook-assigned identity.
+// It is consumed by the controller at the one-way startup publication.
+type firstAudioDriverProbeReceipt struct {
+	runID            string
+	lessonID         int64
+	generation       uint64
+	driverVersion    uint64
+	connectionID     string
+	rawConnection    *sqlite3.SQLiteConn
+	registry         *firstAudioSQLiteConnectionRegistry
+	selectObserved   atomic.Bool
+	functionObserved atomic.Bool
+	failed           atomic.Bool
+	consumed         atomic.Bool
+}
+
+func newFirstAudioDriverProbeReceipt(ctx *firstAudioGuardContext, registry *firstAudioSQLiteConnectionRegistry, rawConnection *sqlite3.SQLiteConn) (*firstAudioDriverProbeReceipt, error) {
+	registration, registered := registry.Lookup(rawConnection)
+	if ctx == nil || ctx.phase != firstAudioGuardDriverProbe || !registered || registration.ID == "" || !firstAudioIDPattern.MatchString(registration.ID) {
+		return nil, errFirstAudioGuardContextInvalid
+	}
+	return &firstAudioDriverProbeReceipt{runID: ctx.runID, lessonID: ctx.currentLessonID, generation: ctx.generation, driverVersion: ctx.version, connectionID: registration.ID, rawConnection: rawConnection, registry: registry}, nil
+}
+
+func (r *firstAudioDriverProbeReceipt) Observe(rawConnection *sqlite3.SQLiteConn, action int, arg1, arg2, databaseName, triggerName string) error {
+	if r == nil {
+		return errFirstAudioGuardProbeRejected
+	}
+	reject := func() error {
+		r.failed.Store(true)
+		return errFirstAudioGuardProbeRejected
+	}
+	if rawConnection != r.rawConnection || r.registry == nil || !r.registry.IsLive(r.connectionID, rawConnection) || r.consumed.Load() || r.failed.Load() || databaseName != "" || triggerName != "" {
+		return reject()
+	}
+	switch action {
+	case sqlite3.SQLITE_SELECT:
+		if arg1 != "" || arg2 != "" {
+			return reject()
+		}
+		if !r.selectObserved.CompareAndSwap(false, true) {
+			return reject()
+		}
+	case sqlite3.SQLITE_FUNCTION:
+		if arg1 != "" || arg2 != "sqlite_version" || !r.selectObserved.Load() || !r.functionObserved.CompareAndSwap(false, true) {
+			return reject()
+		}
+	default:
+		return reject()
+	}
+	return nil
+}
+
+func (r *firstAudioDriverProbeReceipt) matchesAndConsume(driver, startup *firstAudioGuardContext) bool {
+	return r != nil && driver != nil && startup != nil && driver.phase == firstAudioGuardDriverProbe && startup.phase == firstAudioGuardStartupProbe && r.runID == driver.runID && r.lessonID == driver.currentLessonID && r.generation == driver.generation && r.driverVersion == driver.version && startup.runID == driver.runID && startup.currentLessonID == driver.currentLessonID && startup.generation == driver.generation && startup.version == driver.version+1 && r.connectionID != "" && r.registry != nil && r.rawConnection != nil && !r.failed.Load() && r.selectObserved.Load() && r.functionObserved.Load()
 }
 
 func (b firstAudioGuardProbeBinding) matchesContract(p firstAudioGuardProbeContract) bool {
@@ -316,20 +377,89 @@ func sameFirstAudioProbeBinding(a, b firstAudioGuardProbeBinding) bool {
 }
 
 type firstAudioGuardController struct {
-	mu            sync.Mutex
-	publisher     firstAudioGuardContextPublisher
-	probeReceipts map[string]*firstAudioGuardProbeReceipt
-	admissionOpen bool
-	terminal      bool
-	exclusive     bool
-	draining      bool
-	gateVersion   uint64
-	leases        map[uint64]int
-	changed       chan struct{}
+	mu               sync.Mutex
+	publisher        firstAudioGuardContextPublisher
+	driverProbe      *firstAudioDriverProbeReceipt
+	connections      *firstAudioSQLiteConnectionRegistry
+	probeReceipts    map[string]*firstAudioGuardProbeReceipt
+	admissionOpen    bool
+	terminal         bool
+	callbackTerminal atomic.Bool
+	exclusive        bool
+	draining         bool
+	gateVersion      uint64
+	leases           map[uint64]int
+	changed          chan struct{}
 }
 
 func newFirstAudioGuardController() *firstAudioGuardController {
-	return &firstAudioGuardController{leases: make(map[uint64]int), probeReceipts: make(map[string]*firstAudioGuardProbeReceipt), changed: make(chan struct{})}
+	return &firstAudioGuardController{connections: newFirstAudioSQLiteConnectionRegistry(), leases: make(map[uint64]int), probeReceipts: make(map[string]*firstAudioGuardProbeReceipt), changed: make(chan struct{})}
+}
+
+// Test fixtures that begin at STARTUP_PROBE must still traverse and prove the
+// mandatory DRIVER_PROBE phase. Production integration obtains these exact
+// callbacks from ConnectHook; this helper supplies deterministic synthetic
+// callbacks only to lifecycle unit tests.
+func firstAudioTestPublishInitialStartup(controller *firstAudioGuardController, startup *firstAudioGuardContext) (*firstAudioGuardTransitionLease, error) {
+	if controller == nil || startup == nil || startup.phase != firstAudioGuardStartupProbe || startup.version != 1 {
+		return nil, errFirstAudioGuardContextTransition
+	}
+	driver, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
+		runID: startup.runID, currentLessonID: startup.currentLessonID,
+		generation: startup.generation, phase: firstAudioGuardDriverProbe, version: 0,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if err := controller.PublishInitial(driver); err != nil {
+		return nil, err
+	}
+	driverConn, err := (&sqlite3.SQLiteDriver{}).Open(":memory:")
+	if err != nil {
+		return nil, err
+	}
+	rawConn, ok := driverConn.(*sqlite3.SQLiteConn)
+	if !ok {
+		_ = driverConn.Close()
+		return nil, fmt.Errorf("unexpected synthetic driver connection %T", driverConn)
+	}
+	if _, err := controller.connections.Register(rawConn); err != nil {
+		_ = driverConn.Close()
+		return nil, err
+	}
+	defer func() {
+		controller.connections.Retire(rawConn)
+		_ = driverConn.Close()
+	}()
+	if err := controller.ObserveDriverProbe(rawConn, sqlite3.SQLITE_SELECT, "", "", "", ""); err != nil {
+		return nil, err
+	}
+	if err := controller.ObserveDriverProbe(rawConn, sqlite3.SQLITE_FUNCTION, "", "sqlite_version", "", ""); err != nil {
+		return nil, err
+	}
+	transition, err := controller.CloseAndDrain(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	if err := transition.Publish(context.Background(), startup, firstAudioGuardTransitionEvidence{}); err != nil {
+		return nil, err
+	}
+	return transition, nil
+}
+
+func firstAudioTestOpenSQLiteConnection(t *testing.T) *sqlite3.SQLiteConn {
+	t.Helper()
+	driverConn, err := (&sqlite3.SQLiteDriver{}).Open(":memory:")
+	if err != nil {
+		t.Fatal("open synthetic test SQLite connection:", err)
+	}
+	rawConn, ok := driverConn.(*sqlite3.SQLiteConn)
+	if !ok {
+		_ = driverConn.Close()
+		t.Fatalf("synthetic SQLite driver connection type=%T", driverConn)
+	}
+	t.Cleanup(func() { _ = driverConn.Close() })
+	return rawConn
 }
 
 func (c *firstAudioGuardController) PublishInitial(candidate *firstAudioGuardContext) error {
@@ -338,13 +468,95 @@ func (c *firstAudioGuardController) PublishInitial(candidate *firstAudioGuardCon
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if c.terminal || c.admissionOpen || c.exclusive || c.publisher.Load() != nil {
+	if c.isTerminalLocked() || c.admissionOpen || c.exclusive || c.publisher.Load() != nil {
 		return errFirstAudioGuardContextTransition
 	}
-	if candidate.phase != firstAudioGuardStartupProbe {
+	if candidate.phase != firstAudioGuardDriverProbe || candidate.version != 0 {
 		return errFirstAudioGuardContextTransition
 	}
 	return c.publisher.Publish(candidate)
+}
+
+// IsActivePhase lets synchronous SQLite authorizer callbacks consult the
+// controller's sole phase authority without trusting a cached phase pointer.
+func (c *firstAudioGuardController) IsActivePhase(phase firstAudioGuardContextPhase) bool {
+	if c == nil {
+		return false
+	}
+	active := c.publisher.Load()
+	return !c.callbackTerminal.Load() && !c.publisher.callbackTerminal.Load() && active != nil && active.phase == phase
+}
+
+func (c *firstAudioGuardController) IsTerminal() bool {
+	if c == nil {
+		return true
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.isTerminalLocked()
+}
+
+func (c *firstAudioGuardController) isTerminalLocked() bool {
+	return c.terminal || c.callbackTerminal.Load() || c.publisher.callbackTerminal.Load()
+}
+
+// TerminalizeFromSQLiteCallback is safe in an authorizer/UDF callback: it
+// flips an atomic latch and never acquires lifecycle or database locks.
+func (c *firstAudioGuardController) TerminalizeFromSQLiteCallback() error {
+	if c != nil {
+		err := c.publisher.terminalizeFromCallback()
+		c.callbackTerminal.Store(true)
+		return err
+	}
+	return errFirstAudioGuardContextTransition
+}
+
+// Terminalize lets the coordinator close lifecycle admission after SQLite
+// returns a guarded SQL error; unlike callback paths, it may take the lock.
+func (c *firstAudioGuardController) Terminalize() {
+	if c == nil {
+		return
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.markOutOfBandTerminalLocked()
+}
+
+// ObserveDriverProbe is called only by the guarded SQLite ConnectHook's
+// authorizer callback. The controller owns the receipt so a phase publisher
+// cannot manufacture observation evidence or substitute another connection.
+func (c *firstAudioGuardController) ObserveDriverProbe(rawConnection *sqlite3.SQLiteConn, action int, arg1, arg2, databaseName, triggerName string) error {
+	if c == nil {
+		return errFirstAudioGuardContextTransition
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	active := c.publisher.Load()
+	if c.isTerminalLocked() || c.exclusive || active == nil || active.phase != firstAudioGuardDriverProbe {
+		return errFirstAudioGuardContextTransition
+	}
+	registration, registered := c.connections.Lookup(rawConnection)
+	if !registered || registration.Raw != rawConnection {
+		c.markOutOfBandTerminalLocked()
+		return errFirstAudioGuardProbeRejected
+	}
+	if c.driverProbe == nil {
+		receipt, err := newFirstAudioDriverProbeReceipt(active, c.connections, rawConnection)
+		if err != nil {
+			c.markOutOfBandTerminalLocked()
+			return err
+		}
+		c.driverProbe = receipt
+	} else if c.driverProbe.connectionID != registration.ID || c.driverProbe.rawConnection != rawConnection {
+		c.driverProbe.failed.Store(true)
+		c.markOutOfBandTerminalLocked()
+		return errFirstAudioGuardProbeRejected
+	}
+	if err := c.driverProbe.Observe(rawConnection, action, arg1, arg2, databaseName, triggerName); err != nil {
+		c.markOutOfBandTerminalLocked()
+		return err
+	}
+	return nil
 }
 
 // Acquire binds a request to the active context while holding the admission
@@ -359,7 +571,7 @@ func (c *firstAudioGuardController) Acquire() (*firstAudioGuardLease, error) {
 		c.markOutOfBandTerminalLocked()
 		return nil, errFirstAudioGuardAdmissionClosed
 	}
-	if !c.admissionOpen || c.terminal || c.exclusive {
+	if !c.admissionOpen || c.isTerminalLocked() || c.exclusive {
 		return nil, errFirstAudioGuardAdmissionClosed
 	}
 	ctx := c.publisher.Load()
@@ -428,7 +640,7 @@ func (c *firstAudioGuardController) CloseAndDrain(ctx context.Context) (*firstAu
 		ctx = context.Background()
 	}
 	c.mu.Lock()
-	if c.terminal || c.exclusive || c.draining {
+	if c.isTerminalLocked() || c.exclusive || c.draining {
 		c.mu.Unlock()
 		return nil, errFirstAudioGuardAdmissionClosed
 	}
@@ -447,7 +659,7 @@ func (c *firstAudioGuardController) CloseAndDrain(ctx context.Context) (*firstAu
 			return nil, fmt.Errorf("%w: %v", errFirstAudioGuardDrainTimeout, ctx.Err())
 		}
 		c.mu.Lock()
-		if c.terminal {
+		if c.isTerminalLocked() {
 			c.mu.Unlock()
 			return nil, errFirstAudioGuardAdmissionClosed
 		}
@@ -469,7 +681,7 @@ func (l *firstAudioGuardTransitionLease) Publish(ctx context.Context, candidate 
 	evidence.probeReceipts = append([]*firstAudioGuardProbeReceipt(nil), evidence.probeReceipts...)
 	c := l.owner
 	c.mu.Lock()
-	if l.released || l.busy || !c.exclusive || c.terminal || c.activeLeasesLocked() != 0 {
+	if l.released || l.busy || !c.exclusive || c.isTerminalLocked() || c.activeLeasesLocked() != 0 {
 		c.mu.Unlock()
 		return errFirstAudioGuardAdmissionClosed
 	}
@@ -479,6 +691,21 @@ func (l *firstAudioGuardTransitionLease) Publish(ctx context.Context, candidate 
 		l.released = true
 		c.mu.Unlock()
 		return errFirstAudioGuardContextTransition
+	}
+	if active != nil && active.phase == firstAudioGuardDriverProbe && candidate.phase == firstAudioGuardStartupProbe {
+		if c.driverProbe == nil {
+			c.mu.Unlock()
+			return errFirstAudioGuardContextTransition
+		}
+		err := c.publisher.publishDriverStartup(candidate, c.driverProbe)
+		if err == nil {
+			c.driverProbe = nil
+		} else {
+			c.markOutOfBandTerminalLocked()
+			l.released = true
+		}
+		c.mu.Unlock()
+		return err
 	}
 	if active != nil && active.phase == firstAudioGuardStartupProbe && candidate.phase == firstAudioGuardPreflight {
 		registered, ok := evidence.preflightReceiptsFor(candidate)
@@ -522,7 +749,7 @@ func (l *firstAudioGuardTransitionLease) Publish(ctx context.Context, candidate 
 			c.mu.Unlock()
 			return drainErr
 		}
-		if l.released || !l.busy || !c.exclusive || c.terminal || c.activeLeasesLocked() != 0 || c.publisher.Load() != active {
+		if l.released || !l.busy || !c.exclusive || c.isTerminalLocked() || c.activeLeasesLocked() != 0 || c.publisher.Load() != active {
 			c.markOutOfBandTerminalLocked()
 			l.released = true
 			c.mu.Unlock()
@@ -565,7 +792,7 @@ func (l *firstAudioGuardTransitionLease) OpenJourney() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	active := c.publisher.Load()
-	if l.released || l.busy || !c.exclusive || c.terminal || c.hasProbeDenialLocked() || active == nil || active.phase != firstAudioGuardJourney || c.activeLeasesLocked() != 0 {
+	if l.released || l.busy || !c.exclusive || c.isTerminalLocked() || c.hasProbeDenialLocked() || active == nil || active.phase != firstAudioGuardJourney || c.activeLeasesLocked() != 0 {
 		return errFirstAudioGuardContextTransition
 	}
 	c.gateVersion = active.version
@@ -654,6 +881,8 @@ func (c *firstAudioGuardController) markOutOfBandTerminalLocked() {
 	}
 	c.admissionOpen = false
 	c.terminal = true
+	c.callbackTerminal.Store(true)
+	c.publisher.callbackTerminal.Store(true)
 	c.exclusive = false
 	c.draining = false
 	c.signalLocked()

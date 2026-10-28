@@ -23,6 +23,7 @@ var (
 type firstAudioGuardContextPhase string
 
 const (
+	firstAudioGuardDriverProbe  firstAudioGuardContextPhase = "DRIVER_PROBE"
 	firstAudioGuardStartupProbe firstAudioGuardContextPhase = "STARTUP_PROBE"
 	firstAudioGuardPreflight    firstAudioGuardContextPhase = "PREFLIGHT"
 	firstAudioGuardJourney      firstAudioGuardContextPhase = "JOURNEY"
@@ -80,7 +81,7 @@ type firstAudioGuardContext struct {
 }
 
 func newFirstAudioGuardContext(spec firstAudioGuardContextSpec) (*firstAudioGuardContext, error) {
-	if !firstAudioRunIDPattern.MatchString(spec.runID) || spec.version == 0 || spec.currentLessonID <= 0 || spec.generation == 0 {
+	if !firstAudioRunIDPattern.MatchString(spec.runID) || (spec.version == 0 && spec.phase != firstAudioGuardDriverProbe) || spec.currentLessonID <= 0 || spec.generation == 0 {
 		return nil, errFirstAudioGuardContextInvalid
 	}
 
@@ -138,6 +139,10 @@ func (c *firstAudioGuardContext) validateShape() error {
 	keysClear := c.oldRuntimeKey == "" && c.newRuntimeKey == ""
 
 	switch c.phase {
+	case firstAudioGuardDriverProbe:
+		if c.version != 0 || c.generation != 1 || !idsClear || !keysClear || !noConnections || !noRows {
+			return errFirstAudioGuardContextInvalid
+		}
 	case firstAudioGuardStartupProbe:
 		if c.generation != 1 || !idsClear || !keysClear || !noConnections || !noRows {
 			return errFirstAudioGuardContextInvalid
@@ -266,12 +271,39 @@ func (c *firstAudioGuardContext) ProbeCount() int {
 }
 
 type firstAudioGuardContextPublisher struct {
-	current atomic.Pointer[firstAudioGuardContext]
+	current           atomic.Pointer[firstAudioGuardContext]
+	callbackTerminal  atomic.Bool
+	beforePublishCAS  func()
+	beforeTerminalCAS func()
 }
 
 const firstAudioGuardContextCASLimit = 128
 
 func (p *firstAudioGuardContextPublisher) Publish(candidate *firstAudioGuardContext) error {
+	return p.publish(candidate, false)
+}
+
+func (p *firstAudioGuardContextPublisher) publishDriverStartup(candidate *firstAudioGuardContext, receipt *firstAudioDriverProbeReceipt) error {
+	if p == nil || candidate == nil {
+		return errFirstAudioGuardContextInvalid
+	}
+	active := p.Load()
+	if active == nil || active.phase != firstAudioGuardDriverProbe || candidate.phase != firstAudioGuardStartupProbe || receipt == nil || !receipt.matchesAndConsume(active, candidate) {
+		return errFirstAudioGuardContextTransition
+	}
+	err := receipt.registry.WithLiveRegistration(receipt.connectionID, receipt.rawConnection, func() error {
+		if !receipt.consumed.CompareAndSwap(false, true) {
+			return errFirstAudioGuardContextTransition
+		}
+		return p.publish(candidate, true)
+	})
+	if errors.Is(err, errFirstAudioSQLiteRegistrationNotLive) {
+		return errFirstAudioGuardContextTransition
+	}
+	return err
+}
+
+func (p *firstAudioGuardContextPublisher) publish(candidate *firstAudioGuardContext, driverStartupReceipt bool) error {
 	if p == nil || candidate == nil {
 		return errFirstAudioGuardContextInvalid
 	}
@@ -280,6 +312,9 @@ func (p *firstAudioGuardContextPublisher) Publish(candidate *firstAudioGuardCont
 		return err
 	}
 	for attempt := 0; attempt < firstAudioGuardContextCASLimit; attempt++ {
+		if p.callbackTerminal.Load() {
+			return errFirstAudioGuardContextTransition
+		}
 		active := p.current.Load()
 		if active != nil && detached.version <= active.version {
 			return errFirstAudioGuardContextStale
@@ -287,7 +322,17 @@ func (p *firstAudioGuardContextPublisher) Publish(candidate *firstAudioGuardCont
 		if !firstAudioGuardContextTransitionAllowed(active, detached) {
 			return errFirstAudioGuardContextTransition
 		}
+		if active != nil && active.phase == firstAudioGuardDriverProbe && detached.phase == firstAudioGuardStartupProbe && !driverStartupReceipt {
+			return errFirstAudioGuardContextTransition
+		}
+		if p.beforePublishCAS != nil {
+			p.beforePublishCAS()
+		}
 		if p.current.CompareAndSwap(active, detached) {
+			if p.callbackTerminal.Load() {
+				_ = p.terminalizeFromCallback()
+				return errFirstAudioGuardContextTransition
+			}
 			return nil
 		}
 		runtime.Gosched()
@@ -295,20 +340,52 @@ func (p *firstAudioGuardContextPublisher) Publish(candidate *firstAudioGuardCont
 	return fmt.Errorf("%w: publisher CAS contention", errFirstAudioGuardContextStale)
 }
 
+// terminalizeFromCallback arbitrates SQLite callback rejection against phase
+// publication using the same atomic context pointer, without lifecycle locks.
+func (p *firstAudioGuardContextPublisher) terminalizeFromCallback() error {
+	if p == nil {
+		return errFirstAudioGuardContextInvalid
+	}
+	p.callbackTerminal.Store(true)
+	for attempt := 0; attempt < firstAudioGuardContextCASLimit; attempt++ {
+		active := p.current.Load()
+		if active == nil || active.phase == firstAudioGuardTerminal {
+			return nil
+		}
+		terminal, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
+			runID: active.runID, currentLessonID: active.currentLessonID,
+			generation: active.generation, phase: firstAudioGuardTerminal, version: active.version + 1,
+		})
+		if err != nil {
+			return err
+		}
+		if p.beforeTerminalCAS != nil {
+			p.beforeTerminalCAS()
+		}
+		if p.current.CompareAndSwap(active, terminal) {
+			return nil
+		}
+		runtime.Gosched()
+	}
+	return fmt.Errorf("%w: callback terminal CAS contention", errFirstAudioGuardContextStale)
+}
+
 func firstAudioGuardContextTransitionAllowed(active, candidate *firstAudioGuardContext) bool {
 	if candidate == nil {
 		return false
 	}
 	if active == nil {
-		return candidate.phase == firstAudioGuardStartupProbe && candidate.version == 1
+		return candidate.phase == firstAudioGuardDriverProbe && candidate.version == 0
 	}
-	if active.phase == firstAudioGuardTerminal || active.runID != candidate.runID {
+	if active.phase == firstAudioGuardTerminal || active.runID != candidate.runID || candidate.version <= active.version {
 		return false
 	}
 	if candidate.phase == firstAudioGuardTerminal {
 		return active.currentLessonID == candidate.currentLessonID && active.generation == candidate.generation
 	}
 	switch active.phase {
+	case firstAudioGuardDriverProbe:
+		return candidate.phase == firstAudioGuardStartupProbe && active.currentLessonID == candidate.currentLessonID && active.generation == candidate.generation
 	case firstAudioGuardStartupProbe:
 		return candidate.phase == firstAudioGuardPreflight && active.currentLessonID == candidate.currentLessonID && active.generation == candidate.generation
 	case firstAudioGuardPreflight:

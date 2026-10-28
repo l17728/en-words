@@ -11,7 +11,324 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	sqlite3 "github.com/mattn/go-sqlite3"
 )
+
+func TestFirstAudioGuardDriverProbeAdvancesOnlyToNewerStartupContext(t *testing.T) {
+	driverSpec := firstAudioGuardContextSpec{
+		runID: "run-0001", currentLessonID: 101, generation: 1,
+		phase: firstAudioGuardDriverProbe, version: 0,
+	}
+	driver, err := newFirstAudioGuardContext(driverSpec)
+	if err != nil {
+		t.Fatal("valid driver-probe context rejected:", err)
+	}
+	if !firstAudioGuardContextTransitionAllowed(nil, driver) {
+		t.Fatal("driver probe is not accepted as the initial context")
+	}
+
+	startupSpec := driverSpec
+	startupSpec.phase = firstAudioGuardStartupProbe
+	startupSpec.version = 1
+	startup, err := newFirstAudioGuardContext(startupSpec)
+	if err != nil {
+		t.Fatal("valid next startup context rejected:", err)
+	}
+	if !firstAudioGuardContextTransitionAllowed(driver, startup) {
+		t.Fatal("DRIVER_PROBE -> newer STARTUP_PROBE transition rejected")
+	}
+
+	skipped, err := newFirstAudioGuardContext(firstAudioValidPreflightSpec(2))
+	if err != nil {
+		t.Fatal("valid-shaped preflight context rejected during construction:", err)
+	}
+	if firstAudioGuardContextTransitionAllowed(driver, skipped) {
+		t.Fatal("DRIVER_PROBE skipped STARTUP_PROBE and entered PREFLIGHT")
+	}
+
+	wrongIdentitySpec := startupSpec
+	wrongIdentitySpec.runID = "run-0002"
+	wrongIdentity, err := newFirstAudioGuardContext(wrongIdentitySpec)
+	if err != nil {
+		t.Fatal("valid-shaped different-run context rejected during construction:", err)
+	}
+	if firstAudioGuardContextTransitionAllowed(driver, wrongIdentity) {
+		t.Fatal("startup transition changed the run identity")
+	}
+
+	controller := newFirstAudioGuardController()
+	if err := controller.PublishInitial(startup); !errors.Is(err, errFirstAudioGuardContextTransition) {
+		t.Fatalf("direct initial STARTUP_PROBE publish = %v, want mandatory DRIVER_PROBE rejection", err)
+	}
+	if err := controller.PublishInitial(driver); err != nil {
+		t.Fatal("controller rejected initial driver phase:", err)
+	}
+	versionedDriverSpec := driverSpec
+	versionedDriverSpec.version = 1
+	if _, err := newFirstAudioGuardContext(versionedDriverSpec); !errors.Is(err, errFirstAudioGuardContextInvalid) {
+		t.Fatalf("nonzero driver-probe bootstrap version error = %v, want invalid context", err)
+	}
+	if err := controller.publisher.publishDriverStartup(startup, nil); !errors.Is(err, errFirstAudioGuardContextTransition) {
+		t.Fatalf("startup publication without connection evidence = %v, want evidence rejection", err)
+	}
+	rawConn := firstAudioTestOpenSQLiteConnection(t)
+	if _, err := controller.connections.Register(rawConn); err != nil {
+		t.Fatal("register exact driver-probe connection:", err)
+	}
+	t.Cleanup(func() { controller.connections.Retire(rawConn) })
+	if err := controller.ObserveDriverProbe(rawConn, sqlite3.SQLITE_SELECT, "", "", "", ""); err != nil {
+		t.Fatal("observe exact dialector SELECT tuple:", err)
+	}
+	if err := controller.ObserveDriverProbe(rawConn, sqlite3.SQLITE_FUNCTION, "", "sqlite_version", "", ""); err != nil {
+		t.Fatal("observe exact sqlite_version tuple:", err)
+	}
+	transition, err := controller.CloseAndDrain(context.Background())
+	if err != nil {
+		t.Fatal("could not acquire startup phase transition:", err)
+	}
+	if err := transition.Publish(context.Background(), startup, firstAudioGuardTransitionEvidence{}); err != nil {
+		t.Fatal("controller rejected monotonic driver-to-startup publication:", err)
+	}
+	if active := controller.publisher.Load(); active == nil || active.phase != firstAudioGuardStartupProbe || active.version != 1 {
+		t.Fatalf("active context = %#v, want STARTUP_PROBE version 1", active)
+	}
+	if err := transition.Publish(context.Background(), startup, firstAudioGuardTransitionEvidence{}); !errors.Is(err, errFirstAudioGuardContextStale) {
+		t.Fatalf("repeated startup publication = %v, want stale-context rejection", err)
+	}
+}
+
+func TestFirstAudioGuardSQLiteCallbackTerminalLatchDoesNotAcquireLifecycleLock(t *testing.T) {
+	driver, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
+		runID: "run-0001", currentLessonID: 101, generation: 1,
+		phase: firstAudioGuardDriverProbe, version: 0,
+	})
+	if err != nil {
+		t.Fatal("driver-probe context construction failed:", err)
+	}
+	controller := newFirstAudioGuardController()
+	if err := controller.PublishInitial(driver); err != nil {
+		t.Fatal("publish initial context:", err)
+	}
+
+	controller.mu.Lock()
+	locked := true
+	defer func() {
+		if locked {
+			controller.mu.Unlock()
+		}
+	}()
+	callbackDone := make(chan struct{})
+	go func() {
+		_ = controller.TerminalizeFromSQLiteCallback()
+		close(callbackDone)
+	}()
+	select {
+	case <-callbackDone:
+	case <-time.After(time.Second):
+		t.Fatal("SQLite callback terminal latch blocked on the lifecycle mutex")
+	}
+	if controller.IsActivePhase(firstAudioGuardDriverProbe) {
+		t.Fatal("terminal callback latch left the phase authorizer active")
+	}
+	controller.mu.Unlock()
+	locked = false
+
+	if !controller.IsTerminal() {
+		t.Fatal("lock-free terminal latch was not visible to the lifecycle controller")
+	}
+	if _, err := controller.CloseAndDrain(context.Background()); !errors.Is(err, errFirstAudioGuardAdmissionClosed) {
+		t.Fatalf("controller admitted a transition after callback terminalization: %v", err)
+	}
+}
+
+func TestFirstAudioGuardCallbackTerminalCASWinsAgainstPausedPhasePublish(t *testing.T) {
+	startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
+		runID: "run-0001", currentLessonID: 101, generation: 1,
+		phase: firstAudioGuardStartupProbe, version: 1,
+	})
+	if err != nil {
+		t.Fatal("startup context construction failed:", err)
+	}
+	preflight, err := newFirstAudioGuardContext(firstAudioValidPreflightSpec(2))
+	if err != nil {
+		t.Fatal("preflight context construction failed:", err)
+	}
+	controller := newFirstAudioGuardController()
+	controller.publisher.current.Store(startup)
+	enteredCAS := make(chan struct{})
+	releaseCAS := make(chan struct{})
+	var pauseOnce sync.Once
+	controller.publisher.beforePublishCAS = func() {
+		pauseOnce.Do(func() {
+			close(enteredCAS)
+			<-releaseCAS
+		})
+	}
+	publishResult := make(chan error, 1)
+	go func() { publishResult <- controller.publisher.Publish(preflight) }()
+	select {
+	case <-enteredCAS:
+	case <-time.After(time.Second):
+		close(releaseCAS)
+		t.Fatal("phase publisher did not reach its compare-and-swap barrier")
+	}
+	controller.TerminalizeFromSQLiteCallback()
+	close(releaseCAS)
+	select {
+	case err := <-publishResult:
+		if err == nil {
+			t.Fatal("phase publication succeeded after callback terminal CAS")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("phase publisher did not finish after releasing the CAS barrier")
+	}
+	active := controller.publisher.Load()
+	if active == nil || active.phase != firstAudioGuardTerminal || active.version != 2 {
+		t.Fatalf("callback refusal lost atomic phase arbitration: active=%#v", active)
+	}
+}
+
+func TestFirstAudioGuardCallbackTerminalCASFailureStillBlocksPublisher(t *testing.T) {
+	startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
+		runID: "run-0001", currentLessonID: 101, generation: 1,
+		phase: firstAudioGuardStartupProbe, version: 1,
+	})
+	if err != nil {
+		t.Fatal("startup context construction failed:", err)
+	}
+	preflight, err := newFirstAudioGuardContext(firstAudioValidPreflightSpec(2))
+	if err != nil {
+		t.Fatal("preflight context construction failed:", err)
+	}
+	controller := newFirstAudioGuardController()
+	controller.publisher.current.Store(startup)
+	forcedConflicts := 0
+	controller.publisher.beforeTerminalCAS = func() {
+		active := controller.publisher.Load()
+		clone, cloneErr := active.clone()
+		if cloneErr != nil {
+			t.Errorf("clone active context during forced CAS contention: %v", cloneErr)
+			return
+		}
+		controller.publisher.current.Store(clone)
+		forcedConflicts++
+	}
+	if err := controller.TerminalizeFromSQLiteCallback(); !errors.Is(err, errFirstAudioGuardContextStale) {
+		t.Fatalf("terminal CAS exhaustion = %v, want contention error", err)
+	}
+	if forcedConflicts != firstAudioGuardContextCASLimit {
+		t.Fatalf("forced terminal CAS conflicts=%d, want %d", forcedConflicts, firstAudioGuardContextCASLimit)
+	}
+	controller.publisher.beforeTerminalCAS = nil
+	if err := controller.publisher.Publish(preflight); err == nil {
+		t.Fatal("publisher accepted a later phase after terminal CAS exhausted")
+	}
+	if !controller.IsTerminal() {
+		t.Fatal("terminal CAS failure did not leave a sticky terminal gate")
+	}
+	active := controller.publisher.Load()
+	if active == nil || active.phase != firstAudioGuardStartupProbe {
+		t.Fatalf("phase changed despite terminal CAS failure: %#v", active)
+	}
+}
+
+func TestFirstAudioGuardCallbackTerminalVersionOverflowStaysFailClosed(t *testing.T) {
+	startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
+		runID: "run-0001", currentLessonID: 101, generation: 1,
+		phase: firstAudioGuardStartupProbe, version: ^uint64(0),
+	})
+	if err != nil {
+		t.Fatal("maximum-version startup context construction failed:", err)
+	}
+	controller := newFirstAudioGuardController()
+	controller.publisher.current.Store(startup)
+	if err := controller.TerminalizeFromSQLiteCallback(); err == nil {
+		t.Fatal("terminal context wrapped the maximum phase version")
+	}
+	preflight, err := newFirstAudioGuardContext(firstAudioValidPreflightSpec(^uint64(0)))
+	if err != nil {
+		t.Fatal("maximum-version preflight context construction failed:", err)
+	}
+	if err := controller.publisher.Publish(preflight); err == nil {
+		t.Fatal("publisher accepted a phase after terminal version overflow")
+	}
+	if !controller.IsTerminal() {
+		t.Fatal("version overflow did not leave a sticky terminal gate")
+	}
+	if active := controller.publisher.Load(); active == nil || active.phase != firstAudioGuardStartupProbe {
+		t.Fatalf("version overflow changed active phase: %#v", active)
+	}
+}
+
+func TestFirstAudioGuardDriverProbeRejectsCallbackFromDifferentPhysicalConnection(t *testing.T) {
+	driver, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: "run-0001", currentLessonID: 101, generation: 1, phase: firstAudioGuardDriverProbe, version: 0})
+	if err != nil {
+		t.Fatal(err)
+	}
+	controller := newFirstAudioGuardController()
+	if err := controller.PublishInitial(driver); err != nil {
+		t.Fatal(err)
+	}
+	connectionA := firstAudioTestOpenSQLiteConnection(t)
+	connectionB := firstAudioTestOpenSQLiteConnection(t)
+	if _, err := controller.connections.Register(connectionA); err != nil {
+		t.Fatal("register connection A:", err)
+	}
+	t.Cleanup(func() { controller.connections.Retire(connectionA) })
+	if _, err := controller.connections.Register(connectionB); err != nil {
+		t.Fatal("register connection B:", err)
+	}
+	t.Cleanup(func() { controller.connections.Retire(connectionB) })
+	if err := controller.ObserveDriverProbe(connectionA, sqlite3.SQLITE_SELECT, "", "", "", ""); err != nil {
+		t.Fatal("first connection SELECT callback rejected:", err)
+	}
+	if err := controller.ObserveDriverProbe(connectionB, sqlite3.SQLITE_FUNCTION, "", "sqlite_version", "", ""); !errors.Is(err, errFirstAudioGuardProbeRejected) {
+		t.Fatalf("second physical connection callback = %v, want connection identity rejection", err)
+	}
+	if err := controller.PublishInitial(driver); !errors.Is(err, errFirstAudioGuardContextTransition) {
+		t.Fatalf("terminalized driver context republished = %v, want transition rejection", err)
+	}
+	if !controller.terminal {
+		t.Fatal("mismatched physical connection evidence left the controller nonterminal")
+	}
+}
+
+func TestFirstAudioGuardDriverReceiptCannotPublishAfterPhysicalRetirement(t *testing.T) {
+	driver, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: "run-0001", currentLessonID: 101, generation: 1, phase: firstAudioGuardDriverProbe, version: 0})
+	if err != nil {
+		t.Fatal(err)
+	}
+	controller := newFirstAudioGuardController()
+	if err := controller.PublishInitial(driver); err != nil {
+		t.Fatal(err)
+	}
+	raw := firstAudioTestOpenSQLiteConnection(t)
+	if _, err := controller.connections.Register(raw); err != nil {
+		t.Fatal("register physical connection:", err)
+	}
+	if err := controller.ObserveDriverProbe(raw, sqlite3.SQLITE_SELECT, "", "", "", ""); err != nil {
+		t.Fatal("observe driver SELECT:", err)
+	}
+	if err := controller.ObserveDriverProbe(raw, sqlite3.SQLITE_FUNCTION, "", "sqlite_version", "", ""); err != nil {
+		t.Fatal("observe sqlite_version function:", err)
+	}
+	startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: "run-0001", currentLessonID: 101, generation: 1, phase: firstAudioGuardStartupProbe, version: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	transition, err := controller.CloseAndDrain(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	controller.connections.Retire(raw)
+	if err := transition.Publish(context.Background(), startup, firstAudioGuardTransitionEvidence{}); !errors.Is(err, errFirstAudioGuardContextTransition) {
+		t.Fatalf("startup publication after physical retirement = %v, want rejection", err)
+	}
+	if active := controller.publisher.Load(); active == nil || active.phase != firstAudioGuardDriverProbe || !controller.terminal {
+		t.Fatalf("retired connection phase outcome active=%#v terminal=%v, want terminal DRIVER_PROBE", active, controller.terminal)
+	}
+}
 
 func TestFirstAudioGuardProbeChallengeReceiptIsBoundSingleUseAndOrdered(t *testing.T) {
 	binding := firstAudioGuardProbeBinding{runID: "run-0001", lessonID: 101, generation: 1, version: 2, connection: "conn-a", probeID: "probe-a"}
@@ -80,10 +397,7 @@ func TestFirstAudioGuardProbeReplayDenialBlocksJourneyDespiteCallerEvidence(t *t
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := controller.PublishInitial(startup); err != nil {
-		t.Fatal(err)
-	}
-	transition, err := controller.CloseAndDrain(context.Background())
+	transition, err := firstAudioTestPublishInitialStartup(controller, startup)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -241,10 +555,7 @@ func TestFirstAudioGuardControllerPublishesPreflightBeforeProbes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := controller.PublishInitial(startup); err != nil {
-		t.Fatal(err)
-	}
-	transition, err := controller.CloseAndDrain(context.Background())
+	transition, err := firstAudioTestPublishInitialStartup(controller, startup)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -449,10 +760,7 @@ func TestFirstAudioGuardControllerRejectsIncompletePreflightReceiptSet(t *testin
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := controller.PublishInitial(startup); err != nil {
-		t.Fatal(err)
-	}
-	transition, err := controller.CloseAndDrain(context.Background())
+	transition, err := firstAudioTestPublishInitialStartup(controller, startup)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -491,10 +799,7 @@ func TestFirstAudioGuardPreflightReceiptMustMatchActiveTokenDigest(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := controller.PublishInitial(startup); err != nil {
-		t.Fatal(err)
-	}
-	transition, err := controller.CloseAndDrain(context.Background())
+	transition, err := firstAudioTestPublishInitialStartup(controller, startup)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -573,10 +878,7 @@ func TestFirstAudioGuardPreflightPublishWaitsForProbeActivityAndTimesOutTerminal
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := c.PublishInitial(startup); err != nil {
-			t.Fatal(err)
-		}
-		tr, err := c.CloseAndDrain(context.Background())
+		tr, err := firstAudioTestPublishInitialStartup(c, startup)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -829,10 +1131,11 @@ func TestFirstAudioGuardPublisherRejectsIllegalTransitionsAndTerminalBackEdges(t
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := publisher.Publish(startup); err != nil {
-		t.Fatal(err)
+	if err := publisher.Publish(startup); !errors.Is(err, errFirstAudioGuardContextTransition) {
+		t.Fatalf("initial STARTUP_PROBE publish = %v, want mandatory driver receipt", err)
 	}
-	terminal, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: "run-0001", currentLessonID: 101, generation: 1, phase: firstAudioGuardTerminal, version: 2})
+	firstAudioPublishJourney(t, &publisher, 3)
+	terminal, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: "run-0001", currentLessonID: 101, generation: 1, phase: firstAudioGuardTerminal, version: 4})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -851,10 +1154,7 @@ func firstAudioTestOpenJourney(t *testing.T) *firstAudioGuardController {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := controller.PublishInitial(startup); err != nil {
-		t.Fatal(err)
-	}
-	transition, err := controller.CloseAndDrain(context.Background())
+	transition, err := firstAudioTestPublishInitialStartup(controller, startup)
 	if err != nil {
 		t.Fatal(err)
 	}

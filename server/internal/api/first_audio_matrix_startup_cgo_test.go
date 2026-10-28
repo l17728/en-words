@@ -39,6 +39,60 @@ type firstAudioStartupPolicy struct {
 	lastDenial    atomic.Value
 }
 
+// This policy obtains its phase exclusively from firstAudioGuardController.
+// It is used by the strict NewApp integration test; the older atomic policy
+// remains only for isolated allowlist unit tests and historical startup cases.
+type firstAudioControllerStartupPolicy struct {
+	controller    *firstAudioGuardController
+	reads         map[string]map[string]struct{}
+	hooks         atomic.Uint64
+	denials       atomic.Uint64
+	rowGuardCalls atomic.Uint64
+	lastDenial    atomic.Value
+}
+
+func newFirstAudioControllerStartupPolicy(controller *firstAudioGuardController) *firstAudioControllerStartupPolicy {
+	return &firstAudioControllerStartupPolicy{controller: controller, reads: firstAudioStartupReadManifest()}
+}
+
+func (p *firstAudioControllerStartupPolicy) install(conn *sqlite3.SQLiteConn) error {
+	if p == nil || p.controller == nil || conn == nil {
+		return fmt.Errorf("controller startup authorizer is incomplete")
+	}
+	p.hooks.Add(1)
+	if err := conn.RegisterFunc("first_audio_row_guard", func() bool {
+		p.rowGuardCalls.Add(1)
+		if err := p.controller.TerminalizeFromSQLiteCallback(); err != nil {
+			p.lastDenial.Store(fmt.Sprintf("callback terminal CAS failed: %v", err))
+		}
+		return false
+	}, true); err != nil {
+		return err
+	}
+	conn.RegisterAuthorizerWithTriggerName(func(action int, arg1, arg2, databaseName, triggerName string) int {
+		active := p.controller.publisher.Load()
+		allowed := false
+		switch {
+		case p.controller.IsActivePhase(firstAudioGuardDriverProbe):
+			allowed = p.controller.ObserveDriverProbe(conn, action, arg1, arg2, databaseName, triggerName) == nil
+		case p.controller.IsActivePhase(firstAudioGuardStartupProbe):
+			allowed = firstAudioStartupAuthorizeAt(firstAudioStartupApp, p.reads, action, arg1, arg2, databaseName, triggerName)
+		}
+		if allowed {
+			return sqlite3.SQLITE_OK
+		}
+		p.controller.Terminalize()
+		p.denials.Add(1)
+		phase := firstAudioGuardTerminal
+		if active != nil {
+			phase = active.phase
+		}
+		p.lastDenial.Store(fmt.Sprintf("action=%d arg1=%q arg2=%q database=%q trigger=%q phase=%s", action, arg1, arg2, databaseName, triggerName, phase))
+		return sqlite3.SQLITE_DENY
+	})
+	return nil
+}
+
 func newFirstAudioStartupPolicy() *firstAudioStartupPolicy {
 	p := &firstAudioStartupPolicy{reads: firstAudioStartupReadManifest()}
 	p.phase.Store(uint32(firstAudioStartupDriverProbe))
@@ -107,7 +161,10 @@ var firstAudioApprovedGuardTriggers = map[string]struct{}{
 const firstAudioAuditNoReplaceTrigger = "fa_audit_no_replace"
 
 func (p *firstAudioStartupPolicy) authorize(action int, arg1, arg2, databaseName, triggerName string) bool {
-	phase := firstAudioStartupPhase(p.phase.Load())
+	return firstAudioStartupAuthorizeAt(firstAudioStartupPhase(p.phase.Load()), p.reads, action, arg1, arg2, databaseName, triggerName)
+}
+
+func firstAudioStartupAuthorizeAt(phase firstAudioStartupPhase, reads map[string]map[string]struct{}, action int, arg1, arg2, databaseName, triggerName string) bool {
 	switch action {
 	case sqlite3.SQLITE_SELECT:
 		if triggerName == "" {
@@ -137,7 +194,7 @@ func (p *firstAudioStartupPolicy) authorize(action int, arg1, arg2, databaseName
 			}
 			return false
 		}
-		_, ok := p.reads[arg1][arg2]
+		_, ok := reads[arg1][arg2]
 		// SQLite omits the database name for COUNT(*)'s table-existence
 		// authorization callback. Accept that tuple only for the empty-column
 		// sentinel of an explicitly manifested main-schema table.
@@ -357,11 +414,6 @@ func TestFirstAudioMatrixNewAppStartsOnGuardedSQLitePool(t *testing.T) {
 		_ = setupPool.Close()
 		t.Fatal("config guard fixture seed failed", err)
 	}
-	var setupRevisionCount int64
-	if err := setup.Model(&store.ConfigRevision{}).Count(&setupRevisionCount).Error; err != nil {
-		_ = setupPool.Close()
-		t.Fatal("config revision baseline read failed", err)
-	}
 	if err := installFirstAudioStartupGuards(setup); err != nil {
 		_ = setupPool.Close()
 		t.Fatal("fixed row guards installation failed", err)
@@ -397,10 +449,26 @@ func TestFirstAudioMatrixNewAppStartsOnGuardedSQLitePool(t *testing.T) {
 		t.Fatal("setup pool close failed", err)
 	}
 
-	name := fmt.Sprintf("first_audio_matrix_startup_%d", firstAudioProbeDriverSequence.Add(1))
-	policy := newFirstAudioStartupPolicy()
-	if err := registerFirstAudioProbeDriver(name, policy.install); err != nil {
-		t.Fatal("guarded app driver registration failed", err)
+	controller := newFirstAudioGuardController()
+	driverContext, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
+		runID: "startup_20261027", currentLessonID: identity.LessonID, generation: 1,
+		phase: firstAudioGuardDriverProbe, version: 0,
+	})
+	if err != nil {
+		t.Fatal("driver-probe context construction failed:", err)
+	}
+	if err := controller.PublishInitial(driverContext); err != nil {
+		t.Fatal("controller rejected driver-probe context:", err)
+	}
+	policy := newFirstAudioControllerStartupPolicy(controller)
+	name := fmt.Sprintf("first_audio_matrix_controller_startup_%d", firstAudioProbeDriverSequence.Add(1))
+	if err := registerFirstAudioTrackedSQLiteDriver(name, func(conn *sqlite3.SQLiteConn) error {
+		if _, err := controller.connections.Register(conn); err != nil {
+			return err
+		}
+		return policy.install(conn)
+	}, controller.connections.Retire); err != nil {
+		t.Fatal("guarded controller app driver registration failed", err)
 	}
 	appDB, err := gorm.Open(gormsqlite.Dialector{DriverName: name, DSN: path}, &gorm.Config{DisableAutomaticPing: true})
 	if err != nil {
@@ -410,14 +478,30 @@ func TestFirstAudioMatrixNewAppStartsOnGuardedSQLitePool(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer pool.Close()
+	t.Cleanup(func() { _ = pool.Close() })
 	pool.SetMaxOpenConns(1)
-	policy.phase.Store(uint32(firstAudioStartupApp))
 	if err := pool.PingContext(context.Background()); err != nil {
 		t.Fatal("first guarded connection could not be opened", err)
 	}
 	if policy.hooks.Load() != 1 {
 		t.Fatalf("hook count = %d, want 1 before app startup", policy.hooks.Load())
+	}
+	if controller.driverProbe == nil || !controller.connections.IsLive(controller.driverProbe.connectionID, controller.driverProbe.rawConnection) {
+		t.Fatal("initial dialector receipt is not bound to a live tracked SQLite connection")
+	}
+	startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
+		runID: driverContext.runID, currentLessonID: identity.LessonID, generation: 1,
+		phase: firstAudioGuardStartupProbe, version: 1,
+	})
+	if err != nil {
+		t.Fatal("startup context construction failed:", err)
+	}
+	transition, err := controller.CloseAndDrain(context.Background())
+	if err != nil {
+		t.Fatal("close driver-probe admission:", err)
+	}
+	if err := transition.Publish(context.Background(), startup, firstAudioGuardTransitionEvidence{}); err != nil {
+		t.Fatal("publish STARTUP_PROBE from the live physical dialector observation:", err)
 	}
 
 	app := NewApp(scheduler.RealClock{}, appDB)
@@ -432,30 +516,41 @@ func TestFirstAudioMatrixNewAppStartsOnGuardedSQLitePool(t *testing.T) {
 		t.Fatalf("NewApp caused an unexpected physical connection: hooks=%d", policy.hooks.Load())
 	}
 
-	// The startup-only zero-row users reservation is allowed to prepare, but the
-	// fixed BEFORE trigger must reject it when it matches a real row.
-	if err := appDB.Exec("UPDATE users SET id=id WHERE id=?", identity.StudentID).Error; err == nil {
-		t.Fatal("row guard allowed a matching user update")
-	}
-	if err := appDB.Exec("UPDATE config_globals SET key=key WHERE key=?", "wordsPerLesson").Error; err == nil {
-		t.Fatal("authorizer allowed config writes in the startup phase")
-	}
-	var revisionCount int64
-	if err := appDB.Model(&store.ConfigRevision{}).Count(&revisionCount).Error; err != nil || revisionCount != setupRevisionCount {
-		t.Fatalf("blocked config row change emitted revision side effect: count=%d baseline=%d err=%v last_denial=%v", revisionCount, setupRevisionCount, err, policy.lastDenial.Load())
-	}
-	if policy.rowGuardCalls.Load() != 1 {
-		t.Fatalf("row guard calls = %d, want only the blocked user write; config DML must be denied by the authorizer", policy.rowGuardCalls.Load())
-	}
-	policy.phase.Store(uint32(firstAudioStartupPreflight))
-	if err := appDB.Exec("UPDATE users SET id=id WHERE id=?", identity.StudentID).Error; err == nil {
-		t.Fatal("startup-only user update reservation remained authorized after phase tightening")
-	}
-	startupSnapshot, err := firstAudioCaptureDatabaseSnapshot(appDB)
+	pinned, err := pool.Conn(context.Background())
 	if err != nil {
-		t.Fatal("capture complete post-startup snapshot:", err)
+		t.Fatal("pin the sole guarded application connection for readback:", err)
+	}
+	startupSnapshot, snapshotErr := firstAudioCaptureDatabaseSnapshotOnPinnedConn(appDB, pinned)
+	if closeErr := pinned.Close(); closeErr != nil && snapshotErr == nil {
+		snapshotErr = closeErr
+	}
+	if snapshotErr != nil {
+		t.Fatal("capture complete post-startup snapshot on the pinned connection:", snapshotErr)
 	}
 	if baselineSnapshot.SHA256 != startupSnapshot.SHA256 || string(baselineSnapshot.Canonical) != string(startupSnapshot.Canonical) {
 		t.Fatalf("guarded NewApp startup changed the synthetic database\nbefore:\n%s\nafter:\n%s", baselineSnapshot.Canonical, startupSnapshot.Canonical)
+	}
+	var restoredUsers int64
+	if err := appDB.Model(&store.User{}).Count(&restoredUsers).Error; err != nil || restoredUsers != int64(fixtureRows["users"]) {
+		t.Fatalf("base GORM pool unusable after pinned snapshot helper: users=%d err=%v", restoredUsers, err)
+	}
+
+	// The startup-only zero-row users reservation is allowed to prepare, but the
+	// fixed BEFORE trigger must reject it when it matches a real row. The first
+	// unexpected SQL terminalizes this candidate, so this assertion is last.
+	if err := appDB.Exec("UPDATE users SET id=id WHERE id=?", identity.StudentID).Error; err == nil {
+		t.Fatal("row guard allowed a matching user update")
+	}
+	// The SQLite UDF only sets its lock-free terminal latch. The coordinator
+	// observes the failed SQL result here and closes lifecycle admission.
+	controller.Terminalize()
+	if policy.rowGuardCalls.Load() != 1 {
+		t.Fatalf("row guard calls = %d, want exactly one for the blocked user write", policy.rowGuardCalls.Load())
+	}
+	if !controller.IsTerminal() {
+		t.Fatal("unexpected guarded SQL denial did not terminalize the controller")
+	}
+	if err := appDB.Model(&store.User{}).Count(&restoredUsers).Error; err == nil {
+		t.Fatal("terminalized guarded app candidate continued accepting SQL")
 	}
 }

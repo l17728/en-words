@@ -11,6 +11,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+
+	sqlite3 "github.com/mattn/go-sqlite3"
 )
 
 func TestFirstAudioGuardContextValidPhaseShapes(t *testing.T) {
@@ -18,6 +20,7 @@ func TestFirstAudioGuardContextValidPhaseShapes(t *testing.T) {
 		name string
 		spec firstAudioGuardContextSpec
 	}{
+		{"driver probe", firstAudioGuardContextSpec{runID: "run-0001", currentLessonID: 101, generation: 1, phase: firstAudioGuardDriverProbe, version: 0}},
 		{"startup", firstAudioGuardContextSpec{runID: "run-0001", currentLessonID: 101, generation: 1, phase: firstAudioGuardStartupProbe, version: 1}},
 		{"preflight", firstAudioValidPreflightSpec(2)},
 		{"journey", firstAudioValidJourneySpec(2, 101, 1, 1)},
@@ -39,6 +42,7 @@ func TestFirstAudioGuardContextValidPhaseShapes(t *testing.T) {
 
 func TestFirstAudioGuardContextRejectsMalformedShapes(t *testing.T) {
 	validStartup := firstAudioGuardContextSpec{runID: "run-0001", currentLessonID: 101, generation: 1, phase: firstAudioGuardStartupProbe, version: 1}
+	validDriver := firstAudioGuardContextSpec{runID: "run-0001", currentLessonID: 101, generation: 1, phase: firstAudioGuardDriverProbe, version: 0}
 	validPreflight := firstAudioValidPreflightSpec(2)
 	validJourney := firstAudioValidJourneySpec(2, 101, 1, 1)
 	validReset := firstAudioValidResetSpec(2)
@@ -48,6 +52,14 @@ func TestFirstAudioGuardContextRejectsMalformedShapes(t *testing.T) {
 		name string
 		spec firstAudioGuardContextSpec
 	}{
+		{"driver phase must start at generation one", func() firstAudioGuardContextSpec { s := validDriver; s.generation = 2; return s }()},
+		{"driver phase must use bootstrap version zero", func() firstAudioGuardContextSpec { s := validDriver; s.version = 1; return s }()},
+		{"driver phase cannot carry row contracts", func() firstAudioGuardContextSpec {
+			s := validDriver
+			s.rowContracts = []firstAudioGuardRowContract{{table: "lessons", operation: "UPDATE", identity: "lesson:101"}}
+			return s
+		}()},
+		{"driver phase cannot carry prior lesson", func() firstAudioGuardContextSpec { s := validDriver; s.priorLessonID = 100; return s }()},
 		{"empty run id", func() firstAudioGuardContextSpec { s := validStartup; s.runID = ""; return s }()},
 		{"version zero", func() firstAudioGuardContextSpec { s := validStartup; s.version = 0; return s }()},
 		{"startup generation", func() firstAudioGuardContextSpec { s := validStartup; s.generation = 2; return s }()},
@@ -389,6 +401,10 @@ func TestFirstAudioGuardContextPublisherReadersSeeWholeJourneySnapshots(t *testi
 
 func firstAudioPublishJourney(t *testing.T, publisher *firstAudioGuardContextPublisher, version uint64) *firstAudioGuardContext {
 	t.Helper()
+	driver, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: "run-0001", currentLessonID: 101, generation: 1, phase: firstAudioGuardDriverProbe, version: 0})
+	if err != nil {
+		t.Fatal(err)
+	}
 	startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: "run-0001", currentLessonID: 101, generation: 1, phase: firstAudioGuardStartupProbe, version: 1})
 	if err != nil {
 		t.Fatal(err)
@@ -401,7 +417,29 @@ func firstAudioPublishJourney(t *testing.T, publisher *firstAudioGuardContextPub
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, candidate := range []*firstAudioGuardContext{startup, preflight, journey} {
+	if err := publisher.Publish(driver); err != nil {
+		t.Fatalf("publish phase %s version %d: %v", driver.Phase(), driver.Version(), err)
+	}
+	rawConn := firstAudioTestOpenSQLiteConnection(t)
+	registry := newFirstAudioSQLiteConnectionRegistry()
+	if _, err := registry.Register(rawConn); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { registry.Retire(rawConn) })
+	receipt, err := newFirstAudioDriverProbeReceipt(driver, registry, rawConn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := receipt.Observe(rawConn, sqlite3.SQLITE_SELECT, "", "", "", ""); err != nil {
+		t.Fatal(err)
+	}
+	if err := receipt.Observe(rawConn, sqlite3.SQLITE_FUNCTION, "", "sqlite_version", "", ""); err != nil {
+		t.Fatal(err)
+	}
+	if err := publisher.publishDriverStartup(startup, receipt); err != nil {
+		t.Fatalf("publish phase %s version %d: %v", startup.Phase(), startup.Version(), err)
+	}
+	for _, candidate := range []*firstAudioGuardContext{preflight, journey} {
 		if err := publisher.Publish(candidate); err != nil {
 			t.Fatalf("publish phase %s version %d: %v", candidate.Phase(), candidate.Version(), err)
 		}

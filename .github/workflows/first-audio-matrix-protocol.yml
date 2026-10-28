@@ -97,7 +97,7 @@ jobs:
         run: python3 -m unittest discover -s review -p test_first_audio_matrix_control.py -v
       - name: Test JSONL parser, lifecycle, replay, and terminal cleanup
         working-directory: server
-        run: go test ./internal/api -run '^TestFirstAudio(Matrix|Guard(Context|Probe|Controller|Publisher))' -count=1 -timeout=5m
+        run: go test ./internal/api -run '^TestFirstAudio(Matrix|Guard(Context|Probe|Controller|Publisher|CallbackTerminal|SQLiteCallback))' -count=1 -timeout=5m
       - name: Test classroom tool transaction outcome handling
         working-directory: server
         run: go test ./internal/api -run '^(TestToolTransaction|TestObservedToolTransaction|TestUncertainToolTransaction|TestRetiredRoomRejectsPublicProgressionEntrypoints|TestDeferredCommitFailureStopsTeacherContinuationAndSnapshot)' -count=1 -timeout=5m
@@ -180,7 +180,7 @@ jobs:
           gcc --version
       - name: Test Go harness path and lifecycle boundaries
         working-directory: server
-        run: go test ./internal/api -run '^TestFirstAudio(Matrix|Guard(Context|Probe|Controller|Publisher))' -count=1 -timeout=10m
+        run: go test ./internal/api -run '^TestFirstAudio(Matrix|Guard(Context|Probe|Controller|Publisher|CallbackTerminal|SQLiteCallback))' -count=1 -timeout=10m
       - name: Test classroom tool transaction outcome handling
         working-directory: server
         run: go test ./internal/api -run '^(TestToolTransaction|TestObservedToolTransaction|TestUncertainToolTransaction|TestRetiredRoomRejectsPublicProgressionEntrypoints|TestDeferredCommitFailureStopsTeacherContinuationAndSnapshot)' -count=1 -timeout=10m
