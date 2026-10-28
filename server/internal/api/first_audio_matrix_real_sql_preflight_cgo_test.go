@@ -343,7 +343,7 @@ func TestFirstAudioMatrixRealSQLDiscardPinnedConnectionRetiresPhysicalIdentity(t
 	}
 }
 
-func TestFirstAudioMatrixRealSQLRejectsCrossConnectionTokenAndAllowsCleanupRollback(t *testing.T) {
+func TestFirstAudioMatrixRealSQLRejectsCrossConnectionAndWrongTokensAndAllowsCleanupRollback(t *testing.T) {
 	registry := newFirstAudioSQLiteConnectionRegistry()
 	controller := newFirstAudioGuardController()
 	controller.connections = registry
@@ -387,10 +387,10 @@ func TestFirstAudioMatrixRealSQLRejectsCrossConnectionTokenAndAllowsCleanupRollb
 		t.Fatal("open isolated SQLite pool:", err)
 	}
 	defer pool.Close()
-	pool.SetMaxOpenConns(2)
-	pool.SetMaxIdleConns(2)
-	candidates := make([]*candidate, 0, 2)
-	for range 2 {
+	pool.SetMaxOpenConns(3)
+	pool.SetMaxIdleConns(3)
+	candidates := make([]*candidate, 0, 3)
+	for range 3 {
 		pinned, pinErr := pool.Conn(context.Background())
 		if pinErr != nil {
 			t.Fatal("pin physical SQLite connection:", pinErr)
@@ -437,15 +437,24 @@ func TestFirstAudioMatrixRealSQLRejectsCrossConnectionTokenAndAllowsCleanupRollb
 			_ = item.pinned.Close()
 		}
 	}()
-	if candidates[0].binding.connection == candidates[1].binding.connection {
-		t.Fatal("test did not pin two distinct physical connections")
+	seenConnectionIDs := make(map[string]struct{}, len(candidates))
+	seenRawConnections := make(map[*sqlite3.SQLiteConn]struct{}, len(candidates))
+	for _, item := range candidates {
+		if _, duplicate := seenConnectionIDs[item.binding.connection]; duplicate {
+			t.Fatalf("test pinned duplicate physical connection ID %q", item.binding.connection)
+		}
+		if _, duplicate := seenRawConnections[item.tracked.raw]; duplicate {
+			t.Fatalf("test pinned duplicate physical SQLite connection for %q", item.binding.connection)
+		}
+		seenConnectionIDs[item.binding.connection] = struct{}{}
+		seenRawConnections[item.tracked.raw] = struct{}{}
 	}
 	preflightSpec := firstAudioValidPreflightSpec(2)
 	preflightSpec.runID = candidates[0].binding.runID
 	preflightSpec.currentLessonID = candidates[0].binding.lessonID
-	preflightSpec.connectionIDs = make([]string, 0, 2)
-	preflightSpec.probeContracts = make([]firstAudioGuardProbeContract, 0, 2)
-	preflightSpec.rowContracts = make([]firstAudioGuardRowContract, 0, 2)
+	preflightSpec.connectionIDs = make([]string, 0, 3)
+	preflightSpec.probeContracts = make([]firstAudioGuardProbeContract, 0, 3)
+	preflightSpec.rowContracts = make([]firstAudioGuardRowContract, 0, 3)
 	for _, item := range candidates {
 		if !item.challenge.receipt.arm() {
 			t.Fatal("arm fresh connection receipt")
@@ -460,7 +469,7 @@ func TestFirstAudioMatrixRealSQLRejectsCrossConnectionTokenAndAllowsCleanupRollb
 	}
 	preflight, err := newFirstAudioGuardContext(preflightSpec)
 	if err != nil {
-		t.Fatal("construct isolated two-connection PREFLIGHT:", err)
+		t.Fatal("construct isolated three-connection PREFLIGHT:", err)
 	}
 	controller.publisher.current.Store(preflight)
 	for _, item := range candidates {
@@ -519,6 +528,51 @@ func TestFirstAudioMatrixRealSQLRejectsCrossConnectionTokenAndAllowsCleanupRollb
 	}
 	if firstAudioGuardProbeReceiptState(foreign.challenge.receipt.state.Load()) != firstAudioGuardProbeIssued || !registry.IsLive(foreign.binding.connection, candidates[1].tracked.raw) {
 		t.Fatal("cross-connection rejection damaged the foreign candidate connection or receipt")
+	}
+
+	wrongOwner := candidates[2]
+	wrongOwner.sessionRef.session.Store(&firstAudioRealSQLProbeSession{challenge: wrongOwner.challenge, binding: wrongOwner.binding, tracked: wrongOwner.tracked})
+	var wrongTokenTx *sql.Tx
+	if err := wrongOwner.authorizer.withPermit(firstAudioSQLPermitProbeSQL, false, func() error {
+		var beginErr error
+		wrongTokenTx, beginErr = wrongOwner.pinned.BeginTx(context.Background(), nil)
+		return beginErr
+	}); err != nil {
+		t.Fatal("begin fresh wrong-token candidate transaction:", err)
+	}
+	wrongTokenEpoch := wrongOwner.tracked.txEpoch.Load()
+	if !wrongOwner.tracked.txActive.Load() || wrongTokenEpoch == 0 {
+		t.Fatal("wrong-token candidate transaction did not enter active epoch")
+	}
+	wrongOwner.authorizer.activeTx.Store(wrongTokenTx)
+	wrongOwner.authorizer.txEpoch.Store(wrongTokenEpoch)
+	wrongOwner.sessionRef.session.Load().txEpoch.Store(wrongTokenEpoch)
+	if err := wrongOwner.challenge.BindTransactionEpoch(wrongTokenEpoch); err != nil {
+		t.Fatal("bind fresh wrong-token challenge transaction epoch:", err)
+	}
+	wrongToken := append([]byte(nil), wrongOwner.token...)
+	wrongToken[0] ^= 0xff
+	defer zeroFirstAudioSecret(wrongToken)
+	var wrongTokenAccepted bool
+	err = wrongOwner.authorizer.withPermit(firstAudioSQLPermitTokenConsumption, true, func() error {
+		return wrongTokenTx.QueryRowContext(context.Background(), "SELECT first_audio_probe(?)", wrongToken).Scan(&wrongTokenAccepted)
+	})
+	if err != nil {
+		t.Fatalf("real SQLite invalid-token query: %v", err)
+	}
+	if wrongTokenAccepted || firstAudioGuardProbeReceiptState(wrongOwner.challenge.receipt.state.Load()) != firstAudioGuardProbeFailed || wrongOwner.challenge.receipt.denials.Load() == 0 {
+		t.Fatal("fresh challenge did not reject unrelated token with explicit denial evidence")
+	}
+	wrongOwner.authorizer.cleanupPreflight.Store(true)
+	wrongOwner.authorizer.cleanupAvailable.Store(true)
+	if err := wrongOwner.authorizer.rollbackProbeTransaction(); err != nil {
+		t.Fatalf("authorized rollback after unrelated-token rejection: %v", err)
+	}
+	if wrongOwner.tracked.txActive.Load() || !wrongOwner.tracked.raw.AutoCommit() || wrongOwner.authorizer.denials.Load() != 0 {
+		t.Fatal("wrong-token rejection did not finish through the authorized cleanup rollback")
+	}
+	if firstAudioGuardProbeReceiptState(foreign.challenge.receipt.state.Load()) != firstAudioGuardProbeIssued {
+		t.Fatal("unrelated-token rejection changed the other connection's receipt")
 	}
 }
 
