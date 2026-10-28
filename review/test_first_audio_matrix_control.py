@@ -183,7 +183,7 @@ class MatrixControlBoundaryTests(unittest.TestCase):
                             state = raw[raw.rfind(")") + 2:raw.rfind(")") + 3]
                             if state == "Z":
                                 break  # killed and awaiting init reaping; it cannot execute
-                        except FileNotFoundError:
+                        except (FileNotFoundError, ProcessLookupError):
                             break
                         await asyncio.sleep(0.02)
                     else:
@@ -239,7 +239,7 @@ class MatrixControlBoundaryTests(unittest.TestCase):
                         state = stat[stat.rfind(")") + 2:stat.rfind(")") + 3]
                         if state == "Z":
                             break  # killed and awaiting init reaping; no longer executable
-                    except FileNotFoundError:
+                    except (FileNotFoundError, ProcessLookupError):
                         break
                     time.sleep(0.02)
                 else:
