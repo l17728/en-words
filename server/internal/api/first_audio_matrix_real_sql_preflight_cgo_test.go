@@ -278,7 +278,7 @@ func (p *firstAudioRealSQLAuthorizer) discardPinnedConnection() error {
 	return nil
 }
 
-func TestFirstAudioRealSQLDiscardPinnedConnectionRetiresPhysicalIdentity(t *testing.T) {
+func TestFirstAudioMatrixRealSQLDiscardPinnedConnectionRetiresPhysicalIdentity(t *testing.T) {
 	registry := newFirstAudioSQLiteConnectionRegistry()
 	driverName := fmt.Sprintf("first_audio_discard_%d", firstAudioProbeDriverSequence.Add(1))
 	if err := registerFirstAudioTrackedSQLiteDriver(driverName, func(conn *sqlite3.SQLiteConn) error {
@@ -332,7 +332,7 @@ func TestFirstAudioRealSQLDiscardPinnedConnectionRetiresPhysicalIdentity(t *test
 	}
 }
 
-func TestFirstAudioRealSQLMissingCleanupAuthorityTerminalizesAndDiscardsActiveTransaction(t *testing.T) {
+func TestFirstAudioMatrixRealSQLMissingCleanupAuthorityTerminalizesAndDiscardsActiveTransaction(t *testing.T) {
 	registry := newFirstAudioSQLiteConnectionRegistry()
 	driverName := fmt.Sprintf("first_audio_missing_cleanup_authority_%d", firstAudioProbeDriverSequence.Add(1))
 	if err := registerFirstAudioTrackedSQLiteDriver(driverName, func(conn *sqlite3.SQLiteConn) error {
