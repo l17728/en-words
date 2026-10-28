@@ -42,3 +42,15 @@ PREFLIGHT context 一次发布三个 connection-bound challenge/contract/receipt
 ## Review 与后续
 
 实现评审完成后记录评审者、结论、问题及关闭证据。下一阶段继续依照 docs/78 的失败候选清单接通隔离候选 harness，再逐项完成数据库双进程旅程与性能矩阵；真人音频仍须等加密链路、服务端音频协议和课堂授权条件满足后单独验收。
+
+## Latest cleanup review and verification (2026-10-28)
+
+The rollback failure path now terminalizes the guard and discards the uncertain pinned connection. Retirement is accepted only when the connection registry no longer recognizes the raw identity and the tracked driver confirms the underlying `Close()` returned successfully. A regression test exercises this terminalize-and-discard path. The phase predicate test uses direct immutable-context publication because it tests only phase authorization; lifecycle transitions remain covered by the separate controller tests.
+
+Final security re-review found no remaining P1/P2 in this slice. See `review/first-audio-real-sql-preflight-multiconnection-review-20261028.md` for the architecture, security, test/CI findings, fixes, and remaining acceptance scope.
+
+Commit `3bf4a5f` CI passed both Linux and Windows jobs: [First-audio control protocol checks](https://github.com/l17728/en-words/actions/runs/40637306873). The local API test passed with CGO disabled; the CI jobs provide CGO evidence. The previous `16cc255` and `f91ee0a` CI failures are superseded by the corrected run and are not acceptance evidence.
+
+This verifies only the positive real-SQL PREFLIGHT slice and its cleanup fix. The remaining docs/78 §5 fresh-candidate negative matrix, isolated-backend harness integration, guarded `api.App` journey, dual-process Playwright journey, reset races, performance matrix, and real classroom pilot remain open.
+
+The same `3bf4a5f` also passed the [Pilot Linux package and manifest workflow](https://github.com/l17728/en-words/actions/runs/40637732450): all three jobs succeeded, including full backend `go test ./...`, Linux package race/vet/coverage checks, manifest inventory, and runner preflight. VFS/RunRoot candidate acceptance remains explicitly NOT RUN.
