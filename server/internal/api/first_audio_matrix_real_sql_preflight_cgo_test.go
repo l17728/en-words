@@ -39,6 +39,13 @@ type firstAudioRealSQLProbeSessionRef struct {
 	session atomic.Pointer[firstAudioRealSQLProbeSession]
 }
 
+type firstAudioPinnedRealSQLConnection struct {
+	conn         *sql.Conn
+	raw          *sqlite3.SQLiteConn
+	tracked      *firstAudioTrackedSQLiteConn
+	registration firstAudioSQLiteConnectionRegistration
+}
+
 type firstAudioSQLPermit uint32
 
 const (
@@ -572,15 +579,30 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 	if err != nil {
 		t.Fatal("get isolated guarded SQL pool:", err)
 	}
-	pool.SetMaxOpenConns(1)
-	pool.SetMaxIdleConns(1)
+	const physicalConnections = 3
+	pool.SetMaxOpenConns(physicalConnections)
+	pool.SetMaxIdleConns(physicalConnections)
 	pool.SetConnMaxLifetime(0)
 	authorizer.db = guarded
 	t.Cleanup(func() { _ = pool.Close() })
-	// Force ConnectHook registration while DRIVER_PROBE admission is open. Keep
-	// the sole pool connection available to NewApp's startup transactions below.
-	if err := pool.PingContext(context.Background()); err != nil {
-		t.Fatal("open guarded physical SQLite connection:", err)
+	// Force creation and registration of the full configured pool while
+	// DRIVER_PROBE admission is open. Hold the connections simultaneously so
+	// database/sql cannot satisfy the requests with one reused connection.
+	registeredPins := make([]*sql.Conn, 0, physicalConnections)
+	for range physicalConnections {
+		pinned, pinErr := pool.Conn(context.Background())
+		if pinErr != nil {
+			t.Fatal("open guarded physical SQLite connection:", pinErr)
+		}
+		registeredPins = append(registeredPins, pinned)
+	}
+	if got := registry.nextID.Load(); got != physicalConnections {
+		t.Fatalf("ConnectHook registrations=%d, want exactly %d before startup", got, physicalConnections)
+	}
+	for _, pinned := range registeredPins {
+		if closeErr := pinned.Close(); closeErr != nil {
+			t.Fatal("release registered SQLite connection before startup:", closeErr)
+		}
 	}
 	startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
 		runID: driverContext.runID, currentLessonID: identity.LessonID, generation: 1,
@@ -596,133 +618,178 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 	if err := startupTransition.Publish(context.Background(), startup, firstAudioGuardTransitionEvidence{}); err != nil {
 		t.Fatal("publish startup after physical dialector observation:", err)
 	}
+	// NewApp is synchronous, but any pool connection may carry its startup
+	// transaction. Keep the startup permit open on every registered connection.
+	authorizer.startupPermit.Store(true)
 	var app *App
-	if err := authorizer.withStartupPermit(func() error {
-		app = NewApp(scheduler.RealClock{}, guarded)
-		return nil
-	}); err != nil {
-		t.Fatalf("run NewApp inside controller-owned startup transaction permit: %v", err)
-	}
-	if app == nil || app.DB != guarded || app.StartupError != nil {
-		t.Fatalf("NewApp failed on controller-guarded pool: app=%v startup=%v", app != nil, app.StartupError)
-	}
+	app = NewApp(scheduler.RealClock{}, guarded)
+	authorizer.startupPermit.Store(false)
 	if authorizer.startupBegins.Load() != 1 || authorizer.startupEnds.Load() != 1 {
 		t.Fatalf("NewApp startup transactions begin=%d end=%d; want one exact transaction", authorizer.startupBegins.Load(), authorizer.startupEnds.Load())
+	}
+	if app == nil || app.DB != guarded || app.StartupError != nil {
+		t.Fatalf("NewApp failed on guarded pool: app=%v startup=%v", app != nil, app.StartupError)
 	}
 	if user, err := app.Auth.GetUser(identity.Username); err != nil || user.Role != auth.RoleStudent || user.ID != identity.StudentID {
 		t.Fatalf("guarded NewApp did not restore isolated student: user=%#v err=%v", user, err)
 	}
-	pinned, err := pool.Conn(context.Background())
-	if err != nil {
-		t.Fatal("pin physical SQLite connection after NewApp startup:", err)
-	}
-	defer pinned.Close()
-	var raw *sqlite3.SQLiteConn
-	if err := pinned.Raw(func(driverConn any) error {
-		tracked, ok := driverConn.(*firstAudioTrackedSQLiteConn)
-		if !ok || tracked == nil || tracked.raw == nil {
-			return fmt.Errorf("unexpected tracked connection %T", driverConn)
+	pins := make([]*sql.Conn, 0, physicalConnections)
+	identities := make([]firstAudioPinnedRealSQLConnection, 0, physicalConnections)
+	seenIDs := make(map[string]struct{}, physicalConnections)
+	for range physicalConnections {
+		pinned, pinErr := pool.Conn(context.Background())
+		if pinErr != nil {
+			t.Fatal("pin physical SQLite connection after NewApp startup:", pinErr)
 		}
-		raw = tracked.raw
-		return nil
-	}); err != nil {
-		t.Fatal("resolve pinned physical connection identity:", err)
-	}
-	registration, live := registry.Lookup(raw)
-	if !live || !registry.IsLive(registration.ID, raw) {
-		t.Fatal("pinned connection is absent from ConnectHook registry")
-	}
-	var tracked *firstAudioTrackedSQLiteConn
-	if err := pinned.Raw(func(driverConn any) error {
-		var ok bool
-		tracked, ok = driverConn.(*firstAudioTrackedSQLiteConn)
-		if !ok || tracked == nil {
-			return fmt.Errorf("unexpected tracked connection %T", driverConn)
+		pins = append(pins, pinned)
+		var tracked *firstAudioTrackedSQLiteConn
+		if rawErr := pinned.Raw(func(driverConn any) error {
+			var ok bool
+			tracked, ok = driverConn.(*firstAudioTrackedSQLiteConn)
+			if !ok || tracked == nil || tracked.raw == nil {
+				return fmt.Errorf("unexpected tracked connection %T", driverConn)
+			}
+			return nil
+		}); rawErr != nil {
+			t.Fatal("resolve tracked physical SQLite connection:", rawErr)
 		}
-		return nil
-	}); err != nil {
-		t.Fatal("resolve tracked SQLite transaction state:", err)
+		registration, registered := registry.Lookup(tracked.raw)
+		if !registered || !registry.IsLive(registration.ID, tracked.raw) {
+			t.Fatal("pinned connection is absent from ConnectHook registry")
+		}
+		if _, duplicate := seenIDs[registration.ID]; duplicate {
+			t.Fatalf("pool capacity pin reused physical connection %s", registration.ID)
+		}
+		seenIDs[registration.ID] = struct{}{}
+		identities = append(identities, firstAudioPinnedRealSQLConnection{conn: pinned, raw: tracked.raw, tracked: tracked, registration: registration})
 	}
-	authorizer.tracked = tracked
-	authorizer.pinned = pinned
-	binding := firstAudioGuardProbeBinding{
-		runID: "preflight_20261028", lessonID: identity.LessonID, generation: 1,
-		version: 2, connection: registration.ID, probeID: "probe-" + strings.TrimPrefix(registration.ID, "conn-"),
+	defer func() {
+		for _, pinned := range pins {
+			_ = pinned.Close()
+		}
+	}()
+	if got := registry.nextID.Load(); got != physicalConnections || len(seenIDs) != physicalConnections {
+		t.Fatalf("pinned pool registrations=%d unique=%d; want exactly %d", got, len(seenIDs), physicalConnections)
 	}
-	token, challenge, err := newFirstAudioPhysicalProbeChallenge(binding)
+
+	bindings := make([]firstAudioGuardProbeBinding, 0, physicalConnections)
+	challenges := make([]*firstAudioGuardProbeChallenge, 0, physicalConnections)
+	tokens := make([][]byte, 0, physicalConnections)
+	connectionIDs := make([]string, 0, physicalConnections)
+	probeContracts := make([]firstAudioGuardProbeContract, 0, physicalConnections)
+	rowContracts := make([]firstAudioGuardRowContract, 0, physicalConnections)
+	for _, pinnedIdentity := range identities {
+		binding := firstAudioGuardProbeBinding{
+			runID: "preflight_20261028", lessonID: identity.LessonID, generation: 1,
+			version: 2, connection: pinnedIdentity.registration.ID, probeID: "probe-" + strings.TrimPrefix(pinnedIdentity.registration.ID, "conn-"),
+		}
+		token, challenge, issueErr := newFirstAudioPhysicalProbeChallenge(binding)
+		if issueErr != nil {
+			t.Fatal("issue connection-bound preflight challenge:", issueErr)
+		}
+		bindings = append(bindings, binding)
+		challenges = append(challenges, challenge)
+		tokens = append(tokens, token)
+		connectionIDs = append(connectionIDs, pinnedIdentity.registration.ID)
+		probeContracts = append(probeContracts, challenge.Contract())
+		rowContracts = append(rowContracts, firstAudioGuardRowContract{
+			table: "lessons", operation: "UPDATE",
+			identity: fmt.Sprintf("lesson:%d/conn:%s", binding.lessonID, binding.connection),
+			oldRow:   []byte("typed-projection"), newRow: []byte("typed-projection"),
+		})
+	}
+	preflight, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
+		runID: bindings[0].runID, currentLessonID: bindings[0].lessonID, generation: 1,
+		phase: firstAudioGuardPreflight, version: bindings[0].version, requirePhysicalProbes: true,
+		connectionIDs: connectionIDs, probeContracts: probeContracts, rowContracts: rowContracts,
+	})
 	if err != nil {
-		t.Fatal("issue per-connection preflight challenge:", err)
+		for _, token := range tokens {
+			zeroFirstAudioSecret(token)
+		}
+		t.Fatal("construct all-connection PREFLIGHT context:", err)
 	}
-	session := &firstAudioRealSQLProbeSession{challenge: challenge, binding: binding, tracked: tracked}
+	receipts := make([]*firstAudioGuardProbeReceipt, 0, physicalConnections)
+	for _, challenge := range challenges {
+		receipts = append(receipts, challenge.receipt)
+	}
+	if err := startupTransition.Publish(context.Background(), preflight, firstAudioGuardTransitionEvidence{
+		probeBindings: bindings, probeReceipts: receipts,
+	}); err != nil {
+		for _, token := range tokens {
+			zeroFirstAudioSecret(token)
+		}
+		t.Fatal("publish PREFLIGHT after setup snapshot equality:", err)
+	}
+	if !controller.IsActivePhase(firstAudioGuardPreflight) {
+		t.Fatal("controller did not publish PREFLIGHT")
+	}
+	for i, pinnedIdentity := range identities {
+		authorizer.registryID, authorizer.raw = pinnedIdentity.registration.ID, pinnedIdentity.raw
+		authorizer.tracked, authorizer.pinned = pinnedIdentity.tracked, pinnedIdentity.conn
+		session := &firstAudioRealSQLProbeSession{challenge: challenges[i], binding: bindings[i], tracked: pinnedIdentity.tracked}
+		sessionRef.session.Store(session)
+		runFirstAudioRealSQLConnectionProbe(t, guarded, baseline, authorizer, pinnedIdentity, challenges[i], bindings[i], tokens[i], session, sessionRef, &tokenCalls, &rowGuardCalls, &callbackErr)
+		if !registry.IsLive(pinnedIdentity.registration.ID, pinnedIdentity.raw) {
+			t.Fatalf("successful probe unexpectedly replaced physical connection %s", pinnedIdentity.registration.ID)
+		}
+	}
+	for _, challenge := range challenges {
+		if !challenge.receipt.completeFor(challenge.binding, challenge.digest) {
+			t.Fatalf("connection %s lacks a completed physical readback receipt", challenge.binding.connection)
+		}
+	}
+	if err := authorizer.capturePinnedBaseline(); err != nil {
+		t.Fatal("final all-probes snapshot differs from the isolated setup baseline:", err)
+	}
+	if callbackErr.Load() != nil {
+		t.Fatalf("real SQL callback recorded failure: %v", callbackErr.Load())
+	}
+	if authorizer.denials.Load() != 0 {
+		t.Fatalf("real SQL authorizer denied %d tuples: %v", authorizer.denials.Load(), authorizer.lastDenied.Load())
+	}
+}
+
+func runFirstAudioRealSQLConnectionProbe(t *testing.T, db *gorm.DB, baseline firstAudioDatabaseSnapshot, authorizer *firstAudioRealSQLAuthorizer, pinned firstAudioPinnedRealSQLConnection, challenge *firstAudioGuardProbeChallenge, binding firstAudioGuardProbeBinding, token []byte, session *firstAudioRealSQLProbeSession, sessionRef *firstAudioRealSQLProbeSessionRef, tokenCalls, rowGuardCalls *atomic.Uint64, callbackErr *atomic.Value) {
+	t.Helper()
+	defer zeroFirstAudioSecret(token)
 	sessionRef.session.Store(session)
 	var tx *sql.Tx
 	rolledBack, sealed := false, false
 	defer func() {
-		if !rolledBack && tx != nil && tracked.txActive.Load() {
+		if !rolledBack && tx != nil && session.tracked.txActive.Load() {
 			if cleanupErr := authorizer.rollbackProbeTransaction(); cleanupErr != nil {
-				t.Errorf("failure cleanup could not confirm rollback: %v; discard pinned SQLite connection", cleanupErr)
+				t.Errorf("connection %s rollback cleanup failed: %v", binding.connection, cleanupErr)
 			}
 		}
 		if !sealed {
 			challenge.receipt.fail()
 		}
 		session.txEpoch.Store(0)
-		zeroFirstAudioSecret(token)
 	}()
-
-	beforePinned, err := firstAudioCaptureDatabaseSnapshotOnPinnedConn(guarded, pinned)
-	if err != nil {
-		zeroFirstAudioSecret(token)
-		t.Fatal("capture guarded-pool snapshot before probe:", err)
-	}
-	if beforePinned.SHA256 != baseline.SHA256 {
-		zeroFirstAudioSecret(token)
-		t.Fatalf("guarded pool differs from closed setup baseline before probe: setup=%s guarded=%s", baseline.SHA256, beforePinned.SHA256)
-	}
-	preflight, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
-		runID: binding.runID, currentLessonID: binding.lessonID, generation: binding.generation,
-		phase: firstAudioGuardPreflight, version: binding.version,
-		requirePhysicalProbes: true,
-		connectionIDs:         []string{binding.connection}, probeContracts: []firstAudioGuardProbeContract{challenge.Contract()},
-		rowContracts: []firstAudioGuardRowContract{{table: "lessons", operation: "UPDATE", identity: fmt.Sprintf("lesson:%d/conn:%s", binding.lessonID, binding.connection), oldRow: []byte("typed-projection"), newRow: []byte("typed-projection")}},
-	})
-	if err != nil {
-		zeroFirstAudioSecret(token)
-		t.Fatal("construct per-connection PREFLIGHT context:", err)
-	}
-	if err := startupTransition.Publish(context.Background(), preflight, firstAudioGuardTransitionEvidence{
-		probeBindings: []firstAudioGuardProbeBinding{binding}, probeReceipts: []*firstAudioGuardProbeReceipt{challenge.receipt},
-	}); err != nil {
-		zeroFirstAudioSecret(token)
-		t.Fatal("publish PREFLIGHT after setup snapshot equality:", err)
-	}
-	if !challenge.receipt.armed.Load() || !controller.IsActivePhase(firstAudioGuardPreflight) {
-		zeroFirstAudioSecret(token)
-		t.Fatal("controller did not arm the receipt in PREFLIGHT")
+	before, err := firstAudioCaptureDatabaseSnapshotOnPinnedConn(db, pinned.conn)
+	if err != nil || before.SHA256 != baseline.SHA256 || !reflect.DeepEqual(before.Canonical, baseline.Canonical) {
+		t.Fatalf("connection %s pre-probe snapshot differs from setup: hash=%s err=%v", binding.connection, before.SHA256, err)
 	}
 	if err := authorizer.capturePinnedBaseline(); err != nil {
-		zeroFirstAudioSecret(token)
-		t.Fatal("capture PREFLIGHT baseline on pinned connection:", err)
+		t.Fatalf("connection %s capture PREFLIGHT baseline: %v", binding.connection, err)
 	}
-
-	err = authorizer.withPermit(firstAudioSQLPermitProbeSQL, false, func() error {
+	tokenBefore := tokenCalls.Load()
+	if err := authorizer.withPermit(firstAudioSQLPermitProbeSQL, false, func() error {
 		var beginErr error
-		tx, beginErr = pinned.BeginTx(context.Background(), nil)
+		tx, beginErr = pinned.conn.BeginTx(context.Background(), nil)
 		return beginErr
-	})
-	if err != nil {
-		zeroFirstAudioSecret(token)
-		t.Fatalf("begin pinned preflight transaction under PROBE_SQL: %v last_denial=%v", err, authorizer.lastDenied.Load())
+	}); err != nil {
+		t.Fatalf("connection %s begin probe transaction: %v denied=%v", binding.connection, err, authorizer.lastDenied.Load())
 	}
-	session = sessionRef.session.Load()
-	session.txEpoch.Store(tracked.txEpoch.Load())
-	if !tracked.txActive.Load() || session.txEpoch.Load() == 0 {
-		t.Fatal("tracked SQLite transaction state did not advance after BeginTx")
+	session.txEpoch.Store(session.tracked.txEpoch.Load())
+	if !session.tracked.txActive.Load() || session.txEpoch.Load() == 0 {
+		t.Fatalf("connection %s transaction epoch did not advance", binding.connection)
 	}
 	authorizer.txEpoch.Store(session.txEpoch.Load())
 	authorizer.activeTx.Store(tx)
 	if err := challenge.BindTransactionEpoch(session.txEpoch.Load()); err != nil {
-		t.Fatal("bind challenge to the active tracked transaction epoch:", err)
+		t.Fatal("bind physical transaction epoch:", err)
 	}
 	authorizer.cleanupAvailable.Store(true)
 	var tokenAccepted bool
@@ -730,74 +797,51 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 		return tx.QueryRowContext(context.Background(), "SELECT first_audio_probe(?)", token).Scan(&tokenAccepted)
 	})
 	if err != nil || !tokenAccepted {
-		zeroFirstAudioSecret(token)
-		controller.Terminalize()
-		t.Fatalf("consume same-connection token: accepted=%v err=%v callback=%v authorizer=%v", tokenAccepted, err, callbackErr.Load(), authorizer.lastDenied.Load())
+		t.Fatalf("connection %s token rejected: accepted=%v err=%v callback=%v denied=%v", binding.connection, tokenAccepted, err, callbackErr.Load(), authorizer.lastDenied.Load())
 	}
 	zeroFirstAudioSecret(token)
-	if tokenCalls.Load() != 1 || firstAudioGuardProbeReceiptState(challenge.receipt.state.Load()) != firstAudioGuardProbeTokenConsumed {
-		t.Fatalf("token receipt state=%d callbacks=%d, want one consumed callback", challenge.receipt.state.Load(), tokenCalls.Load())
+	if tokenCalls.Load() != tokenBefore+1 || firstAudioGuardProbeReceiptState(challenge.receipt.state.Load()) != firstAudioGuardProbeTokenConsumed {
+		t.Fatalf("connection %s token callbacks delta=%d receipt=%d", binding.connection, tokenCalls.Load()-tokenBefore, challenge.receipt.state.Load())
 	}
-
-	projectionValues, err := authorizer.readTargetLessonProjection(tx, identity.LessonID)
-	if err != nil {
-		controller.Terminalize()
-		t.Fatalf("read fixed typed lesson projection: %v last_denial=%v", err, authorizer.lastDenied.Load())
+	projection, err := authorizer.readTargetLessonProjection(tx, binding.lessonID)
+	if err != nil || len(projection) != 36 {
+		t.Fatalf("connection %s typed projection len=%d err=%v", binding.connection, len(projection), err)
 	}
-	if len(projectionValues) != 36 {
-		t.Fatalf("typed lesson projection values=%d, want 36", len(projectionValues))
-	}
-	session.expectedProjection.Store(&firstAudioExpectedTypedProjection{values: normalizeFirstAudioTypedSQLitePairs(projectionValues)})
-
+	session.expectedProjection.Store(&firstAudioExpectedTypedProjection{values: normalizeFirstAudioTypedSQLitePairs(projection)})
+	guardBefore := rowGuardCalls.Load()
 	var result sql.Result
 	err = authorizer.withPermit(firstAudioSQLPermitProbeSQL, true, func() error {
 		var updateErr error
-		result, updateErr = tx.ExecContext(context.Background(), "UPDATE main.lessons SET id=id WHERE id=?", identity.LessonID)
+		result, updateErr = tx.ExecContext(context.Background(), "UPDATE main.lessons SET id=id WHERE id=?", binding.lessonID)
 		return updateErr
 	})
 	if err != nil {
-		challenge.receipt.fail()
-		controller.Terminalize()
-		t.Fatalf("execute fixed lesson no-op update: %v callback=%v authorizer=%v", err, callbackErr.Load(), authorizer.lastDenied.Load())
+		t.Fatalf("connection %s exact probe update: %v callback=%v denied=%v", binding.connection, err, callbackErr.Load(), authorizer.lastDenied.Load())
 	}
 	matched, err := result.RowsAffected()
 	if err != nil || matched != 1 {
-		challenge.receipt.fail()
-		t.Fatalf("fixed no-op update matched=%d err=%v want=1", matched, err)
+		t.Fatalf("connection %s no-op UPDATE rows=%d err=%v", binding.connection, matched, err)
 	}
-	if rowGuardCalls.Load() != 1 || firstAudioGuardProbeReceiptState(challenge.receipt.state.Load()) != firstAudioGuardProbeRowGuardObserved {
-		challenge.receipt.fail()
-		t.Fatalf("row guard calls=%d receipt state=%d callback=%v", rowGuardCalls.Load(), challenge.receipt.state.Load(), callbackErr.Load())
+	if rowGuardCalls.Load() != guardBefore+1 || firstAudioGuardProbeReceiptState(challenge.receipt.state.Load()) != firstAudioGuardProbeRowGuardObserved {
+		t.Fatalf("connection %s row guard callbacks delta=%d receipt=%d", binding.connection, rowGuardCalls.Load()-guardBefore, challenge.receipt.state.Load())
 	}
 	assertFirstAudioTypedProjectionCallback(t, firstAudioRowGuardCapturedArgs(t, sessionRef))
-
 	if err := authorizer.rollbackProbeTransaction(); err != nil {
-		challenge.receipt.fail()
-		controller.Terminalize()
-		t.Fatalf("explicit preflight rollback: %v authorizer=%v", err, authorizer.lastDenied.Load())
+		t.Fatalf("connection %s explicit rollback: %v", binding.connection, err)
 	}
 	rolledBack = true
 	session.txEpoch.Store(0)
 	if err := newFirstAudioGuardProbeExecutor(challenge).VerifyRollback(challenge.receipt, binding, nil); err != nil {
-		t.Fatal("seal receipt after confirmed rollback:", err)
+		t.Fatalf("connection %s rollback receipt: %v", binding.connection, err)
 	}
 	if challenge.receipt.completeFor(binding, challenge.digest) {
-		t.Fatal("rollback receipt became consumable before snapshot readback")
+		t.Fatalf("connection %s receipt completed before readback", binding.connection)
 	}
 	if err := authorizer.confirmSnapshotReadback(challenge); err != nil {
-		t.Fatal("confirm full snapshot readback on pinned connection:", err)
+		t.Fatalf("connection %s full snapshot readback: %v", binding.connection, err)
 	}
 	if !challenge.receipt.completeFor(binding, challenge.digest) {
-		t.Fatal("real SQL probe receipt was not complete after rollback and full snapshot readback")
-	}
-	if !registry.IsLive(registration.ID, raw) {
-		t.Fatal("successful preflight unexpectedly replaced its pinned physical connection")
-	}
-	if callbackErr.Load() != nil {
-		t.Fatalf("real SQL callback recorded failure: %v", callbackErr.Load())
-	}
-	if authorizer.denials.Load() != 0 {
-		t.Fatalf("real SQL authorizer denied %d tuples: %v", authorizer.denials.Load(), authorizer.lastDenied.Load())
+		t.Fatalf("connection %s receipt incomplete after readback", binding.connection)
 	}
 	sealed = true
 }
