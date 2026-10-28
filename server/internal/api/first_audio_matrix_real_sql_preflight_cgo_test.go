@@ -112,7 +112,10 @@ func (p *firstAudioRealSQLAuthorizer) install(conn *sqlite3.SQLiteConn) error {
 				allowed = firstAudioStartupAuthorizeAt(firstAudioStartupApp, p.reads, action, arg1, arg2, databaseName, triggerName)
 			}
 		case p.controller.IsActivePhase(firstAudioGuardPreflight):
-			allowed = firstAudioAuthorizePreflightTuple(firstAudioSQLPermit(p.permit.Load()), p.reads, action, arg1, arg2, databaseName, triggerName)
+			// The coordinator may move this test authorizer's selected physical
+			// connection only while the pool is pinned and operations are serial.
+			// A permit for one connection must never authorize SQL on a sibling.
+			allowed = p.registryID == registration.ID && firstAudioAuthorizePreflightTuple(firstAudioSQLPermit(p.permit.Load()), p.reads, action, arg1, arg2, databaseName, triggerName)
 		}
 		if allowed {
 			return sqlite3.SQLITE_OK
@@ -671,6 +674,16 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 	if got := registry.nextID.Load(); got != physicalConnections || len(seenIDs) != physicalConnections {
 		t.Fatalf("pinned pool registrations=%d unique=%d; want exactly %d", got, len(seenIDs), physicalConnections)
 	}
+	// Compare every pinned connection to the setup baseline while startup
+	// snapshot reads are still admitted. PREFLIGHT readback below is separately
+	// authorized through each connection's one-use SNAPSHOT_READ permit.
+	for _, pinnedIdentity := range identities {
+		authorizer.registryID, authorizer.raw = pinnedIdentity.registration.ID, pinnedIdentity.raw
+		snapshot, snapshotErr := firstAudioCaptureDatabaseSnapshotOnPinnedConn(guarded, pinnedIdentity.conn)
+		if snapshotErr != nil || snapshot.SHA256 != baseline.SHA256 || !reflect.DeepEqual(snapshot.Canonical, baseline.Canonical) {
+			t.Fatalf("connection %s startup snapshot differs from setup: hash=%s err=%v", pinnedIdentity.registration.ID, snapshot.SHA256, snapshotErr)
+		}
+	}
 
 	bindings := make([]firstAudioGuardProbeBinding, 0, physicalConnections)
 	challenges := make([]*firstAudioGuardProbeChallenge, 0, physicalConnections)
@@ -729,7 +742,7 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 		authorizer.tracked, authorizer.pinned = pinnedIdentity.tracked, pinnedIdentity.conn
 		session := &firstAudioRealSQLProbeSession{challenge: challenges[i], binding: bindings[i], tracked: pinnedIdentity.tracked}
 		sessionRef.session.Store(session)
-		runFirstAudioRealSQLConnectionProbe(t, guarded, baseline, authorizer, pinnedIdentity, challenges[i], bindings[i], tokens[i], session, sessionRef, &tokenCalls, &rowGuardCalls, &callbackErr)
+		runFirstAudioRealSQLConnectionProbe(t, authorizer, pinnedIdentity, challenges[i], bindings[i], tokens[i], session, sessionRef, &tokenCalls, &rowGuardCalls, &callbackErr)
 		if !registry.IsLive(pinnedIdentity.registration.ID, pinnedIdentity.raw) {
 			t.Fatalf("successful probe unexpectedly replaced physical connection %s", pinnedIdentity.registration.ID)
 		}
@@ -750,7 +763,7 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 	}
 }
 
-func runFirstAudioRealSQLConnectionProbe(t *testing.T, db *gorm.DB, baseline firstAudioDatabaseSnapshot, authorizer *firstAudioRealSQLAuthorizer, pinned firstAudioPinnedRealSQLConnection, challenge *firstAudioGuardProbeChallenge, binding firstAudioGuardProbeBinding, token []byte, session *firstAudioRealSQLProbeSession, sessionRef *firstAudioRealSQLProbeSessionRef, tokenCalls, rowGuardCalls *atomic.Uint64, callbackErr *atomic.Value) {
+func runFirstAudioRealSQLConnectionProbe(t *testing.T, authorizer *firstAudioRealSQLAuthorizer, pinned firstAudioPinnedRealSQLConnection, challenge *firstAudioGuardProbeChallenge, binding firstAudioGuardProbeBinding, token []byte, session *firstAudioRealSQLProbeSession, sessionRef *firstAudioRealSQLProbeSessionRef, tokenCalls, rowGuardCalls *atomic.Uint64, callbackErr *atomic.Value) {
 	t.Helper()
 	defer zeroFirstAudioSecret(token)
 	sessionRef.session.Store(session)
@@ -767,10 +780,6 @@ func runFirstAudioRealSQLConnectionProbe(t *testing.T, db *gorm.DB, baseline fir
 		}
 		session.txEpoch.Store(0)
 	}()
-	before, err := firstAudioCaptureDatabaseSnapshotOnPinnedConn(db, pinned.conn)
-	if err != nil || before.SHA256 != baseline.SHA256 || !reflect.DeepEqual(before.Canonical, baseline.Canonical) {
-		t.Fatalf("connection %s pre-probe snapshot differs from setup: hash=%s err=%v", binding.connection, before.SHA256, err)
-	}
 	if err := authorizer.capturePinnedBaseline(); err != nil {
 		t.Fatalf("connection %s capture PREFLIGHT baseline: %v", binding.connection, err)
 	}
