@@ -1,7 +1,7 @@
 # First-Audio Production Audit Writer Probe SDD
 
 Date: 2026-10-28
-Status: design and code review approved; implementation updated after first CI regression; rerun pending.
+Status: design and code review approved; implementation and cross-platform CI passed.
 
 ## Goal
 
