@@ -19,7 +19,8 @@
 
 - `go test ./internal/api -run '^TestFirstAudioJourney' -count=1 -timeout=90s`：通过，约 21 秒。
 - `go test ./internal/api -run '^TestFirstAudio' -count=1 -timeout=3m`：通过，约 57 秒。
-- `go test -race ./internal/api -run '^TestFirstAudioJourneyAuditGuard' -count=1 -timeout=3m`：Windows 上等待超过 5 分钟仍无结果，手动停止；不记为通过。GCC 已安装，但 Linux race 结果仍待 CI。
-- `go vet ./internal/api`：本机尝试无干净退出或输出，未记为通过。
+- 本机 `go test -race ./internal/api -run '^TestFirstAudioJourneyAuditGuard' -count=1 -timeout=3m`：Windows 上等待超过 5 分钟仍无结果，手动停止；不记为通过。
+- 本机 `go vet ./internal/api`：未能在本机干净完成；不记为通过。
+- GitHub Actions（提交 `b58594e30f9ef78ac8e00f73c76e6a5e5a76e423`，运行 [40666344798](https://github.com/l17728/en-words/actions/runs/40666344798)）：`protocol` 与 `windows-boundaries` 均成功。`protocol` 在 Linux 上完成定向 journey 测试、审计 Guard race 测试和 `go vet ./internal/api`；Windows job 完成定向边界测试。
 
 评审结论仅覆盖该 SQLite 行 Guard 切片。它不构成 guarded `api.App`、双进程 Playwright、跨复位竞态、课堂性能或真人试点验收。
