@@ -13,7 +13,11 @@
 
 修订后，authorizer manifest 加入 `ROLLBACK/AUDIT_CLEANUP` 并与运行时捕获集合精确比较；permit 按事务 epoch 消费一次，事务 Begin 成功后才启用写操作，清理失败会 retire 连接并关闭池。预期行在 SQL 前校验，行触发器仍逐字段比较 SQLite storage class 和原始 TEXT。新增了三个允许工具的正例、每字段变异、BLOB 类型、wrong-row replay、ID 序列/错配、UPDATE/DELETE/duplicate/REPLACE 快照、ID 查询/COMMIT 失败回滚、epoch wrap 和部分 schema extension 拒绝用例。
 
+后续复核发现清理失败虽有退役代码路径，但没有强制 ROLLBACK 失败的执行回归。已新增 authorizer fault injection，专门拒绝 cleanup permit 下的 `ROLLBACK`，并断言候选终结、连接注册退役、pool 关闭、无持久行且后续 permit 被拒；架构和安全复核通过。
+
 一轮代码复审又发现 commit 错误后的 defer 过度依赖 `tx.Error`，以及 UTC/5 秒时长限制超出 Registry 事实。现已改为依据活动事务尝试回滚；不确定时 retire 连接。时间按瞬间比较冻结窗口并保留 SQLite 时间字节，允许本地时区偏移；DurationMs 遵循 Registry 的 `>=1ms` 合同，不设人为上限。二轮架构、安全、后端/测试性复审均通过。
+
+该时长结论只适用于 standalone guard probe：它核对正值及调用方绑定的精确值。未来 JOURNEY adapter 仍须先执行 docs/77 的 `1..60000 ms` 业务合同；standalone probe 不放宽该上层约束。
 
 ## 验证证据
 
@@ -22,5 +26,6 @@
 - 本机 `go test -race ./internal/api -run '^TestFirstAudioJourneyAuditGuard' -count=1 -timeout=3m`：Windows 上等待超过 5 分钟仍无结果，手动停止；不记为通过。
 - 本机 `go vet ./internal/api`：未能在本机干净完成；不记为通过。
 - GitHub Actions（提交 `b58594e30f9ef78ac8e00f73c76e6a5e5a76e423`，运行 [40666344798](https://github.com/l17728/en-words/actions/runs/40666344798)）：`protocol` 与 `windows-boundaries` 均成功。`protocol` 在 Linux 上完成定向 journey 测试、审计 Guard race 测试和 `go vet ./internal/api`；Windows job 完成定向边界测试。
+- GitHub Actions（提交 `99b1c7daa062421ca0673901022428457bdb9c4a`，运行 [40669687960](https://github.com/l17728/en-words/actions/runs/40669687960)）：Linux `protocol` 与 Windows `windows-boundaries` 均成功；Linux 执行了新的强制 ROLLBACK 拒绝回归以及 audit-guard race、`go vet ./internal/api`。本机后来发现连 `go version` 都可能无输出挂起，未将该本机尝试记作测试结果。
 
 评审结论仅覆盖该 SQLite 行 Guard 切片。它不构成 guarded `api.App`、双进程 Playwright、跨复位竞态、课堂性能或真人试点验收。
