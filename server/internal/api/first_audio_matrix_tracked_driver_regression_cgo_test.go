@@ -284,6 +284,37 @@ func TestFirstAudioSQLiteConnectionRegistryRetirementWaitsForLiveOperation(t *te
 	}
 }
 
+func TestFirstAudioSQLiteConnectionRegistryWithLiveRegistrationsIsAtomicAndExact(t *testing.T) {
+	registry := newFirstAudioSQLiteConnectionRegistry()
+	connections := make([]*sqlite3.SQLiteConn, 2)
+	registrations := make(map[string]*sqlite3.SQLiteConn, len(connections))
+	for i := range connections {
+		conn, err := (&sqlite3.SQLiteDriver{}).Open(":memory:")
+		if err != nil {
+			t.Fatal("open registry fixture connection:", err)
+		}
+		t.Cleanup(func() { _ = conn.Close() })
+		var ok bool
+		connections[i], ok = conn.(*sqlite3.SQLiteConn)
+		if !ok {
+			t.Fatalf("unexpected SQLite fixture connection type %T", conn)
+		}
+		registration, err := registry.Register(connections[i])
+		if err != nil {
+			t.Fatal("register fixture connection:", err)
+		}
+		registrations[registration.ID] = connections[i]
+	}
+	called := 0
+	if err := registry.WithLiveRegistrations(registrations, func() error { called++; return nil }); err != nil || called != 1 {
+		t.Fatalf("live registration set callback count=%d err=%v", called, err)
+	}
+	registry.Retire(connections[1])
+	if err := registry.WithLiveRegistrations(registrations, func() error { called++; return nil }); err == nil || called != 1 {
+		t.Fatalf("stale registration set was accepted: callback_count=%d err=%v", called, err)
+	}
+}
+
 func assertDriverOptionalInterfaces(t *testing.T, conn *firstAudioTrackedSQLiteConn) {
 	t.Helper()
 	if conn == nil {

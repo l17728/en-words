@@ -218,6 +218,43 @@ func TestFirstAudioGuardContextDeepCopiesInputsAndAccessors(t *testing.T) {
 	}
 }
 
+func TestFirstAudioGuardContextPublisherRetainsPhysicalProbeMode(t *testing.T) {
+	publisher := &firstAudioGuardContextPublisher{}
+	driver, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
+		runID: "run-0001", currentLessonID: 101, generation: 1,
+		phase: firstAudioGuardDriverProbe, version: 0,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := publisher.Publish(driver); err != nil {
+		t.Fatal("publish initial driver context:", err)
+	}
+	startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
+		runID: "run-0001", currentLessonID: 101, generation: 1,
+		phase: firstAudioGuardStartupProbe, version: 1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := publisher.publish(startup, true); err != nil {
+		t.Fatal("advance to startup fixture context:", err)
+	}
+	preflightSpec := firstAudioValidPreflightSpec(2)
+	preflightSpec.requirePhysicalProbes = true
+	preflight, err := newFirstAudioGuardContext(preflightSpec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := publisher.Publish(preflight); err != nil {
+		t.Fatal("publish physical preflight context:", err)
+	}
+	active := publisher.Load()
+	if active == nil || !active.requirePhysicalProbes {
+		t.Fatal("published immutable context lost its physical probe mode")
+	}
+}
+
 func TestFirstAudioGuardContextPublisherMonotonicAndNilSafe(t *testing.T) {
 	var publisher firstAudioGuardContextPublisher
 	if err := publisher.Publish(nil); !errors.Is(err, errFirstAudioGuardContextInvalid) {

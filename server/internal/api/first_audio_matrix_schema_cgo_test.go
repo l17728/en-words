@@ -4,6 +4,7 @@ package api
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -33,8 +34,25 @@ type firstAudioSchemaManifest struct {
 
 func firstAudioReadSchemaManifest(db *gorm.DB) (firstAudioSchemaManifest, []byte, error) {
 	objects := make([]firstAudioSQLiteObject, 0)
-	err := db.Raw(`SELECT type, name, tbl_name, COALESCE(sql, '') AS sql FROM sqlite_master ORDER BY type, name, tbl_name`).Scan(&objects).Error
+	rows, err := db.Raw(`SELECT type, name, tbl_name, sql FROM sqlite_master ORDER BY type, name, tbl_name`).Rows()
 	if err != nil {
+		return firstAudioSchemaManifest{}, nil, err
+	}
+	for rows.Next() {
+		var object firstAudioSQLiteObject
+		var sqlText sql.NullString
+		if err := rows.Scan(&object.Type, &object.Name, &object.Table, &sqlText); err != nil {
+			_ = rows.Close()
+			return firstAudioSchemaManifest{}, nil, fmt.Errorf("scan sqlite_master object: %w", err)
+		}
+		object.SQL = sqlText.String
+		objects = append(objects, object)
+	}
+	if err := rows.Err(); err != nil {
+		_ = rows.Close()
+		return firstAudioSchemaManifest{}, nil, err
+	}
+	if err := rows.Close(); err != nil {
 		return firstAudioSchemaManifest{}, nil, err
 	}
 	canonical, err := json.Marshal(objects)
@@ -65,6 +83,22 @@ func firstAudioValidateSchemaManifest(db *gorm.DB) error {
 		return fmt.Errorf("checked-in schema inventory is incomplete\nactual manifest follows:\n%s", actualJSON)
 	}
 	if !reflect.DeepEqual(expected, actual) {
+		// The reviewed lesson probe triggers are a separately pinned extension
+		// to the application schema manifest. Accept only when removing that
+		// exact trigger namespace restores the base manifest and the dedicated
+		// trigger manifest validates all three objects and their complete DDL.
+		core := firstAudioSchemaManifest{FormatVersion: actual.FormatVersion}
+		for _, object := range actual.Objects {
+			if object.Type == "trigger" && strings.HasPrefix(object.Name, "fa_lessons_guard_") {
+				continue
+			}
+			core.Objects = append(core.Objects, object)
+		}
+		if reflect.DeepEqual(expected.Objects, core.Objects) {
+			if err := validateFirstAudioLessonProbeTriggerDDL(db); err == nil {
+				return nil
+			}
+		}
 		expectedJSON, _ := json.MarshalIndent(expected, "", "  ")
 		return fmt.Errorf("SQLite schema drift: expected sha256=%s (%d objects), actual sha256=%s (%d objects)\nexpected:\n%s\nactual:\n%s", expected.SHA256, len(expected.Objects), actual.SHA256, len(actual.Objects), expectedJSON, actualJSON)
 	}
@@ -238,6 +272,33 @@ func TestFirstAudioMatrixSchemaManifestRejectsUnexpectedObject(t *testing.T) {
 		t.Fatal("schema validator accepted an unreviewed SQLite object")
 	} else if !strings.Contains(err.Error(), "SQLite schema drift") {
 		t.Fatalf("schema mismatch failed for the wrong reason: %v", err)
+	}
+}
+
+func TestFirstAudioMatrixSchemaManifestAcceptsOnlyPinnedLessonProbeTriggerExtension(t *testing.T) {
+	db, err := store.Open(filepath.Join(t.TempDir(), "schema-lesson-extension.db"))
+	if err != nil {
+		t.Fatal("open migrated schema fixture:", err)
+	}
+	pool, err := db.DB()
+	if err != nil {
+		t.Fatal("get migrated schema pool:", err)
+	}
+	defer pool.Close()
+	if err := installFirstAudioStartupGuards(db); err != nil {
+		t.Fatal("install expected startup guards:", err)
+	}
+	if err := installFirstAudioLessonProbeTriggers(db); err != nil {
+		t.Fatal("install pinned lesson probe triggers:", err)
+	}
+	if err := firstAudioValidateSchemaManifest(db); err != nil {
+		t.Fatalf("schema validator rejected the exact reviewed trigger extension: %v", err)
+	}
+	if err := db.Exec(`CREATE TRIGGER fa_lessons_guard_extra BEFORE UPDATE ON lessons BEGIN SELECT 1; END`).Error; err != nil {
+		t.Fatal("install unreviewed extra trigger:", err)
+	}
+	if err := firstAudioValidateSchemaManifest(db); err == nil {
+		t.Fatal("schema validator accepted an extra trigger in the reviewed namespace")
 	}
 }
 

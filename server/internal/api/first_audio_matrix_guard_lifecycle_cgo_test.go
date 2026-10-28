@@ -103,17 +103,22 @@ const (
 	firstAudioGuardProbeTokenConsumed
 	firstAudioGuardProbeRowGuardObserved
 	firstAudioGuardProbeRollbackVerified
+	firstAudioGuardProbeReadbackVerified
 	firstAudioGuardProbeFailed
 )
 
 type firstAudioGuardProbeReceipt struct {
-	binding      firstAudioGuardProbeBinding
-	digest       [sha256.Size]byte
-	state        atomic.Uint32
-	denials      atomic.Uint64
-	armed        atomic.Bool
-	active       atomic.Uint64
-	activityDone chan struct{}
+	binding                  firstAudioGuardProbeBinding
+	digest                   [sha256.Size]byte
+	state                    atomic.Uint32
+	txEpoch                  atomic.Uint64
+	readbackRaw              atomic.Pointer[sqlite3.SQLiteConn]
+	physicalReadback         atomic.Bool
+	requiresPhysicalReadback bool
+	denials                  atomic.Uint64
+	armed                    atomic.Bool
+	active                   atomic.Uint64
+	activityDone             chan struct{}
 }
 
 const firstAudioGuardProbeClosedBit uint64 = 1 << 63
@@ -123,10 +128,20 @@ type firstAudioGuardProbeChallenge struct {
 	binding firstAudioGuardProbeBinding
 	digest  [sha256.Size]byte
 	receipt *firstAudioGuardProbeReceipt
+	txEpoch atomic.Uint64
 }
 
 func newFirstAudioGuardProbeChallenge(binding firstAudioGuardProbeBinding) ([]byte, *firstAudioGuardProbeChallenge, error) {
 	return newFirstAudioGuardProbeChallengeFrom(rand.Reader, binding)
+}
+
+func newFirstAudioPhysicalProbeChallenge(binding firstAudioGuardProbeBinding) ([]byte, *firstAudioGuardProbeChallenge, error) {
+	token, challenge, err := newFirstAudioGuardProbeChallenge(binding)
+	if err != nil {
+		return nil, nil, err
+	}
+	challenge.receipt.requiresPhysicalReadback = true
+	return token, challenge, nil
 }
 
 func newFirstAudioGuardProbeChallengeFrom(source io.Reader, binding firstAudioGuardProbeBinding) ([]byte, *firstAudioGuardProbeChallenge, error) {
@@ -174,6 +189,28 @@ func (c *firstAudioGuardProbeChallenge) Consume(token []byte, supplied firstAudi
 	return c.consumeAdmitted(token)
 }
 
+// BindTransactionEpoch ties a real-SQL probe challenge to the tracked driver's
+// current transaction epoch. The logical lifecycle tests may continue using
+// Consume directly; the real SQLite callbacks must use the transaction-bound
+// methods below.
+func (c *firstAudioGuardProbeChallenge) BindTransactionEpoch(epoch uint64) error {
+	if c == nil || c.receipt == nil || epoch == 0 || firstAudioGuardProbeReceiptState(c.receipt.state.Load()) != firstAudioGuardProbeIssued || !c.txEpoch.CompareAndSwap(0, epoch) {
+		return errFirstAudioGuardProbeRejected
+	}
+	c.receipt.txEpoch.Store(epoch)
+	return nil
+}
+
+func (c *firstAudioGuardProbeChallenge) ConsumeInTransaction(token []byte, supplied firstAudioGuardProbeBinding, epoch uint64) error {
+	if c == nil || epoch == 0 || c.txEpoch.Load() != epoch {
+		if c != nil && c.receipt != nil {
+			c.receipt.denyAttempt()
+		}
+		return errFirstAudioGuardProbeRejected
+	}
+	return c.Consume(token, supplied)
+}
+
 // consumeAdmitted models a callback that crossed its gate before a drain and
 // finished its in-flight work after admission closed.
 func (c *firstAudioGuardProbeChallenge) consumeAdmitted(token []byte) error {
@@ -205,6 +242,16 @@ func (c *firstAudioGuardProbeChallenge) ObserveRowGuard(supplied firstAudioGuard
 	return nil
 }
 
+func (c *firstAudioGuardProbeChallenge) ObserveRowGuardInTransaction(supplied firstAudioGuardProbeBinding, epoch uint64) error {
+	if c == nil || epoch == 0 || c.txEpoch.Load() != epoch {
+		if c != nil && c.receipt != nil {
+			c.receipt.denyAttempt()
+		}
+		return errFirstAudioGuardProbeRejected
+	}
+	return c.ObserveRowGuard(supplied)
+}
+
 type firstAudioGuardProbeExecutor struct {
 	binding firstAudioGuardProbeBinding
 	receipt *firstAudioGuardProbeReceipt
@@ -234,6 +281,24 @@ func (e *firstAudioGuardProbeExecutor) VerifyRollback(receipt *firstAudioGuardPr
 	return nil
 }
 
+func firstAudioConfirmLogicalReadbackForTest(challenge *firstAudioGuardProbeChallenge, snapshotsEqual bool) error {
+	if challenge == nil || challenge.receipt == nil || challenge.receipt.requiresPhysicalReadback || challenge.txEpoch.Load() != 0 || challenge.receipt.txEpoch.Load() != 0 || !snapshotsEqual {
+		if challenge != nil && challenge.receipt != nil {
+			challenge.receipt.denyAttempt()
+		}
+		return errFirstAudioGuardProbeRejected
+	}
+	if !challenge.receipt.beginProbeActivity() {
+		return errFirstAudioGuardProbeRejected
+	}
+	defer challenge.receipt.endProbeActivity()
+	if challenge.receipt.denials.Load() != 0 || !challenge.receipt.state.CompareAndSwap(uint32(firstAudioGuardProbeRollbackVerified), uint32(firstAudioGuardProbeReadbackVerified)) {
+		challenge.receipt.deny()
+		return errFirstAudioGuardProbeRejected
+	}
+	return nil
+}
+
 func (r *firstAudioGuardProbeReceipt) fail() {
 	if r == nil {
 		return
@@ -250,7 +315,7 @@ func (r *firstAudioGuardProbeReceipt) fail() {
 }
 
 func (r *firstAudioGuardProbeReceipt) completeFor(binding firstAudioGuardProbeBinding, digest [sha256.Size]byte) bool {
-	return r != nil && sameFirstAudioProbeBinding(r.binding, binding) && subtle.ConstantTimeCompare(r.digest[:], digest[:]) == 1 && r.denials.Load() == 0 && firstAudioGuardProbeReceiptState(r.state.Load()) == firstAudioGuardProbeRollbackVerified
+	return r != nil && sameFirstAudioProbeBinding(r.binding, binding) && subtle.ConstantTimeCompare(r.digest[:], digest[:]) == 1 && r.denials.Load() == 0 && firstAudioGuardProbeReceiptState(r.state.Load()) == firstAudioGuardProbeReadbackVerified
 }
 
 func (r *firstAudioGuardProbeReceipt) deny() {
@@ -498,6 +563,27 @@ func (c *firstAudioGuardController) IsTerminal() bool {
 
 func (c *firstAudioGuardController) isTerminalLocked() bool {
 	return c.terminal || c.callbackTerminal.Load() || c.publisher.callbackTerminal.Load()
+}
+
+func firstAudioPhysicalReadbackRegistrations(receipts []*firstAudioGuardProbeReceipt) (map[string]*sqlite3.SQLiteConn, error) {
+	registrations := make(map[string]*sqlite3.SQLiteConn)
+	for _, receipt := range receipts {
+		if receipt == nil {
+			return nil, errFirstAudioGuardContextTransition
+		}
+		if !receipt.physicalReadback.Load() {
+			if receipt.requiresPhysicalReadback || receipt.txEpoch.Load() != 0 {
+				return nil, errFirstAudioGuardContextTransition
+			}
+			continue // Pure logical lifecycle fixtures have no physical SQL connection.
+		}
+		raw := receipt.readbackRaw.Load()
+		if raw == nil || receipt.binding.connection == "" {
+			return nil, errFirstAudioGuardContextTransition
+		}
+		registrations[receipt.binding.connection] = raw
+	}
+	return registrations, nil
 }
 
 // TerminalizeFromSQLiteCallback is safe in an authorizer/UDF callback: it
@@ -779,7 +865,22 @@ func (l *firstAudioGuardTransitionLease) Publish(ctx context.Context, candidate 
 		c.mu.Unlock()
 		return errFirstAudioGuardContextTransition
 	}
-	err := c.publisher.Publish(candidate)
+	publish := func() error { return c.publisher.Publish(candidate) }
+	var err error
+	if candidate.phase == firstAudioGuardJourney && len(receipts) > 0 {
+		registrations, registrationErr := firstAudioPhysicalReadbackRegistrations(receipts)
+		if registrationErr != nil {
+			c.mu.Unlock()
+			return registrationErr
+		}
+		if len(registrations) > 0 {
+			err = c.connections.WithLiveRegistrations(registrations, publish)
+		} else {
+			err = publish()
+		}
+	} else {
+		err = publish()
+	}
 	c.mu.Unlock()
 	return err
 }
@@ -947,7 +1048,7 @@ func (e firstAudioGuardTransitionEvidence) preflightReceiptsFor(candidate *first
 	for i, binding := range e.probeBindings {
 		contract, ok := candidate.probes[binding.connection]
 		receipt := e.probeReceipts[i]
-		if !ok || !binding.matchesContract(contract) || receipt == nil || !sameFirstAudioProbeBinding(receipt.binding, binding) || subtle.ConstantTimeCompare(receipt.digest[:], contract.tokenDigest[:]) != 1 || receipt.armed.Load() || firstAudioGuardProbeReceiptState(receipt.state.Load()) != firstAudioGuardProbeIssued || receipt.active.Load() != 0 {
+		if !ok || !binding.matchesContract(contract) || receipt == nil || receipt.requiresPhysicalReadback != candidate.requirePhysicalProbes || !sameFirstAudioProbeBinding(receipt.binding, binding) || subtle.ConstantTimeCompare(receipt.digest[:], contract.tokenDigest[:]) != 1 || receipt.armed.Load() || firstAudioGuardProbeReceiptState(receipt.state.Load()) != firstAudioGuardProbeIssued || receipt.active.Load() != 0 {
 			return nil, false
 		}
 		if _, exists := registered[binding.connection]; exists {

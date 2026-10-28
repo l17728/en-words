@@ -32,18 +32,19 @@ const (
 )
 
 type firstAudioGuardContextSpec struct {
-	runID           string
-	currentLessonID int64
-	priorLessonID   int64
-	nextLessonID    int64
-	generation      uint64
-	phase           firstAudioGuardContextPhase
-	version         uint64
-	oldRuntimeKey   string
-	newRuntimeKey   string
-	connectionIDs   []string
-	probeContracts  []firstAudioGuardProbeContract
-	rowContracts    []firstAudioGuardRowContract
+	runID                 string
+	currentLessonID       int64
+	priorLessonID         int64
+	nextLessonID          int64
+	generation            uint64
+	phase                 firstAudioGuardContextPhase
+	version               uint64
+	oldRuntimeKey         string
+	newRuntimeKey         string
+	connectionIDs         []string
+	probeContracts        []firstAudioGuardProbeContract
+	rowContracts          []firstAudioGuardRowContract
+	requirePhysicalProbes bool
 }
 
 type firstAudioGuardProbeContract struct {
@@ -66,22 +67,26 @@ type firstAudioGuardRowContract struct {
 }
 
 type firstAudioGuardContext struct {
-	runID           string
-	currentLessonID int64
-	priorLessonID   int64
-	nextLessonID    int64
-	generation      uint64
-	phase           firstAudioGuardContextPhase
-	version         uint64
-	oldRuntimeKey   string
-	newRuntimeKey   string
-	connectionIDs   []string
-	probes          map[string]firstAudioGuardProbeContract
-	rows            map[string]firstAudioGuardRowContract
+	runID                 string
+	currentLessonID       int64
+	priorLessonID         int64
+	nextLessonID          int64
+	generation            uint64
+	phase                 firstAudioGuardContextPhase
+	version               uint64
+	oldRuntimeKey         string
+	newRuntimeKey         string
+	connectionIDs         []string
+	probes                map[string]firstAudioGuardProbeContract
+	rows                  map[string]firstAudioGuardRowContract
+	requirePhysicalProbes bool
 }
 
 func newFirstAudioGuardContext(spec firstAudioGuardContextSpec) (*firstAudioGuardContext, error) {
 	if !firstAudioRunIDPattern.MatchString(spec.runID) || (spec.version == 0 && spec.phase != firstAudioGuardDriverProbe) || spec.currentLessonID <= 0 || spec.generation == 0 {
+		return nil, errFirstAudioGuardContextInvalid
+	}
+	if spec.requirePhysicalProbes && spec.phase != firstAudioGuardPreflight {
 		return nil, errFirstAudioGuardContextInvalid
 	}
 
@@ -89,9 +94,10 @@ func newFirstAudioGuardContext(spec firstAudioGuardContextSpec) (*firstAudioGuar
 		runID: spec.runID, currentLessonID: spec.currentLessonID, priorLessonID: spec.priorLessonID,
 		nextLessonID: spec.nextLessonID, generation: spec.generation, phase: spec.phase,
 		version: spec.version, oldRuntimeKey: spec.oldRuntimeKey, newRuntimeKey: spec.newRuntimeKey,
-		connectionIDs: append([]string(nil), spec.connectionIDs...),
-		probes:        make(map[string]firstAudioGuardProbeContract, len(spec.probeContracts)),
-		rows:          make(map[string]firstAudioGuardRowContract, len(spec.rowContracts)),
+		connectionIDs:         append([]string(nil), spec.connectionIDs...),
+		probes:                make(map[string]firstAudioGuardProbeContract, len(spec.probeContracts)),
+		rows:                  make(map[string]firstAudioGuardRowContract, len(spec.rowContracts)),
+		requirePhysicalProbes: spec.requirePhysicalProbes,
 	}
 	probeIDs := make(map[string]struct{}, len(spec.probeContracts))
 	for _, probe := range spec.probeContracts {
@@ -232,7 +238,8 @@ func (c *firstAudioGuardContext) clone() (*firstAudioGuardContext, error) {
 		runID: c.runID, currentLessonID: c.currentLessonID, priorLessonID: c.priorLessonID,
 		nextLessonID: c.nextLessonID, generation: c.generation, phase: c.phase, version: c.version,
 		oldRuntimeKey: c.oldRuntimeKey, newRuntimeKey: c.newRuntimeKey,
-		connectionIDs: append([]string(nil), c.connectionIDs...),
+		connectionIDs:         append([]string(nil), c.connectionIDs...),
+		requirePhysicalProbes: c.requirePhysicalProbes,
 	}
 	for _, probe := range c.probes {
 		spec.probeContracts = append(spec.probeContracts, probe)

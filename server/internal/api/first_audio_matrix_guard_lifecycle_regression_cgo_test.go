@@ -15,6 +15,100 @@ import (
 	sqlite3 "github.com/mattn/go-sqlite3"
 )
 
+func TestFirstAudioReadbackRejectsLogicalEvidenceForTransactionBoundReceipt(t *testing.T) {
+	binding := firstAudioGuardProbeBinding{runID: "readback_epoch", lessonID: 1, generation: 1, version: 1, connection: "conn-1", probeID: "probe-1"}
+	token, challenge, err := newFirstAudioGuardProbeChallenge(binding)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer zeroFirstAudioSecret(token)
+	if !challenge.receipt.arm() {
+		t.Fatal("could not arm readback fixture")
+	}
+	if err := challenge.BindTransactionEpoch(42); err != nil {
+		t.Fatal("bind transaction epoch:", err)
+	}
+	if err := challenge.Consume(token, binding); err != nil {
+		t.Fatal(err)
+	}
+	if err := challenge.ObserveRowGuard(binding); err != nil {
+		t.Fatal(err)
+	}
+	executor := newFirstAudioGuardProbeExecutor(challenge)
+	if err := executor.VerifyRollback(challenge.receipt, binding, nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := firstAudioConfirmLogicalReadbackForTest(challenge, true); !errors.Is(err, errFirstAudioGuardProbeRejected) {
+		t.Fatalf("logical readback evidence completed a SQL-bound receipt: %v", err)
+	}
+	if challenge.receipt.completeFor(binding, challenge.digest) {
+		t.Fatal("SQL-bound receipt became complete without physical connection readback evidence")
+	}
+}
+
+func TestFirstAudioReadbackRejectsLogicalEvidenceForPhysicalReceiptBeforeBegin(t *testing.T) {
+	binding := firstAudioGuardProbeBinding{runID: "physical_readback", lessonID: 1, generation: 1, version: 1, connection: "conn-1", probeID: "probe-1"}
+	token, challenge, err := newFirstAudioPhysicalProbeChallenge(binding)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer zeroFirstAudioSecret(token)
+	if !challenge.receipt.arm() {
+		t.Fatal("could not arm physical readback fixture")
+	}
+	if challenge.receipt.txEpoch.Load() != 0 {
+		t.Fatal("physical readback fixture unexpectedly has a transaction epoch")
+	}
+	challenge.receipt.state.Store(uint32(firstAudioGuardProbeRollbackVerified))
+	if err := firstAudioConfirmLogicalReadbackForTest(challenge, true); !errors.Is(err, errFirstAudioGuardProbeRejected) {
+		t.Fatalf("physical receipt without epoch accepted logical readback: %v", err)
+	}
+	if challenge.receipt.completeFor(binding, challenge.digest) {
+		t.Fatal("physical receipt completed without BeginTx-bound readback")
+	}
+}
+
+func TestFirstAudioPreflightAdmissionRequiresExplicitReceiptMode(t *testing.T) {
+	binding := firstAudioGuardProbeBinding{runID: "receipt_mode", lessonID: 1, generation: 1, version: 1, connection: "conn-1", probeID: "probe-1"}
+	for _, test := range []struct {
+		name            string
+		physicalReceipt bool
+		physicalContext bool
+	}{
+		{name: "logical receipt cannot enter physical preflight", physicalReceipt: false, physicalContext: true},
+		{name: "physical receipt cannot enter logical preflight", physicalReceipt: true, physicalContext: false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			var challenge *firstAudioGuardProbeChallenge
+			var token []byte
+			var err error
+			if test.physicalReceipt {
+				token, challenge, err = newFirstAudioPhysicalProbeChallenge(binding)
+			} else {
+				token, challenge, err = newFirstAudioGuardProbeChallenge(binding)
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer zeroFirstAudioSecret(token)
+			candidate, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
+				runID: binding.runID, currentLessonID: binding.lessonID, generation: binding.generation,
+				phase: firstAudioGuardPreflight, version: binding.version,
+				connectionIDs: []string{binding.connection}, probeContracts: []firstAudioGuardProbeContract{challenge.Contract()},
+				rowContracts:          []firstAudioGuardRowContract{{table: "lessons", operation: "UPDATE", identity: fmt.Sprintf("lesson:%d/conn:%s", binding.lessonID, binding.connection), oldRow: []byte("typed"), newRow: []byte("typed")}},
+				requirePhysicalProbes: test.physicalContext,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			evidence := firstAudioGuardTransitionEvidence{probeBindings: []firstAudioGuardProbeBinding{binding}, probeReceipts: []*firstAudioGuardProbeReceipt{challenge.receipt}}
+			if _, ok := evidence.preflightReceiptsFor(candidate); ok {
+				t.Fatal("preflight admitted receipt whose mode disagrees with context")
+			}
+		})
+	}
+}
+
 func TestFirstAudioGuardDriverProbeAdvancesOnlyToNewerStartupContext(t *testing.T) {
 	driverSpec := firstAudioGuardContextSpec{
 		runID: "run-0001", currentLessonID: 101, generation: 1,
@@ -372,14 +466,44 @@ func TestFirstAudioGuardProbeChallengeReceiptIsBoundSingleUseAndOrdered(t *testi
 	if err := executor.VerifyRollback(success.receipt, binding, nil); err != nil {
 		t.Fatal("verified rollback rejected:", err)
 	}
+	if success.receipt.completeFor(binding, success.Contract().tokenDigest) {
+		t.Fatal("rollback alone completed a receipt before snapshot readback")
+	}
+	if err := firstAudioConfirmLogicalReadbackForTest(success, true); err != nil {
+		t.Fatal("snapshot readback confirmation rejected:", err)
+	}
 	if !success.receipt.completeFor(binding, success.Contract().tokenDigest) {
-		t.Fatal("probe receipt did not reach rollback-verified state")
+		t.Fatal("probe receipt did not reach readback-verified state")
 	}
 	if err := success.Consume(secret, binding); !errors.Is(err, errFirstAudioGuardProbeRejected) {
 		t.Fatalf("post-success token replay error = %v, want rejected", err)
 	}
 	if success.receipt.completeFor(binding, success.Contract().tokenDigest) {
 		t.Fatal("post-success denial left probe eligible for preflight")
+	}
+	failedReadbackToken, failedReadback, err := newFirstAudioGuardProbeChallengeFrom(bytes.NewReader(seed), binding)
+	if err != nil {
+		t.Fatal("create failed-readback fixture:", err)
+	}
+	defer zeroFirstAudioSecret(failedReadbackToken)
+	if !failedReadback.receipt.arm() {
+		t.Fatal("could not arm failed-readback fixture")
+	}
+	if err := failedReadback.Consume(failedReadbackToken, binding); err != nil {
+		t.Fatal(err)
+	}
+	if err := failedReadback.ObserveRowGuard(binding); err != nil {
+		t.Fatal(err)
+	}
+	failedReadbackExecutor := newFirstAudioGuardProbeExecutor(failedReadback)
+	if err := failedReadbackExecutor.VerifyRollback(failedReadback.receipt, binding, nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := firstAudioConfirmLogicalReadbackForTest(failedReadback, false); !errors.Is(err, errFirstAudioGuardProbeRejected) {
+		t.Fatalf("unequal snapshot readback was accepted: %v", err)
+	}
+	if failedReadback.receipt.completeFor(binding, failedReadback.Contract().tokenDigest) {
+		t.Fatal("failed snapshot readback left receipt eligible for PREFLIGHT")
 	}
 	productionToken, productionChallenge, err := newFirstAudioGuardProbeChallenge(binding)
 	if err != nil {
@@ -605,6 +729,9 @@ func TestFirstAudioGuardControllerPublishesPreflightBeforeProbes(t *testing.T) {
 		}
 		if err := newFirstAudioGuardProbeExecutor(challenge).VerifyRollback(challenge.receipt, bindings[i], nil); err != nil {
 			t.Fatal("verify probe rollback:", err)
+		}
+		if err := firstAudioConfirmLogicalReadbackForTest(challenge, true); err != nil {
+			t.Fatal("confirm preflight snapshot readback:", err)
 		}
 	}
 	journey, err := newFirstAudioGuardContext(firstAudioValidJourneySpec(3, 101, 1, 3))
@@ -916,7 +1043,7 @@ func TestFirstAudioGuardPreflightPublishWaitsForProbeActivityAndTimesOutTerminal
 		if err := late.Consume([]byte("late callback"), bindings[0]); !errors.Is(err, errFirstAudioGuardProbeRejected) {
 			t.Fatalf("post-close callback = %v, want rejected", err)
 		}
-		if receipts[0].denials.Load() != denials || firstAudioGuardProbeReceiptState(receipts[0].state.Load()) != firstAudioGuardProbeRollbackVerified {
+		if receipts[0].denials.Load() != denials || firstAudioGuardProbeReceiptState(receipts[0].state.Load()) != firstAudioGuardProbeReadbackVerified {
 			t.Fatal("post-close callback mutated the completed receipt")
 		}
 		if c.publisher.Load() != pre {
@@ -1199,6 +1326,9 @@ func firstAudioTestCompleteProbes(t *testing.T, tokens [][]byte, bindings []firs
 		}
 		if err := newFirstAudioGuardProbeExecutor(challenge).VerifyRollback(receipt, bindings[i], nil); err != nil {
 			t.Fatal("verify preflight rollback:", err)
+		}
+		if err := firstAudioConfirmLogicalReadbackForTest(challenge, true); err != nil {
+			t.Fatal("confirm preflight snapshot readback:", err)
 		}
 	}
 }

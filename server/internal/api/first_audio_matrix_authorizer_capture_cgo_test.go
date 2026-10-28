@@ -36,8 +36,11 @@ func (c *firstAudioAuthorizerCapture) install(conn *sqlite3.SQLiteConn) error {
 			action: action, arg1: arg1, arg2: arg2, databaseName: databaseName, triggerName: triggerName,
 		})
 		c.mu.Unlock()
-		// This capture-only connection is used exclusively to EXPLAIN a
-		// statement. No statement is executed and no app/listener is started.
+		// This recorder always allows callbacks and is never a security policy.
+		// It is restricted to isolated temporary fixtures: the original test
+		// uses EXPLAIN only, while the real-SQL tuple-discovery test executes a
+		// synthetic lesson transaction in a disposable database. Never install
+		// it on an app or acceptance candidate.
 		return sqlite3.SQLITE_OK
 	})
 	return nil

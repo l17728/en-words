@@ -91,6 +91,21 @@ func (r *firstAudioSQLiteConnectionRegistry) WithLiveRegistration(id string, raw
 	return fn()
 }
 
+func (r *firstAudioSQLiteConnectionRegistry) WithLiveRegistrations(registrations map[string]*sqlite3.SQLiteConn, fn func() error) error {
+	if r == nil || len(registrations) == 0 || fn == nil {
+		return errFirstAudioSQLiteRegistrationNotLive
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for id, raw := range registrations {
+		registration, ok := r.byRaw[raw]
+		if !ok || raw == nil || registration.ID != id || r.byID[id] != raw {
+			return errFirstAudioSQLiteRegistrationNotLive
+		}
+	}
+	return fn()
+}
+
 func (r *firstAudioSQLiteConnectionRegistry) Retire(raw *sqlite3.SQLiteConn) {
 	if r == nil || raw == nil {
 		return
@@ -143,6 +158,8 @@ type firstAudioTrackedSQLiteConn struct {
 	retire    func(*sqlite3.SQLiteConn)
 	closeOnce sync.Once
 	closeErr  error
+	txEpoch   atomic.Uint64
+	txActive  atomic.Bool
 }
 
 func (c *firstAudioTrackedSQLiteConn) Close() error {
@@ -169,16 +186,60 @@ func (c *firstAudioTrackedSQLiteConn) PrepareContext(ctx context.Context, query 
 }
 
 func (c *firstAudioTrackedSQLiteConn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
+	var tx driver.Tx
+	var err error
 	if conn, ok := c.Conn.(driver.ConnBeginTx); ok {
-		return conn.BeginTx(ctx, opts)
+		tx, err = conn.BeginTx(ctx, opts)
+	} else {
+		if opts.Isolation != driver.IsolationLevel(0) || opts.ReadOnly {
+			return nil, errors.New("sqlite driver does not support requested transaction options")
+		}
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		tx, err = c.Conn.Begin()
 	}
-	if opts.Isolation != driver.IsolationLevel(0) || opts.ReadOnly {
-		return nil, errors.New("sqlite driver does not support requested transaction options")
-	}
-	if err := ctx.Err(); err != nil {
+	if err != nil {
 		return nil, err
 	}
-	return c.Conn.Begin()
+	if !c.txActive.CompareAndSwap(false, true) {
+		_ = tx.Rollback()
+		return nil, errors.New("tracked SQLite connection already has an active transaction")
+	}
+	epoch := c.txEpoch.Add(1)
+	return &firstAudioTrackedSQLiteTx{Tx: tx, owner: c, epoch: epoch}, nil
+}
+
+type firstAudioTrackedSQLiteTx struct {
+	driver.Tx
+	owner *firstAudioTrackedSQLiteConn
+	epoch uint64
+	once  sync.Once
+}
+
+func (tx *firstAudioTrackedSQLiteTx) finish(err error) {
+	if tx == nil || tx.owner == nil {
+		return
+	}
+	if err == nil || tx.owner.raw.AutoCommit() {
+		tx.once.Do(func() {
+			if tx.owner.txEpoch.Load() == tx.epoch {
+				tx.owner.txActive.Store(false)
+			}
+		})
+	}
+}
+
+func (tx *firstAudioTrackedSQLiteTx) Commit() error {
+	err := tx.Tx.Commit()
+	tx.finish(err)
+	return err
+}
+
+func (tx *firstAudioTrackedSQLiteTx) Rollback() error {
+	err := tx.Tx.Rollback()
+	tx.finish(err)
+	return err
 }
 
 func (c *firstAudioTrackedSQLiteConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {

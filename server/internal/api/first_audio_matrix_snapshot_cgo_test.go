@@ -98,6 +98,9 @@ func firstAudioCaptureDatabaseSnapshotWithKnownSchema(db *gorm.DB) (firstAudioDa
 	if err := firstAudioCheckSnapshotTableCoverage(specs, actualSchema.Objects); err != nil {
 		return firstAudioDatabaseSnapshot{}, err
 	}
+	if err := firstAudioCheckSnapshotColumnCoverage(specs, firstAudioStartupReadManifest()); err != nil {
+		return firstAudioDatabaseSnapshot{}, err
+	}
 
 	snapshot := firstAudioDatabaseSnapshot{SchemaSHA256: actualSchema.SHA256, Tables: make([]firstAudioSnapshotTable, 0, len(specs))}
 	for _, spec := range specs {
@@ -167,6 +170,75 @@ func firstAudioCaptureDatabaseSnapshotWithKnownSchema(db *gorm.DB) (firstAudioDa
 		return firstAudioDatabaseSnapshot{}, fmt.Errorf("encode diagnostic database snapshot: %w", err)
 	}
 	return snapshot, nil
+}
+
+func firstAudioCheckSnapshotColumnCoverage(specs []firstAudioSnapshotSpec, manifest map[string]map[string]struct{}) error {
+	missing, extra := make([]string, 0), make([]string, 0)
+	for _, spec := range specs {
+		want := manifest[spec.name]
+		actual := make(map[string]struct{}, len(spec.columns))
+		for _, column := range spec.columns {
+			actual[column] = struct{}{}
+		}
+		for column := range want {
+			if column == "" { // COUNT(*) authorizer sentinel, not a physical snapshot column.
+				continue
+			}
+			if _, ok := actual[column]; !ok {
+				missing = append(missing, spec.name+"."+column)
+			}
+		}
+		for column := range actual {
+			if _, ok := want[column]; !ok {
+				extra = append(extra, spec.name+"."+column)
+			}
+		}
+	}
+	for table := range manifest {
+		if table == "sqlite_master" { // Schema metadata is separately included in the schema digest.
+			continue
+		}
+		found := false
+		for _, spec := range specs {
+			if spec.name == table {
+				found = true
+				break
+			}
+		}
+		if !found {
+			missing = append(missing, table+".<table>")
+		}
+	}
+	sort.Strings(missing)
+	sort.Strings(extra)
+	if len(missing) != 0 || len(extra) != 0 {
+		return fmt.Errorf("snapshot column coverage differs from approved read manifest: missing=%v extra=%v", missing, extra)
+	}
+	return nil
+}
+
+func TestFirstAudioMatrixSnapshotColumnCoverageIsExact(t *testing.T) {
+	manifest := map[string]map[string]struct{}{"lessons": {"": {}, "id": {}, "status": {}}, "sqlite_sequence": {"name": {}, "seq": {}}}
+	tests := []struct {
+		name  string
+		specs []firstAudioSnapshotSpec
+	}{
+		{"complete", []firstAudioSnapshotSpec{{name: "lessons", columns: []string{"id", "status"}}, {name: "sqlite_sequence", columns: []string{"name", "seq"}}}},
+		{"missing physical column", []firstAudioSnapshotSpec{{name: "lessons", columns: []string{"id"}}, {name: "sqlite_sequence", columns: []string{"name", "seq"}}}},
+		{"extra snapshot column", []firstAudioSnapshotSpec{{name: "lessons", columns: []string{"id", "status", "unreviewed"}}, {name: "sqlite_sequence", columns: []string{"name", "seq"}}}},
+		{"missing table", []firstAudioSnapshotSpec{{name: "lessons", columns: []string{"id", "status"}}}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := firstAudioCheckSnapshotColumnCoverage(test.specs, manifest)
+			if test.name == "complete" && err != nil {
+				t.Fatalf("complete snapshot rejected: %v", err)
+			}
+			if test.name != "complete" && err == nil {
+				t.Fatalf("invalid snapshot accepted: %#v", test.specs)
+			}
+		})
+	}
 }
 
 // firstAudioCaptureDatabaseSnapshotOnPinnedConn forces every GORM query onto
