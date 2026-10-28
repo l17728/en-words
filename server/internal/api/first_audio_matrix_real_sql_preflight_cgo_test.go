@@ -566,7 +566,7 @@ func TestFirstAudioMatrixCleanupPhaseAllowsOnlyPreflightOrItsTerminalCleanup(t *
 	if err != nil {
 		t.Fatal("construct DRIVER_PROBE context:", err)
 	}
-	controller.publisher.Store(driver)
+	controller.publisher.current.Store(driver)
 	if firstAudioCleanupPhaseAllowed(controller, true) {
 		t.Fatal("cleanup permit accepted during DRIVER_PROBE")
 	}
@@ -577,7 +577,7 @@ func TestFirstAudioMatrixCleanupPhaseAllowsOnlyPreflightOrItsTerminalCleanup(t *
 	if err != nil {
 		t.Fatal("construct STARTUP_PROBE context:", err)
 	}
-	controller.publisher.Store(startup)
+	controller.publisher.current.Store(startup)
 	if firstAudioCleanupPhaseAllowed(controller, true) {
 		t.Fatal("cleanup permit accepted during STARTUP_PROBE")
 	}
@@ -585,7 +585,7 @@ func TestFirstAudioMatrixCleanupPhaseAllowsOnlyPreflightOrItsTerminalCleanup(t *
 	if err != nil {
 		t.Fatal("construct PREFLIGHT context:", err)
 	}
-	controller.publisher.Store(preflight)
+	controller.publisher.current.Store(preflight)
 	if !firstAudioCleanupPhaseAllowed(controller, true) {
 		t.Fatal("PREFLIGHT failed to retain its coordinator-only rollback permit")
 	}
