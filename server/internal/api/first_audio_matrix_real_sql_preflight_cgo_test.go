@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -44,6 +45,11 @@ type firstAudioPinnedRealSQLConnection struct {
 	raw          *sqlite3.SQLiteConn
 	tracked      *firstAudioTrackedSQLiteConn
 	registration firstAudioSQLiteConnectionRegistration
+}
+
+type firstAudioRealSQLConnectionHarness struct {
+	authorizer *firstAudioRealSQLAuthorizer
+	sessionRef *firstAudioRealSQLProbeSessionRef
 }
 
 type firstAudioSQLPermit uint32
@@ -98,8 +104,9 @@ func (p *firstAudioRealSQLAuthorizer) install(conn *sqlite3.SQLiteConn) error {
 	conn.RegisterAuthorizerWithTriggerName(func(action int, arg1, arg2, databaseName, triggerName string) int {
 		active := p.controller.publisher.Load()
 		allowed := false
-		if firstAudioAuthorizeCleanupTuple(firstAudioSQLPermit(p.permit.Load()), action, arg1, arg2, databaseName, triggerName, !conn.AutoCommit()) {
-			allowed = true
+		if p.registryID == registration.ID && p.raw == conn && firstAudioAuthorizeCleanupTuple(firstAudioSQLPermit(p.permit.Load()), action, arg1, arg2, databaseName, triggerName, !conn.AutoCommit()) {
+			session := p.sessionRef.session.Load()
+			allowed = session != nil && session.challenge != nil && session.binding.connection == registration.ID && session.tracked == p.tracked && p.tracked != nil && p.tracked.raw == conn && p.tracked.txActive.Load() && session.txEpoch.Load() != 0 && session.txEpoch.Load() == p.txEpoch.Load() && session.txEpoch.Load() == p.tracked.txEpoch.Load()
 		}
 		switch {
 		case allowed:
@@ -112,10 +119,9 @@ func (p *firstAudioRealSQLAuthorizer) install(conn *sqlite3.SQLiteConn) error {
 				allowed = firstAudioStartupAuthorizeAt(firstAudioStartupApp, p.reads, action, arg1, arg2, databaseName, triggerName)
 			}
 		case p.controller.IsActivePhase(firstAudioGuardPreflight):
-			// The coordinator may move this test authorizer's selected physical
-			// connection only while the pool is pinned and operations are serial.
-			// A permit for one connection must never authorize SQL on a sibling.
-			allowed = p.registryID == registration.ID && firstAudioAuthorizePreflightTuple(firstAudioSQLPermit(p.permit.Load()), p.reads, action, arg1, arg2, databaseName, triggerName)
+			// A connection-local authorizer accepts permits only for the raw
+			// connection whose identity was captured by its ConnectHook.
+			allowed = p.registryID == registration.ID && p.raw == conn && firstAudioAuthorizePreflightTuple(firstAudioSQLPermit(p.permit.Load()), p.reads, action, arg1, arg2, databaseName, triggerName)
 		}
 		if allowed {
 			return sqlite3.SQLITE_OK
@@ -518,8 +524,9 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 	if err := controller.PublishInitial(driverContext); err != nil {
 		t.Fatal("publish initial driver-probe context:", err)
 	}
-	sessionRef := &firstAudioRealSQLProbeSessionRef{}
-	authorizer := newFirstAudioRealSQLAuthorizer(controller, sessionRef, baseline)
+	var connectionHarnessMu sync.Mutex
+	connectionHarnesses := make(map[string]firstAudioRealSQLConnectionHarness)
+	var guarded *gorm.DB
 	var tokenCalls atomic.Uint64
 	var rowGuardCalls atomic.Uint64
 	var callbackErr atomic.Value
@@ -529,6 +536,11 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 		if err != nil {
 			return err
 		}
+		sessionRef := &firstAudioRealSQLProbeSessionRef{}
+		authorizer := newFirstAudioRealSQLAuthorizer(controller, sessionRef, baseline)
+		connectionHarnessMu.Lock()
+		connectionHarnesses[registration.ID] = firstAudioRealSQLConnectionHarness{authorizer: authorizer, sessionRef: sessionRef}
+		connectionHarnessMu.Unlock()
 		if err := conn.RegisterFunc("first_audio_probe", func(token []byte) bool {
 			tokenCalls.Add(1)
 			session := sessionRef.session.Load()
@@ -574,7 +586,7 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 		t.Fatal("register tracked callback SQLite driver:", err)
 	}
 
-	guarded, err := gorm.Open(gormsqlite.Dialector{DriverName: driverName, DSN: path}, &gorm.Config{DisableAutomaticPing: true})
+	guarded, err = gorm.Open(gormsqlite.Dialector{DriverName: driverName, DSN: path}, &gorm.Config{DisableAutomaticPing: true})
 	if err != nil {
 		t.Fatal("open isolated guarded SQLite GORM pool:", err)
 	}
@@ -586,12 +598,16 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 	pool.SetMaxOpenConns(physicalConnections)
 	pool.SetMaxIdleConns(physicalConnections)
 	pool.SetConnMaxLifetime(0)
-	authorizer.db = guarded
 	t.Cleanup(func() { _ = pool.Close() })
 	// Force creation and registration of the full configured pool while
 	// DRIVER_PROBE admission is open. Hold the connections simultaneously so
 	// database/sql cannot satisfy the requests with one reused connection.
 	registeredPins := make([]*sql.Conn, 0, physicalConnections)
+	defer func() {
+		for _, pinned := range registeredPins {
+			_ = pinned.Close()
+		}
+	}()
 	for range physicalConnections {
 		pinned, pinErr := pool.Conn(context.Background())
 		if pinErr != nil {
@@ -602,11 +618,21 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 	if got := registry.nextID.Load(); got != physicalConnections {
 		t.Fatalf("ConnectHook registrations=%d, want exactly %d before startup", got, physicalConnections)
 	}
+	connectionHarnessMu.Lock()
+	if len(connectionHarnesses) != physicalConnections {
+		connectionHarnessMu.Unlock()
+		t.Fatalf("ConnectHook authorizers=%d; want one independent authorizer per physical connection (%d)", len(connectionHarnesses), physicalConnections)
+	}
+	for _, harness := range connectionHarnesses {
+		harness.authorizer.db = guarded
+	}
+	connectionHarnessMu.Unlock()
 	for _, pinned := range registeredPins {
 		if closeErr := pinned.Close(); closeErr != nil {
 			t.Fatal("release registered SQLite connection before startup:", closeErr)
 		}
 	}
+	registeredPins = nil
 	startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
 		runID: driverContext.runID, currentLessonID: identity.LessonID, generation: 1,
 		phase: firstAudioGuardStartupProbe, version: 1,
@@ -623,12 +649,23 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 	}
 	// NewApp is synchronous, but any pool connection may carry its startup
 	// transaction. Keep the startup permit open on every registered connection.
-	authorizer.startupPermit.Store(true)
+	connectionHarnessMu.Lock()
+	for _, harness := range connectionHarnesses {
+		harness.authorizer.startupPermit.Store(true)
+	}
+	connectionHarnessMu.Unlock()
 	var app *App
 	app = NewApp(scheduler.RealClock{}, guarded)
-	authorizer.startupPermit.Store(false)
-	if authorizer.startupBegins.Load() != 1 || authorizer.startupEnds.Load() != 1 {
-		t.Fatalf("NewApp startup transactions begin=%d end=%d; want one exact transaction", authorizer.startupBegins.Load(), authorizer.startupEnds.Load())
+	var startupBegins, startupEnds uint32
+	connectionHarnessMu.Lock()
+	for _, harness := range connectionHarnesses {
+		harness.authorizer.startupPermit.Store(false)
+		startupBegins += harness.authorizer.startupBegins.Load()
+		startupEnds += harness.authorizer.startupEnds.Load()
+	}
+	connectionHarnessMu.Unlock()
+	if startupBegins != 1 || startupEnds != 1 {
+		t.Fatalf("NewApp startup transactions begin=%d end=%d; want one exact transaction", startupBegins, startupEnds)
 	}
 	if app == nil || app.DB != guarded || app.StartupError != nil {
 		t.Fatalf("NewApp failed on guarded pool: app=%v startup=%v", app != nil, app.StartupError)
@@ -637,6 +674,11 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 		t.Fatalf("guarded NewApp did not restore isolated student: user=%#v err=%v", user, err)
 	}
 	pins := make([]*sql.Conn, 0, physicalConnections)
+	defer func() {
+		for _, pinned := range pins {
+			_ = pinned.Close()
+		}
+	}()
 	identities := make([]firstAudioPinnedRealSQLConnection, 0, physicalConnections)
 	seenIDs := make(map[string]struct{}, physicalConnections)
 	for range physicalConnections {
@@ -666,11 +708,6 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 		seenIDs[registration.ID] = struct{}{}
 		identities = append(identities, firstAudioPinnedRealSQLConnection{conn: pinned, raw: tracked.raw, tracked: tracked, registration: registration})
 	}
-	defer func() {
-		for _, pinned := range pins {
-			_ = pinned.Close()
-		}
-	}()
 	if got := registry.nextID.Load(); got != physicalConnections || len(seenIDs) != physicalConnections {
 		t.Fatalf("pinned pool registrations=%d unique=%d; want exactly %d", got, len(seenIDs), physicalConnections)
 	}
@@ -678,7 +715,15 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 	// snapshot reads are still admitted. PREFLIGHT readback below is separately
 	// authorized through each connection's one-use SNAPSHOT_READ permit.
 	for _, pinnedIdentity := range identities {
-		authorizer.registryID, authorizer.raw = pinnedIdentity.registration.ID, pinnedIdentity.raw
+		connectionHarnessMu.Lock()
+		harness, exists := connectionHarnesses[pinnedIdentity.registration.ID]
+		connectionHarnessMu.Unlock()
+		if !exists {
+			t.Fatalf("connection %s has no connection-local authorizer", pinnedIdentity.registration.ID)
+		}
+		if harness.authorizer.raw != pinnedIdentity.raw || harness.authorizer.registryID != pinnedIdentity.registration.ID {
+			t.Fatalf("connection %s authorizer is bound to a different raw connection", pinnedIdentity.registration.ID)
+		}
 		snapshot, snapshotErr := firstAudioCaptureDatabaseSnapshotOnPinnedConn(guarded, pinnedIdentity.conn)
 		if snapshotErr != nil || snapshot.SHA256 != baseline.SHA256 || !reflect.DeepEqual(snapshot.Canonical, baseline.Canonical) {
 			t.Fatalf("connection %s startup snapshot differs from setup: hash=%s err=%v", pinnedIdentity.registration.ID, snapshot.SHA256, snapshotErr)
@@ -711,6 +756,11 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 			oldRow:   []byte("typed-projection"), newRow: []byte("typed-projection"),
 		})
 	}
+	defer func() {
+		for _, token := range tokens {
+			zeroFirstAudioSecret(token)
+		}
+	}()
 	preflight, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
 		runID: bindings[0].runID, currentLessonID: bindings[0].lessonID, generation: 1,
 		phase: firstAudioGuardPreflight, version: bindings[0].version, requirePhysicalProbes: true,
@@ -738,11 +788,17 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 		t.Fatal("controller did not publish PREFLIGHT")
 	}
 	for i, pinnedIdentity := range identities {
-		authorizer.registryID, authorizer.raw = pinnedIdentity.registration.ID, pinnedIdentity.raw
+		connectionHarnessMu.Lock()
+		harness, exists := connectionHarnesses[pinnedIdentity.registration.ID]
+		connectionHarnessMu.Unlock()
+		if !exists {
+			t.Fatalf("connection %s lost its connection-local authorizer", pinnedIdentity.registration.ID)
+		}
+		authorizer := harness.authorizer
 		authorizer.tracked, authorizer.pinned = pinnedIdentity.tracked, pinnedIdentity.conn
 		session := &firstAudioRealSQLProbeSession{challenge: challenges[i], binding: bindings[i], tracked: pinnedIdentity.tracked}
-		sessionRef.session.Store(session)
-		runFirstAudioRealSQLConnectionProbe(t, authorizer, pinnedIdentity, challenges[i], bindings[i], tokens[i], session, sessionRef, &tokenCalls, &rowGuardCalls, &callbackErr)
+		harness.sessionRef.session.Store(session)
+		runFirstAudioRealSQLConnectionProbe(t, authorizer, pinnedIdentity, challenges[i], bindings[i], tokens[i], session, harness.sessionRef, &tokenCalls, &rowGuardCalls, &callbackErr)
 		if !registry.IsLive(pinnedIdentity.registration.ID, pinnedIdentity.raw) {
 			t.Fatalf("successful probe unexpectedly replaced physical connection %s", pinnedIdentity.registration.ID)
 		}
@@ -752,14 +808,35 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 			t.Fatalf("connection %s lacks a completed physical readback receipt", challenge.binding.connection)
 		}
 	}
-	if err := authorizer.capturePinnedBaseline(); err != nil {
+	lastIdentity := identities[len(identities)-1]
+	connectionHarnessMu.Lock()
+	lastHarness := connectionHarnesses[lastIdentity.registration.ID]
+	connectionHarnessMu.Unlock()
+	if err := lastHarness.authorizer.capturePinnedBaseline(); err != nil {
 		t.Fatal("final all-probes snapshot differs from the isolated setup baseline:", err)
 	}
 	if callbackErr.Load() != nil {
 		t.Fatalf("real SQL callback recorded failure: %v", callbackErr.Load())
 	}
-	if authorizer.denials.Load() != 0 {
-		t.Fatalf("real SQL authorizer denied %d tuples: %v", authorizer.denials.Load(), authorizer.lastDenied.Load())
+	for connectionID, harness := range connectionHarnesses {
+		if harness.authorizer.denials.Load() != 0 {
+			t.Fatalf("connection %s authorizer denied %d tuples: %v", connectionID, harness.authorizer.denials.Load(), harness.authorizer.lastDenied.Load())
+		}
+	}
+	for _, pinned := range pins {
+		if err := pinned.Close(); err != nil {
+			t.Fatal("release pinned preflight connection:", err)
+		}
+	}
+	pins = nil
+	for _, pinnedIdentity := range identities {
+		registration, live := registry.Lookup(pinnedIdentity.raw)
+		if !live || registration.ID != pinnedIdentity.registration.ID || !registry.IsLive(pinnedIdentity.registration.ID, pinnedIdentity.raw) {
+			t.Fatalf("registry changed after releasing pinned connection %s", pinnedIdentity.registration.ID)
+		}
+	}
+	if got := registry.nextID.Load(); got != physicalConnections {
+		t.Fatalf("ConnectHook registrations changed after releasing pins: got=%d want=%d", got, physicalConnections)
 	}
 }
 
@@ -768,6 +845,7 @@ func runFirstAudioRealSQLConnectionProbe(t *testing.T, authorizer *firstAudioRea
 	defer zeroFirstAudioSecret(token)
 	sessionRef.session.Store(session)
 	var tx *sql.Tx
+	var err error
 	rolledBack, sealed := false, false
 	defer func() {
 		if !rolledBack && tx != nil && session.tracked.txActive.Load() {
