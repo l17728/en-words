@@ -233,11 +233,22 @@ func (p *firstAudioRealSQLAuthorizer) terminalizeAndDiscardUncertainConnection()
 		terminalErr = p.controller.TerminalizeFromSQLiteCallback()
 		p.controller.Terminalize()
 	}
+	var leaseReleaseErr error
+	if tx := p.activeTx.Load(); tx != nil {
+		// Release database/sql's transaction lease after terminalization and
+		// before Raw returns ErrBadConn. The terminal authorizer may reject the
+		// driver's rollback; either outcome is followed by physical eviction.
+		leaseReleaseErr = tx.Rollback()
+		p.activeTx.CompareAndSwap(tx, nil)
+	}
 	if err := p.discardPinnedConnection(); err != nil {
-		return fmt.Errorf("uncertain probe cleanup; physical connection retirement unconfirmed: %w", err)
+		return fmt.Errorf("uncertain probe cleanup; physical connection retirement unconfirmed (transaction lease release error=%v): %w", leaseReleaseErr, err)
 	}
 	if terminalErr != nil {
 		return fmt.Errorf("uncertain probe cleanup; terminal context publication failed after connection retirement: %w", terminalErr)
+	}
+	if leaseReleaseErr != nil {
+		return fmt.Errorf("uncertain probe cleanup; transaction rollback was rejected after terminalization and connection was retired: %v: %w", leaseReleaseErr, errFirstAudioGuardProbeRejected)
 	}
 	return errFirstAudioGuardProbeRejected
 }
@@ -425,6 +436,9 @@ func TestFirstAudioMatrixRealSQLMissingCleanupAuthorityTerminalizesAndDiscardsAc
 	authorizer.probeChallenge.Store(challenge)
 	authorizer.activeTx.Store(tx)
 	authorizer.txEpoch.Store(epoch)
+	if err := authorizer.install(tracked.raw); err != nil {
+		t.Fatal("install real SQLite authorizer before terminal cleanup:", err)
+	}
 	foreignBinding := binding
 	foreignBinding.connection = "conn-foreign"
 	foreignBinding.probeID = "probe-foreign"
@@ -454,6 +468,9 @@ func TestFirstAudioMatrixRealSQLMissingCleanupAuthorityTerminalizesAndDiscardsAc
 	}
 	if firstAudioGuardProbeReceiptState(challenge.receipt.state.Load()) != firstAudioGuardProbeFailed || challenge.receipt.completeFor(binding, challenge.digest) {
 		t.Fatal("terminal cleanup left its real-SQL receipt reusable or complete")
+	}
+	if authorizer.denials.Load() == 0 {
+		t.Fatal("terminal transaction-lease release was not denied by the SQLite authorizer")
 	}
 	journey, err := newFirstAudioGuardContext(firstAudioValidJourneySpec(4, binding.lessonID, binding.generation, 1))
 	if err != nil {
