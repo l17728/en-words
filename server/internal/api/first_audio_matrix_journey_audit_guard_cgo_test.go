@@ -312,6 +312,12 @@ func (p *firstAudioAuditProbe) withPermit(name string, operation func() error) e
 	return nil
 }
 
+func (p *firstAudioAuditProbe) permitConsumed(epoch uint64, name string) bool {
+	p.permitMu.Lock()
+	defer p.permitMu.Unlock()
+	return p.usedPermits[epoch] != nil && p.usedPermits[epoch][name]
+}
+
 func firstAudioValidateExpectedAuditRow(row store.AuditLog) error {
 	if _, ok := firstAudioAllowedJourneyAuditTools[row.Tool]; !ok {
 		return fmt.Errorf("audit tool %q is outside the fixed journey allowlist", row.Tool)
@@ -626,8 +632,11 @@ func TestFirstAudioJourneyAuditGuardProductionWriterTerminalizesAfterUnlistedToo
 	if calls.Load() != 2 || probe.callbacks.Load() != 1 || !probe.terminal.Load() || probe.denials.Load() < 2 {
 		t.Fatalf("writer/callback/terminal/denial evidence: calls=%d callbacks=%d terminal=%t denials=%d", calls.Load(), probe.callbacks.Load(), probe.terminal.Load(), probe.denials.Load())
 	}
-	assertFirstAudioAuditRowCount(t, probe, 0)
 	assertFirstAudioAuditProbeRolledBack(t, probe)
+	if probe.permitConsumed(probe.txEpoch.Load(), firstAudioAuditCommitPermit) {
+		t.Fatal("rejected unlisted-tool path consumed a COMMIT permit")
+	}
+	assertFirstAudioAuditRowCount(t, probe, 0)
 }
 
 func TestFirstAudioJourneyAuditGuardProductionWriterReadbackMismatchDeniesSecondWrite(t *testing.T) {
@@ -651,8 +660,11 @@ func TestFirstAudioJourneyAuditGuardProductionWriterReadbackMismatchDeniesSecond
 	if calls.Load() != 2 || probe.callbacks.Load() != 1 || !probe.terminal.Load() || probe.denials.Load() == 0 {
 		t.Fatalf("writer/callback/terminal/denial evidence: calls=%d callbacks=%d terminal=%t denials=%d", calls.Load(), probe.callbacks.Load(), probe.terminal.Load(), probe.denials.Load())
 	}
-	assertFirstAudioAuditRowCount(t, probe, 0)
 	assertFirstAudioAuditProbeRolledBack(t, probe)
+	if probe.permitConsumed(probe.txEpoch.Load(), firstAudioAuditCommitPermit) {
+		t.Fatal("readback-mismatch path consumed a COMMIT permit")
+	}
+	assertFirstAudioAuditRowCount(t, probe, 0)
 }
 
 func TestFirstAudioJourneyAuditGuardRejectsUnlistedToolBeforeSQL(t *testing.T) {
@@ -1298,7 +1310,11 @@ func firstAudioExecuteAuditProbeWithWriter(t *testing.T, probe *firstAudioAuditP
 		if productionWriter != nil {
 			return productionWriter(tx)
 		}
-		return tx.Create(&row).Error
+		if err := tx.Create(&row).Error; err != nil {
+			return err
+		}
+		actual.ID = row.ID
+		return nil
 	}
 	if err := probe.withPermit(firstAudioAuditInsertPermit, func() error { return write(actual) }); err != nil {
 		if productionWriter != nil {
