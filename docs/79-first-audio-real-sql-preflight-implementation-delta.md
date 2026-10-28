@@ -2,7 +2,7 @@
 
 ## 范围
 
-本记录跟踪 `docs/78-first-audio-real-sql-preflight-amendment.md` 中单连接真实 SQL PREFLIGHT 的实现证据。原规格保持不变；本记录不扩大到 `JOURNEY`、浏览器验收或课堂验收。
+本记录跟踪 `docs/78-first-audio-real-sql-preflight-amendment.md` 中真实 SQL PREFLIGHT 的实现证据。当前正向集成切片覆盖三条同时 pin 的物理连接；原规格保持不变；本记录不扩大到 `JOURNEY`、浏览器验收或课堂验收。
 
 ## 已实现与验证
 
@@ -29,7 +29,15 @@ go test ./internal/api -count=1 -timeout=10m
 
 ## 明确未验收
 
-此单连接测试不证明多连接逐一探测、负例隔离子进程、取消/超时与 drain 竞态、回滚失败后的连接销毁、双进程 Playwright journey、跨复位 stale callback 隔离、性能矩阵或真人课堂效果。不得据此标记首音课堂矩阵通过。
+本正向切片不证明 §5 真实 SQL 负例隔离子进程、取消/超时与 drain 竞态、失败回滚/连接销毁注入、双进程 Playwright journey、跨复位 stale callback 隔离、性能矩阵或真人课堂效果。不得据此标记首音课堂矩阵通过。
+
+## 三物理连接正向 PREFLIGHT 增量（2026-10-28）
+
+`TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits` 现在固定池容量为 3，并在启动前及 PREFLIGHT 前分别同时 pin 这三条连接。测试从每个 `Conn.Raw` 获取 tracked raw 指针，要求注册 ID 唯一且 hook 注册总数恰为 3；每个 ConnectHook 创建独立 authorizer、session、permit 和连接级 UDF。NewApp 的 startup permit 按连接实例分别开启并汇总断言恰好一组 BEGIN/结束事务。
+
+PREFLIGHT context 一次发布三个 connection-bound challenge/contract/receipt。协调器逐连接消费各自 token、读取固定投影、执行唯一 no-op UPDATE、显式回滚并在同一 pinned raw 连接完整读回 snapshot。每个 receipt 必须到达物理 readback 终态；所有探测后重新核对全库 setup baseline，释放 pins 后再次确认相同 raw/ID 仍在 registry。TX_CLEANUP authorizer tuple 同时要求本地注册 ID/raw、活动 session、tracked 连接及事务 epoch 一致；token slice 在创建挑战前注册统一清理。
+
+提交 `f1db42e` 的 CI：[Linux/Windows 控制协议检查](https://github.com/l17728/en-words/actions/runs/40635891277)。工作流还包括 CGO API 定向回归、Linux race、vet、Web build/typecheck 与生产符号检查。CI 通过只证明该工作流内检查通过，不代表 docs/78 §5 完整负例、JOURNEY、Playwright 双进程旅程或性能/课堂验收通过。三领域评审记录见 `review/first-audio-real-sql-preflight-multiconnection-review-20261028.md`。
 
 ## Review 与后续
 

@@ -80,6 +80,7 @@ type firstAudioRealSQLAuthorizer struct {
 	startupBegins           atomic.Uint32
 	startupEnds             atomic.Uint32
 	cleanupAvailable        atomic.Bool
+	cleanupPreflight        atomic.Bool
 	tracked                 *firstAudioTrackedSQLiteConn
 	pinned                  *sql.Conn
 	activeTx                atomic.Pointer[sql.Tx]
@@ -104,7 +105,7 @@ func (p *firstAudioRealSQLAuthorizer) install(conn *sqlite3.SQLiteConn) error {
 	conn.RegisterAuthorizerWithTriggerName(func(action int, arg1, arg2, databaseName, triggerName string) int {
 		active := p.controller.publisher.Load()
 		allowed := false
-		if p.registryID == registration.ID && p.raw == conn && firstAudioAuthorizeCleanupTuple(firstAudioSQLPermit(p.permit.Load()), action, arg1, arg2, databaseName, triggerName, !conn.AutoCommit()) {
+		if p.registryID == registration.ID && p.raw == conn && p.cleanupPreflight.Load() && firstAudioCleanupPhaseAllowed(p.controller, true) && firstAudioAuthorizeCleanupTuple(firstAudioSQLPermit(p.permit.Load()), action, arg1, arg2, databaseName, triggerName, !conn.AutoCommit()) {
 			session := p.sessionRef.session.Load()
 			allowed = session != nil && session.challenge != nil && session.binding.connection == registration.ID && session.tracked == p.tracked && p.tracked != nil && p.tracked.raw == conn && p.tracked.txActive.Load() && session.txEpoch.Load() != 0 && session.txEpoch.Load() == p.txEpoch.Load() && session.txEpoch.Load() == p.tracked.txEpoch.Load()
 		}
@@ -188,9 +189,10 @@ func (p *firstAudioRealSQLAuthorizer) withPermit(permit firstAudioSQLPermit, req
 }
 
 func (p *firstAudioRealSQLAuthorizer) rollbackProbeTransaction() error {
-	if p == nil || p.pinned == nil || p.tracked == nil || !p.connections.IsLive(p.registryID, p.raw) || !p.tracked.txActive.Load() || p.txEpoch.Load() == 0 || p.txEpoch.Load() != p.tracked.txEpoch.Load() || !p.cleanupAvailable.CompareAndSwap(true, false) {
+	if p == nil || p.pinned == nil || p.tracked == nil || !p.cleanupPreflight.Load() || !firstAudioCleanupPhaseAllowed(p.controller, true) || !p.connections.IsLive(p.registryID, p.raw) || !p.tracked.txActive.Load() || p.txEpoch.Load() == 0 || p.txEpoch.Load() != p.tracked.txEpoch.Load() || !p.cleanupAvailable.CompareAndSwap(true, false) {
 		return errFirstAudioGuardProbeRejected
 	}
+	defer p.cleanupPreflight.Store(false)
 	if !p.permit.CompareAndSwap(uint32(firstAudioSQLPermitNone), uint32(firstAudioSQLPermitTransactionCleanup)) {
 		p.cleanupAvailable.Store(true)
 		return errFirstAudioGuardProbeRejected
@@ -208,6 +210,17 @@ func (p *firstAudioRealSQLAuthorizer) rollbackProbeTransaction() error {
 	}
 	p.activeTx.CompareAndSwap(tx, nil)
 	return nil
+}
+
+func firstAudioCleanupPhaseAllowed(controller *firstAudioGuardController, probeBeganInPreflight bool) bool {
+	if controller == nil || !probeBeganInPreflight {
+		return false
+	}
+	if controller.IsActivePhase(firstAudioGuardPreflight) {
+		return true
+	}
+	active := controller.publisher.Load()
+	return controller.IsTerminal() && active != nil && active.phase == firstAudioGuardTerminal
 }
 
 func (p *firstAudioRealSQLAuthorizer) discardPinnedConnection() {
@@ -464,6 +477,55 @@ func TestFirstAudioMatrixTerminalCleanupPermitAllowsOnlyActiveRollback(t *testin
 		if firstAudioAuthorizeCleanupTuple(tuple.permit, tuple.action, tuple.arg1, tuple.arg2, tuple.db, tuple.source, tuple.active) {
 			t.Errorf("terminal cleanup accepted a non-cleanup tuple: %#v", tuple)
 		}
+	}
+}
+
+func TestFirstAudioMatrixCleanupPhaseAllowsOnlyPreflightOrItsTerminalCleanup(t *testing.T) {
+	controller := newFirstAudioGuardController()
+	driver, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
+		runID: "run-0001", currentLessonID: 101, generation: 1,
+		phase: firstAudioGuardDriverProbe, version: 0,
+	})
+	if err != nil {
+		t.Fatal("construct DRIVER_PROBE context:", err)
+	}
+	if err := controller.PublishInitial(driver); err != nil {
+		t.Fatal("initialize DRIVER_PROBE controller:", err)
+	}
+	if firstAudioCleanupPhaseAllowed(controller, true) {
+		t.Fatal("cleanup permit accepted during DRIVER_PROBE")
+	}
+	startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
+		runID: "run-0001", currentLessonID: 101, generation: 1,
+		phase: firstAudioGuardStartupProbe, version: 1,
+	})
+	if err != nil {
+		t.Fatal("construct STARTUP_PROBE context:", err)
+	}
+	if err := controller.publisher.Publish(startup); err != nil {
+		t.Fatal("advance controller to STARTUP_PROBE:", err)
+	}
+	if firstAudioCleanupPhaseAllowed(controller, true) {
+		t.Fatal("cleanup permit accepted during STARTUP_PROBE")
+	}
+	preflight, err := newFirstAudioGuardContext(firstAudioValidPreflightSpec(2))
+	if err != nil {
+		t.Fatal("construct PREFLIGHT context:", err)
+	}
+	if err := controller.publisher.Publish(preflight); err != nil {
+		t.Fatal("advance controller to PREFLIGHT:", err)
+	}
+	if !firstAudioCleanupPhaseAllowed(controller, true) {
+		t.Fatal("PREFLIGHT failed to retain its coordinator-only rollback permit")
+	}
+	if err := controller.TerminalizeFromSQLiteCallback(); err != nil {
+		t.Fatal("terminalize callback candidate:", err)
+	}
+	if !firstAudioCleanupPhaseAllowed(controller, true) {
+		t.Fatal("callback-terminal candidate lost the one rollback required to clean its PREFLIGHT transaction")
+	}
+	if firstAudioCleanupPhaseAllowed(controller, false) {
+		t.Fatal("terminal candidate without a PREFLIGHT transaction retained cleanup authority")
 	}
 }
 
@@ -878,6 +940,10 @@ func runFirstAudioRealSQLConnectionProbe(t *testing.T, authorizer *firstAudioRea
 	if err := challenge.BindTransactionEpoch(session.txEpoch.Load()); err != nil {
 		t.Fatal("bind physical transaction epoch:", err)
 	}
+	if !authorizer.controller.IsActivePhase(firstAudioGuardPreflight) || !session.tracked.txActive.Load() || session.txEpoch.Load() == 0 {
+		t.Fatalf("connection %s cannot arm cleanup outside its active PREFLIGHT transaction", binding.connection)
+	}
+	authorizer.cleanupPreflight.Store(true)
 	authorizer.cleanupAvailable.Store(true)
 	var tokenAccepted bool
 	err = authorizer.withPermit(firstAudioSQLPermitTokenConsumption, true, func() error {
