@@ -158,6 +158,7 @@ type firstAudioTrackedSQLiteConn struct {
 	retire    func(*sqlite3.SQLiteConn)
 	closeOnce sync.Once
 	closeErr  error
+	closeOK   atomic.Bool
 	txEpoch   atomic.Uint64
 	txActive  atomic.Bool
 }
@@ -171,6 +172,7 @@ func (c *firstAudioTrackedSQLiteConn) Close() error {
 		// connection. A later connection can never inherit its probe receipt.
 		c.retire(c.raw)
 		c.closeErr = c.Conn.Close()
+		c.closeOK.Store(c.closeErr == nil)
 	})
 	return c.closeErr
 }

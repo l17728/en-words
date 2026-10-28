@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"math"
 	"path/filepath"
@@ -190,23 +191,21 @@ func (p *firstAudioRealSQLAuthorizer) withPermit(permit firstAudioSQLPermit, req
 
 func (p *firstAudioRealSQLAuthorizer) rollbackProbeTransaction() error {
 	if p == nil || p.pinned == nil || p.tracked == nil || !p.cleanupPreflight.Load() || !firstAudioCleanupPhaseAllowed(p.controller, true) || !p.connections.IsLive(p.registryID, p.raw) || !p.tracked.txActive.Load() || p.txEpoch.Load() == 0 || p.txEpoch.Load() != p.tracked.txEpoch.Load() || !p.cleanupAvailable.CompareAndSwap(true, false) {
-		return errFirstAudioGuardProbeRejected
+		return p.terminalizeAndDiscardUncertainConnection()
 	}
 	defer p.cleanupPreflight.Store(false)
 	if !p.permit.CompareAndSwap(uint32(firstAudioSQLPermitNone), uint32(firstAudioSQLPermitTransactionCleanup)) {
-		p.cleanupAvailable.Store(true)
-		return errFirstAudioGuardProbeRejected
+		return p.terminalizeAndDiscardUncertainConnection()
 	}
 	defer p.permit.Store(uint32(firstAudioSQLPermitNone))
 	tx := p.activeTx.Load()
 	if tx == nil {
-		p.discardPinnedConnection()
-		return errFirstAudioGuardProbeRejected
+		return p.terminalizeAndDiscardUncertainConnection()
 	}
 	err := tx.Rollback()
 	if err != nil || p.tracked.txActive.Load() || !p.raw.AutoCommit() {
-		p.discardPinnedConnection()
-		return fmt.Errorf("probe rollback unconfirmed: %w", errFirstAudioGuardProbeRejected)
+		cleanupErr := p.terminalizeAndDiscardUncertainConnection()
+		return fmt.Errorf("probe rollback unconfirmed: %w (rollback error=%v)", cleanupErr, err)
 	}
 	p.activeTx.CompareAndSwap(tx, nil)
 	return nil
@@ -223,9 +222,87 @@ func firstAudioCleanupPhaseAllowed(controller *firstAudioGuardController, probeB
 	return controller.IsTerminal() && active != nil && active.phase == firstAudioGuardTerminal
 }
 
-func (p *firstAudioRealSQLAuthorizer) discardPinnedConnection() {
-	if p != nil && p.pinned != nil {
-		_ = p.pinned.Raw(func(any) error { return driver.ErrBadConn })
+func (p *firstAudioRealSQLAuthorizer) terminalizeAndDiscardUncertainConnection() error {
+	if p == nil {
+		return errFirstAudioGuardProbeRejected
+	}
+	if p.controller != nil {
+		p.controller.Terminalize()
+	}
+	if err := p.discardPinnedConnection(); err != nil {
+		return fmt.Errorf("uncertain probe cleanup; physical connection retirement unconfirmed: %w", err)
+	}
+	return errFirstAudioGuardProbeRejected
+}
+
+func (p *firstAudioRealSQLAuthorizer) discardPinnedConnection() error {
+	if p == nil || p.pinned == nil || p.connections == nil || p.raw == nil || p.registryID == "" {
+		return errFirstAudioGuardProbeRejected
+	}
+	rawErr := p.pinned.Raw(func(any) error { return driver.ErrBadConn })
+	if p.connections.IsLive(p.registryID, p.raw) {
+		return fmt.Errorf("physical SQLite connection %s remains registered after ErrBadConn", p.registryID)
+	}
+	if p.tracked == nil || !p.tracked.closeOK.Load() {
+		return fmt.Errorf("physical SQLite connection %s was retired from registry without a confirmed successful Close", p.registryID)
+	}
+	if rawErr != nil && !errors.Is(rawErr, driver.ErrBadConn) {
+		return rawErr
+	}
+	return nil
+}
+
+func TestFirstAudioRealSQLDiscardPinnedConnectionRetiresPhysicalIdentity(t *testing.T) {
+	registry := newFirstAudioSQLiteConnectionRegistry()
+	driverName := fmt.Sprintf("first_audio_discard_%d", firstAudioProbeDriverSequence.Add(1))
+	if err := registerFirstAudioTrackedSQLiteDriver(driverName, func(conn *sqlite3.SQLiteConn) error {
+		_, err := registry.Register(conn)
+		return err
+	}, registry.Retire); err != nil {
+		t.Fatal("register tracked SQLite driver:", err)
+	}
+	pool, err := sql.Open(driverName, filepath.Join(t.TempDir(), "discard.db"))
+	if err != nil {
+		t.Fatal("open isolated SQLite pool:", err)
+	}
+	defer pool.Close()
+	pinned, err := pool.Conn(context.Background())
+	if err != nil {
+		t.Fatal("pin isolated SQLite connection:", err)
+	}
+	defer pinned.Close()
+	var tracked *firstAudioTrackedSQLiteConn
+	if err := pinned.Raw(func(driverConn any) error {
+		var ok bool
+		tracked, ok = driverConn.(*firstAudioTrackedSQLiteConn)
+		if !ok || tracked == nil || tracked.raw == nil {
+			return fmt.Errorf("unexpected tracked connection %T", driverConn)
+		}
+		return nil
+	}); err != nil {
+		t.Fatal("resolve isolated SQLite connection:", err)
+	}
+	registration, live := registry.Lookup(tracked.raw)
+	if !live || !registry.IsLive(registration.ID, tracked.raw) {
+		t.Fatal("new physical connection is absent from registry")
+	}
+	controller := newFirstAudioGuardController()
+	authorizer := &firstAudioRealSQLAuthorizer{
+		controller:  controller,
+		connections: registry,
+		registryID:  registration.ID,
+		raw:         tracked.raw,
+		tracked:     tracked,
+		pinned:      pinned,
+	}
+	if err := authorizer.terminalizeAndDiscardUncertainConnection(); !errors.Is(err, errFirstAudioGuardProbeRejected) {
+		t.Fatalf("terminalize and discard uncertain physical connection = %v, want rejected probe after confirmed cleanup", err)
+	}
+	if registry.IsLive(registration.ID, tracked.raw) || !tracked.closeOK.Load() {
+		t.Fatal("discarded physical connection lacks registry retirement or confirmed successful Close")
+	}
+	if !controller.IsTerminal() {
+		t.Fatal("uncertain physical cleanup did not terminalize controller")
 	}
 }
 
@@ -489,9 +566,7 @@ func TestFirstAudioMatrixCleanupPhaseAllowsOnlyPreflightOrItsTerminalCleanup(t *
 	if err != nil {
 		t.Fatal("construct DRIVER_PROBE context:", err)
 	}
-	if err := controller.PublishInitial(driver); err != nil {
-		t.Fatal("initialize DRIVER_PROBE controller:", err)
-	}
+	controller.publisher.Store(driver)
 	if firstAudioCleanupPhaseAllowed(controller, true) {
 		t.Fatal("cleanup permit accepted during DRIVER_PROBE")
 	}
@@ -502,9 +577,7 @@ func TestFirstAudioMatrixCleanupPhaseAllowsOnlyPreflightOrItsTerminalCleanup(t *
 	if err != nil {
 		t.Fatal("construct STARTUP_PROBE context:", err)
 	}
-	if err := controller.publisher.Publish(startup); err != nil {
-		t.Fatal("advance controller to STARTUP_PROBE:", err)
-	}
+	controller.publisher.Store(startup)
 	if firstAudioCleanupPhaseAllowed(controller, true) {
 		t.Fatal("cleanup permit accepted during STARTUP_PROBE")
 	}
@@ -512,9 +585,7 @@ func TestFirstAudioMatrixCleanupPhaseAllowsOnlyPreflightOrItsTerminalCleanup(t *
 	if err != nil {
 		t.Fatal("construct PREFLIGHT context:", err)
 	}
-	if err := controller.publisher.Publish(preflight); err != nil {
-		t.Fatal("advance controller to PREFLIGHT:", err)
-	}
+	controller.publisher.Store(preflight)
 	if !firstAudioCleanupPhaseAllowed(controller, true) {
 		t.Fatal("PREFLIGHT failed to retain its coordinator-only rollback permit")
 	}
