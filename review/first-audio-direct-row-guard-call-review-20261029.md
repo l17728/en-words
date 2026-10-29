@@ -25,9 +25,14 @@ or classroom acceptance.
 
 ## Validation status
 
-Local Windows validation is unavailable because `go`/`gofmt` are not installed.
-Linux and Windows CGO protocol tests, formatting, vet, and production-symbol
-checks are **PENDING GitHub Actions**. No test result is claimed until CI passes.
+The first [Linux and Windows protocol run](https://github.com/l17728/en-words/actions/runs/40812824256)
+failed. It confirmed the expected authorization error text, but the driver's
+reported primary SQLite code did not match the test's `SQLITE_AUTH` assumption;
+the test now prints primary/expected codes so the assertion can be grounded in
+the observed driver behavior. The same run found an existing regression check
+that expected `txActive` to remain true after successful physical Close; it now
+proves the transaction was active before cleanup and retired only after
+`closeOK`. Corrected CGO tests and platform validation are **PENDING**.
 
 ## Acceptance boundary
 

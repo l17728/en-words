@@ -1,7 +1,7 @@
 # First-Audio Direct Row-Guard Call Negative SDD
 
 Date: 2026-10-29
-Status: design, security, and test review approved; implementation complete; CI pending.
+Status: design, security, and test review approved; implementation under CI correction after first cross-platform run exposed an error-code assumption and an outdated close-state assertion.
 
 ## Goal
 

@@ -1001,7 +1001,7 @@ func testFirstAudioDirectRowGuardUDFChild(t *testing.T) {
 	})
 	var sqliteErr sqlite3.Error
 	if queryErr == nil || !errors.As(queryErr, &sqliteErr) || sqliteErr.Code != sqlite3.ErrAuth {
-		t.Fatalf("direct top-level row-guard call error=%T %v, want SQLITE_AUTH", queryErr, queryErr)
+		t.Fatalf("direct top-level row-guard call error=%T %v sqlite_code=%d want SQLITE_AUTH=%d", queryErr, queryErr, sqliteErr.Code, sqlite3.ErrAuth)
 	}
 	deniedTuple := authorizer.lastDenied.Load()
 	if authorizer.denials.Load() != 1 || deniedTuple == nil || !strings.Contains(deniedTuple.(string), `source=""`) || !strings.Contains(deniedTuple.(string), `arg2="first_audio_row_guard"`) {
@@ -1136,6 +1136,9 @@ func TestFirstAudioMatrixRealSQLMissingCleanupAuthorityTerminalizesAndDiscardsAc
 	sessionRef.session.Store(session)
 	// cleanupPreflight is deliberately absent while a transaction is active.
 	// The helper must fail closed rather than leave this connection reusable.
+	if !tracked.txActive.Load() || tracked.closeOK.Load() || tracked.raw.AutoCommit() {
+		t.Fatal("test setup did not reach an active transaction before cleanup rejection")
+	}
 	if err := authorizer.rollbackProbeTransaction(); !errors.Is(err, errFirstAudioGuardProbeRejected) {
 		t.Fatalf("rollback with missing cleanup authority = %v, want rejected probe after terminal cleanup", err)
 	}
@@ -1161,8 +1164,8 @@ func TestFirstAudioMatrixRealSQLMissingCleanupAuthorityTerminalizesAndDiscardsAc
 	if registry.IsLive(registration.ID, tracked.raw) || !tracked.closeOK.Load() {
 		t.Fatal("uncertain active transaction connection was not retired after successful Close")
 	}
-	if !tracked.txActive.Load() {
-		t.Fatal("test did not exercise an active transaction at the cleanup rejection point")
+	if tracked.txActive.Load() || !tracked.closeOK.Load() {
+		t.Fatal("successful physical Close did not retire the formerly active SQLite transaction")
 	}
 }
 
