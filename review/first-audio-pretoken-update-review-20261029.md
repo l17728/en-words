@@ -15,9 +15,9 @@ Scope: component-level SQLite lesson trigger/UDF and challenge ordering case in 
 
 ## Validation
 
-- GitHub Actions Linux/Windows CGO, focused first-audio suite, Linux race and API vet: pending.
+- GitHub Actions Linux/Windows CGO, focused first-audio suite, Linux race and API vet: PASS — [run 40801551667](https://github.com/l17728/en-words/actions/runs/40801551667). Linux protocol completed in 3m03s; Windows boundaries completed in 3m48s.
 - Local Windows Go test execution is unavailable because the native Go command previously hung without output; Actions is the verification environment.
 
 ## Acceptance boundary
 
-This closes only the component-level real-SQL pre-token UPDATE ordering case after CI passes. The full PREFLIGHT negative matrix, isolated backend binding, guarded App JOURNEY, two-process Playwright reset race, performance matrix, and classroom pilot remain open.
+This closes only the component-level real-SQL pre-token UPDATE ordering case. The full PREFLIGHT negative matrix, isolated backend binding, guarded App JOURNEY, two-process Playwright reset race, performance matrix, and classroom pilot remain open.

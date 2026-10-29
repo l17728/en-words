@@ -1,7 +1,7 @@
 # First-Audio Pre-Token Update Negative SDD
 
 Date: 2026-10-29
-Status: design/security/test review approved; component test implemented; CI pending.
+Status: design/security/test review approved; component test implemented; Linux and Windows CI passed (run 40801551667).
 
 ## Goal and scope
 
