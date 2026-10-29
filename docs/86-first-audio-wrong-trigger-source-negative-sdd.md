@@ -1,7 +1,7 @@
 # First-Audio Wrong Trigger-Source Negative SDD
 
 Date: 2026-10-29
-Status: design, security, and test review approved; implementation complete; Linux/Windows protocol CI pending.
+Status: design, security, and test review approved; implementation complete; Linux/Windows protocol CI passed.
 
 ## Goal and boundary
 
@@ -31,3 +31,7 @@ Call `terminalizeAndDiscardUncertainConnection`; require `errFirstAudioGuardProb
 ## Validation
 
 Review this SDD before implementation. Then run the isolated Go CGO test, first-audio protocol matrix on Linux and Windows, Linux race/vet/format checks, and full Linux backend package regression. The existing docs/78 listener-factory, guarded-App, browser journey, performance, and human classroom gates remain open.
+
+## Acceptance evidence
+
+Both design/security and test-quality reviewers approved the SDD and implementation; see `review/first-audio-wrong-trigger-source-review-20261029.md`. Commit `225919b` passed [Linux and Windows protocol CI](https://github.com/l17728/en-words/actions/runs/40817001582), including the CGO `TestFirstAudioMatrixRealSQL...` suite, Linux race/vet/format checks, and Windows CGO checks. The change accepts only this wrong-trigger-source negative subcase; the broader docs/78 and guarded-App gates remain open.

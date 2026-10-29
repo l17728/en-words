@@ -27,6 +27,7 @@ The design, security, and test-quality reviews are approved. Reviewers confirmed
 that the test uses the tracked raw connection, exact seeded lesson and no-op
 UPDATE, asserts the exact trigger-source denial tuple and zero UDF callbacks,
 and safely reaps the isolated child. The event log records the tuple and SQLite
-result; the raw challenge token is zeroed after setup. Linux/Windows CGO protocol
-CI is pending. Do not treat the earlier Python SQLite shape probe as acceptance
-evidence.
+result; the raw challenge token is zeroed after setup. Linux/Windows CGO
+protocol CI passed on commit `225919b`: [run 40817001582](https://github.com/l17728/en-words/actions/runs/40817001582).
+The earlier Python SQLite shape probe remains exploratory only and is not
+acceptance evidence.
