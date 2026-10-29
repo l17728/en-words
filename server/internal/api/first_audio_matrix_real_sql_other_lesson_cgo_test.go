@@ -221,7 +221,7 @@ func testFirstAudioOtherLessonUpdateChild(t *testing.T) {
 		preflightSpec.probeContracts = []firstAudioGuardProbeContract{challenge.Contract()}
 		preflightSpec.rowContracts = []firstAudioGuardRowContract{{
 			table: "lessons", operation: "UPDATE", identity: fmt.Sprintf("lesson:%d/conn:%s", lessonA, binding.connection),
-			oldRow: []byte("bound-lesson-a-old"), newRow: []byte("bound-lesson-a-new"),
+			oldRow: []byte("bound-lesson-a-noop-projection"), newRow: []byte("bound-lesson-a-noop-projection"),
 		}}
 		preflightSpec.requirePhysicalProbes = true
 		preflight, err := newFirstAudioGuardContext(preflightSpec)
