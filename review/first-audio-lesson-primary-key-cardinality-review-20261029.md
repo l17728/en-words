@@ -12,7 +12,7 @@ The test uses the production `store.Open` migration and runs schema inspection b
 
 ## Test-quality review — PASS
 
-The test requires exactly one `pk=1` column named `id`, with declared type `INTEGER`, and all other columns `pk=0`. A duplicate insert must be `*modernc.org/sqlite.Error` with code 1555, with a separate assertion that one row remains. The fixed UPDATE must affect exactly one row. The exact test is included in Linux and Windows focused selectors and Linux race selector; SDD, review artifact, and test paths are wired into push and pull-request filters.
+The test requires exactly one `pk=1` column named `id`, with declared type `INTEGER`, and all other columns `pk=0`. A duplicate insert must be `*github.com/glebarez/go-sqlite.Error` with code 1555, with a separate assertion that one row remains. The fixed UPDATE must affect exactly one row. The exact test is included in Linux and Windows focused selectors and Linux race selector; SDD, review artifact, and test paths are wired into push and pull-request filters.
 
 ## Decision
 
@@ -21,3 +21,8 @@ Approved for implementation. No acceptance claim beyond migrated-schema primary-
 ## Implementation review — PASS
 
 Security review confirmed the temporary migrated DB, bounded logs, and narrow conclusion. Test-quality review caught a case-sensitive PRAGMA type comparison; implementation now uses `strings.EqualFold` because the checked-in migrated schema declares `integer` in lowercase. Remaining assertions and Linux/Windows/race selectors passed review. No local Go tests were run during review.
+
+
+## CI finding and follow-up review — PASS
+
+The first compile passed the test source review but CI exposed that importing modernc.org/sqlite.Error directly loaded a second driver instance alongside the active glebarez fork, causing duplicate driver registration. The test now asserts *github.com/glebarez/go-sqlite.Error, the package actually used by store.Open. Security and test-quality reviewers re-reviewed the SDD and implementation and confirmed the driver type, logging, assertions, scope, and selectors. The follow-up CI run is pending.

@@ -1,7 +1,7 @@
 # First-Audio Lesson Primary-Key Cardinality SDD
 
 Date: 2026-10-29  
-Status: design review requested; implementation not started.
+Status: SDD reviewed; implementation reviewed; Linux/Windows CI rerun pending.
 
 ## Goal and boundary
 
@@ -11,7 +11,7 @@ Establish against the real GORM/SQLite migrated schema that `lessons.id` is the 
 
 Open a fresh temporary database through `store.Open`. Before installing any guard authorizer, query `PRAGMA table_info(lessons)` and assert every schema row: exactly one column has `pk=1`, its name is `id`, its declared type is `INTEGER`, and all other columns have `pk=0`. This rules out a composite key and establishes the migrated schema's INTEGER primary-key shape. The duplicate-insert constraint check independently proves uniqueness; this test does not claim rowid-alias semantics.
 
-Insert one synthetic `store.Lesson` with a unique ID, then attempt another insert with that ID. Require `errors.As` to `*modernc.org/sqlite.Error` and `Code()==1555` (`SQLITE_CONSTRAINT_PRIMARYKEY`); query and assert the table still contains exactly one row with that ID. Do not accept a generic insert failure or a different constraint code. Execute the fixed no-op statement `UPDATE main.lessons SET id=id WHERE id=?` and require exactly one affected row. The separate docs/88 zero-row negative remains the evidence for a missing target; do not conflate these outcomes.
+Insert one synthetic `store.Lesson` with a unique ID, then attempt another insert with that ID. Require `errors.As` to the active driver fork type `*github.com/glebarez/go-sqlite.Error` (do not import `modernc.org/sqlite` separately, which would register a second SQLite driver instance) and `Code()==1555` (`SQLITE_CONSTRAINT_PRIMARYKEY`); query and assert the table still contains exactly one row with that ID. Do not accept a generic insert failure or a different constraint code. Execute the fixed no-op statement `UPDATE main.lessons SET id=id WHERE id=?` and require exactly one affected row. The separate docs/88 zero-row negative remains the evidence for a missing target; do not conflate these outcomes.
 
 Emit only trace ID, module/event, PK name/type/count, duplicate-insert rejection and SQLite code, fixed statement identity, and affected-row count. Never log row contents or credentials.
 

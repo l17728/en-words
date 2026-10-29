@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"enwords/internal/store"
-	sqlite "modernc.org/sqlite"
+	sqlitedriver "github.com/glebarez/go-sqlite"
 )
 
 func TestFirstAudioLessonPrimaryKeyCardinalityRealSchema(t *testing.T) {
@@ -71,7 +71,7 @@ func TestFirstAudioLessonPrimaryKeyCardinalityRealSchema(t *testing.T) {
 	}
 	duplicate := store.Lesson{ID: lessonID, StudentID: 872348, BookID: 872347, Status: "ACTIVE"}
 	duplicateErr := db.Create(&duplicate).Error
-	var sqliteErr *sqlite.Error
+	var sqliteErr *sqlitedriver.Error
 	if !errors.As(duplicateErr, &sqliteErr) || sqliteErr.Code() != 1555 {
 		code := 0
 		if sqliteErr != nil {
