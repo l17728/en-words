@@ -1,7 +1,7 @@
 # First-Audio JOURNEY Lease Integration SDD
 
 Date: 2026-10-29  
-Status: design review passed on 2026-10-29. The capture-only reset authorizer fixture and manifest are implemented and passed their separate four-domain review plus Linux/Windows CI. The production JOURNEY lease bridge, reset-permit enforcement, listener gating, and two-process journey remain unimplemented; do not infer their acceptance from the capture artifact.
+Status: design review passed on 2026-10-29. The capture-only reset authorizer fixture/manifest and a standalone test-only admission/reset-barrier primitive are implemented and separately reviewed. The primitive has Linux/Windows CI selectors and local Windows normal/race checks, but is not wired into real REST, WebSocket, timer/callback, or SQLite reset paths. The guarded App journey, reset-permit enforcement, listener gating, and two-process Playwright journey remain unimplemented; do not infer their acceptance from component tests.
 
 ## Goal and boundary
 
