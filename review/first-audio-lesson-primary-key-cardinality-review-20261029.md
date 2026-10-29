@@ -1,4 +1,4 @@
-﻿# First-Audio Lesson Primary-Key Cardinality SDD Review
+# First-Audio Lesson Primary-Key Cardinality SDD Review
 
 Date: 2026-10-29
 
@@ -17,3 +17,7 @@ The test requires exactly one `pk=1` column named `id`, with declared type `INTE
 ## Decision
 
 Approved for implementation. No acceptance claim beyond migrated-schema primary-key cardinality is authorized by this review.
+
+## Implementation review — PASS
+
+Security review confirmed the temporary migrated DB, bounded logs, and narrow conclusion. Test-quality review caught a case-sensitive PRAGMA type comparison; implementation now uses `strings.EqualFold` because the checked-in migrated schema declares `integer` in lowercase. Remaining assertions and Linux/Windows/race selectors passed review. No local Go tests were run during review.
