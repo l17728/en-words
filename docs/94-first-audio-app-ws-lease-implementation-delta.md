@@ -18,6 +18,7 @@ Design: [93-first-audio-journey-lease-integration-sdd.md](93-first-audio-journey
 - The targeted App/WS admission, socket closer, and write-pump tests passed three times under `go test -race`. A prior reset-barrier test exposed a test-only scheduling assumption (it observed closed admission before asynchronous socket-close callbacks); its wait now covers admission closure, both revoked sessions, and both close callbacks.
 - The positive integration test exercises login, lesson entry/ticket issuance, real Router WebSocket upgrade, initial frame, one student event, reset waiting on its operation lease, and zero session/operation leases before generation publication. It asserts lease drain only; it does not claim classroom mutation fencing or old-audio/caption behavior.
 - Architecture/backend and security reviews: PASS for this App/WS lifecycle slice. Test review findings were addressed with deferred/idempotent barrier release and 3-second WebSocket handshake limits. Reviewers explicitly excluded SQL permit coverage, timer/callback fencing, isolated backend reset, and the two-process browser journey from their acceptance.
+- GitHub Actions PASS (Linux protocol and Windows boundaries, [run 40884003725](https://github.com/l17728/en-words/actions/runs/40884003725)). Its browser step only discovers the isolated Playwright journey; it does not execute that journey.
 
 ## Remaining acceptance boundary
 
