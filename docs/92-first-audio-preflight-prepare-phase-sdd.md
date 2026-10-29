@@ -1,7 +1,7 @@
 # First-Audio PREFLIGHT Preparation Phase SDD
 
 Date: 2026-10-29
-Status: implementation present; Linux and Windows CGO protocol CI passed (run 40839202122); final implementation review in progress.
+Status: implementation accepted for the startup/PREFLIGHT slice; Linux and Windows CGO protocol CI passed (run 40839202122); broader matrix remains open.
 
 ## Problem
 
@@ -23,4 +23,4 @@ Tests must prove NewApp precedes pool expansion; the dialector identity is regis
 
 CI gates: add this SDD and its regression file to push and pull-request path filters; run `TestFirstAudioPreflightPrepare` in Linux normal, Linux `-race`, and Windows selectors.
 
-Design review is recorded in `review/first-audio-preflight-prepare-design-review-20261029.md`. Implementation review is in progress. GitHub Actions run `40839202122` passed both Linux protocol (including normal, `-race`, `go vet`, and production-binary boundary checks) and Windows CGO boundaries at commit `7ebe6f7244898c7f22036475852a89ca461dce0a`. The missing-startup-receipt regression asserts terminal fail-closed behavior: a rejected phase advance must leave neither STARTUP_PROBE nor PREFLIGHT_PREPARE active. Do not mark this phase accepted until final implementation review closes.
+Design and implementation reviews are recorded in `review/first-audio-preflight-prepare-design-review-20261029.md`. Architecture, backend, security, and test-quality implementation reviewers passed without P1/P2 findings. GitHub Actions run `40839202122` passed Linux protocol (normal, `-race`, `go vet`, and production-binary boundary checks) and Windows CGO boundaries at commit `7ebe6f7244898c7f22036475852a89ca461dce0a`. The missing-startup-receipt regression asserts terminal fail-closed behavior: a rejected phase advance leaves neither STARTUP_PROBE nor PREFLIGHT_PREPARE active. Acceptance is limited to startup/PREFLIGHT preparation; listener bind, JOURNEY, reset races, browser journey, performance, and classroom acceptance remain open.

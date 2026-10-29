@@ -1,11 +1,13 @@
 # First-Audio Guarded App Preparation SDD
 
 Date: 2026-10-29
-Status: design reviewed; PREFLIGHT_PREPARE phase implementation pending; do not treat the target sequence as implemented.
+Status: startup/PREFLIGHT preparation implemented; Linux and Windows CGO protocol CI passed (run 40839202122); listener bind, JOURNEY, reset, and browser acceptance remain unimplemented.
 
 ## Purpose and boundary
 
-Compose the reviewed fixture, tracked SQLite connection, immutable guard controller, real `api.NewApp`, and per-connection PREFLIGHT checks under one test-only owner, implementing the startup/PREFLIGHT slice of docs/74 and the strict STARTUP v1 -> PREFLIGHT_PREPARE v2 -> PREFLIGHT v3 sequence in docs/92. This is not protocol `bind`: it cannot return an API origin, create a listener, publish JOURNEY, or claim browser/classroom acceptance. All code stays in CGO-tagged `_test.go` files; no production route, flag, or binary dependency is added.
+Compose the reviewed fixture, tracked SQLite connection, immutable guard controller, real `api.NewApp`, and per-connection PREFLIGHT checks under one test-only owner. This implements the startup/PREFLIGHT slice of docs/74 and the strict STARTUP v1 -> PREFLIGHT_PREPARE v2 -> PREFLIGHT v3 sequence in docs/92. It is not protocol `bind`: it cannot return an API origin, create a listener, publish JOURNEY, or claim browser/classroom acceptance. All code stays in CGO-tagged `_test.go` files; no production route, flag, or binary dependency is added.
+
+The implementation passed GitHub Actions run `40839202122` on commit `7ebe6f7244898c7f22036475852a89ca461dce0a` (Linux normal/race/vet/binary boundary and Windows CGO). Architecture, security, and test-quality implementation reviews found no P1/P2 issues. Full backend integration and classroom acceptance remain open as listed above.
 
 ## API and ownership
 
