@@ -20,6 +20,8 @@ On Windows with GCC 16.2.0, `CGO_ENABLED=1`, and the repository's Go 1.25.14 too
 
 - `go test -vet=off ./internal/api -run '^TestFirstAudioJourneyAdmission' -count=1 -timeout=5m` — PASS (5.773s).
 - `go test -race -vet=off ./internal/api -run '^TestFirstAudioJourneyAdmission' -count=1 -timeout=5m` — PASS (7.586s).
+- `go test ./... -count=1` — PASS (all server packages).
+- `go test -race ./... -count=1` — PASS (all server packages; `internal/api` 288.158s, `internal/store` 170.306s).
 - `git diff --check` — PASS.
 
 Linux/Windows CI run [40865712975](https://github.com/l17728/en-words/actions/runs/40865712975) passed both `protocol` and `windows-boundaries`, including Linux race and Windows CGO harness checks.
