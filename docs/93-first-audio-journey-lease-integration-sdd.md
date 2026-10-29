@@ -1,7 +1,7 @@
 # First-Audio JOURNEY Lease Integration SDD
 
 Date: 2026-10-29  
-Status: design review passed on 2026-10-29. The capture-only reset authorizer fixture/manifest and a standalone test-only admission/reset-barrier primitive are implemented and separately reviewed. The primitive has Linux/Windows CI selectors and local Windows normal/race checks, but is not wired into real REST, WebSocket, timer/callback, or SQLite reset paths. The guarded App journey, reset-permit enforcement, listener gating, and two-process Playwright journey remain unimplemented; do not infer their acceptance from component tests.
+Status: design review passed on 2026-10-29. The capture-only reset authorizer fixture/manifest and a standalone test-only admission/reset-barrier primitive are implemented and separately reviewed; the primitive passed Linux/Windows CI run 40865712975 and local Windows normal/race checks. It is not wired into real REST, WebSocket, timer/callback, or SQLite reset paths. The guarded App journey, reset-permit enforcement, listener gating, and two-process Playwright journey remain unimplemented; do not infer their acceptance from component tests. Review details: `review/first-audio-journey-admission-review-20261029.md`.
 
 ## Goal and boundary
 

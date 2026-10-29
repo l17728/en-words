@@ -22,4 +22,4 @@ On Windows with GCC 16.2.0, `CGO_ENABLED=1`, and the repository's Go 1.25.14 too
 - `go test -race -vet=off ./internal/api -run '^TestFirstAudioJourneyAdmission' -count=1 -timeout=5m` — PASS (7.586s).
 - `git diff --check` — PASS.
 
-Linux/Windows CI selectors are included in `.github/workflows/first-audio-matrix-protocol.yml`; CI still must pass on the commit before this slice is accepted.
+Linux/Windows CI run [40865712975](https://github.com/l17728/en-words/actions/runs/40865712975) passed both `protocol` and `windows-boundaries`, including Linux race and Windows CGO harness checks.
