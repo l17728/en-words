@@ -36,10 +36,20 @@ code. The diagnostic run also found an existing regression check that expected
 transaction was active before cleanup and retired only after `closeOK`.
 Corrected CGO tests and platform validation are **PENDING**.
 
-The revised design and test review: **PASS**. The denial assertion now matches
+The revised design, security, and test review: **PASS**. The denial assertion now matches
 the complete PREFLIGHT/TOKEN_CONSUMPTION/SQLITE_FUNCTION tuple, the API's
 observed `SQLITE_ERROR` and authorization-denial text, and zero UDF callbacks.
-Reviewers performed static review; corrected Go tests still require CI.
+Reviewers performed static review; the corrected Linux/Windows CI passed in
+[run 40814548849](https://github.com/l17728/en-words/actions/runs/40814548849),
+including the CGO test selector, Linux race tests, Go formatting/vet, web build,
+Playwright discovery, Windows boundary tests, and production-symbol check.
+
+After review noted that docs/78 also requires an explicit no-later-phase
+assertion, the SDD was revised and reviewed again. The child now publishes a
+valid JOURNEY candidate to the terminal controller after cleanup and asserts
+`errFirstAudioGuardContextTransition`. This follow-up code change is **PENDING
+CI**. The listener-factory assertion remains out of scope for this no-App
+component child and remains open for guarded-App integration.
 
 ## Acceptance boundary
 

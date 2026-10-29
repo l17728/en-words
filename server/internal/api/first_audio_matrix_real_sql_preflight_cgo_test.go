@@ -1020,8 +1020,15 @@ func testFirstAudioDirectRowGuardUDFChild(t *testing.T) {
 	if firstAudioGuardProbeReceiptState(challenge.receipt.state.Load()) != firstAudioGuardProbeFailed || challenge.receipt.completeFor(binding, challenge.digest) || tracked.txActive.Load() || !tracked.closeOK.Load() || registry.IsLive(binding.connection, tracked.raw) {
 		t.Fatalf("direct-UDF terminal evidence incomplete: receipt=%d complete=%t txActive=%t closeOK=%t live=%t", challenge.receipt.state.Load(), challenge.receipt.completeFor(binding, challenge.digest), tracked.txActive.Load(), tracked.closeOK.Load(), registry.IsLive(binding.connection, tracked.raw))
 	}
+	journey, err := newFirstAudioGuardContext(firstAudioValidJourneySpec(4, binding.lessonID, binding.generation, 1))
+	if err != nil {
+		t.Fatal("construct valid post-denial JOURNEY candidate:", err)
+	}
+	if err := controller.publisher.Publish(journey); !errors.Is(err, errFirstAudioGuardContextTransition) {
+		t.Fatalf("JOURNEY publication after direct-UDF terminalization=%v, want terminal transition rejection", err)
+	}
 	cleanupDenials := authorizer.denials.Load() - directDenials
-	t.Logf("trace_id=%s module=first_audio_preflight event=direct_row_guard_udf_denied payload={sqlite_code:%d,direct_denials_before_cleanup:%d,cleanup_rollback_denials:%d,udf_callbacks:%d,receipt_state:%d,physical_close:%t,registry_live:%t}", binding.runID, sqliteErr.Code, directDenials, cleanupDenials, rowGuardCalls.Load(), challenge.receipt.state.Load(), tracked.closeOK.Load(), registry.IsLive(binding.connection, tracked.raw))
+	t.Logf("trace_id=%s module=first_audio_preflight event=direct_row_guard_udf_denied payload={sqlite_code:%d,direct_denials_before_cleanup:%d,cleanup_rollback_denials:%d,udf_callbacks:%d,receipt_state:%d,physical_close:%t,registry_live:%t,journey_publish_rejected:true}", binding.runID, sqliteErr.Code, directDenials, cleanupDenials, rowGuardCalls.Load(), challenge.receipt.state.Load(), tracked.closeOK.Load(), registry.IsLive(binding.connection, tracked.raw))
 }
 
 func TestFirstAudioMatrixRealSQLMissingCleanupAuthorityTerminalizesAndDiscardsActiveTransaction(t *testing.T) {
