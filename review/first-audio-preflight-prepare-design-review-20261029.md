@@ -18,4 +18,4 @@ Scope: `docs/92-first-audio-preflight-prepare-phase-sdd.md`, reconciled with doc
 5. Synchronized docs/74 and docs/91, including the PREPARE no-SQL exception to general metadata-read policy.
 6. Replaced caller-controlled startup verification flags with a controller-owned, one-use receipt bound to the STARTUP context and matching baseline/readback digests.
 
-This review approves the design only. Code review and CI remain required before accepting the implementation. Parent kill/reap for uncertain cleanup is not yet verified by this slice.
+This review approves the design only. GitHub Actions `40839202122` passed on commit `7ebe6f7244898c7f22036475852a89ca461dce0a`: Linux normal/race/vet/binary-boundary checks and Windows CGO boundaries. The fail-closed negative test asserts that a missing startup receipt terminalizes the controller and leaves both startup and PREPARE phases inactive. Final implementation review remains required before accepting this phase. Parent kill/reap for uncertain cleanup is not yet verified by this slice.

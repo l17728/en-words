@@ -1,7 +1,7 @@
 # First-Audio PREFLIGHT Preparation Phase SDD
 
 Date: 2026-10-29
-Status: design reviewed; implementation in progress; CGO CI pending.
+Status: implementation present; Linux and Windows CGO protocol CI passed (run 40839202122); final implementation review in progress.
 
 ## Problem
 
@@ -23,4 +23,4 @@ Tests must prove NewApp precedes pool expansion; the dialector identity is regis
 
 CI gates: add this SDD and its regression file to push and pull-request path filters; run `TestFirstAudioPreflightPrepare` in Linux normal, Linux `-race`, and Windows selectors.
 
-Design review is recorded in `review/first-audio-preflight-prepare-design-review-20261029.md`. Implementation review and Linux normal/race plus Windows CGO CI must pass before accepting this phase.
+Design review is recorded in `review/first-audio-preflight-prepare-design-review-20261029.md`. Implementation review is in progress. GitHub Actions run `40839202122` passed both Linux protocol (including normal, `-race`, `go vet`, and production-binary boundary checks) and Windows CGO boundaries at commit `7ebe6f7244898c7f22036475852a89ca461dce0a`. The missing-startup-receipt regression asserts terminal fail-closed behavior: a rejected phase advance must leave neither STARTUP_PROBE nor PREFLIGHT_PREPARE active. Do not mark this phase accepted until final implementation review closes.
