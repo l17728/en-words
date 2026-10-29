@@ -305,8 +305,8 @@ func TestFirstAudioPreflightPrepareRejectsMissingStartupVerificationReceipt(t *t
 	if err := transition.Publish(context.Background(), prepare, firstAudioGuardTransitionEvidence{}); !errors.Is(err, errFirstAudioGuardContextTransition) {
 		t.Fatalf("publish without controller verification receipt=%v, want rejection", err)
 	}
-	if controller.IsTerminal() || !controller.IsActivePhase(firstAudioGuardStartupProbe) || controller.IsActivePhase(firstAudioGuardPreflightPrepare) {
-		t.Fatal("missing startup verification receipt changed the active phase")
+	if !controller.IsTerminal() || controller.IsActivePhase(firstAudioGuardStartupProbe) || controller.IsActivePhase(firstAudioGuardPreflightPrepare) {
+		t.Fatal("missing startup verification receipt did not fail closed")
 	}
 }
 
