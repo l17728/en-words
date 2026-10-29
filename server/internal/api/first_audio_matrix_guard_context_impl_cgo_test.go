@@ -23,12 +23,13 @@ var (
 type firstAudioGuardContextPhase string
 
 const (
-	firstAudioGuardDriverProbe  firstAudioGuardContextPhase = "DRIVER_PROBE"
-	firstAudioGuardStartupProbe firstAudioGuardContextPhase = "STARTUP_PROBE"
-	firstAudioGuardPreflight    firstAudioGuardContextPhase = "PREFLIGHT"
-	firstAudioGuardJourney      firstAudioGuardContextPhase = "JOURNEY"
-	firstAudioGuardResetApply   firstAudioGuardContextPhase = "RESET_APPLY"
-	firstAudioGuardTerminal     firstAudioGuardContextPhase = "TERMINAL"
+	firstAudioGuardDriverProbe      firstAudioGuardContextPhase = "DRIVER_PROBE"
+	firstAudioGuardStartupProbe     firstAudioGuardContextPhase = "STARTUP_PROBE"
+	firstAudioGuardPreflightPrepare firstAudioGuardContextPhase = "PREFLIGHT_PREPARE"
+	firstAudioGuardPreflight        firstAudioGuardContextPhase = "PREFLIGHT"
+	firstAudioGuardJourney          firstAudioGuardContextPhase = "JOURNEY"
+	firstAudioGuardResetApply       firstAudioGuardContextPhase = "RESET_APPLY"
+	firstAudioGuardTerminal         firstAudioGuardContextPhase = "TERMINAL"
 )
 
 type firstAudioGuardContextSpec struct {
@@ -151,6 +152,10 @@ func (c *firstAudioGuardContext) validateShape() error {
 		}
 	case firstAudioGuardStartupProbe:
 		if c.generation != 1 || !idsClear || !keysClear || !noConnections || !noRows {
+			return errFirstAudioGuardContextInvalid
+		}
+	case firstAudioGuardPreflightPrepare:
+		if c.version != 2 || c.generation != 1 || !idsClear || !keysClear || !noConnections || !noRows {
 			return errFirstAudioGuardContextInvalid
 		}
 	case firstAudioGuardPreflight:
@@ -278,16 +283,45 @@ func (c *firstAudioGuardContext) ProbeCount() int {
 }
 
 type firstAudioGuardContextPublisher struct {
-	current           atomic.Pointer[firstAudioGuardContext]
-	callbackTerminal  atomic.Bool
-	beforePublishCAS  func()
-	beforeTerminalCAS func()
+	requirePreflightPrepare bool
+	transitionCapability    *struct{}
+	current                 atomic.Pointer[firstAudioGuardContext]
+	callbackTerminal        atomic.Bool
+	beforePublishCAS        func()
+	beforeTerminalCAS       func()
+}
+
+type firstAudioValidatedTransition struct {
+	owner      *firstAudioGuardController
+	lease      *firstAudioGuardTransitionLease
+	candidate  *firstAudioGuardContext
+	capability *struct{}
 }
 
 const firstAudioGuardContextCASLimit = 128
 
 func (p *firstAudioGuardContextPublisher) Publish(candidate *firstAudioGuardContext) error {
+	if p == nil || candidate == nil {
+		return errFirstAudioGuardContextInvalid
+	}
+	active := p.current.Load()
+	if p.requirePreflightPrepare && active != nil && ((active.phase == firstAudioGuardStartupProbe && (candidate.phase == firstAudioGuardPreflightPrepare || candidate.phase == firstAudioGuardPreflight)) || (active.phase == firstAudioGuardPreflightPrepare && candidate.phase == firstAudioGuardPreflight)) {
+		return errFirstAudioGuardContextTransition
+	}
 	return p.publish(candidate, false)
+}
+
+func (p *firstAudioGuardContextPublisher) publishGuardedTransition(permit *firstAudioValidatedTransition) error {
+	if p == nil || permit == nil || permit.owner == nil || permit.lease == nil || permit.candidate == nil {
+		return errFirstAudioGuardContextTransition
+	}
+	owner := permit.owner
+	// The caller holds owner.mu. The call-scoped permit is constructed only
+	// after TransitionLease.Publish validates phase and all transition evidence.
+	if permit.capability == nil || permit.capability != p.transitionCapability || &owner.publisher != p || permit.lease.owner != owner || !owner.exclusive || owner.activeTransition != permit.lease || permit.lease.released || permit.lease.busy || owner.activeLeasesLocked() != 0 || owner.isTerminalLocked() {
+		return errFirstAudioGuardContextTransition
+	}
+	return p.publishCore(permit.candidate, false, permit)
 }
 
 func (p *firstAudioGuardContextPublisher) publishDriverStartup(candidate *firstAudioGuardContext, receipt *firstAudioDriverProbeReceipt) error {
@@ -311,6 +345,10 @@ func (p *firstAudioGuardContextPublisher) publishDriverStartup(candidate *firstA
 }
 
 func (p *firstAudioGuardContextPublisher) publish(candidate *firstAudioGuardContext, driverStartupReceipt bool) error {
+	return p.publishCore(candidate, driverStartupReceipt, nil)
+}
+
+func (p *firstAudioGuardContextPublisher) publishCore(candidate *firstAudioGuardContext, driverStartupReceipt bool, permit *firstAudioValidatedTransition) error {
 	if p == nil || candidate == nil {
 		return errFirstAudioGuardContextInvalid
 	}
@@ -328,6 +366,11 @@ func (p *firstAudioGuardContextPublisher) publish(candidate *firstAudioGuardCont
 		}
 		if !firstAudioGuardContextTransitionAllowed(active, detached) {
 			return errFirstAudioGuardContextTransition
+		}
+		if p.requirePreflightPrepare && active != nil && ((active.phase == firstAudioGuardStartupProbe && (detached.phase == firstAudioGuardPreflightPrepare || detached.phase == firstAudioGuardPreflight)) || (active.phase == firstAudioGuardPreflightPrepare && detached.phase == firstAudioGuardPreflight)) {
+			if permit == nil || permit.candidate != candidate || permit.capability == nil || permit.capability != p.transitionCapability || permit.owner == nil || &permit.owner.publisher != p || permit.lease == nil || permit.lease.owner != permit.owner || permit.owner.activeTransition != permit.lease || !permit.owner.exclusive || permit.lease.released || permit.lease.busy || permit.owner.isTerminalLocked() || permit.owner.activeLeasesLocked() != 0 {
+				return errFirstAudioGuardContextTransition
+			}
 		}
 		if active != nil && active.phase == firstAudioGuardDriverProbe && detached.phase == firstAudioGuardStartupProbe && !driverStartupReceipt {
 			return errFirstAudioGuardContextTransition
@@ -394,7 +437,9 @@ func firstAudioGuardContextTransitionAllowed(active, candidate *firstAudioGuardC
 	case firstAudioGuardDriverProbe:
 		return candidate.phase == firstAudioGuardStartupProbe && active.currentLessonID == candidate.currentLessonID && active.generation == candidate.generation
 	case firstAudioGuardStartupProbe:
-		return candidate.phase == firstAudioGuardPreflight && active.currentLessonID == candidate.currentLessonID && active.generation == candidate.generation
+		return (candidate.phase == firstAudioGuardPreflightPrepare || candidate.phase == firstAudioGuardPreflight) && active.currentLessonID == candidate.currentLessonID && active.generation == candidate.generation
+	case firstAudioGuardPreflightPrepare:
+		return candidate.phase == firstAudioGuardPreflight && active.currentLessonID == candidate.currentLessonID && active.generation == candidate.generation && candidate.version == active.version+1
 	case firstAudioGuardPreflight:
 		return candidate.phase == firstAudioGuardJourney && active.currentLessonID == candidate.currentLessonID && active.generation == candidate.generation
 	case firstAudioGuardJourney:

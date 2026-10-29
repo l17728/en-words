@@ -91,6 +91,7 @@ type firstAudioRealSQLAuthorizer struct {
 	activeTx                atomic.Pointer[sql.Tx]
 	txEpoch                 atomic.Uint64
 	denials                 atomic.Uint64
+	authorizerEvents        atomic.Uint64
 	lastDenied              atomic.Value
 	onAuthorize             func(firstAudioRealSQLAuthorizerEvent)
 }
@@ -118,6 +119,7 @@ func (p *firstAudioRealSQLAuthorizer) install(conn *sqlite3.SQLiteConn) error {
 	}
 	p.registryID, p.raw = registration.ID, conn
 	conn.RegisterAuthorizerWithTriggerName(func(action int, arg1, arg2, databaseName, triggerName string) int {
+		p.authorizerEvents.Add(1)
 		active := p.controller.publisher.Load()
 		allowed := false
 		if p.registryID == registration.ID && p.raw == conn && p.cleanupPreflight.Load() && firstAudioCleanupPhaseAllowed(p.controller, true) && firstAudioAuthorizeCleanupTuple(firstAudioSQLPermit(p.permit.Load()), action, arg1, arg2, databaseName, triggerName, !conn.AutoCommit()) {

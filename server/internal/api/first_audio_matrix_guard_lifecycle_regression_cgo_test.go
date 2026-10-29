@@ -6,14 +6,586 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	sqlite3 "github.com/mattn/go-sqlite3"
 )
+
+func TestFirstAudioPreflightPrepareStrictOwnerPublishesExactUnarmedReceipts(t *testing.T) {
+	controller := newFirstAudioGuardControllerWithPolicy(true, 3)
+	startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: "preflight_prepare_owner", currentLessonID: 701, generation: 1, phase: firstAudioGuardStartupProbe, version: 1})
+	if err != nil {
+		t.Fatal("create startup context:", err)
+	}
+	transition, err := firstAudioTestPublishInitialStartup(controller, startup)
+	if err != nil {
+		t.Fatal("publish startup:", err)
+	}
+	prepare, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: startup.runID, currentLessonID: startup.currentLessonID, generation: 1, phase: firstAudioGuardPreflightPrepare, version: 2})
+	if err != nil {
+		t.Fatal("create prepare context:", err)
+	}
+	var concurrentRawErr error
+	controller.publisher.beforePublishCAS = func() {
+		done := make(chan error, 1)
+		go func() { done <- controller.publisher.publish(prepare, false) }()
+		concurrentRawErr = <-done
+	}
+	if err := transition.Publish(context.Background(), prepare, firstAudioGuardTransitionEvidence{}); err != nil {
+		t.Fatal("publish prepare:", err)
+	}
+	controller.publisher.beforePublishCAS = nil
+	if !errors.Is(concurrentRawErr, errFirstAudioGuardContextTransition) {
+		t.Fatalf("concurrent raw publish during validated transition error=%v, want rejection", concurrentRawErr)
+	}
+	if !controller.IsActivePhase(firstAudioGuardPreflightPrepare) {
+		t.Fatal("PREPARE was not published")
+	}
+
+	bindings := make([]firstAudioGuardProbeBinding, 0, 3)
+	contracts := make([]firstAudioGuardProbeContract, 0, 3)
+	rows := make([]firstAudioGuardRowContract, 0, 3)
+	receipts := make([]*firstAudioGuardProbeReceipt, 0, 3)
+	expectedConnections := make(map[string]*sqlite3.SQLiteConn, 3)
+	ids := make([]string, 0, 3)
+	tokens := make([][]byte, 0, 3)
+	for range 3 {
+		raw := firstAudioTestOpenSQLiteConnection(t)
+		registration, registerErr := controller.connections.Register(raw)
+		if registerErr != nil {
+			t.Fatal("register physical connection:", registerErr)
+		}
+		expectedConnections[registration.ID] = raw
+		id := registration.ID
+		t.Cleanup(func() { controller.connections.Retire(raw) })
+		binding := firstAudioGuardProbeBinding{runID: startup.runID, lessonID: startup.currentLessonID, generation: 1, version: 3, connection: id, probeID: "probe-" + id}
+		token, challenge, issueErr := newFirstAudioPhysicalProbeChallenge(binding)
+		if issueErr != nil {
+			t.Fatal("issue physical challenge:", issueErr)
+		}
+		tokens = append(tokens, token)
+		bindings = append(bindings, binding)
+		contracts = append(contracts, challenge.Contract())
+		rows = append(rows, firstAudioGuardRowContract{table: "lessons", operation: "UPDATE", identity: fmt.Sprintf("lesson:%d/conn:%s", binding.lessonID, id), oldRow: []byte("same"), newRow: []byte("same")})
+		receipts = append(receipts, challenge.receipt)
+		ids = append(ids, id)
+	}
+	t.Cleanup(func() {
+		for _, token := range tokens {
+			zeroFirstAudioSecret(token)
+		}
+	})
+	candidate, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: startup.runID, currentLessonID: startup.currentLessonID, generation: 1, phase: firstAudioGuardPreflight, version: 3, connectionIDs: ids, probeContracts: contracts, rowContracts: rows, requirePhysicalProbes: true})
+	if err != nil {
+		t.Fatal("create final preflight context:", err)
+	}
+	if err := transition.Publish(context.Background(), candidate, firstAudioGuardTransitionEvidence{probeBindings: bindings, probeReceipts: receipts, expectedConnections: expectedConnections}); err != nil {
+		t.Fatal("publish final PREFLIGHT:", err)
+	}
+	if !controller.IsActivePhase(firstAudioGuardPreflight) {
+		t.Fatal("final PREFLIGHT phase was not published")
+	}
+	for _, receipt := range receipts {
+		if !receipt.armed.Load() || firstAudioGuardProbeReceiptState(receipt.state.Load()) != firstAudioGuardProbeIssued || receipt.active.Load() != 0 {
+			t.Fatal("receipt was not armed after publication in ISSUED state")
+		}
+	}
+	if controller.admissionOpen {
+		t.Fatal("protocol admission opened before JOURNEY")
+	}
+}
+
+func TestFirstAudioPreflightPrepareStrictOwnerRejectsLegacyDirectTransition(t *testing.T) {
+	controller := newFirstAudioGuardControllerWithPolicy(true, 3)
+	startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: "preflight_prepare_bypass", currentLessonID: 702, generation: 1, phase: firstAudioGuardStartupProbe, version: 1})
+	if err != nil {
+		t.Fatal("create startup context:", err)
+	}
+	transition, err := firstAudioTestPublishInitialStartup(controller, startup)
+	if err != nil {
+		t.Fatal("publish startup:", err)
+	}
+	bindings := make([]firstAudioGuardProbeBinding, 0, 3)
+	contracts := make([]firstAudioGuardProbeContract, 0, 3)
+	rows := make([]firstAudioGuardRowContract, 0, 3)
+	receipts := make([]*firstAudioGuardProbeReceipt, 0, 3)
+	ids := make([]string, 0, 3)
+	tokens := make([][]byte, 0, 3)
+	for range 3 {
+		raw := firstAudioTestOpenSQLiteConnection(t)
+		registration, registerErr := controller.connections.Register(raw)
+		if registerErr != nil {
+			t.Fatal("register physical connection:", registerErr)
+		}
+		t.Cleanup(func() { controller.connections.Retire(raw) })
+		binding := firstAudioGuardProbeBinding{runID: startup.runID, lessonID: startup.currentLessonID, generation: 1, version: 2, connection: registration.ID, probeID: "probe-" + registration.ID}
+		token, challenge, issueErr := newFirstAudioPhysicalProbeChallenge(binding)
+		if issueErr != nil {
+			t.Fatal("issue physical challenge:", issueErr)
+		}
+		tokens = append(tokens, token)
+		bindings = append(bindings, binding)
+		contracts = append(contracts, challenge.Contract())
+		rows = append(rows, firstAudioGuardRowContract{table: "lessons", operation: "UPDATE", identity: fmt.Sprintf("lesson:%d/conn:%s", binding.lessonID, registration.ID), oldRow: []byte("same"), newRow: []byte("same")})
+		receipts = append(receipts, challenge.receipt)
+		ids = append(ids, registration.ID)
+	}
+	t.Cleanup(func() {
+		for _, token := range tokens {
+			zeroFirstAudioSecret(token)
+		}
+	})
+	direct, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: startup.runID, currentLessonID: startup.currentLessonID, generation: 1, phase: firstAudioGuardPreflight, version: 2, connectionIDs: ids, probeContracts: contracts, rowContracts: rows, requirePhysicalProbes: true})
+	if err != nil {
+		t.Fatal("create direct candidate:", err)
+	}
+	if err := transition.Publish(context.Background(), direct, firstAudioGuardTransitionEvidence{probeBindings: bindings, probeReceipts: receipts}); !errors.Is(err, errFirstAudioGuardContextTransition) {
+		t.Fatalf("strict owner direct transition error=%v", err)
+	}
+	if !controller.IsTerminal() || controller.IsActivePhase(firstAudioGuardPreflight) {
+		t.Fatal("strict owner bypass did not terminalize before PREFLIGHT")
+	}
+	for _, receipt := range receipts {
+		if receipt.armed.Load() {
+			t.Fatal("bypass armed a receipt")
+		}
+	}
+}
+
+func TestFirstAudioPreflightPrepareStrictPublisherRejectsTransitionWithoutLease(t *testing.T) {
+	controller := newFirstAudioGuardControllerWithPolicy(true, 3)
+	startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: "preflight_prepare_no_lease", currentLessonID: 703, generation: 1, phase: firstAudioGuardStartupProbe, version: 1})
+	if err != nil {
+		t.Fatal("create startup context:", err)
+	}
+	if _, err := firstAudioTestPublishInitialStartup(controller, startup); err != nil {
+		t.Fatal("publish startup:", err)
+	}
+	prepare, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: startup.runID, currentLessonID: startup.currentLessonID, generation: 1, phase: firstAudioGuardPreflightPrepare, version: 2})
+	if err != nil {
+		t.Fatal("create prepare context:", err)
+	}
+	if err := controller.publisher.Publish(prepare); !errors.Is(err, errFirstAudioGuardContextTransition) {
+		t.Fatalf("publisher without transition lease error=%v, want transition rejection", err)
+	}
+	controller.mu.Lock()
+	guardedErr := controller.publisher.publishGuardedTransition(&firstAudioValidatedTransition{
+		owner: controller, lease: &firstAudioGuardTransitionLease{owner: controller}, candidate: prepare,
+	})
+	controller.mu.Unlock()
+	if !errors.Is(guardedErr, errFirstAudioGuardContextTransition) {
+		t.Fatalf("forged guarded transition error=%v, want transition rejection", guardedErr)
+	}
+	controller.mu.Lock()
+	rawErr := controller.publisher.publish(prepare, false)
+	controller.mu.Unlock()
+	if !errors.Is(rawErr, errFirstAudioGuardContextTransition) {
+		t.Fatalf("raw strict publisher error=%v, want transition rejection", rawErr)
+	}
+	if !controller.IsActivePhase(firstAudioGuardStartupProbe) {
+		t.Fatal("direct publisher call changed active phase")
+	}
+}
+
+func TestFirstAudioPreflightPrepareRejectsBackwardPhaseAndMutatedVersion(t *testing.T) {
+	t.Run("backward_phase", func(t *testing.T) {
+		controller, transition := firstAudioTestStrictPreflightPrepare(t, "preflight_prepare_backward", 7031)
+		startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: "preflight_prepare_backward", currentLessonID: 7031, generation: 1, phase: firstAudioGuardStartupProbe, version: 3})
+		if err != nil {
+			t.Fatal("create backward startup context:", err)
+		}
+		if err := transition.Publish(context.Background(), startup, firstAudioGuardTransitionEvidence{}); !errors.Is(err, errFirstAudioGuardContextTransition) {
+			t.Fatalf("backward transition error=%v, want transition rejection", err)
+		}
+		if !controller.IsActivePhase(firstAudioGuardPreflightPrepare) || controller.IsTerminal() {
+			t.Fatal("invalid backward transition changed active PREPARE state")
+		}
+	})
+	t.Run("wrong_generation", func(t *testing.T) {
+		controller := newFirstAudioGuardControllerWithPolicy(true, 3)
+		startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: "preflight_prepare_wrong_gen", currentLessonID: 7032, generation: 1, phase: firstAudioGuardStartupProbe, version: 1})
+		if err != nil {
+			t.Fatal("create startup context:", err)
+		}
+		transition, err := firstAudioTestPublishInitialStartup(controller, startup)
+		if err != nil {
+			t.Fatal("publish startup:", err)
+		}
+		candidate, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: startup.runID, currentLessonID: startup.currentLessonID, generation: 1, phase: firstAudioGuardPreflightPrepare, version: 2})
+		if err != nil {
+			t.Fatal("create valid candidate:", err)
+		}
+		candidate.generation = 2
+		if err := transition.Publish(context.Background(), candidate, firstAudioGuardTransitionEvidence{}); !errors.Is(err, errFirstAudioGuardContextTransition) && !errors.Is(err, errFirstAudioGuardContextInvalid) {
+			t.Fatalf("wrong-generation controller publish error=%v", err)
+		}
+		if !controller.IsTerminal() || controller.IsActivePhase(firstAudioGuardPreflightPrepare) {
+			t.Fatal("wrong generation was published or owner remained live")
+		}
+	})
+	t.Run("wrong_version", func(t *testing.T) {
+		controller := newFirstAudioGuardControllerWithPolicy(true, 3)
+		startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: "preflight_prepare_wrong_ver", currentLessonID: 7033, generation: 1, phase: firstAudioGuardStartupProbe, version: 1})
+		if err != nil {
+			t.Fatal("create startup context:", err)
+		}
+		transition, err := firstAudioTestPublishInitialStartup(controller, startup)
+		if err != nil {
+			t.Fatal("publish startup:", err)
+		}
+		candidate, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: startup.runID, currentLessonID: startup.currentLessonID, generation: 1, phase: firstAudioGuardPreflightPrepare, version: 2})
+		if err != nil {
+			t.Fatal("create valid candidate:", err)
+		}
+		candidate.version = 3
+		if err := transition.Publish(context.Background(), candidate, firstAudioGuardTransitionEvidence{}); !errors.Is(err, errFirstAudioGuardContextTransition) && !errors.Is(err, errFirstAudioGuardContextInvalid) {
+			t.Fatalf("wrong-version controller publish error=%v", err)
+		}
+		if !controller.IsTerminal() || controller.IsActivePhase(firstAudioGuardPreflightPrepare) {
+			t.Fatal("wrong version was published or owner remained live")
+		}
+	})
+}
+
+func TestFirstAudioPreflightPrepareLegacyControllerRetainsDirectTransition(t *testing.T) {
+	controller := newFirstAudioGuardController()
+	startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: "preflight_prepare_legacy", currentLessonID: 704, generation: 1, phase: firstAudioGuardStartupProbe, version: 1})
+	if err != nil {
+		t.Fatal("create startup context:", err)
+	}
+	transition, err := firstAudioTestPublishInitialStartup(controller, startup)
+	if err != nil {
+		t.Fatal("publish startup:", err)
+	}
+	binding := firstAudioGuardProbeBinding{runID: startup.runID, lessonID: startup.currentLessonID, generation: 1, version: 2, connection: "conn-legacy", probeID: "probe-legacy"}
+	token, challenge, err := newFirstAudioGuardProbeChallenge(binding)
+	if err != nil {
+		t.Fatal("create legacy probe:", err)
+	}
+	defer zeroFirstAudioSecret(token)
+	candidate, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
+		runID: startup.runID, currentLessonID: startup.currentLessonID, generation: 1,
+		phase: firstAudioGuardPreflight, version: 2, connectionIDs: []string{binding.connection},
+		probeContracts: []firstAudioGuardProbeContract{challenge.Contract()},
+		rowContracts:   []firstAudioGuardRowContract{{table: "lessons", operation: "UPDATE", identity: "lesson:704/conn:conn-legacy", oldRow: []byte("same"), newRow: []byte("same")}},
+	})
+	if err != nil {
+		t.Fatal("create legacy preflight context:", err)
+	}
+	if err := transition.Publish(context.Background(), candidate, firstAudioGuardTransitionEvidence{probeBindings: []firstAudioGuardProbeBinding{binding}, probeReceipts: []*firstAudioGuardProbeReceipt{challenge.receipt}}); err != nil {
+		t.Fatal("legacy direct preflight transition rejected:", err)
+	}
+	if !controller.IsActivePhase(firstAudioGuardPreflight) {
+		t.Fatal("legacy direct transition did not publish PREFLIGHT")
+	}
+}
+
+func TestFirstAudioPreflightPrepareAuthorizerDeniesSQL(t *testing.T) {
+	cases := []struct {
+		name string
+		sql  string
+		udf  bool
+	}{
+		{name: "read", sql: "SELECT 1"},
+		{name: "write", sql: "INSERT INTO sqlite_master(type,name,tbl_name,rootpage,sql) VALUES('table','denied_prepare','denied_prepare',0,'CREATE TABLE denied_prepare(x INTEGER)')"},
+		{name: "transaction", sql: "BEGIN"},
+		{name: "udf", sql: "SELECT first_audio_probe(X'00')", udf: true},
+	}
+	for index, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			runID := fmt.Sprintf("preflight_prepare_sql_%d", index)
+			controller, _ := firstAudioTestStrictPreflightPrepare(t, runID, int64(710+index))
+			raw := firstAudioTestOpenSQLiteConnection(t)
+			if _, err := controller.connections.Register(raw); err != nil {
+				t.Fatal("register raw connection:", err)
+			}
+			var udfCalls atomic.Uint64
+			if testCase.udf {
+				if err := raw.RegisterFunc("first_audio_probe", func([]byte) bool { udfCalls.Add(1); return true }, true); err != nil {
+					t.Fatal("register test UDF:", err)
+				}
+			}
+			authorizer := newFirstAudioRealSQLAuthorizer(controller, &firstAudioRealSQLProbeSessionRef{}, firstAudioDatabaseSnapshot{})
+			if err := authorizer.install(raw); err != nil {
+				t.Fatal("install authorizer:", err)
+			}
+			queryer, ok := any(raw).(driver.ExecerContext)
+			if !ok {
+				t.Fatal("SQLite connection lacks ExecerContext")
+			}
+			if _, err := queryer.ExecContext(context.Background(), testCase.sql, nil); err == nil {
+				t.Fatalf("PREPARE allowed %s", testCase.name)
+			}
+			if !controller.IsTerminal() || authorizer.denials.Load() != 1 {
+				t.Fatalf("PREPARE %s denial did not terminalize exactly once", testCase.name)
+			}
+			if udfCalls.Load() != 0 {
+				t.Fatalf("PREPARE executed denied UDF %d times", udfCalls.Load())
+			}
+		})
+	}
+}
+
+func firstAudioTestStrictPreflightPrepare(t *testing.T, runID string, lessonID int64) (*firstAudioGuardController, *firstAudioGuardTransitionLease) {
+	t.Helper()
+	controller := newFirstAudioGuardControllerWithPolicy(true, 3)
+	startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: runID, currentLessonID: lessonID, generation: 1, phase: firstAudioGuardStartupProbe, version: 1})
+	if err != nil {
+		t.Fatal("create startup context:", err)
+	}
+	transition, err := firstAudioTestPublishInitialStartup(controller, startup)
+	if err != nil {
+		t.Fatal("publish startup:", err)
+	}
+	prepare, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: runID, currentLessonID: lessonID, generation: 1, phase: firstAudioGuardPreflightPrepare, version: 2})
+	if err != nil {
+		t.Fatal("create prepare context:", err)
+	}
+	if err := transition.Publish(context.Background(), prepare, firstAudioGuardTransitionEvidence{}); err != nil {
+		t.Fatal("publish prepare:", err)
+	}
+	return controller, transition
+}
+
+func firstAudioTestPhysicalPreflightCandidate(t *testing.T, controller *firstAudioGuardController, runID string, lessonID int64, count int) (*firstAudioGuardContext, firstAudioGuardTransitionEvidence, [][]byte) {
+	t.Helper()
+	bindings := make([]firstAudioGuardProbeBinding, 0, count)
+	contracts := make([]firstAudioGuardProbeContract, 0, count)
+	rows := make([]firstAudioGuardRowContract, 0, count)
+	receipts := make([]*firstAudioGuardProbeReceipt, 0, count)
+	ids := make([]string, 0, count)
+	tokens := make([][]byte, 0, count)
+	expected := make(map[string]*sqlite3.SQLiteConn, count)
+	for range count {
+		raw := firstAudioTestOpenSQLiteConnection(t)
+		registration, err := controller.connections.Register(raw)
+		if err != nil {
+			t.Fatal("register physical connection:", err)
+		}
+		t.Cleanup(func() { controller.connections.Retire(raw) })
+		binding := firstAudioGuardProbeBinding{runID: runID, lessonID: lessonID, generation: 1, version: 3, connection: registration.ID, probeID: "probe-" + registration.ID}
+		token, challenge, err := newFirstAudioPhysicalProbeChallenge(binding)
+		if err != nil {
+			t.Fatal("issue physical challenge:", err)
+		}
+		bindings = append(bindings, binding)
+		contracts = append(contracts, challenge.Contract())
+		rows = append(rows, firstAudioGuardRowContract{table: "lessons", operation: "UPDATE", identity: fmt.Sprintf("lesson:%d/conn:%s", lessonID, registration.ID), oldRow: []byte("same"), newRow: []byte("same")})
+		receipts = append(receipts, challenge.receipt)
+		ids = append(ids, registration.ID)
+		tokens = append(tokens, token)
+		expected[registration.ID] = raw
+	}
+	t.Cleanup(func() {
+		for _, token := range tokens {
+			zeroFirstAudioSecret(token)
+		}
+	})
+	candidate, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: runID, currentLessonID: lessonID, generation: 1, phase: firstAudioGuardPreflight, version: 3, connectionIDs: ids, probeContracts: contracts, rowContracts: rows, requirePhysicalProbes: true})
+	if err != nil {
+		t.Fatal("create final context:", err)
+	}
+	return candidate, firstAudioGuardTransitionEvidence{probeBindings: bindings, probeReceipts: receipts, expectedConnections: expected}, tokens
+}
+
+func TestFirstAudioPreflightPrepareRejectsFewerThanRequiredConnections(t *testing.T) {
+	controller, transition := firstAudioTestStrictPreflightPrepare(t, "preflight_prepare_short", 705)
+	candidate, evidence, _ := firstAudioTestPhysicalPreflightCandidate(t, controller, "preflight_prepare_short", 705, 2)
+	if err := transition.Publish(context.Background(), candidate, evidence); !errors.Is(err, errFirstAudioGuardContextTransition) && !errors.Is(err, errFirstAudioSQLiteRegistrationNotLive) {
+		t.Fatalf("two-connection PREFLIGHT error=%v", err)
+	}
+	if !controller.IsTerminal() || controller.IsActivePhase(firstAudioGuardPreflight) {
+		t.Fatal("short connection set did not terminalize before PREFLIGHT")
+	}
+}
+
+func TestFirstAudioPreflightPrepareRegistryLockCoversPublishAndReceiptArm(t *testing.T) {
+	controller, transition := firstAudioTestStrictPreflightPrepare(t, "preflight_prepare_lock_arm", 7051)
+	candidate, evidence, _ := firstAudioTestPhysicalPreflightCandidate(t, controller, "preflight_prepare_lock_arm", 7051, 3)
+	var retireID string
+	var retireRaw *sqlite3.SQLiteConn
+	for id, raw := range evidence.expectedConnections {
+		retireID, retireRaw = id, raw
+		break
+	}
+	if retireRaw == nil {
+		t.Fatal("no pinned connection in evidence")
+	}
+	started := make(chan struct{})
+	done := make(chan struct{})
+	var once sync.Once
+	controller.beforeReceiptArm = func() {
+		once.Do(func() {
+			go func() {
+				close(started)
+				controller.connections.Retire(retireRaw)
+				close(done)
+			}()
+			<-started
+			select {
+			case <-done:
+				t.Error("physical retirement crossed the registry lock before all receipts were armed")
+			default:
+			}
+		})
+	}
+	if err := transition.Publish(context.Background(), candidate, evidence); err != nil {
+		t.Fatal("publish PREFLIGHT and arm receipts:", err)
+	}
+	controller.beforeReceiptArm = nil
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("physical retirement did not resume after registry lock release")
+	}
+	if !controller.IsActivePhase(firstAudioGuardPreflight) {
+		t.Fatal("PREFLIGHT context was not published")
+	}
+	if _, live := controller.connections.Lookup(retireRaw); live {
+		t.Fatalf("connection %s remained registered after retirement", retireID)
+	}
+	for _, receipt := range evidence.probeReceipts {
+		if !receipt.armed.Load() {
+			t.Fatal("not all receipts were armed before registry lock release")
+		}
+	}
+}
+
+func TestFirstAudioPreflightPrepareRejectsExtraConnections(t *testing.T) {
+	controller, transition := firstAudioTestStrictPreflightPrepare(t, "preflight_prepare_extra", 708)
+	candidate, evidence, _ := firstAudioTestPhysicalPreflightCandidate(t, controller, "preflight_prepare_extra", 708, 4)
+	if err := transition.Publish(context.Background(), candidate, evidence); !errors.Is(err, errFirstAudioGuardContextTransition) {
+		t.Fatalf("four-connection PREFLIGHT error=%v", err)
+	}
+	if !controller.IsTerminal() || controller.IsActivePhase(firstAudioGuardPreflight) {
+		t.Fatal("extra connection set did not terminalize before PREFLIGHT")
+	}
+}
+
+func TestFirstAudioPreflightPrepareRejectsReplacedRawIdentity(t *testing.T) {
+	controller, transition := firstAudioTestStrictPreflightPrepare(t, "preflight_prepare_replaced", 706)
+	candidate, evidence, _ := firstAudioTestPhysicalPreflightCandidate(t, controller, "preflight_prepare_replaced", 706, 3)
+	replacement := firstAudioTestOpenSQLiteConnection(t)
+	for id := range evidence.expectedConnections {
+		evidence.expectedConnections[id] = replacement
+		break
+	}
+	if err := transition.Publish(context.Background(), candidate, evidence); !errors.Is(err, errFirstAudioGuardContextTransition) && !errors.Is(err, errFirstAudioSQLiteRegistrationNotLive) {
+		t.Fatalf("replaced raw identity error=%v", err)
+	}
+	if !controller.IsTerminal() || controller.IsActivePhase(firstAudioGuardPreflight) {
+		t.Fatal("replaced raw identity did not terminalize before PREFLIGHT")
+	}
+	for _, receipt := range evidence.probeReceipts {
+		if receipt.armed.Load() {
+			t.Fatal("replaced identity armed a receipt")
+		}
+	}
+}
+
+func TestFirstAudioPreflightPrepareRejectsIncompleteReceiptSet(t *testing.T) {
+	controller, transition := firstAudioTestStrictPreflightPrepare(t, "preflight_prepare_receipt", 707)
+	candidate, evidence, _ := firstAudioTestPhysicalPreflightCandidate(t, controller, "preflight_prepare_receipt", 707, 3)
+	evidence.probeReceipts = evidence.probeReceipts[:2]
+	if err := transition.Publish(context.Background(), candidate, evidence); !errors.Is(err, errFirstAudioGuardContextTransition) {
+		t.Fatalf("incomplete receipt set error=%v", err)
+	}
+	if !controller.IsTerminal() || controller.IsActivePhase(firstAudioGuardPreflight) {
+		t.Fatal("incomplete receipt set did not terminalize before PREFLIGHT")
+	}
+}
+
+func TestFirstAudioPreflightPrepareRejectsForeignReceipt(t *testing.T) {
+	controller, transition := firstAudioTestStrictPreflightPrepare(t, "preflight_prepare_foreign", 709)
+	candidate, evidence, _ := firstAudioTestPhysicalPreflightCandidate(t, controller, "preflight_prepare_foreign", 709, 3)
+	foreignBinding := firstAudioGuardProbeBinding{runID: "preflight_prepare_other", lessonID: 999, generation: 1, version: 3, connection: "conn-foreign", probeID: "probe-foreign"}
+	foreignToken, foreignChallenge, err := newFirstAudioPhysicalProbeChallenge(foreignBinding)
+	if err != nil {
+		t.Fatal("create foreign challenge:", err)
+	}
+	defer zeroFirstAudioSecret(foreignToken)
+	evidence.probeReceipts[0] = foreignChallenge.receipt
+	if err := transition.Publish(context.Background(), candidate, evidence); !errors.Is(err, errFirstAudioGuardContextTransition) {
+		t.Fatalf("foreign receipt error=%v", err)
+	}
+	if !controller.IsTerminal() || controller.IsActivePhase(firstAudioGuardPreflight) {
+		t.Fatal("foreign receipt did not terminalize before PREFLIGHT")
+	}
+	for _, receipt := range evidence.probeReceipts {
+		if receipt.armed.Load() {
+			t.Fatal("foreign receipt set armed a receipt")
+		}
+	}
+}
+
+func TestFirstAudioPreflightPrepareContextRejectsWrongPhaseVersionAndGeneration(t *testing.T) {
+	cases := []firstAudioGuardContextSpec{
+		{runID: "preflight_prepare_ctx", currentLessonID: 710, generation: 1, phase: firstAudioGuardPreflightPrepare, version: 3},
+		{runID: "preflight_prepare_ctx", currentLessonID: 710, generation: 2, phase: firstAudioGuardPreflightPrepare, version: 2},
+		{runID: "preflight_prepare_ctx", currentLessonID: 710, generation: 1, phase: firstAudioGuardPreflight, version: 2},
+	}
+	for index, spec := range cases {
+		if _, err := newFirstAudioGuardContext(spec); err == nil {
+			t.Fatalf("invalid PREPARE context %d was accepted", index)
+		}
+	}
+}
+
+func TestFirstAudioPreflightPrepareRegistrationProvenance(t *testing.T) {
+	cases := []struct {
+		phase   firstAudioGuardContextPhase
+		version uint64
+		id      string
+		next    uint64
+		want    bool
+	}{
+		{firstAudioGuardDriverProbe, 0, "conn-1", 1, true},
+		{firstAudioGuardPreflightPrepare, 2, "conn-2", 2, true},
+		{firstAudioGuardPreflightPrepare, 2, "conn-3", 3, true},
+		{firstAudioGuardStartupProbe, 1, "conn-2", 2, false},
+		{firstAudioGuardPreflightPrepare, 1, "conn-2", 2, false},
+		{firstAudioGuardPreflightPrepare, 2, "conn-1", 1, false},
+		{firstAudioGuardPreflightPrepare, 2, "conn-4", 4, false},
+		{firstAudioGuardPreflightPrepare, 2, "unexpected", 2, false},
+	}
+	for _, tc := range cases {
+		t.Run(fmt.Sprintf("%s_v%d_%s_next%d", tc.phase, tc.version, tc.id, tc.next), func(t *testing.T) {
+			if got := firstAudioPrepareRegistrationAllowed(tc.phase, tc.version, tc.id, tc.next); got != tc.want {
+				t.Fatalf("registration allowed = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestFirstAudioPreflightPrepareRejectsRepeatAndJourneySkip(t *testing.T) {
+	controller, transition := firstAudioTestStrictPreflightPrepare(t, "preflight_prepare_skip", 711)
+	if _, err := controller.Acquire(); err == nil {
+		t.Fatal("PREPARE exposed a user lease")
+	}
+	repeated, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: "preflight_prepare_skip", currentLessonID: 711, generation: 1, phase: firstAudioGuardPreflightPrepare, version: 2})
+	if err != nil {
+		t.Fatal("create repeated context:", err)
+	}
+	if err := transition.Publish(context.Background(), repeated, firstAudioGuardTransitionEvidence{}); !errors.Is(err, errFirstAudioGuardContextStale) && !errors.Is(err, errFirstAudioGuardContextTransition) {
+		t.Fatalf("repeated PREPARE publish error=%v", err)
+	}
+	skipped, err := newFirstAudioGuardContext(firstAudioValidJourneySpec(3, 711, 1, 3))
+	if err != nil {
+		t.Fatal("create skip candidate:", err)
+	}
+	if err := transition.Publish(context.Background(), skipped, firstAudioGuardTransitionEvidence{}); !errors.Is(err, errFirstAudioGuardContextTransition) {
+		t.Fatalf("PREPARE->JOURNEY skip error=%v", err)
+	}
+	if !controller.IsActivePhase(firstAudioGuardPreflightPrepare) || controller.IsTerminal() {
+		t.Fatal("rejected skip changed the active PREPARE phase")
+	}
+}
 
 func TestFirstAudioReadbackRejectsLogicalEvidenceForTransactionBoundReceipt(t *testing.T) {
 	binding := firstAudioGuardProbeBinding{runID: "readback_epoch", lessonID: 1, generation: 1, version: 1, connection: "conn-1", probeID: "probe-1"}

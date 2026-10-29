@@ -107,6 +107,32 @@ func (r *firstAudioSQLiteConnectionRegistry) WithLiveRegistrations(registrations
 	return fn()
 }
 
+// WithExactLiveIDs holds the registry lock while validating that ids are the
+// complete physical set and while the caller publishes connection-bound state.
+func (r *firstAudioSQLiteConnectionRegistry) WithExactLiveIDs(ids []string, fn func(map[string]*sqlite3.SQLiteConn) error) error {
+	if r == nil || len(ids) == 0 || fn == nil {
+		return errFirstAudioSQLiteRegistrationNotLive
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if len(ids) != len(r.byID) || len(ids) != len(r.byRaw) {
+		return errFirstAudioSQLiteRegistrationNotLive
+	}
+	connections := make(map[string]*sqlite3.SQLiteConn, len(ids))
+	for _, id := range ids {
+		if id == "" || connections[id] != nil {
+			return errFirstAudioSQLiteRegistrationNotLive
+		}
+		raw := r.byID[id]
+		registration, ok := r.byRaw[raw]
+		if raw == nil || !ok || registration.ID != id || registration.Raw != raw {
+			return errFirstAudioSQLiteRegistrationNotLive
+		}
+		connections[id] = raw
+	}
+	return fn(connections)
+}
+
 func (r *firstAudioSQLiteConnectionRegistry) Retire(raw *sqlite3.SQLiteConn) {
 	if r == nil || raw == nil {
 		return

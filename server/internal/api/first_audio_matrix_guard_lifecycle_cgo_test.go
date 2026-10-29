@@ -464,23 +464,38 @@ func sameFirstAudioProbeBinding(a, b firstAudioGuardProbeBinding) bool {
 }
 
 type firstAudioGuardController struct {
-	mu               sync.Mutex
-	publisher        firstAudioGuardContextPublisher
-	driverProbe      *firstAudioDriverProbeReceipt
-	connections      *firstAudioSQLiteConnectionRegistry
-	probeReceipts    map[string]*firstAudioGuardProbeReceipt
-	admissionOpen    bool
-	terminal         bool
-	callbackTerminal atomic.Bool
-	exclusive        bool
-	draining         bool
-	gateVersion      uint64
-	leases           map[uint64]int
-	changed          chan struct{}
+	mu                           sync.Mutex
+	requirePreflightPrepare      bool
+	requiredPreflightConnections int
+	publisher                    firstAudioGuardContextPublisher
+	driverProbe                  *firstAudioDriverProbeReceipt
+	beforeReceiptArm             func() // deterministic test seam; called while exact-live registry lock is held
+	connections                  *firstAudioSQLiteConnectionRegistry
+	probeReceipts                map[string]*firstAudioGuardProbeReceipt
+	admissionOpen                bool
+	terminal                     bool
+	callbackTerminal             atomic.Bool
+	exclusive                    bool
+	draining                     bool
+	activeTransition             *firstAudioGuardTransitionLease
+	gateVersion                  uint64
+	leases                       map[uint64]int
+	changed                      chan struct{}
 }
 
 func newFirstAudioGuardController() *firstAudioGuardController {
-	return &firstAudioGuardController{connections: newFirstAudioSQLiteConnectionRegistry(), leases: make(map[uint64]int), probeReceipts: make(map[string]*firstAudioGuardProbeReceipt), changed: make(chan struct{})}
+	return newFirstAudioGuardControllerWithPolicy(false, 0)
+}
+
+func newFirstAudioGuardControllerWithPolicy(requirePreflightPrepare bool, requiredPreflightConnections int) *firstAudioGuardController {
+	if (requirePreflightPrepare && requiredPreflightConnections < 1) || (!requirePreflightPrepare && requiredPreflightConnections != 0) {
+		panic("invalid first-audio controller policy")
+	}
+	publisher := firstAudioGuardContextPublisher{requirePreflightPrepare: requirePreflightPrepare}
+	if requirePreflightPrepare {
+		publisher.transitionCapability = &struct{}{}
+	}
+	return &firstAudioGuardController{requirePreflightPrepare: requirePreflightPrepare, requiredPreflightConnections: requiredPreflightConnections, publisher: publisher, connections: newFirstAudioSQLiteConnectionRegistry(), leases: make(map[uint64]int), probeReceipts: make(map[string]*firstAudioGuardProbeReceipt), changed: make(chan struct{})}
 }
 
 // Test fixtures that begin at STARTUP_PROBE must still traverse and prove the
@@ -774,8 +789,10 @@ func (c *firstAudioGuardController) CloseAndDrain(ctx context.Context) (*firstAu
 	}
 	c.exclusive = true
 	c.draining = false
+	lease := &firstAudioGuardTransitionLease{owner: c}
+	c.activeTransition = lease
 	c.mu.Unlock()
-	return &firstAudioGuardTransitionLease{owner: c}, nil
+	return lease, nil
 }
 
 func (l *firstAudioGuardTransitionLease) Publish(ctx context.Context, candidate *firstAudioGuardContext, evidence firstAudioGuardTransitionEvidence) error {
@@ -787,6 +804,13 @@ func (l *firstAudioGuardTransitionLease) Publish(ctx context.Context, candidate 
 	}
 	evidence.probeBindings = append([]firstAudioGuardProbeBinding(nil), evidence.probeBindings...)
 	evidence.probeReceipts = append([]*firstAudioGuardProbeReceipt(nil), evidence.probeReceipts...)
+	if evidence.expectedConnections != nil {
+		expected := make(map[string]*sqlite3.SQLiteConn, len(evidence.expectedConnections))
+		for id, raw := range evidence.expectedConnections {
+			expected[id] = raw
+		}
+		evidence.expectedConnections = expected
+	}
 	c := l.owner
 	c.mu.Lock()
 	if l.released || l.busy || !c.exclusive || c.isTerminalLocked() || c.activeLeasesLocked() != 0 {
@@ -815,7 +839,29 @@ func (l *firstAudioGuardTransitionLease) Publish(ctx context.Context, candidate 
 		c.mu.Unlock()
 		return err
 	}
+	if active != nil && active.phase == firstAudioGuardStartupProbe && candidate.phase == firstAudioGuardPreflightPrepare {
+		if !c.requirePreflightPrepare || candidate.version != 2 || candidate.generation != 1 || len(candidate.connectionIDs) != 0 || len(candidate.probes) != 0 || len(evidence.probeBindings) != 0 || len(evidence.probeReceipts) != 0 {
+			c.markOutOfBandTerminalLocked()
+			l.released = true
+			c.mu.Unlock()
+			return errFirstAudioGuardContextTransition
+		}
+		permit := &firstAudioValidatedTransition{owner: c, lease: l, candidate: candidate, capability: c.publisher.transitionCapability}
+		err := c.publisher.publishGuardedTransition(permit)
+		if err != nil {
+			c.markOutOfBandTerminalLocked()
+			l.released = true
+		}
+		c.mu.Unlock()
+		return err
+	}
 	if active != nil && active.phase == firstAudioGuardStartupProbe && candidate.phase == firstAudioGuardPreflight {
+		if c.requirePreflightPrepare {
+			c.markOutOfBandTerminalLocked()
+			l.released = true
+			c.mu.Unlock()
+			return errFirstAudioGuardContextTransition
+		}
 		registered, ok := evidence.preflightReceiptsFor(candidate)
 		if !ok {
 			c.mu.Unlock()
@@ -834,6 +880,59 @@ func (l *firstAudioGuardTransitionLease) Publish(ctx context.Context, candidate 
 				c.mu.Unlock()
 				return errFirstAudioGuardContextTransition
 			}
+		}
+		c.mu.Unlock()
+		return nil
+	}
+	if active != nil && active.phase == firstAudioGuardPreflightPrepare && candidate.phase == firstAudioGuardPreflight {
+		registered, ok := evidence.preflightReceiptsFor(candidate)
+		if !c.requirePreflightPrepare || !ok || len(candidate.connectionIDs) != c.requiredPreflightConnections || candidate.version != active.version+1 || candidate.generation != active.generation || candidate.currentLessonID != active.currentLessonID {
+			c.markOutOfBandTerminalLocked()
+			l.released = true
+			c.mu.Unlock()
+			return errFirstAudioGuardContextTransition
+		}
+		if len(evidence.expectedConnections) != len(candidate.connectionIDs) {
+			c.markOutOfBandTerminalLocked()
+			l.released = true
+			c.mu.Unlock()
+			return errFirstAudioGuardContextTransition
+		}
+		previous := c.probeReceipts
+		err := c.connections.WithExactLiveIDs(candidate.connectionIDs, func(live map[string]*sqlite3.SQLiteConn) error {
+			for id, receipt := range registered {
+				if receipt == nil || live[id] == nil || evidence.expectedConnections[id] != live[id] || receipt.binding.connection != id {
+					return errFirstAudioGuardContextTransition
+				}
+			}
+			c.probeReceipts = registered
+			permit := &firstAudioValidatedTransition{owner: c, lease: l, candidate: candidate, capability: c.publisher.transitionCapability}
+			if publishErr := c.publisher.publishGuardedTransition(permit); publishErr != nil {
+				c.probeReceipts = previous
+				return publishErr
+			}
+			for _, receipt := range registered {
+				if c.beforeReceiptArm != nil {
+					c.beforeReceiptArm()
+				}
+				if !receipt.arm() {
+					c.markOutOfBandTerminalLocked()
+					return errFirstAudioGuardContextTransition
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			c.markOutOfBandTerminalLocked()
+			l.released = true
+			c.mu.Unlock()
+			return err
+		}
+		if c.isTerminalLocked() {
+			c.markOutOfBandTerminalLocked()
+			l.released = true
+			c.mu.Unlock()
+			return errFirstAudioGuardAdmissionClosed
 		}
 		c.mu.Unlock()
 		return nil
@@ -922,6 +1021,7 @@ func (l *firstAudioGuardTransitionLease) OpenJourney() error {
 	c.exclusive = false
 	c.admissionOpen = true
 	l.released = true
+	c.activeTransition = nil
 	c.signalLocked()
 	return nil
 }
@@ -981,6 +1081,7 @@ func (l *firstAudioGuardTransitionLease) MarkTerminal(ctx context.Context) error
 	c.markOutOfBandTerminalLocked()
 	c.probeReceipts = make(map[string]*firstAudioGuardProbeReceipt)
 	l.released = true
+	c.activeTransition = nil
 	c.mu.Unlock()
 	return err
 }
@@ -1012,14 +1113,15 @@ func (c *firstAudioGuardController) markOutOfBandTerminalLocked() {
 }
 
 type firstAudioGuardTransitionEvidence struct {
-	probeBindings      []firstAudioGuardProbeBinding
-	probeReceipts      []*firstAudioGuardProbeReceipt
-	snapshotUnchanged  bool
-	registryReconciled bool
-	unexpectedDenials  uint64
-	resetCommitted     bool
-	writeCommitted     bool
-	readbackVerified   bool
+	probeBindings       []firstAudioGuardProbeBinding
+	probeReceipts       []*firstAudioGuardProbeReceipt
+	expectedConnections map[string]*sqlite3.SQLiteConn
+	snapshotUnchanged   bool
+	registryReconciled  bool
+	unexpectedDenials   uint64
+	resetCommitted      bool
+	writeCommitted      bool
+	readbackVerified    bool
 }
 
 func (e firstAudioGuardTransitionEvidence) validFor(active, candidate *firstAudioGuardContext) bool {
