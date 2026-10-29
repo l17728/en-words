@@ -447,8 +447,71 @@ func TestFirstAudioResetAuthorizerCaptureOnly(t *testing.T) {
 		t.Fatal("read reviewed reset authorizer manifest:", err)
 	}
 	if string(want) != string(append(output, '\n')) {
-		t.Fatal("capture-only reset authorizer manifest drift; review the new artifact before updating it")
+		t.Fatalf("capture-only reset authorizer manifest drift: %s", firstAudioResetManifestDifference(want, append(output, '\n')))
 	}
+}
+
+func firstAudioResetManifestDifference(wantJSON, actualJSON []byte) string {
+	type manifestView struct {
+		DriverModuleVersion string                             `json:"driver_module_version"`
+		DriverSourceSHA256  string                             `json:"driver_source_sha256"`
+		SQLite              map[string]any                     `json:"sqlite"`
+		Runtime             string                             `json:"go_runtime"`
+		SchemaSHA256        string                             `json:"schema_sha256"`
+		TriggerVersion      int                                `json:"trigger_manifest_version"`
+		TriggerSHA256       string                             `json:"trigger_manifest_sha256"`
+		Statements          []firstAudioResetCapturedStatement `json:"statements"`
+	}
+	var want, actual manifestView
+	if err := json.Unmarshal(wantJSON, &want); err != nil {
+		return "checked-in manifest is invalid JSON"
+	}
+	if err := json.Unmarshal(actualJSON, &actual); err != nil {
+		return "captured manifest is invalid JSON"
+	}
+	differences := make([]string, 0)
+	if want.DriverModuleVersion != actual.DriverModuleVersion {
+		differences = append(differences, "driver_module_version")
+	}
+	if want.DriverSourceSHA256 != actual.DriverSourceSHA256 {
+		differences = append(differences, "driver_source_sha256")
+	}
+	if !reflect.DeepEqual(want.SQLite, actual.SQLite) {
+		differences = append(differences, "sqlite_build")
+	}
+	if want.Runtime != actual.Runtime {
+		differences = append(differences, "go_runtime")
+	}
+	if want.SchemaSHA256 != actual.SchemaSHA256 {
+		differences = append(differences, "schema_sha256")
+	}
+	if want.TriggerVersion != actual.TriggerVersion || want.TriggerSHA256 != actual.TriggerSHA256 {
+		differences = append(differences, "trigger_manifest")
+	}
+	if len(want.Statements) != len(actual.Statements) {
+		differences = append(differences, fmt.Sprintf("statement_count:%d!=%d", len(want.Statements), len(actual.Statements)))
+	}
+	for i := 0; i < len(want.Statements) && i < len(actual.Statements); i++ {
+		left, right := want.Statements[i], actual.Statements[i]
+		if left.Operation != right.Operation || left.SQL != right.SQL || !reflect.DeepEqual(left.Tuples, right.Tuples) {
+			detail := fmt.Sprintf("statement[%d]=%s/%s", i+1, left.Operation, right.Operation)
+			if len(left.Tuples) != len(right.Tuples) {
+				detail += fmt.Sprintf(" tuple_count:%d!=%d", len(left.Tuples), len(right.Tuples))
+			}
+			for ti := 0; ti < len(left.Tuples) && ti < len(right.Tuples); ti++ {
+				if left.Tuples[ti] != right.Tuples[ti] {
+					detail += fmt.Sprintf(" tuple[%d]:%#v!=%#v", ti, left.Tuples[ti], right.Tuples[ti])
+					break
+				}
+			}
+			differences = append(differences, detail)
+			break
+		}
+	}
+	if len(differences) == 0 {
+		return "canonical JSON or digest differs"
+	}
+	return strings.Join(differences, "; ")
 }
 
 func writeFirstAudioResetManifestAtomically(path string, content []byte) (resultErr error) {
@@ -466,8 +529,12 @@ func writeFirstAudioResetManifestAtomically(path string, content []byte) (result
 	}
 	if resolved, err := filepath.EvalSymlinks(parent); err != nil {
 		return err
-	} else if !samePathForResetManifest(resolved, parent) {
-		return fmt.Errorf("manifest parent resolves through a different path")
+	} else {
+		resolvedInfo, resolvedErr := os.Stat(resolved)
+		parentInfo, parentErr := os.Stat(parent)
+		if resolvedErr != nil || parentErr != nil || !os.SameFile(resolvedInfo, parentInfo) {
+			return fmt.Errorf("manifest parent resolves through a different path")
+		}
 	}
 	if info, err := os.Lstat(path); err == nil {
 		if info.Mode()&os.ModeSymlink != 0 || !info.Mode().IsRegular() {
@@ -502,12 +569,6 @@ func writeFirstAudioResetManifestAtomically(path string, content []byte) (result
 		return err
 	}
 	return replaceFirstAudioResetManifest(temporaryPath, path)
-}
-
-func samePathForResetManifest(left, right string) bool {
-	leftAbs, leftErr := filepath.Abs(left)
-	rightAbs, rightErr := filepath.Abs(right)
-	return leftErr == nil && rightErr == nil && filepath.Clean(leftAbs) == filepath.Clean(rightAbs)
 }
 
 func TestFirstAudioResetManifestWriterRejectsSymlinkTargets(t *testing.T) {
