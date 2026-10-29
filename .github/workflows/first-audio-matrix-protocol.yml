@@ -10,6 +10,7 @@ on:
       - "docs/77-first-audio-write-callsite-inventory-sdd.md"
       - "docs/80-first-audio-audit-row-guard-sdd.md"
       - "docs/81-first-audio-production-audit-writer-probe-sdd.md"
+      - "docs/82-first-audio-pretoken-update-negative-sdd.md"
       - "review/first-audio-transaction-outcome-review-20261027.md"
       - "review/first-audio-write-inventory-review-20261027.md"
       - "server/internal/api/first_audio_matrix_harness_test.go"
@@ -38,6 +39,7 @@ on:
       - "docs/77-first-audio-write-callsite-inventory-sdd.md"
       - "docs/80-first-audio-audit-row-guard-sdd.md"
       - "docs/81-first-audio-production-audit-writer-probe-sdd.md"
+      - "docs/82-first-audio-pretoken-update-negative-sdd.md"
       - "review/first-audio-transaction-outcome-review-20261027.md"
       - "review/first-audio-write-inventory-review-20261027.md"
       - "server/internal/api/first_audio_matrix_harness_test.go"
@@ -113,7 +115,7 @@ jobs:
         run: go test . -run '^TestFailedCommitCleanupError' -count=1 -timeout=1m
       - name: Race-test immutable guard context publication
         working-directory: server
-        run: go test -race ./internal/api -run '^TestFirstAudioGuard(Context|Probe|Controller|Publisher)' -count=1 -timeout=5m
+        run: go test -race ./internal/api -run '^(TestFirstAudioGuard(Context|Probe|Controller|Publisher)|TestFirstAudioMatrixRealSQLRejectsLessonUpdateBeforeTokenConsumption)$' -count=1 -timeout=5m
       - name: Race-test SQLite journey audit row guard
         working-directory: server
         run: go test -race ./internal/api -run '^TestFirstAudioJourneyAuditGuard' -count=1 -timeout=5m

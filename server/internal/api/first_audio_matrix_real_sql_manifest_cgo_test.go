@@ -8,12 +8,14 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	sqlite3 "github.com/mattn/go-sqlite3"
@@ -203,6 +205,195 @@ func TestFirstAudioMatrixRealSQLLessonProbeTriggerUsesTyped72ArgumentProjectionA
 	}
 	if callbackCount != 1 {
 		t.Fatalf("row-guard callback count after readback=%d, want one", callbackCount)
+	}
+}
+
+func TestFirstAudioMatrixRealSQLRejectsLessonUpdateBeforeTokenConsumption(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "pre-token-update.db")
+	setup, err := gorm.Open(gormsqlite.Open(path), &gorm.Config{DisableAutomaticPing: true})
+	if err != nil {
+		t.Fatal("open isolated pre-token setup database:", err)
+	}
+	setupPool, err := setup.DB()
+	if err != nil {
+		t.Fatal("get setup pool:", err)
+	}
+	columns := make([]string, len(firstAudioLessonProbeColumns))
+	for i, column := range firstAudioLessonProbeColumns {
+		columns[i] = quoteFirstAudioIdentifier(column)
+	}
+	if err := setup.Exec("CREATE TABLE lessons (" + strings.Join(columns, ",") + ")").Error; err != nil {
+		_ = setupPool.Close()
+		t.Fatal("create isolated lesson table:", err)
+	}
+	values := []any{int64(7), int64(11), int64(13), int64(1), "started", nil, nil, nil, []byte("[1,2]"), "TEACH", int64(0), int64(0), int64(1), int64(0), []byte("{}"), []byte("[]"), "result", float64(1700000000.25)}
+	placeholders := strings.TrimRight(strings.Repeat("?,", len(values)), ",")
+	if err := setup.Exec("INSERT INTO lessons ("+strings.Join(columns, ",")+") VALUES ("+placeholders+")", values...).Error; err != nil {
+		_ = setupPool.Close()
+		t.Fatal("seed isolated lesson row:", err)
+	}
+	if err := installFirstAudioLessonProbeTriggers(setup); err != nil {
+		_ = setupPool.Close()
+		t.Fatal("install frozen lesson triggers:", err)
+	}
+	if err := setupPool.Close(); err != nil {
+		t.Fatal("close setup pool before tracked connection:", err)
+	}
+
+	registry := newFirstAudioSQLiteConnectionRegistry()
+	sessionRef := &firstAudioRealSQLProbeSessionRef{}
+	var rawConn *sqlite3.SQLiteConn
+	var tokenCalls atomic.Uint64
+	var callbackCalls atomic.Uint64
+	var callbackErr atomic.Value
+	trackedName := fmt.Sprintf("first_audio_pretoken_tracked_%d", firstAudioProbeDriverSequence.Add(1))
+	if err := registerFirstAudioTrackedSQLiteDriver(trackedName, func(raw *sqlite3.SQLiteConn) error {
+		registration, err := registry.Register(raw)
+		if err != nil {
+			return err
+		}
+		rawConn = raw
+		if err := raw.RegisterFunc("first_audio_probe", func(token []byte) bool {
+			tokenCalls.Add(1)
+			session := sessionRef.session.Load()
+			return session != nil && session.challenge != nil && session.challenge.ConsumeInTransaction(token, session.binding, session.txEpoch.Load()) == nil
+		}, true); err != nil {
+			return err
+		}
+		return raw.RegisterFunc("first_audio_row_guard", func(args ...any) bool {
+			callbackCalls.Add(1)
+			session := sessionRef.session.Load()
+			if session == nil || session.challenge == nil || session.tracked == nil || session.tracked.raw != raw || session.binding.connection != registration.ID || !registry.IsLive(registration.ID, raw) || !session.tracked.txActive.Load() || session.txEpoch.Load() == 0 || session.txEpoch.Load() != session.tracked.txEpoch.Load() || len(args) != 72 {
+				callbackErr.Store("callback connection, transaction epoch, or argument identity mismatch")
+				return false
+			}
+			expected := session.expectedProjection.Load()
+			oldValues := normalizeFirstAudioTypedSQLitePairs(args[:36])
+			newValues := normalizeFirstAudioTypedSQLitePairs(args[36:])
+			if expected == nil || !reflect.DeepEqual(expected.values, oldValues) || !reflect.DeepEqual(oldValues, newValues) {
+				callbackErr.Store("callback OLD/NEW typed projection differs from the pinned baseline")
+				return false
+			}
+			session.callbackArgs.Store(&firstAudioCapturedTypedCallbackArgs{values: cloneFirstAudioSQLiteCallbackArgs(args)})
+			if observeErr := session.challenge.ObserveRowGuardInTransaction(session.binding, session.txEpoch.Load()); observeErr != nil {
+				callbackErr.Store(observeErr.Error())
+				return false
+			}
+			return true
+		}, true)
+	}, registry.Retire); err != nil {
+		t.Fatal("register tracked pre-token driver:", err)
+	}
+	pool, err := sql.Open(trackedName, path)
+	if err != nil {
+		t.Fatal("open tracked pre-token database:", err)
+	}
+	defer pool.Close()
+	pool.SetMaxOpenConns(1)
+	pool.SetMaxIdleConns(1)
+	pinned, err := pool.Conn(context.Background())
+	if err != nil {
+		t.Fatal("pin tracked pre-token connection:", err)
+	}
+	defer pinned.Close()
+	var tracked *firstAudioTrackedSQLiteConn
+	if err := pinned.Raw(func(connection any) error {
+		var ok bool
+		tracked, ok = connection.(*firstAudioTrackedSQLiteConn)
+		if !ok || tracked == nil || tracked.raw == nil || tracked.raw != rawConn {
+			return fmt.Errorf("pinned connection does not match ConnectHook raw identity: %T", connection)
+		}
+		return nil
+	}); err != nil {
+		t.Fatal("resolve pinned tracked connection:", err)
+	}
+	registration, live := registry.Lookup(tracked.raw)
+	if !live || registration.ID == "" || !registry.IsLive(registration.ID, tracked.raw) {
+		t.Fatal("pinned tracked connection is not live in its ConnectHook registry")
+	}
+
+	readTypedProjection := func() []any {
+		rows, queryErr := pinned.QueryContext(context.Background(), firstAudioLessonTypedProjectionSQL(), int64(7))
+		if queryErr != nil {
+			t.Fatal("read typed lesson projection on pinned connection:", queryErr)
+		}
+		defer rows.Close()
+		if !rows.Next() {
+			t.Fatalf("typed lesson projection missing: %v", rows.Err())
+		}
+		values := make([]any, 36)
+		dest := make([]any, len(values))
+		for i := range values {
+			dest[i] = &values[i]
+		}
+		if err := rows.Scan(dest...); err != nil {
+			t.Fatal("scan typed lesson projection:", err)
+		}
+		if rows.Next() || rows.Err() != nil {
+			t.Fatalf("typed lesson projection was not unique: %v", rows.Err())
+		}
+		return normalizeFirstAudioTypedSQLitePairs(values)
+	}
+	baselineProjection := readTypedProjection()
+	baselineRaw := readFirstAudioProbeRow(t, pinned)
+	binding := firstAudioGuardProbeBinding{runID: "pretoken_20261029", lessonID: 7, generation: 1, version: 1, connection: registration.ID, probeID: "probe1"}
+	token, challenge, err := newFirstAudioGuardProbeChallenge(binding)
+	if err != nil {
+		t.Fatal("create test-local challenge:", err)
+	}
+	defer zeroFirstAudioSecret(token)
+	if !challenge.receipt.arm() {
+		t.Fatal("arm test-local challenge receipt")
+	}
+	zeroFirstAudioSecret(token)
+	tx, err := pinned.BeginTx(context.Background(), nil)
+	if err != nil {
+		t.Fatal("begin real tracked SQLite transaction:", err)
+	}
+	epoch := tracked.txEpoch.Load()
+	if epoch == 0 || !tracked.txActive.Load() {
+		_ = tx.Rollback()
+		t.Fatal("tracked transaction did not publish a live nonzero epoch")
+	}
+	if err := challenge.BindTransactionEpoch(epoch); err != nil {
+		_ = tx.Rollback()
+		t.Fatal("bind challenge after successful BEGIN:", err)
+	}
+	session := &firstAudioRealSQLProbeSession{challenge: challenge, binding: binding, tracked: tracked}
+	session.txEpoch.Store(epoch)
+	session.expectedProjection.Store(&firstAudioExpectedTypedProjection{values: baselineProjection})
+	sessionRef.session.Store(session)
+	result, updateErr := tx.ExecContext(context.Background(), "UPDATE main.lessons SET id=id WHERE id=?", int64(7))
+	if updateErr == nil {
+		_ = tx.Rollback()
+		t.Fatalf("pre-token UPDATE unexpectedly succeeded: result=%v tokenCalls=%d callbackCalls=%d", result, tokenCalls.Load(), callbackCalls.Load())
+	}
+	var sqliteErr sqlite3.Error
+	if !errors.As(updateErr, &sqliteErr) || sqliteErr.Code != sqlite3.ErrConstraint || sqliteErr.ExtendedCode != sqlite3.ErrConstraintTrigger {
+		_ = tx.Rollback()
+		t.Fatalf("pre-token UPDATE error=%T %v, want SQLITE_CONSTRAINT_TRIGGER: tokenCalls=%d callbackCalls=%d", updateErr, updateErr, tokenCalls.Load(), callbackCalls.Load())
+	}
+	if callbackCalls.Load() != 1 || tokenCalls.Load() != 0 || callbackErr.Load() != errFirstAudioGuardProbeRejected.Error() || firstAudioGuardProbeReceiptState(challenge.receipt.state.Load()) != firstAudioGuardProbeFailed || challenge.receipt.denials.Load() == 0 || challenge.receipt.completeFor(binding, challenge.digest) {
+		_ = tx.Rollback()
+		t.Fatalf("pre-token rejection evidence incomplete: run=%s probe=%s registered=%s bound=%s callback=%d token=%d callbackErr=%v state=%d denials=%d complete=%t", binding.runID, binding.probeID, registration.ID, binding.connection, callbackCalls.Load(), tokenCalls.Load(), callbackErr.Load(), challenge.receipt.state.Load(), challenge.receipt.denials.Load(), challenge.receipt.completeFor(binding, challenge.digest))
+	}
+	captured := session.callbackArgs.Load()
+	if captured == nil {
+		_ = tx.Rollback()
+		t.Fatal("pre-token trigger did not retain SQLite's actual callback arguments")
+	}
+	assertFirstAudioProbeCallbackTypes(t, captured.values)
+	if err := tx.Rollback(); err != nil {
+		t.Fatalf("explicit rollback after rejected pre-token UPDATE: %v", err)
+	}
+	if tracked.txActive.Load() || !tracked.raw.AutoCommit() || !registry.IsLive(registration.ID, tracked.raw) {
+		t.Fatalf("rollback did not leave the same tracked connection clean: txActive=%t autocommit=%t live=%t", tracked.txActive.Load(), tracked.raw.AutoCommit(), registry.IsLive(registration.ID, tracked.raw))
+	}
+	if after := readTypedProjection(); !reflect.DeepEqual(after, baselineProjection) {
+		t.Fatalf("pre-token UPDATE changed pinned typed row: baseline=%#v after=%#v", baselineProjection, after)
+	}
+	if after := readFirstAudioProbeRow(t, pinned); !reflect.DeepEqual(after, baselineRaw) {
+		t.Fatalf("pre-token UPDATE changed raw row projection: baseline=%#v after=%#v", baselineRaw, after)
 	}
 }
 
