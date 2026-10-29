@@ -1033,6 +1033,217 @@ func testFirstAudioDirectRowGuardUDFChild(t *testing.T) {
 	t.Logf("trace_id=%s module=first_audio_preflight event=direct_row_guard_udf_denied payload={sqlite_code:%d,direct_denials_before_cleanup:%d,cleanup_rollback_denials:%d,udf_callbacks:%d,receipt_state:%d,physical_close:%t,registry_live:%t,journey_publish_rejected:true}", binding.runID, sqliteErr.Code, directDenials, cleanupDenials, rowGuardCalls.Load(), challenge.receipt.state.Load(), tracked.closeOK.Load(), registry.IsLive(binding.connection, tracked.raw))
 }
 
+const firstAudioWrongTriggerSourceChildMarker = "ENWORDS_FIRST_AUDIO_WRONG_TRIGGER_SOURCE_CHILD"
+
+func TestFirstAudioMatrixRealSQLRejectsWrongTriggerSource(t *testing.T) {
+	if os.Getenv(firstAudioWrongTriggerSourceChildMarker) == "1" {
+		testFirstAudioWrongTriggerSourceChild(t)
+		return
+	}
+
+	childEnv := make([]string, 0, len(os.Environ())+1)
+	for _, entry := range os.Environ() {
+		if !strings.HasPrefix(entry, firstAudioWrongTriggerSourceChildMarker+"=") {
+			childEnv = append(childEnv, entry)
+		}
+	}
+	childEnv = append(childEnv, firstAudioWrongTriggerSourceChildMarker+"=1")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	command := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestFirstAudioMatrixRealSQLRejectsWrongTriggerSource$", "-test.v")
+	command.Env = childEnv
+	output := &firstAudioCappedChildOutput{limit: 256 << 10}
+	command.Stdout = output
+	command.Stderr = output
+	err := command.Run() // Run waits/reaps the child after exit or CommandContext cancellation.
+	if command.ProcessState == nil || !command.ProcessState.Exited() {
+		t.Fatalf("isolated wrong-source child was not reaped: err=%v output=%s", err, output.String())
+	}
+	if ctx.Err() != nil {
+		t.Fatalf("isolated wrong-source child exceeded 30-second deadline and was terminated/reaped: %v; output=%s", ctx.Err(), output.String())
+	}
+	if err != nil {
+		t.Fatalf("isolated wrong-source child failed: %v; output=%s", err, output.String())
+	}
+	t.Log(output.String())
+}
+
+func testFirstAudioWrongTriggerSourceChild(t *testing.T) {
+	t.Helper()
+	controller := newFirstAudioGuardController()
+	registry := controller.connections
+	sessionRef := &firstAudioRealSQLProbeSessionRef{}
+	var rowGuardCalls atomic.Uint64
+	var registeredRaw *sqlite3.SQLiteConn
+	driverName := fmt.Sprintf("first_audio_wrong_trigger_source_%d", firstAudioProbeDriverSequence.Add(1))
+	if err := registerFirstAudioTrackedSQLiteDriver(driverName, func(raw *sqlite3.SQLiteConn) error {
+		if _, err := registry.Register(raw); err != nil {
+			return err
+		}
+		registeredRaw = raw
+		return raw.RegisterFunc("first_audio_row_guard", func(args ...any) bool {
+			rowGuardCalls.Add(1)
+			return true
+		}, true)
+	}, registry.Retire); err != nil {
+		t.Fatal("register isolated wrong-source tracked driver:", err)
+	}
+	pool, err := sql.Open(driverName, filepath.Join(t.TempDir(), "wrong-trigger-source.db"))
+	if err != nil {
+		t.Fatal("open isolated wrong-source pool:", err)
+	}
+	pool.SetMaxOpenConns(1)
+	pool.SetMaxIdleConns(1)
+	t.Cleanup(func() { _ = pool.Close() })
+	pinned, err := pool.Conn(context.Background())
+	if err != nil {
+		t.Fatal("pin isolated wrong-source connection:", err)
+	}
+	t.Cleanup(func() { _ = pinned.Close() })
+	var tracked *firstAudioTrackedSQLiteConn
+	if err := pinned.Raw(func(connection any) error {
+		var ok bool
+		tracked, ok = connection.(*firstAudioTrackedSQLiteConn)
+		if !ok || tracked == nil || tracked.raw == nil || tracked.raw != registeredRaw {
+			return fmt.Errorf("pinned wrong-source connection does not match registered raw identity: %T", connection)
+		}
+		return nil
+	}); err != nil {
+		t.Fatal("resolve registered wrong-source connection:", err)
+	}
+	registration, live := registry.Lookup(tracked.raw)
+	if !live || registration.ID == "" || !registry.IsLive(registration.ID, tracked.raw) {
+		t.Fatal("wrong-source physical connection is not live in the registry")
+	}
+	const lessonID int64 = 503
+	arguments := make([]string, len(firstAudioLessonProbeColumns)*4)
+	for i := range arguments {
+		arguments[i] = "NULL"
+	}
+	if len(arguments) != 72 {
+		t.Fatalf("wrong-source trigger argument count=%d, want 72", len(arguments))
+	}
+	triggerDDL := "CREATE TRIGGER attacker_source_guard BEFORE UPDATE ON lessons WHEN first_audio_row_guard(" + strings.Join(arguments, ",") + ") BEGIN SELECT 1; END"
+	for _, statement := range []string{
+		"CREATE TABLE lessons (id INTEGER PRIMARY KEY)",
+		fmt.Sprintf("INSERT INTO lessons(id) VALUES(%d)", lessonID),
+		triggerDDL,
+	} {
+		if _, err := pinned.ExecContext(context.Background(), statement); err != nil {
+			t.Fatalf("prepare unapproved wrong-source fixture %q: %v", statement, err)
+		}
+	}
+	var seededID int64
+	if err := pinned.QueryRowContext(context.Background(), "SELECT id FROM lessons WHERE id=?", lessonID).Scan(&seededID); err != nil || seededID != lessonID {
+		t.Fatalf("wrong-source fixture lesson id=%d err=%v, want seeded id %d", seededID, err, lessonID)
+	}
+	var triggerCount int
+	if err := pinned.QueryRowContext(context.Background(), "SELECT count(*) FROM sqlite_master WHERE type='trigger' AND name='attacker_source_guard'").Scan(&triggerCount); err != nil || triggerCount != 1 {
+		t.Fatalf("unapproved wrong-source trigger count=%d err=%v, want exactly one", triggerCount, err)
+	}
+
+	binding := firstAudioGuardProbeBinding{runID: "wrong_source_20261029", lessonID: lessonID, generation: 1, version: 2, connection: registration.ID, probeID: "probe_wrong_source"}
+	token, challenge, err := newFirstAudioPhysicalProbeChallenge(binding)
+	if err != nil {
+		t.Fatal("create wrong-source physical challenge:", err)
+	}
+	defer zeroFirstAudioSecret(token)
+	if !challenge.receipt.arm() {
+		t.Fatal("arm wrong-source challenge receipt")
+	}
+	preflightSpec := firstAudioValidPreflightSpec(2)
+	preflightSpec.runID = binding.runID
+	preflightSpec.currentLessonID = binding.lessonID
+	preflightSpec.connectionIDs = []string{binding.connection}
+	preflightSpec.probeContracts = []firstAudioGuardProbeContract{challenge.Contract()}
+	preflightSpec.rowContracts = []firstAudioGuardRowContract{{
+		table: "lessons", operation: "UPDATE",
+		identity: fmt.Sprintf("lesson:%d/conn:%s", binding.lessonID, binding.connection),
+		oldRow:   []byte("same-typed-projection"), newRow: []byte("same-typed-projection"),
+	}}
+	controller.probeReceipts[binding.connection] = challenge.receipt
+	preflight, err := newFirstAudioGuardContext(preflightSpec)
+	if err != nil {
+		t.Fatal("construct one-connection wrong-source PREFLIGHT:", err)
+	}
+	controller.publisher.current.Store(preflight)
+	authorizer := newFirstAudioRealSQLAuthorizer(controller, sessionRef, firstAudioDatabaseSnapshot{})
+	authorizer.tracked, authorizer.pinned = tracked, pinned
+	authorizer.probeChallenge.Store(challenge)
+	if err := authorizer.install(tracked.raw); err != nil {
+		t.Fatal("install production-shaped wrong-source SQL authorizer:", err)
+	}
+	session := &firstAudioRealSQLProbeSession{challenge: challenge, binding: binding, tracked: tracked}
+	sessionRef.session.Store(session)
+	t.Cleanup(func() {
+		if !registry.IsLive(binding.connection, tracked.raw) {
+			return
+		}
+		cleanupErr := authorizer.terminalizeAndDiscardUncertainConnection()
+		if !errors.Is(cleanupErr, errFirstAudioGuardProbeRejected) {
+			t.Errorf("terminalize/discard wrong-source child after early failure: %v", cleanupErr)
+		}
+	})
+	var tx *sql.Tx
+	if err := authorizer.withPermit(firstAudioSQLPermitProbeSQL, false, func() error {
+		var beginErr error
+		tx, beginErr = pinned.BeginTx(context.Background(), nil)
+		return beginErr
+	}); err != nil {
+		t.Fatal("begin wrong-source transaction:", err)
+	}
+	authorizer.activeTx.Store(tx)
+	epoch := tracked.txEpoch.Load()
+	if !tracked.txActive.Load() || epoch == 0 {
+		t.Fatal("wrong-source transaction is not active at a nonzero epoch")
+	}
+	authorizer.txEpoch.Store(epoch)
+	session.txEpoch.Store(epoch)
+	if err := challenge.BindTransactionEpoch(epoch); err != nil {
+		t.Fatal("bind wrong-source challenge transaction epoch:", err)
+	}
+	denialsBefore := authorizer.denials.Load()
+	queryErr := authorizer.withPermit(firstAudioSQLPermitProbeSQL, true, func() error {
+		_, err := tx.ExecContext(context.Background(), "UPDATE main.lessons SET id=id WHERE id=?", binding.lessonID)
+		return err
+	})
+	var sqliteErr sqlite3.Error
+	if queryErr == nil || !errors.As(queryErr, &sqliteErr) || sqliteErr.Code != sqlite3.ErrError || !strings.Contains(strings.ToLower(queryErr.Error()), "not authorized") {
+		t.Fatalf("wrong-source trigger UPDATE error=%T %v sqlite_code=%d want SQLITE_ERROR=%d with authorization-denial text", queryErr, queryErr, sqliteErr.Code, sqlite3.ErrError)
+	}
+	deniedTuple := authorizer.lastDenied.Load()
+	deniedTupleText, tupleIsString := deniedTuple.(string)
+	wantDeniedTuple := fmt.Sprintf("phase=%s permit=%d action=%d db=%q source=%q arg1=%q arg2=%q", firstAudioGuardPreflight, firstAudioSQLPermitProbeSQL, sqlite3.SQLITE_FUNCTION, "", "attacker_source_guard", "", "first_audio_row_guard")
+	if authorizer.denials.Load()-denialsBefore != 1 || !tupleIsString || deniedTupleText != wantDeniedTuple {
+		t.Fatalf("wrong-source authorizer denial tuple: count_delta=%d tuple=%v want=%q", authorizer.denials.Load()-denialsBefore, deniedTuple, wantDeniedTuple)
+	}
+	directDenials := authorizer.denials.Load()
+	if rowGuardCalls.Load() != 0 || !controller.IsTerminal() {
+		t.Fatalf("wrong-source row-guard UDF executed or controller remained live: callbacks=%d terminal=%t", rowGuardCalls.Load(), controller.IsTerminal())
+	}
+	if !tracked.txActive.Load() || tracked.raw.AutoCommit() {
+		t.Fatal("wrong-source denial did not leave the expected active transaction for terminal cleanup")
+	}
+	cleanupErr := authorizer.terminalizeAndDiscardUncertainConnection()
+	if !errors.Is(cleanupErr, errFirstAudioGuardProbeRejected) {
+		t.Fatalf("terminalize/discard after wrong-source denial=%v, want rejected after confirmed retirement", cleanupErr)
+	}
+	if firstAudioGuardProbeReceiptState(challenge.receipt.state.Load()) != firstAudioGuardProbeFailed || challenge.receipt.completeFor(binding, challenge.digest) || tracked.txActive.Load() || !tracked.closeOK.Load() || registry.IsLive(binding.connection, tracked.raw) {
+		t.Fatalf("wrong-source terminal evidence incomplete: receipt=%d complete=%t txActive=%t closeOK=%t live=%t", challenge.receipt.state.Load(), challenge.receipt.completeFor(binding, challenge.digest), tracked.txActive.Load(), tracked.closeOK.Load(), registry.IsLive(binding.connection, tracked.raw))
+	}
+	journeySpec := firstAudioValidJourneySpec(4, binding.lessonID, binding.generation, 1)
+	journeySpec.runID = binding.runID
+	journey, err := newFirstAudioGuardContext(journeySpec)
+	if err != nil {
+		t.Fatal("construct valid post-denial wrong-source JOURNEY:", err)
+	}
+	if err := controller.publisher.Publish(journey); !errors.Is(err, errFirstAudioGuardContextTransition) {
+		t.Fatalf("JOURNEY publication after wrong-source terminalization=%v, want terminal transition rejection", err)
+	}
+	cleanupDenials := authorizer.denials.Load() - directDenials
+	t.Logf("trace_id=%s module=first_audio_preflight event=wrong_trigger_source_denied payload={sqlite_code:%d,denial_tuple:%q,authorizer_denials:%d,cleanup_rollback_denials:%d,trigger_source:%q,udf_callbacks:%d,receipt_state:%d,physical_close:%t,registry_live:%t,journey_publish_rejected:true}", binding.runID, sqliteErr.Code, deniedTupleText, directDenials-denialsBefore, cleanupDenials, "attacker_source_guard", rowGuardCalls.Load(), challenge.receipt.state.Load(), tracked.closeOK.Load(), registry.IsLive(binding.connection, tracked.raw))
+}
+
 func TestFirstAudioMatrixRealSQLMissingCleanupAuthorityTerminalizesAndDiscardsActiveTransaction(t *testing.T) {
 	registry := newFirstAudioSQLiteConnectionRegistry()
 	driverName := fmt.Sprintf("first_audio_missing_cleanup_authority_%d", firstAudioProbeDriverSequence.Add(1))
