@@ -12,4 +12,5 @@ Scope: docs/83 and the isolated CGO SQLite challenge harness. No production auth
 ## Validation
 
 - Local Go execution: unavailable; `go`/`gofmt` are not installed or on PATH in this worktree environment.
-- Linux/Windows CI: pending.
+- Linux/Windows protocol CI: PASS — [run 40805069098](https://github.com/l17728/en-words/actions/runs/40805069098), including focused first-audio regressions, Linux race/vet, Windows CGO boundaries, web build, and Playwright discovery.
+- Linux package/manifest CI: PASS — [run 40805069147](https://github.com/l17728/en-words/actions/runs/40805069147), including full backend regression, race/vet and manifest checks. The runner preflight job did not start a candidate; VFS/RunRoot acceptance remains outside this evidence.

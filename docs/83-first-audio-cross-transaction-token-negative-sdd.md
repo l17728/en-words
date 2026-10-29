@@ -1,7 +1,7 @@
 # First-Audio Cross-Transaction Token Negative SDD
 
 Date: 2026-10-29
-Status: design/security/test review approved; implementation in progress.
+Status: design/security/test review approved; Linux and Windows protocol CI plus Linux package regression passed (runs 40805069098 and 40805069147).
 
 ## Goal
 
