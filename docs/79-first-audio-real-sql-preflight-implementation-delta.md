@@ -70,3 +70,17 @@ The four-connection version at `d01cd84` also verifies one successful token cons
 The bounded docs/78 §5 pre-token UPDATE case is implemented by `TestFirstAudioMatrixRealSQLRejectsLessonUpdateBeforeTokenConsumption` in `server/internal/api/first_audio_matrix_real_sql_manifest_cgo_test.go`. It executes the frozen 72-argument SQLite trigger/UDF against a temporary SQLite database and verifies UPDATE-before-token-consumption is rejected, the token callback is not reached, the challenge records denial evidence, rollback succeeds, and the row remains unchanged. Design and review are recorded in docs/82 and `review/first-audio-pretoken-update-review-20261029.md`.
 
 Linux and Windows CI passed in [run 40801551667](https://github.com/l17728/en-words/actions/runs/40801551667). This closes only this component-level negative case; the remaining PREFLIGHT negative matrix, production authorization policy, guarded `api.App` integration, browser journey/reset-race coverage, performance matrix, and real classroom pilot remain open.
+
+## docs/78 §5 negative-matrix evidence ledger (2026-10-29)
+
+The tests below are evidence for their named slice only. They do not collectively satisfy the required fresh-candidate matrix, listener-factory/no-later-phase assertions, or isolated-child requirement in docs/78 §5.
+
+| docs/78 case | Current evidence | Acceptance boundary |
+|---|---|---|
+| Wrong token, connection A using B's token, replay | `TestFirstAudioMatrixRealSQLRejectsCrossConnectionWrongAndReplayedTokens` | Isolated real SQLite connections and authorizer cleanup are exercised; not full guarded `api.App` fresh-candidate acceptance. |
+| Token consumed in a different transaction epoch | `TestFirstAudioMatrixProbeChallengeRejectsDifferentTransactionEpoch` | State-machine/unit evidence only; real SQLite UDF/trigger candidate case remains open. |
+| UPDATE before token consumption | `TestFirstAudioMatrixRealSQLRejectsLessonUpdateBeforeTokenConsumption` | Real SQLite trigger/UDF component case; no production authorizer or App candidate. |
+| Missing cleanup authority with an active SQL transaction | `TestFirstAudioMatrixRealSQLMissingCleanupAuthorityTerminalizesAndDiscardsActiveTransaction` | Real SQL terminalization and physical connection retirement are exercised; not a substitute for per-case full candidate assertions. |
+| Other docs/78 §5 negatives | No matching acceptance evidence recorded yet | Open: binding variants, direct/wrong-source call, callback replay, other-row/projection/zero-row failures, schema/UDF/connection faults, cleanup/readback failures, callback cardinality, and cancel/timeout drain races. |
+
+Do not infer unlisted scenarios from a neighboring test. The still-open cases are: independent wrong run/lesson/generation/context-version bindings; token use in a later transaction; direct or wrong-source UDF calls; duplicate row callback; other-row UPDATE; corrupted OLD/NEW projection; primary-key/fixed-statement at-most-one-row evidence and zero-row behavior; missing/replaced UDF or trigger and extra trigger; unregistered/replaced connection; extra/omitted callback; projection read error or absent/ambiguous target; callback cancellation/drain races; and phase-specific rollback denial. Close each only after its own reviewed case, observable failure assertions, rollback/snapshot or terminal evidence, and required platform CI pass. The epoch unit case must be followed by a real-SQL case before that row is complete.

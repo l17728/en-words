@@ -209,6 +209,9 @@ func (p *firstAudioRealSQLAuthorizer) rollbackProbeTransaction() error {
 		return fmt.Errorf("probe rollback unconfirmed: %w (rollback error=%v)", cleanupErr, err)
 	}
 	p.activeTx.CompareAndSwap(tx, nil)
+	if challenge := p.probeChallenge.Load(); challenge != nil {
+		challenge.InvalidateIncompleteTransaction(p.txEpoch.Load())
+	}
 	return nil
 }
 
@@ -355,6 +358,7 @@ func TestFirstAudioMatrixRealSQLRejectsCrossConnectionWrongAndReplayedTokens(t *
 		binding    firstAudioGuardProbeBinding
 		token      []byte
 		challenge  *firstAudioGuardProbeChallenge
+		tokenCalls atomic.Uint64
 	}
 	harnesses := make(map[string]*candidate)
 	var harnessMu sync.Mutex
@@ -366,10 +370,12 @@ func TestFirstAudioMatrixRealSQLRejectsCrossConnectionWrongAndReplayedTokens(t *
 		}
 		sessionRef := &firstAudioRealSQLProbeSessionRef{}
 		authorizer := newFirstAudioRealSQLAuthorizer(controller, sessionRef, firstAudioDatabaseSnapshot{})
+		current := &candidate{authorizer: authorizer, sessionRef: sessionRef}
 		harnessMu.Lock()
-		harnesses[registration.ID] = &candidate{authorizer: authorizer, sessionRef: sessionRef}
+		harnesses[registration.ID] = current
 		harnessMu.Unlock()
 		if err := raw.RegisterFunc("first_audio_probe", func(token []byte) bool {
+			current.tokenCalls.Add(1)
 			session := sessionRef.session.Load()
 			if session == nil || session.challenge == nil || session.tracked == nil || !session.tracked.txActive.Load() || session.txEpoch.Load() == 0 || session.txEpoch.Load() != session.tracked.txEpoch.Load() {
 				return false
@@ -387,9 +393,9 @@ func TestFirstAudioMatrixRealSQLRejectsCrossConnectionWrongAndReplayedTokens(t *
 		t.Fatal("open isolated SQLite pool:", err)
 	}
 	defer pool.Close()
-	pool.SetMaxOpenConns(4)
-	pool.SetMaxIdleConns(4)
-	candidates := make([]*candidate, 0, 4)
+	pool.SetMaxOpenConns(5)
+	pool.SetMaxIdleConns(5)
+	candidates := make([]*candidate, 0, 5)
 	defer func() {
 		for _, item := range candidates {
 			zeroFirstAudioSecret(item.token)
@@ -408,7 +414,7 @@ func TestFirstAudioMatrixRealSQLRejectsCrossConnectionWrongAndReplayedTokens(t *
 			}
 		}
 	}()
-	for range 4 {
+	for range 5 {
 		pinned, pinErr := pool.Conn(context.Background())
 		if pinErr != nil {
 			t.Fatal("pin physical SQLite connection:", pinErr)
@@ -464,9 +470,9 @@ func TestFirstAudioMatrixRealSQLRejectsCrossConnectionWrongAndReplayedTokens(t *
 	preflightSpec := firstAudioValidPreflightSpec(2)
 	preflightSpec.runID = candidates[0].binding.runID
 	preflightSpec.currentLessonID = candidates[0].binding.lessonID
-	preflightSpec.connectionIDs = make([]string, 0, 4)
-	preflightSpec.probeContracts = make([]firstAudioGuardProbeContract, 0, 4)
-	preflightSpec.rowContracts = make([]firstAudioGuardRowContract, 0, 4)
+	preflightSpec.connectionIDs = make([]string, 0, 5)
+	preflightSpec.probeContracts = make([]firstAudioGuardProbeContract, 0, 5)
+	preflightSpec.rowContracts = make([]firstAudioGuardRowContract, 0, 5)
 	for _, item := range candidates {
 		if !item.challenge.receipt.arm() {
 			t.Fatal("arm fresh connection receipt")
@@ -481,7 +487,7 @@ func TestFirstAudioMatrixRealSQLRejectsCrossConnectionWrongAndReplayedTokens(t *
 	}
 	preflight, err := newFirstAudioGuardContext(preflightSpec)
 	if err != nil {
-		t.Fatal("construct isolated four-connection PREFLIGHT:", err)
+		t.Fatal("construct isolated five-connection PREFLIGHT:", err)
 	}
 	controller.publisher.current.Store(preflight)
 	for _, item := range candidates {
@@ -631,6 +637,80 @@ func TestFirstAudioMatrixRealSQLRejectsCrossConnectionWrongAndReplayedTokens(t *
 	}
 	if replayOwner.tracked.txActive.Load() || !replayOwner.tracked.raw.AutoCommit() || replayOwner.authorizer.denials.Load() != 0 {
 		t.Fatal("replay rejection did not finish through the authorized cleanup rollback")
+	}
+
+	epochOwner := candidates[4]
+	epochOwner.sessionRef.session.Store(&firstAudioRealSQLProbeSession{challenge: epochOwner.challenge, binding: epochOwner.binding, tracked: epochOwner.tracked})
+	var firstEpochTx *sql.Tx
+	if err := epochOwner.authorizer.withPermit(firstAudioSQLPermitProbeSQL, false, func() error {
+		var beginErr error
+		firstEpochTx, beginErr = epochOwner.pinned.BeginTx(context.Background(), nil)
+		return beginErr
+	}); err != nil {
+		t.Fatal("begin first transaction for cross-transaction replay case:", err)
+	}
+	epochOwner.authorizer.activeTx.Store(firstEpochTx)
+	firstEpoch := epochOwner.tracked.txEpoch.Load()
+	if !epochOwner.tracked.txActive.Load() || firstEpoch == 0 {
+		t.Fatal("first cross-transaction epoch is not active and nonzero")
+	}
+	epochOwner.authorizer.txEpoch.Store(firstEpoch)
+	epochOwner.sessionRef.session.Load().txEpoch.Store(firstEpoch)
+	if err := epochOwner.challenge.BindTransactionEpoch(firstEpoch); err != nil {
+		t.Fatal("bind challenge to first cross-transaction epoch:", err)
+	}
+	var acceptedInFirstEpoch bool
+	if err := epochOwner.authorizer.withPermit(firstAudioSQLPermitTokenConsumption, true, func() error {
+		return firstEpochTx.QueryRowContext(context.Background(), "SELECT first_audio_probe(?)", epochOwner.token).Scan(&acceptedInFirstEpoch)
+	}); err != nil || !acceptedInFirstEpoch || epochOwner.tokenCalls.Load() != 1 || firstAudioGuardProbeReceiptState(epochOwner.challenge.receipt.state.Load()) != firstAudioGuardProbeTokenConsumed {
+		t.Fatalf("first-epoch token consumption accepted=%t callbacks=%d state=%d err=%v", acceptedInFirstEpoch, epochOwner.tokenCalls.Load(), epochOwner.challenge.receipt.state.Load(), err)
+	}
+	epochOwner.authorizer.cleanupPreflight.Store(true)
+	epochOwner.authorizer.cleanupAvailable.Store(true)
+	if err := epochOwner.authorizer.rollbackProbeTransaction(); err != nil {
+		t.Fatalf("cleanup first cross-transaction epoch: %v", err)
+	}
+	if firstAudioGuardProbeReceiptState(epochOwner.challenge.receipt.state.Load()) != firstAudioGuardProbeFailed || epochOwner.challenge.receipt.denials.Load() == 0 || epochOwner.challenge.receipt.completeFor(epochOwner.binding, epochOwner.challenge.digest) {
+		t.Fatal("rollback left an incomplete token-consumed challenge reusable or complete")
+	}
+	if !registry.IsLive(epochOwner.binding.connection, epochOwner.tracked.raw) {
+		t.Fatal("confirmed first rollback retired the same physical candidate connection")
+	}
+
+	var secondEpochTx *sql.Tx
+	if err := epochOwner.authorizer.withPermit(firstAudioSQLPermitProbeSQL, false, func() error {
+		var beginErr error
+		secondEpochTx, beginErr = epochOwner.pinned.BeginTx(context.Background(), nil)
+		return beginErr
+	}); err != nil {
+		t.Fatal("begin second transaction for cross-transaction replay case:", err)
+	}
+	epochOwner.authorizer.activeTx.Store(secondEpochTx)
+	secondEpoch := epochOwner.tracked.txEpoch.Load()
+	if !epochOwner.tracked.txActive.Load() || secondEpoch <= firstEpoch {
+		t.Fatalf("tracked transaction epoch did not advance: first=%d second=%d active=%t", firstEpoch, secondEpoch, epochOwner.tracked.txActive.Load())
+	}
+	epochOwner.authorizer.txEpoch.Store(secondEpoch)
+	epochOwner.sessionRef.session.Load().txEpoch.Store(secondEpoch)
+	if epochOwner.challenge.txEpoch.Load() != firstEpoch || epochOwner.tracked.txEpoch.Load() != secondEpoch || epochOwner.sessionRef.session.Load().txEpoch.Load() != secondEpoch || epochOwner.authorizer.txEpoch.Load() != secondEpoch || epochOwner.authorizer.activeTx.Load() != secondEpochTx {
+		t.Fatalf("cross-transaction references are inconsistent: challenge=%d tracked=%d session=%d authorizer=%d activeTxMatches=%t; first=%d second=%d", epochOwner.challenge.txEpoch.Load(), epochOwner.tracked.txEpoch.Load(), epochOwner.sessionRef.session.Load().txEpoch.Load(), epochOwner.authorizer.txEpoch.Load(), epochOwner.authorizer.activeTx.Load() == secondEpochTx, firstEpoch, secondEpoch)
+	}
+	var acceptedInSecondEpoch bool
+	if err := epochOwner.authorizer.withPermit(firstAudioSQLPermitTokenConsumption, true, func() error {
+		return secondEpochTx.QueryRowContext(context.Background(), "SELECT first_audio_probe(?)", epochOwner.token).Scan(&acceptedInSecondEpoch)
+	}); err != nil {
+		t.Fatalf("real SQLite cross-transaction token replay query: %v", err)
+	}
+	if acceptedInSecondEpoch || epochOwner.tokenCalls.Load() != 2 || firstAudioGuardProbeReceiptState(epochOwner.challenge.receipt.state.Load()) != firstAudioGuardProbeFailed || epochOwner.challenge.receipt.denials.Load() < 2 || epochOwner.challenge.receipt.completeFor(epochOwner.binding, epochOwner.challenge.digest) {
+		t.Fatalf("cross-transaction replay evidence incomplete: accepted=%t callbacks=%d state=%d denials=%d", acceptedInSecondEpoch, epochOwner.tokenCalls.Load(), epochOwner.challenge.receipt.state.Load(), epochOwner.challenge.receipt.denials.Load())
+	}
+	epochOwner.authorizer.cleanupPreflight.Store(true)
+	epochOwner.authorizer.cleanupAvailable.Store(true)
+	if err := epochOwner.authorizer.rollbackProbeTransaction(); err != nil {
+		t.Fatalf("cleanup second cross-transaction epoch: %v", err)
+	}
+	if epochOwner.tracked.txActive.Load() || !epochOwner.tracked.raw.AutoCommit() || !registry.IsLive(epochOwner.binding.connection, epochOwner.tracked.raw) {
+		t.Fatal("second cross-transaction rollback failed to preserve a clean live pinned connection")
 	}
 }
 

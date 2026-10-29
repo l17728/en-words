@@ -211,6 +211,28 @@ func (c *firstAudioGuardProbeChallenge) ConsumeInTransaction(token []byte, suppl
 	return c.Consume(token, supplied)
 }
 
+// InvalidateIncompleteTransaction models the protocol rule that ending a
+// transaction cannot leave an unused token or an unconsummated row permit
+// reusable. A row-guard-observed challenge remains eligible for the normal
+// rollback/readback receipt path; incomplete states fail closed.
+func (c *firstAudioGuardProbeChallenge) InvalidateIncompleteTransaction(epoch uint64) {
+	if c == nil || c.receipt == nil {
+		return
+	}
+	state := firstAudioGuardProbeReceiptState(c.receipt.state.Load())
+	if state == firstAudioGuardProbeFailed || state == firstAudioGuardProbeRowGuardObserved || state == firstAudioGuardProbeRollbackVerified || state == firstAudioGuardProbeReadbackVerified {
+		return
+	}
+	if epoch == 0 || c.txEpoch.Load() != epoch {
+		c.receipt.denyAttempt()
+		return
+	}
+	switch state {
+	case firstAudioGuardProbeIssued, firstAudioGuardProbeTokenConsumed:
+		c.receipt.deny()
+	}
+}
+
 // consumeAdmitted models a callback that crossed its gate before a drain and
 // finished its in-flight work after admission closed.
 func (c *firstAudioGuardProbeChallenge) consumeAdmitted(token []byte) error {
