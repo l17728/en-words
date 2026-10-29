@@ -12,4 +12,4 @@ Scope: docs/84 and four negative callback-binding cases in the isolated CGO SQLi
 ## Validation
 
 - Local Go execution: unavailable; `go` and `gofmt` are not installed or on PATH in this worktree environment.
-- Linux/Windows protocol CI: pending.
+- Linux/Windows protocol CI: PASS — [run 40807107366](https://github.com/l17728/en-words/actions/runs/40807107366), including the focused CGO matrix, Linux race/vet, Windows harness boundaries, web build, Playwright discovery, and production-symbol check.

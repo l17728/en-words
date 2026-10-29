@@ -1,7 +1,7 @@
 # First-Audio SQL Binding Negative SDD
 
 Date: 2026-10-29
-Status: design/security/test review approved; implementation in progress.
+Status: design/security/test review approved; Linux/Windows protocol CI passed (run 40807107366).
 
 ## Goal
 
