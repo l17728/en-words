@@ -92,6 +92,16 @@ type firstAudioRealSQLAuthorizer struct {
 	txEpoch                 atomic.Uint64
 	denials                 atomic.Uint64
 	lastDenied              atomic.Value
+	onAuthorize             func(firstAudioRealSQLAuthorizerEvent)
+}
+
+type firstAudioRealSQLAuthorizerEvent struct {
+	phase                     firstAudioGuardContextPhase
+	permit                    firstAudioSQLPermit
+	action                    int
+	arg1, arg2                string
+	databaseName, triggerName string
+	allowed                   bool
 }
 
 func newFirstAudioRealSQLAuthorizer(controller *firstAudioGuardController, sessionRef *firstAudioRealSQLProbeSessionRef, baseline firstAudioDatabaseSnapshot) *firstAudioRealSQLAuthorizer {
@@ -128,6 +138,16 @@ func (p *firstAudioRealSQLAuthorizer) install(conn *sqlite3.SQLiteConn) error {
 			// A connection-local authorizer accepts permits only for the raw
 			// connection whose identity was captured by its ConnectHook.
 			allowed = p.registryID == registration.ID && p.raw == conn && firstAudioAuthorizePreflightTuple(firstAudioSQLPermit(p.permit.Load()), p.reads, action, arg1, arg2, databaseName, triggerName)
+		}
+		if p.onAuthorize != nil {
+			phase := firstAudioGuardTerminal
+			if active != nil {
+				phase = active.phase
+			}
+			p.onAuthorize(firstAudioRealSQLAuthorizerEvent{
+				phase: phase, permit: firstAudioSQLPermit(p.permit.Load()), action: action,
+				arg1: arg1, arg2: arg2, databaseName: databaseName, triggerName: triggerName, allowed: allowed,
+			})
 		}
 		if allowed {
 			return sqlite3.SQLITE_OK
