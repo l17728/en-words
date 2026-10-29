@@ -400,6 +400,10 @@ func TestFirstAudioResetAuthorizerCaptureOnly(t *testing.T) {
 	if err := json.Unmarshal(triggerBytes, &triggerManifest); err != nil || triggerManifest.FormatVersion != 1 || triggerManifest.SHA256 == "" {
 		t.Fatalf("lesson trigger manifest metadata is invalid: version=%d err=%v", triggerManifest.FormatVersion, err)
 	}
+	// Windows checkouts may use CRLF while Linux checkouts use LF. Hash a
+	// canonical representation so the reviewed trigger manifest is identical
+	// across the platform matrix.
+	triggerBytes = canonicalFirstAudioTriggerManifestBytes(triggerBytes)
 	triggerDigest := sha256.Sum256(triggerBytes)
 	artifact := struct {
 		FormatVersion          int                                `json:"format_version"`
@@ -451,6 +455,23 @@ func TestFirstAudioResetAuthorizerCaptureOnly(t *testing.T) {
 	}
 }
 
+func canonicalFirstAudioTriggerManifestBytes(raw []byte) []byte {
+	return bytes.ReplaceAll(raw, []byte("\r\n"), []byte("\n"))
+}
+
+func TestFirstAudioTriggerManifestDigestIgnoresLineEndings(t *testing.T) {
+	lf := []byte("{\n  \"format_version\": 1\n}\n")
+	crlf := bytes.ReplaceAll(lf, []byte("\n"), []byte("\r\n"))
+	if !bytes.Equal(canonicalFirstAudioTriggerManifestBytes(lf), canonicalFirstAudioTriggerManifestBytes(crlf)) {
+		t.Fatal("trigger manifest canonical bytes differ between LF and CRLF")
+	}
+	lfDigest := sha256.Sum256(canonicalFirstAudioTriggerManifestBytes(lf))
+	crlfDigest := sha256.Sum256(canonicalFirstAudioTriggerManifestBytes(crlf))
+	if lfDigest != crlfDigest {
+		t.Fatal("trigger manifest digest differs between LF and CRLF")
+	}
+}
+
 func firstAudioResetManifestDifference(wantJSON, actualJSON []byte) string {
 	type manifestView struct {
 		SHA256              string                             `json:"sha256"`
@@ -497,8 +518,11 @@ func firstAudioResetManifestDifference(wantJSON, actualJSON []byte) string {
 	if want.SchemaSHA256 != actual.SchemaSHA256 {
 		differences = append(differences, "schema_sha256")
 	}
-	if want.TriggerVersion != actual.TriggerVersion || want.TriggerSHA256 != actual.TriggerSHA256 {
-		differences = append(differences, "trigger_manifest")
+	if want.TriggerVersion != actual.TriggerVersion {
+		differences = append(differences, "trigger_manifest_version")
+	}
+	if want.TriggerSHA256 != actual.TriggerSHA256 {
+		differences = append(differences, "trigger_manifest_sha256")
 	}
 	if len(want.Statements) != len(actual.Statements) {
 		differences = append(differences, fmt.Sprintf("statement_count:%d!=%d", len(want.Statements), len(actual.Statements)))

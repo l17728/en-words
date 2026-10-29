@@ -155,7 +155,7 @@ jobs:
         run: go test ./internal/api -run '^TestFirstAudioJourney' -count=1 -timeout=5m
       - name: Verify reset authorizer capture manifest
         working-directory: server
-        run: go test ./internal/api -run '^TestFirstAudioReset(AuthorizerCaptureOnly|ManifestWriterRejectsSymlinkTargets)$' -count=1 -timeout=5m
+        run: go test ./internal/api -run '^(TestFirstAudioReset(AuthorizerCaptureOnly|ManifestWriterRejectsSymlinkTargets)|TestFirstAudioTriggerManifestDigestIgnoresLineEndings)$' -count=1 -timeout=5m
       - name: Test classroom tool transaction outcome handling
         working-directory: server
         run: go test ./internal/api -run '^(TestToolTransaction|TestObservedToolTransaction|TestUncertainToolTransaction|TestRetiredRoomRejectsPublicProgressionEntrypoints|TestDeferredCommitFailureStopsTeacherContinuationAndSnapshot)' -count=1 -timeout=5m
@@ -170,7 +170,7 @@ jobs:
         run: go test -race ./internal/api -run '^TestFirstAudioJourneyAuditGuard' -count=1 -timeout=5m
       - name: Race-test reset authorizer capture
         working-directory: server
-        run: go test -race ./internal/api -run '^TestFirstAudioReset(AuthorizerCaptureOnly|ManifestWriterRejectsSymlinkTargets)$' -count=1 -timeout=5m
+        run: go test -race ./internal/api -run '^(TestFirstAudioReset(AuthorizerCaptureOnly|ManifestWriterRejectsSymlinkTargets)|TestFirstAudioTriggerManifestDigestIgnoresLineEndings)$' -count=1 -timeout=5m
       - name: Confirm Linux CGO compiler is active
         run: |
           test "$(go env CGO_ENABLED)" = "1"
@@ -250,7 +250,7 @@ jobs:
         run: go test ./internal/api -run '^TestFirstAudioJourney' -count=1 -timeout=5m
       - name: Verify reset authorizer capture manifest
         working-directory: server
-        run: go test ./internal/api -run '^TestFirstAudioReset(AuthorizerCaptureOnly|ManifestWriterRejectsSymlinkTargets)$' -count=1 -timeout=5m
+        run: go test ./internal/api -run '^(TestFirstAudioReset(AuthorizerCaptureOnly|ManifestWriterRejectsSymlinkTargets)|TestFirstAudioTriggerManifestDigestIgnoresLineEndings)$' -count=1 -timeout=5m
       - name: Test classroom tool transaction outcome handling
         working-directory: server
         run: go test ./internal/api -run '^(TestToolTransaction|TestObservedToolTransaction|TestUncertainToolTransaction|TestRetiredRoomRejectsPublicProgressionEntrypoints|TestDeferredCommitFailureStopsTeacherContinuationAndSnapshot)' -count=1 -timeout=10m
