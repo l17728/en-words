@@ -1020,7 +1020,9 @@ func testFirstAudioDirectRowGuardUDFChild(t *testing.T) {
 	if firstAudioGuardProbeReceiptState(challenge.receipt.state.Load()) != firstAudioGuardProbeFailed || challenge.receipt.completeFor(binding, challenge.digest) || tracked.txActive.Load() || !tracked.closeOK.Load() || registry.IsLive(binding.connection, tracked.raw) {
 		t.Fatalf("direct-UDF terminal evidence incomplete: receipt=%d complete=%t txActive=%t closeOK=%t live=%t", challenge.receipt.state.Load(), challenge.receipt.completeFor(binding, challenge.digest), tracked.txActive.Load(), tracked.closeOK.Load(), registry.IsLive(binding.connection, tracked.raw))
 	}
-	journey, err := newFirstAudioGuardContext(firstAudioValidJourneySpec(4, binding.lessonID, binding.generation, 1))
+	journeySpec := firstAudioValidJourneySpec(4, binding.lessonID, binding.generation, 1)
+	journeySpec.runID = binding.runID
+	journey, err := newFirstAudioGuardContext(journeySpec)
 	if err != nil {
 		t.Fatal("construct valid post-denial JOURNEY candidate:", err)
 	}
