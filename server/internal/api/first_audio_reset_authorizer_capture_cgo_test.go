@@ -453,6 +453,9 @@ func TestFirstAudioResetAuthorizerCaptureOnly(t *testing.T) {
 
 func firstAudioResetManifestDifference(wantJSON, actualJSON []byte) string {
 	type manifestView struct {
+		SHA256              string                             `json:"sha256"`
+		FormatVersion       int                                `json:"format_version"`
+		Driver              string                             `json:"driver"`
 		DriverModuleVersion string                             `json:"driver_module_version"`
 		DriverSourceSHA256  string                             `json:"driver_source_sha256"`
 		SQLite              map[string]any                     `json:"sqlite"`
@@ -470,6 +473,15 @@ func firstAudioResetManifestDifference(wantJSON, actualJSON []byte) string {
 		return "captured manifest is invalid JSON"
 	}
 	differences := make([]string, 0)
+	if want.SHA256 != actual.SHA256 {
+		differences = append(differences, "sha256")
+	}
+	if want.FormatVersion != actual.FormatVersion {
+		differences = append(differences, "format_version")
+	}
+	if want.Driver != actual.Driver {
+		differences = append(differences, "driver")
+	}
 	if want.DriverModuleVersion != actual.DriverModuleVersion {
 		differences = append(differences, "driver_module_version")
 	}
@@ -493,8 +505,17 @@ func firstAudioResetManifestDifference(wantJSON, actualJSON []byte) string {
 	}
 	for i := 0; i < len(want.Statements) && i < len(actual.Statements); i++ {
 		left, right := want.Statements[i], actual.Statements[i]
-		if left.Operation != right.Operation || left.SQL != right.SQL || !reflect.DeepEqual(left.Tuples, right.Tuples) {
-			detail := fmt.Sprintf("statement[%d]=%s/%s", i+1, left.Operation, right.Operation)
+		if left.Sequence != right.Sequence || left.Operation != right.Operation || left.SQL != right.SQL || !reflect.DeepEqual(left.Tuples, right.Tuples) {
+			detail := fmt.Sprintf("statement[%d]", i+1)
+			if left.Sequence != right.Sequence {
+				detail += fmt.Sprintf(" sequence:%d!=%d", left.Sequence, right.Sequence)
+			}
+			if left.Operation != right.Operation {
+				detail += fmt.Sprintf(" operation:%s!=%s", left.Operation, right.Operation)
+			}
+			if left.SQL != right.SQL {
+				detail += fmt.Sprintf(" sql_template:%s!=%s", left.SQL, right.SQL)
+			}
 			if len(left.Tuples) != len(right.Tuples) {
 				detail += fmt.Sprintf(" tuple_count:%d!=%d", len(left.Tuples), len(right.Tuples))
 			}
@@ -529,12 +550,8 @@ func writeFirstAudioResetManifestAtomically(path string, content []byte) (result
 	}
 	if resolved, err := filepath.EvalSymlinks(parent); err != nil {
 		return err
-	} else {
-		resolvedInfo, resolvedErr := os.Stat(resolved)
-		parentInfo, parentErr := os.Stat(parent)
-		if resolvedErr != nil || parentErr != nil || !os.SameFile(resolvedInfo, parentInfo) {
-			return fmt.Errorf("manifest parent resolves through a different path")
-		}
+	} else if !sameResolvedFirstAudioResetManifestPath(resolved, parent) {
+		return fmt.Errorf("manifest parent resolves through a different path")
 	}
 	if info, err := os.Lstat(path); err == nil {
 		if info.Mode()&os.ModeSymlink != 0 || !info.Mode().IsRegular() {
@@ -569,6 +586,37 @@ func writeFirstAudioResetManifestAtomically(path string, content []byte) (result
 		return err
 	}
 	return replaceFirstAudioResetManifest(temporaryPath, path)
+}
+
+func sameResolvedFirstAudioResetManifestPath(resolved, input string) bool {
+	resolvedAbs, resolvedErr := filepath.Abs(resolved)
+	inputAbs, inputErr := filepath.Abs(input)
+	if resolvedErr != nil || inputErr != nil {
+		return false
+	}
+	resolvedAbs = filepath.Clean(resolvedAbs)
+	inputAbs = filepath.Clean(inputAbs)
+	if runtime.GOOS == "windows" {
+		// EvalSymlinks may return an extended-length path while the caller uses
+		// a drive-letter path. Strip only that representation prefix, then use
+		// Windows' case-insensitive path comparison semantics.
+		resolvedAbs = normalizeWindowsResetManifestPath(resolvedAbs)
+		inputAbs = normalizeWindowsResetManifestPath(inputAbs)
+		return strings.EqualFold(resolvedAbs, inputAbs)
+	}
+	return resolvedAbs == inputAbs
+}
+
+func normalizeWindowsResetManifestPath(path string) string {
+	const extendedUNC = `\\?\UNC\`
+	const extendedPath = `\\?\`
+	if strings.HasPrefix(strings.ToUpper(path), extendedUNC) {
+		return `\\` + path[len(extendedUNC):]
+	}
+	if strings.HasPrefix(strings.ToUpper(path), extendedPath) {
+		return path[len(extendedPath):]
+	}
+	return path
 }
 
 func TestFirstAudioResetManifestWriterRejectsSymlinkTargets(t *testing.T) {
@@ -617,6 +665,17 @@ func TestFirstAudioResetManifestWriterRejectsSymlinkTargets(t *testing.T) {
 	content, err = os.ReadFile(externalFile)
 	if err != nil || string(content) != "parent-keep" {
 		t.Fatalf("symlink-parent target changed: content=%q err=%v", content, err)
+	}
+	ancestorLink := filepath.Join(root, "linked-ancestor")
+	if err := os.Symlink(root, ancestorLink); err != nil {
+		t.Skipf("ancestor symlink creation unavailable: %v", err)
+	}
+	if err := writeFirstAudioResetManifestAtomically(filepath.Join(ancestorLink, "external-dir", "manifest.json"), []byte("ancestor-replace")); err == nil {
+		t.Fatal("writer accepted a parent reached through a symlink ancestor")
+	}
+	content, err = os.ReadFile(externalFile)
+	if err != nil || string(content) != "parent-keep" {
+		t.Fatalf("symlink-ancestor target changed: content=%q err=%v", content, err)
 	}
 }
 
