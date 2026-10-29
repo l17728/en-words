@@ -1,7 +1,7 @@
 # First-Audio Direct Row-Guard Call Negative SDD
 
 Date: 2026-10-29
-Status: SDD/security/test review approved; explicit post-terminal JOURNEY assertion implemented; CI pending.
+Status: SDD/security/test review approved; explicit post-terminal JOURNEY assertion passed Linux/Windows protocol CI (run 40815213939) and Linux package/backend regression (run 40815610001); listener/App acceptance remains open.
 
 ## Goal
 

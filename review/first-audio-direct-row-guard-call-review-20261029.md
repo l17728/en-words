@@ -14,8 +14,9 @@ or classroom acceptance.
   specifies the SQLite authorizer denial, bounded child-process isolation,
   transaction terminalization, and physical connection eviction.
 - Security review: **PASS**. The registered variadic UDF is called only by a
-  real SQLite statement; the actual authorizer returns `SQLITE_AUTH` before the
-  UDF callback. The manifest is unchanged, callback count remains zero, and no
+  real SQLite statement; the authorizer callback returns `SQLITE_DENY`, and
+  SQLite reports `SQLITE_ERROR` with authorization-denial text before the UDF
+  callback. The manifest is unchanged, callback count remains zero, and no
   token material is logged.
 - Testability review: **PASS**. Cleanup callbacks use LIFO order so terminal
   transaction cleanup precedes pinned-connection and pool closure. The direct
@@ -46,10 +47,16 @@ Playwright discovery, Windows boundary tests, and production-symbol check.
 
 After review noted that docs/78 also requires an explicit no-later-phase
 assertion, the SDD was revised and reviewed again. The child now publishes a
-valid JOURNEY candidate to the terminal controller after cleanup and asserts
-`errFirstAudioGuardContextTransition`. This follow-up code change is **PENDING
-CI**. The listener-factory assertion remains out of scope for this no-App
-component child and remains open for guarded-App integration.
+valid, same-run JOURNEY candidate to the terminal controller after cleanup and
+asserts `errFirstAudioGuardContextTransition`. Security and test review: **PASS**.
+The corrected Linux/Windows protocol workflow passed in
+[run 40815213939](https://github.com/l17728/en-words/actions/runs/40815213939).
+The listener-factory assertion remains out of scope for this no-App component
+child and remains open for guarded-App integration. A full Linux package/backend
+regression on the same corrected revision passed all three jobs in
+[run 40815610001](https://github.com/l17728/en-words/actions/runs/40815610001),
+including full backend `go test ./...`, package race/vet, manifest inventory,
+and runner preflight. This is not VFS/RunRoot candidate acceptance.
 
 ## Acceptance boundary
 
