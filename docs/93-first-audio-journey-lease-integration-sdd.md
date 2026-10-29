@@ -1,7 +1,7 @@
 # First-Audio JOURNEY Lease Integration SDD
 
 Date: 2026-10-29  
-Status: design review passed on 2026-10-29; implementation has not started. The capture-only reset authorizer manifest is a required next-stage artifact and must pass its own review before reset-permit enforcement.
+Status: design review passed on 2026-10-29. The capture-only reset authorizer fixture and manifest are implemented and passed their separate four-domain review plus Linux/Windows CI. The production JOURNEY lease bridge, reset-permit enforcement, listener gating, and two-process journey remain unimplemented; do not infer their acceptance from the capture artifact.
 
 ## Goal and boundary
 
