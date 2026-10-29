@@ -181,7 +181,7 @@ jobs:
       - name: Check Go formatting and API package vet
         working-directory: server
         run: |
-          unformatted=$(gofmt -l internal/api/first_audio_*_test.go)
+          unformatted=$(gofmt -l internal/api/first_audio_matrix_*_test.go internal/api/first_audio_journey_admission_test.go)
           if [ -n "$unformatted" ]; then
             while IFS= read -r file; do
               gofmt -d "$file"
