@@ -9,6 +9,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -165,7 +166,8 @@ func TestFirstAudioPreflightPrepareStrictPublisherRejectsTransitionWithoutLease(
 	if err != nil {
 		t.Fatal("create startup context:", err)
 	}
-	if _, err := firstAudioTestPublishInitialStartup(controller, startup); err != nil {
+	transition, err := firstAudioTestPublishInitialStartup(controller, startup)
+	if err != nil {
 		t.Fatal("publish startup:", err)
 	}
 	prepare, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: startup.runID, currentLessonID: startup.currentLessonID, generation: 1, phase: firstAudioGuardPreflightPrepare, version: 2})

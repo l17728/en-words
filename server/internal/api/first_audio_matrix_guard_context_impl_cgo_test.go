@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
+
+	sqlite3 "github.com/mattn/go-sqlite3"
 )
 
 var (
