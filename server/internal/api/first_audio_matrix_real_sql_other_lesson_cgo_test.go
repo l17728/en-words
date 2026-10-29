@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -469,13 +470,14 @@ func testFirstAudioOtherLessonUpdateChild(t *testing.T, zeroRow bool) {
 		authorizerEventsMu.Lock()
 		statementEvents := append([]firstAudioRealSQLAuthorizerEvent(nil), authorizerEvents[eventStart:]...)
 		authorizerEventsMu.Unlock()
-		t.Logf("trace_id=%s module=first_audio_preflight event=zero_row_authorizer_characterization payload={events:%#v}", runID, statementEvents)
+		tupleSummary := assertFirstAudioZeroRowAuthorizerMultiset(t, statementEvents)
+		t.Logf("trace_id=%s module=first_audio_preflight event=zero_row_authorizer_multiset_verified payload={statement_id:%q,target_class:%q,tuple_count:%d,denial_delta:0,tuple_multiset:%s}", runID, "UPDATE main.lessons SET id=id WHERE id=?", "nonexistent", len(statementEvents), strings.Join(tupleSummary, ";"))
 	}
 	if firstAudioGuardProbeReceiptState(challenge.receipt.state.Load()) != firstAudioGuardProbeTokenConsumed || challenge.receipt.completeFor(challenge.binding, challenge.digest) {
-		t.Fatalf("failed other-row callback receipt state=%d complete=%t, want token-consumed and incomplete", challenge.receipt.state.Load(), challenge.receipt.completeFor(challenge.binding, challenge.digest))
+		t.Fatalf("failed update negative receipt state=%d complete=%t, want token-consumed and incomplete", challenge.receipt.state.Load(), challenge.receipt.completeFor(challenge.binding, challenge.digest))
 	}
 	if err := authorizer.rollbackProbeTransaction(); err != nil {
-		t.Fatalf("rollback rejected other-lesson update: %v", err)
+		t.Fatalf("rollback rejected failed update negative: %v", err)
 	}
 	if trackedConnection.txActive.Load() || !trackedConnection.raw.AutoCommit() || firstAudioGuardProbeReceiptState(challenge.receipt.state.Load()) != firstAudioGuardProbeFailed || challenge.receipt.completeFor(challenge.binding, challenge.digest) {
 		t.Fatalf("rollback/invalidation state txActive=%t autocommit=%t receipt=%d complete=%t", trackedConnection.txActive.Load(), trackedConnection.raw.AutoCommit(), challenge.receipt.state.Load(), challenge.receipt.completeFor(challenge.binding, challenge.digest))
@@ -511,6 +513,47 @@ func testFirstAudioOtherLessonUpdateChild(t *testing.T, zeroRow bool) {
 		eventName = "zero_row_update_rejected"
 	}
 	t.Logf("trace_id=%s module=first_audio_preflight event=%s payload={trigger_phase:%q,trigger_permit:%d,trigger_action:%d,trigger_db:%q,trigger_source:%q,trigger_arg1:%q,trigger_arg2:%q,trigger_allowed:%t,affected_rows:%d,sqlite_code:%d,token_accepted:%t,token_calls:%d,row_guard_calls:%d,mismatch:%v,receipt_state:%d,rollback_confirmed:true,snapshot_unchanged:true,journey_rejected:true}", runID, eventName, triggerEvent.phase, triggerEvent.permit, triggerEvent.action, triggerEvent.databaseName, triggerEvent.triggerName, triggerEvent.arg1, triggerEvent.arg2, triggerEvent.allowed, updateRows, sqliteCode, tokenAccepted, tokenCalls.Load(), rowGuardCalls.Load(), callbackErr.Load(), challenge.receipt.state.Load())
+}
+
+func assertFirstAudioZeroRowAuthorizerMultiset(t *testing.T, events []firstAudioRealSQLAuthorizerEvent) []string {
+	t.Helper()
+	type eventKey = firstAudioRealSQLAuthorizerEvent
+	want := make(map[eventKey]int, 6+len(firstAudioLessonProbeColumns))
+	add := func(action int, databaseName, triggerName, arg1, arg2 string, count int) {
+		want[eventKey{phase: firstAudioGuardPreflight, permit: firstAudioSQLPermitProbeSQL, action: action, databaseName: databaseName, triggerName: triggerName, arg1: arg1, arg2: arg2, allowed: true}] = count
+	}
+	add(sqlite3.SQLITE_READ, "main", "", "lessons", "id", 2)
+	add(sqlite3.SQLITE_UPDATE, "main", "", "lessons", "id", 1)
+	add(sqlite3.SQLITE_SELECT, "", "fa_lessons_guard_update", "", "", 1)
+	add(sqlite3.SQLITE_FUNCTION, "", "fa_lessons_guard_update", "", "first_audio_row_guard", 1)
+	add(sqlite3.SQLITE_FUNCTION, "", "fa_lessons_guard_update", "", "typeof", 72)
+	for _, column := range firstAudioLessonProbeColumns {
+		add(sqlite3.SQLITE_READ, "main", "fa_lessons_guard_update", "lessons", column, 8)
+	}
+	if len(events) != 221 {
+		t.Fatalf("zero-row statement authorizer event count=%d want=221", len(events))
+	}
+	got := make(map[eventKey]int, len(want))
+	for _, event := range events {
+		if !event.allowed {
+			t.Fatalf("zero-row statement authorizer denied tuple: %#v", event)
+		}
+		got[event]++
+	}
+	if len(got) != len(want) {
+		t.Fatalf("zero-row statement authorizer unique tuple count=%d want=%d; got=%#v", len(got), len(want), got)
+	}
+	for tuple, wantCount := range want {
+		if gotCount := got[tuple]; gotCount != wantCount {
+			t.Fatalf("zero-row statement authorizer tuple multiplicity=%d want=%d tuple=%#v", gotCount, wantCount, tuple)
+		}
+	}
+	summary := make([]string, 0, len(got))
+	for tuple, count := range got {
+		summary = append(summary, fmt.Sprintf("%s|%d|%d|db=%q|source=%q|arg1=%q|arg2=%q|allowed=%t|count=%d", tuple.phase, tuple.permit, tuple.action, tuple.databaseName, tuple.triggerName, tuple.arg1, tuple.arg2, tuple.allowed, count))
+	}
+	sort.Strings(summary)
+	return summary
 }
 
 func firstAudioOtherLessonValues(id int64, label string) []any {

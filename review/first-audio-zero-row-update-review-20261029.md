@@ -13,3 +13,11 @@ Pre-implementation review of docs/88. The harness binds a valid challenge and ty
 ## Implementation gate
 
 Approved to begin implementation. This SDD does not itself provide code or CI acceptance. Linux/Windows CGO protocol CI, Linux race/vet/format, full backend regression, and post-implementation security/test review remain required. Broader first-audio journey, performance, and classroom gates remain open.
+
+## Real-driver characterization (2026-10-29)
+
+Linux/mattn SQLite captured 221 allowed authorizer events for the exact zero-row UPDATE, all PREFLIGHT / PROBE_SQL / allowed=true. The exact tuple key is `(phase, permit, action, databaseName, triggerName, arg1, arg2)`: `READ(20, "main", "", "lessons", "id") ×2`; `UPDATE(23, "main", "", "lessons", "id") ×1`; `SELECT(21, "", "fa_lessons_guard_update", "", "") ×1`; `FUNCTION(31, "", "fa_lessons_guard_update", "", "first_audio_row_guard") ×1`; `FUNCTION(31, "", "fa_lessons_guard_update", "", "typeof") ×72`; and `READ(20, "main", "fa_lessons_guard_update", "lessons", <column>) ×8` for each ordered column `id, student_id, book_id, seq, status, open_at, started_at, finished_at, batch_word_ids, phase, group_idx, word_idx, repeat_count, tts_seg_idx, quiz_state, cumulative_ids, result, state_upd_at`. All events were allowed; denial delta was zero. Security and test-quality reviewers approved this measured oracle and its exact regression assertion.
+
+## Implementation review
+
+The zero-row scenario reuses the isolated same-binary real SQLite candidate harness. It binds token/projection to lesson A, binds the fixed update to a nonexistent harness-only ID, proves zero rows/no runtime UDF/no observation and exact 221-event authorizer multiset equality, then explicitly rolls back, verifies FAILED/incomplete receipt and complete observer snapshot equality, and rejects JOURNEY through the transition lease. Logs include statement identity, redacted target classification, and a stable sorted tuple/count summary; token bytes and bind values are excluded. Architecture/security review and test-quality review both PASS. Linux/Windows CGO protocol CI and full backend package CI on this final implementation remain required.

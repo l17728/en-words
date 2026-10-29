@@ -1,7 +1,7 @@
 # First-Audio Zero-Row UPDATE Negative SDD
 
 Date: 2026-10-29  
-Status: architecture/security and test-quality SDD review PASS; implementation not started.
+Status: SDD and implementation review PASS; Linux/Windows CGO protocol and full Linux backend CI pending.
 
 ## Goal and boundary
 
@@ -14,6 +14,19 @@ Run a same-binary child with a unique environment marker, exact `-test.run`, bou
 Open a fresh guarded candidate and issue a valid challenge bound to A. Its PREFLIGHT row contract binds the same run, lesson, generation/version, and connection identity; OLD and NEW are the same nonempty bytes, and trace ID is empty. Under the exact one-use PREFLIGHT token permit, consume A's token and read its 18-column typed projection as the expected row. Register `defer func(){ zeroFirstAudioSecret(token) }()` after token assignment and explicitly wipe the token immediately after successful consumption.
 
 Immediately before UPDATE, snapshot authorizer-event and denial counters. Under the fixed `PROBE_SQL` permit, execute the exact reviewed SQL text `UPDATE main.lessons SET id=id WHERE id=?`, but bind a nonexistent ID. This deliberately injects an invalid target parameter at the harness boundary; do not claim it is a valid controller-produced operation. SQLite prepares the trigger even though no row matches. Require the top-level empty-source `SQLITE_READ(main.lessons,id)` and `SQLITE_UPDATE(main.lessons,id)` and the trigger-source `SQLITE_SELECT`, manifested `SQLITE_READ`s, `SQLITE_FUNCTION(typeof)`, and one `SQLITE_FUNCTION(first_audio_row_guard)` all to be admitted. During implementation, first run a characterization probe that captures the complete actual event multiset for only this statement; record exact tuple fields and multiplicities in the review artifact, compare it to the checked-in trigger manifest, and obtain security/test review of that oracle before freezing it in the regression assertion. The final assertion requires exact equality with that reviewed multiset and zero denials; no event outside the manifest is allowed. At execution, assert `RowsAffected == 0`, zero row-guard UDF callbacks, zero successful row observations, and an incomplete receipt. The test coordinator records the zero-row failure and performs no further business SELECT/DML/COMMIT. Permit exactly one `rollbackProbeTransaction`; assert tracked transaction inactive, SQLite autocommit true, receipt FAILED/incomplete after challenge invalidation, and no authorizer denial required for this zero-row outcome. Close candidate connections, compare the full schema/typed-row snapshot to baseline, then submit a valid JOURNEY candidate through the transition lease with the failed receipt; assert `Publish` rejects and the controller is terminal. Do not claim `matchesPreflight` ran if `Publish` short-circuits earlier.
+
+The Linux/mattn driver characterization on 2026-10-29 observed the following 221 allowed events for this exact statement. Tuple columns are `(phase, permit, action, databaseName, triggerName, arg1, arg2)`; omitted values are never wildcarded, and `""` is literal empty string. All rows have phase `PREFLIGHT`, permit `PROBE_SQL` (numeric 2), and `allowed=true`:
+
+| action | databaseName | triggerName | arg1 | arg2 | multiplicity |
+|---|---|---|---|---|---:|
+| `SQLITE_READ` (20) | `main` | `""` | `lessons` | `id` | 2 |
+| `SQLITE_UPDATE` (23) | `main` | `""` | `lessons` | `id` | 1 |
+| `SQLITE_SELECT` (21) | `""` | `fa_lessons_guard_update` | `""` | `""` | 1 |
+| `SQLITE_FUNCTION` (31) | `""` | `fa_lessons_guard_update` | `""` | `first_audio_row_guard` | 1 |
+| `SQLITE_FUNCTION` (31) | `""` | `fa_lessons_guard_update` | `""` | `typeof` | 72 |
+| `SQLITE_READ` (20) | `main` | `fa_lessons_guard_update` | `lessons` | each column below | 8 per column |
+
+The ordered columns in the final row are `id, student_id, book_id, seq, status, open_at, started_at, finished_at, batch_word_ids, phase, group_idx, word_idx, repeat_count, tts_seg_idx, quiz_state, cumulative_ids, result, state_upd_at`. Denial delta is zero. A runtime row-guard UDF callback is not part of the authorization multiset; it must be zero because no row matches. Security and test-quality reviewers independently approved this measured multiset and its exact regression assertion.
 
 Log trace, phase, permit, exact authorizer tuples, statement identity, redacted target classification (`nonexistent`), affected-row count, callback count, rollback result, receipt state, snapshot equality, and transition result. Never log token bytes. Register cleanup in this order: pool-close cleanup immediately after pool open; pinned-handle cleanup immediately after pin; candidate transaction cleanup after pin and before BEGIN's first fallible follow-up assertion. LIFO must roll back/terminalize first, release the pin next, and close the pool last, including early failures.
 
