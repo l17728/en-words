@@ -1,7 +1,7 @@
 # First-Audio Zero-Row UPDATE Negative SDD
 
 Date: 2026-10-29  
-Status: SDD and implementation review PASS; Linux/Windows CGO protocol and full Linux backend CI pending.
+Status: SDD and implementation review PASS; Linux/Windows CGO protocol and full Linux backend package CI passed on `2c4fef1`.
 
 ## Goal and boundary
 
@@ -33,3 +33,7 @@ Log trace, phase, permit, exact authorizer tuples, statement identity, redacted 
 ## Review and validation gate
 
 Review this SDD with security and test-quality reviewers before implementation. Add this path to Linux/Windows protocol workflow push and pull-request filters. Name `TestFirstAudioMatrixRealSQLRejectsZeroRowUpdate` explicitly in Linux/Windows focused selectors and the Linux race selector. After implementation, require the characterization event multiset to be captured and independently reviewed before finalizing assertions; then require Linux/Windows CGO protocol CI, Linux race/vet/format, and full Linux backend package CI. Keep this as one component negative; other docs/78 cases and the pilot gates remain open.
+
+## Validation evidence
+
+Code commit `2c4fef1` passed [Linux/Windows protocol CI](https://github.com/l17728/en-words/actions/runs/40822859602), including focused CGO tests, Linux race/vet/format, Windows CGO boundaries, web checks, Playwright discovery, and production-symbol checks. The [Linux package/manifest workflow](https://github.com/l17728/en-words/actions/runs/40822864171) passed all three jobs, including full backend `go test ./...`, package race/vet/coverage, manifest inventory, and runner preflight. These results accept this component negative only; the remaining docs/78 cases and isolated journey, performance, and classroom gates remain open.
