@@ -1,7 +1,7 @@
 # First-Audio Other-Lesson UPDATE Negative SDD
 
 Date: 2026-10-29
-Status: design, security, and test review approved; implementation complete and code-reviewed; Linux/Windows CGO and full backend CI pending.
+Status: design, security, and test review approved; implementation complete and code-reviewed; Linux/Windows CGO protocol and full Linux backend package CI passed.
 
 ## Goal and boundary
 
@@ -20,3 +20,7 @@ Register pool and pinned-handle cleanup before transaction setup and register ca
 ## Review and validation gate
 
 Review this SDD before code. Add this SDD to protocol workflow push and pull-request path filters. Ensure the focused test is included in the Linux/Windows `^TestFirstAudioMatrix...` selector and an explicit Linux race selector. After implementation, require architecture/security/test-quality review, Linux and Windows CGO protocol CI, Linux race/vet/format checks, and full Linux backend regression. Keep the listener-factory, guarded `api.App` journey, real dual-process Playwright, reset races, performance matrix, and isolated human classroom pilot open until separately accepted.
+
+## Validation evidence
+
+Code commit `a19ffa5` passed the [Linux/Windows protocol workflow](https://github.com/l17728/en-words/actions/runs/40819750481), including focused CGO tests, Linux race/vet/format checks, Windows CGO boundaries, web checks, Playwright discovery, and production-symbol checks. The [Linux package/manifest workflow](https://github.com/l17728/en-words/actions/runs/40819760855) also passed, including full backend `go test ./...`, package race/vet/coverage, manifest inventory, and runner preflight. This accepts this component case only; VFS/RunRoot and the separately listed journey, performance, and classroom gates remain open.

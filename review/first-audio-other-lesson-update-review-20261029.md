@@ -16,4 +16,4 @@ The implementation adds an isolated child-process real-SQL test, a test-only aut
 
 ## Validation status
 
-Linux/Windows CGO protocol CI, Linux race/vet/format, and full backend regression remain pending. No code acceptance is implied until these checks pass.
+Linux/Windows CGO protocol CI and full Linux backend regression passed on code commit `a19ffa5`: [protocol run 40819750481](https://github.com/l17728/en-words/actions/runs/40819750481), [package run 40819760855](https://github.com/l17728/en-words/actions/runs/40819760855). These workflows include Linux race/vet/format and full backend `go test ./...`. The result accepts this component case only; it does not close the broader first-audio gates listed in docs/87.
