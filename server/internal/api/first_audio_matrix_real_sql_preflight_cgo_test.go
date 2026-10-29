@@ -1000,12 +1000,14 @@ func testFirstAudioDirectRowGuardUDFChild(t *testing.T) {
 		return tx.QueryRowContext(context.Background(), statement).Scan(&result)
 	})
 	var sqliteErr sqlite3.Error
-	if queryErr == nil || !errors.As(queryErr, &sqliteErr) || sqliteErr.Code != sqlite3.ErrAuth {
-		t.Fatalf("direct top-level row-guard call error=%T %v sqlite_code=%d want SQLITE_AUTH=%d", queryErr, queryErr, sqliteErr.Code, sqlite3.ErrAuth)
+	if queryErr == nil || !errors.As(queryErr, &sqliteErr) || sqliteErr.Code != sqlite3.ErrError || !strings.Contains(strings.ToLower(queryErr.Error()), "not authorized") {
+		t.Fatalf("direct top-level row-guard call error=%T %v sqlite_code=%d want SQLITE_ERROR=%d with authorization-denial text", queryErr, queryErr, sqliteErr.Code, sqlite3.ErrError)
 	}
 	deniedTuple := authorizer.lastDenied.Load()
-	if authorizer.denials.Load() != 1 || deniedTuple == nil || !strings.Contains(deniedTuple.(string), `source=""`) || !strings.Contains(deniedTuple.(string), `arg2="first_audio_row_guard"`) {
-		t.Fatalf("authorizer denial evidence does not identify direct empty-source row guard: count=%d tuple=%v", authorizer.denials.Load(), deniedTuple)
+	deniedTupleText, tupleIsString := deniedTuple.(string)
+	wantDeniedTuple := fmt.Sprintf("phase=%s permit=%d action=%d db=%q source=%q arg1=%q arg2=%q", firstAudioGuardPreflight, firstAudioSQLPermitTokenConsumption, sqlite3.SQLITE_FUNCTION, "", "", "", "first_audio_row_guard")
+	if authorizer.denials.Load() != 1 || !tupleIsString || deniedTupleText != wantDeniedTuple {
+		t.Fatalf("authorizer denial did not match exact direct empty-source SQLITE_FUNCTION tuple: count=%d tuple=%v want=%q", authorizer.denials.Load(), deniedTuple, wantDeniedTuple)
 	}
 	directDenials := authorizer.denials.Load()
 	if rowGuardCalls.Load() != 0 || !controller.IsTerminal() {

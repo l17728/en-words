@@ -26,13 +26,20 @@ or classroom acceptance.
 ## Validation status
 
 The first [Linux and Windows protocol run](https://github.com/l17728/en-words/actions/runs/40812824256)
-failed. It confirmed the expected authorization error text, but the driver's
-reported primary SQLite code did not match the test's `SQLITE_AUTH` assumption;
-the test now prints primary/expected codes so the assertion can be grounded in
-the observed driver behavior. The same run found an existing regression check
-that expected `txActive` to remain true after successful physical Close; it now
-proves the transaction was active before cleanup and retired only after
-`closeOK`. Corrected CGO tests and platform validation are **PENDING**.
+failed. The follow-up [diagnostic run](https://github.com/l17728/en-words/actions/runs/40813969915)
+confirmed both platforms report primary code `1` (`SQLITE_ERROR`) and
+authorization-denial text. SQLite requirement H12505 specifies `SQLITE_ERROR`
+for a statement denied by an authorizer, so the SDD and test oracle now
+distinguish the authorizer's `SQLITE_DENY` callback decision from the API error
+code. The diagnostic run also found an existing regression check that expected
+`txActive` to remain true after successful physical Close; it now proves the
+transaction was active before cleanup and retired only after `closeOK`.
+Corrected CGO tests and platform validation are **PENDING**.
+
+The revised design and test review: **PASS**. The denial assertion now matches
+the complete PREFLIGHT/TOKEN_CONSUMPTION/SQLITE_FUNCTION tuple, the API's
+observed `SQLITE_ERROR` and authorization-denial text, and zero UDF callbacks.
+Reviewers performed static review; corrected Go tests still require CI.
 
 ## Acceptance boundary
 
