@@ -120,7 +120,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.25.0"
+          go-version: "1.25.14"
           cache: true
           cache-dependency-path: server/go.sum
       - uses: actions/setup-python@v5
@@ -153,6 +153,9 @@ jobs:
       - name: Test strict SQLite journey audit row guard
         working-directory: server
         run: go test ./internal/api -run '^TestFirstAudioJourney' -count=1 -timeout=5m
+      - name: Verify reset authorizer capture manifest
+        working-directory: server
+        run: go test ./internal/api -run '^TestFirstAudioReset(AuthorizerCaptureOnly|ManifestWriterRejectsSymlinkTargets)$' -count=1 -timeout=5m
       - name: Test classroom tool transaction outcome handling
         working-directory: server
         run: go test ./internal/api -run '^(TestToolTransaction|TestObservedToolTransaction|TestUncertainToolTransaction|TestRetiredRoomRejectsPublicProgressionEntrypoints|TestDeferredCommitFailureStopsTeacherContinuationAndSnapshot)' -count=1 -timeout=5m
@@ -165,6 +168,9 @@ jobs:
       - name: Race-test SQLite journey audit row guard
         working-directory: server
         run: go test -race ./internal/api -run '^TestFirstAudioJourneyAuditGuard' -count=1 -timeout=5m
+      - name: Race-test reset authorizer capture
+        working-directory: server
+        run: go test -race ./internal/api -run '^TestFirstAudioReset(AuthorizerCaptureOnly|ManifestWriterRejectsSymlinkTargets)$' -count=1 -timeout=5m
       - name: Confirm Linux CGO compiler is active
         run: |
           test "$(go env CGO_ENABLED)" = "1"
@@ -205,7 +211,7 @@ jobs:
           install: mingw-w64-x86_64-gcc
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.25.0"
+          go-version: "1.25.14"
           cache: true
           cache-dependency-path: server/go.sum
       - uses: actions/setup-python@v5
@@ -242,6 +248,9 @@ jobs:
       - name: Test strict SQLite journey audit row guard
         working-directory: server
         run: go test ./internal/api -run '^TestFirstAudioJourney' -count=1 -timeout=5m
+      - name: Verify reset authorizer capture manifest
+        working-directory: server
+        run: go test ./internal/api -run '^TestFirstAudioReset(AuthorizerCaptureOnly|ManifestWriterRejectsSymlinkTargets)$' -count=1 -timeout=5m
       - name: Test classroom tool transaction outcome handling
         working-directory: server
         run: go test ./internal/api -run '^(TestToolTransaction|TestObservedToolTransaction|TestUncertainToolTransaction|TestRetiredRoomRejectsPublicProgressionEntrypoints|TestDeferredCommitFailureStopsTeacherContinuationAndSnapshot)' -count=1 -timeout=10m

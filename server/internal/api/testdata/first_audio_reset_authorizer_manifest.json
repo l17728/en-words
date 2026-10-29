@@ -1,0 +1,3735 @@
+{
+  "sha256": "46b3003bdcffb1e61880f2fcabcade6d3346cb45f8ec845994a88a8f3ee0b048",
+  "format_version": 1,
+  "driver": "github.com/mattn/go-sqlite3",
+  "driver_module_version": "v1.14.22 (repository fork)",
+  "driver_source_sha256": "1b7a49d27931b8b8d0bf25fdc94c05dd1736bacd384499e62202c07b0f329d42",
+  "sqlite": {
+    "source_id": "2024-01-30 16:01:20 e876e51a0ed5c5b3126f52e532044363a014bc594cfefa87ffb5b82257cc467a",
+    "version": "3.45.1",
+    "version_number": 3045001
+  },
+  "go_runtime": "go1.25.14",
+  "schema_sha256": "a333a8863bba415d687d5099393a81926de667e073b7a6075ab546fff686b4af",
+  "trigger_manifest_version": 1,
+  "trigger_manifest_sha256": "455b551414ce36b6034cc6f3c0ee5fa9322d70b80f2331a9f8b567d46da0bbc0",
+  "statements": [
+    {
+      "sequence": 1,
+      "operation": "01_begin_tx",
+      "sql_template": "driver.ConnBeginTx",
+      "tuples": [
+        {
+          "action": 22,
+          "arg1": "BEGIN",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 2,
+      "operation": "02_select_old_lesson",
+      "sql_template": "SELECT \"id\",\"student_id\",\"book_id\",\"seq\",\"status\",\"open_at\",\"started_at\",\"finished_at\",\"batch_word_ids\",\"phase\",\"group_idx\",\"word_idx\",\"repeat_count\",\"tts_seg_idx\",\"quiz_state\",\"cumulative_ids\",\"result\",\"state_upd_at\" FROM lessons WHERE id=?",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "book_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "seq",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "status",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "open_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "started_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "finished_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "batch_word_ids",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "phase",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "group_idx",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "word_idx",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "repeat_count",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "tts_seg_idx",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "quiz_state",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "cumulative_ids",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "result",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "state_upd_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 3,
+      "operation": "03_update_lesson_id",
+      "sql_template": "UPDATE lessons SET id=? WHERE id=?",
+      "tuples": [
+        {
+          "action": 23,
+          "arg1": "lessons",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "first_audio_row_guard",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "book_id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "book_id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "book_id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "book_id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "seq",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "seq",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "seq",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "seq",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "status",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "status",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "status",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "status",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "open_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "open_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "open_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "open_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "started_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "started_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "started_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "started_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "finished_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "finished_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "finished_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "finished_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "batch_word_ids",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "batch_word_ids",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "batch_word_ids",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "batch_word_ids",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "phase",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "phase",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "phase",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "phase",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "group_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "group_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "group_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "group_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "word_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "word_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "word_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "word_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "repeat_count",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "repeat_count",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "repeat_count",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "repeat_count",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "tts_seg_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "tts_seg_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "tts_seg_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "tts_seg_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "quiz_state",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "quiz_state",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "quiz_state",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "quiz_state",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "cumulative_ids",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "cumulative_ids",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "cumulative_ids",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "cumulative_ids",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "result",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "result",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "result",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "result",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "state_upd_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "state_upd_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "state_upd_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "state_upd_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "book_id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "book_id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "book_id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "book_id",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "seq",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "seq",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "seq",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "seq",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "status",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "status",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "status",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "status",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "open_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "open_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "open_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "open_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "started_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "started_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "started_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "started_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "finished_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "finished_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "finished_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "finished_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "batch_word_ids",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "batch_word_ids",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "batch_word_ids",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "batch_word_ids",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "phase",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "phase",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "phase",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "phase",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "group_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "group_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "group_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "group_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "word_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "word_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "word_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "word_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "repeat_count",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "repeat_count",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "repeat_count",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "repeat_count",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "tts_seg_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "tts_seg_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "tts_seg_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "tts_seg_idx",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "quiz_state",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "quiz_state",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "quiz_state",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "quiz_state",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "cumulative_ids",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "cumulative_ids",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "cumulative_ids",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "cumulative_ids",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "result",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "result",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "result",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "result",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "state_upd_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 31,
+          "arg1": "",
+          "arg2": "typeof",
+          "database": "",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "state_upd_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "state_upd_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "state_upd_at",
+          "database": "main",
+          "trigger": "fa_lessons_guard_update"
+        }
+      ]
+    },
+    {
+      "sequence": 4,
+      "operation": "04_delete_old_snapshot",
+      "sql_template": "DELETE FROM runtime_records WHERE key=?",
+      "tuples": [
+        {
+          "action": 9,
+          "arg1": "runtime_records",
+          "arg2": "",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "runtime_records",
+          "arg2": "key",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 5,
+      "operation": "05_commit_tx",
+      "sql_template": "driver.Tx.Commit",
+      "tuples": [
+        {
+          "action": 22,
+          "arg1": "COMMIT",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 6,
+      "operation": "06_schema_manifest_read",
+      "sql_template": "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name,tbl_name",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "sqlite_master",
+          "arg2": "type",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "sqlite_master",
+          "arg2": "name",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "sqlite_master",
+          "arg2": "tbl_name",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "sqlite_master",
+          "arg2": "sql",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "sqlite_master",
+          "arg2": "type",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "sqlite_master",
+          "arg2": "name",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "sqlite_master",
+          "arg2": "tbl_name",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 7,
+      "operation": "07_snapshot_agent_memories",
+      "sql_template": "SELECT \"id\",\"owner_role\",\"student_id\",\"book_id\",\"kind\",\"content\",\"importance\",\"source_lesson_id\",\"created_at\",\"updated_at\" FROM \"agent_memories\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "agent_memories",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "agent_memories",
+          "arg2": "owner_role",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "agent_memories",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "agent_memories",
+          "arg2": "book_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "agent_memories",
+          "arg2": "kind",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "agent_memories",
+          "arg2": "content",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "agent_memories",
+          "arg2": "importance",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "agent_memories",
+          "arg2": "source_lesson_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "agent_memories",
+          "arg2": "created_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "agent_memories",
+          "arg2": "updated_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "agent_memories",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 8,
+      "operation": "07_snapshot_audit_logs",
+      "sql_template": "SELECT \"id\",\"ts\",\"actor_type\",\"actor_id\",\"actor_role\",\"tool\",\"risk\",\"ok\",\"result\",\"args\",\"duration_ms\",\"trace_id\" FROM \"audit_logs\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "audit_logs",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "audit_logs",
+          "arg2": "ts",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "audit_logs",
+          "arg2": "actor_type",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "audit_logs",
+          "arg2": "actor_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "audit_logs",
+          "arg2": "actor_role",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "audit_logs",
+          "arg2": "tool",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "audit_logs",
+          "arg2": "risk",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "audit_logs",
+          "arg2": "ok",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "audit_logs",
+          "arg2": "result",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "audit_logs",
+          "arg2": "args",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "audit_logs",
+          "arg2": "duration_ms",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "audit_logs",
+          "arg2": "trace_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "audit_logs",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 9,
+      "operation": "07_snapshot_classroom_events",
+      "sql_template": "SELECT \"id\",\"lesson_id\",\"ts\",\"event\",\"payload\",\"trace_id\" FROM \"classroom_events\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "classroom_events",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "classroom_events",
+          "arg2": "lesson_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "classroom_events",
+          "arg2": "ts",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "classroom_events",
+          "arg2": "event",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "classroom_events",
+          "arg2": "payload",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "classroom_events",
+          "arg2": "trace_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "classroom_events",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 10,
+      "operation": "07_snapshot_config_globals",
+      "sql_template": "SELECT \"key\",\"value\",\"updated_by\",\"reason\",\"updated_at\" FROM \"config_globals\" ORDER BY \"key\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "config_globals",
+          "arg2": "key",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "config_globals",
+          "arg2": "value",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "config_globals",
+          "arg2": "updated_by",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "config_globals",
+          "arg2": "reason",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "config_globals",
+          "arg2": "updated_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "config_globals",
+          "arg2": "key",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 11,
+      "operation": "07_snapshot_config_overrides",
+      "sql_template": "SELECT \"id\",\"student_id\",\"key\",\"value\",\"updated_by\",\"reason\",\"updated_at\" FROM \"config_overrides\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "config_overrides",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "config_overrides",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "config_overrides",
+          "arg2": "key",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "config_overrides",
+          "arg2": "value",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "config_overrides",
+          "arg2": "updated_by",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "config_overrides",
+          "arg2": "reason",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "config_overrides",
+          "arg2": "updated_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "config_overrides",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 12,
+      "operation": "07_snapshot_config_revisions",
+      "sql_template": "SELECT \"student_id\",\"key\",\"revision\" FROM \"config_revisions\" ORDER BY \"student_id\",\"key\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "config_revisions",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "config_revisions",
+          "arg2": "key",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "config_revisions",
+          "arg2": "revision",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "config_revisions",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "config_revisions",
+          "arg2": "key",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 13,
+      "operation": "07_snapshot_durable_memories",
+      "sql_template": "SELECT \"id\",\"owner_role\",\"student_id\",\"book_id\",\"kind\",\"content\",\"importance\",\"source_lesson_id\",\"revised_from\",\"created_at\",\"updated_at\" FROM \"durable_memories\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "durable_memories",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "durable_memories",
+          "arg2": "owner_role",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "durable_memories",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "durable_memories",
+          "arg2": "book_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "durable_memories",
+          "arg2": "kind",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "durable_memories",
+          "arg2": "content",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "durable_memories",
+          "arg2": "importance",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "durable_memories",
+          "arg2": "source_lesson_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "durable_memories",
+          "arg2": "revised_from",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "durable_memories",
+          "arg2": "created_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "durable_memories",
+          "arg2": "updated_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "durable_memories",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 14,
+      "operation": "07_snapshot_feedback_intents",
+      "sql_template": "SELECT \"task_id\",\"intent_index\",\"kind\",\"frozen_json\",\"result_json\",\"status\",\"attempt_count\",\"completed_at\" FROM \"feedback_intents\" ORDER BY \"task_id\",\"intent_index\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_intents",
+          "arg2": "task_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_intents",
+          "arg2": "intent_index",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_intents",
+          "arg2": "kind",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_intents",
+          "arg2": "frozen_json",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_intents",
+          "arg2": "result_json",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_intents",
+          "arg2": "status",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_intents",
+          "arg2": "attempt_count",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_intents",
+          "arg2": "completed_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_intents",
+          "arg2": "task_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_intents",
+          "arg2": "intent_index",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 15,
+      "operation": "07_snapshot_feedback_notices",
+      "sql_template": "SELECT \"id\",\"task_id\",\"intent_index\",\"recipient\",\"kind\",\"title\",\"body\",\"read\",\"created_at\",\"updated_at\" FROM \"feedback_notices\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_notices",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_notices",
+          "arg2": "task_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_notices",
+          "arg2": "intent_index",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_notices",
+          "arg2": "recipient",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_notices",
+          "arg2": "kind",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_notices",
+          "arg2": "title",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_notices",
+          "arg2": "body",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_notices",
+          "arg2": "read",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_notices",
+          "arg2": "created_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_notices",
+          "arg2": "updated_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_notices",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 16,
+      "operation": "07_snapshot_feedback_tasks",
+      "sql_template": "SELECT \"id\",\"student_id\",\"submission_id\",\"task_id\",\"schema_version\",\"input_text\",\"input_hash\",\"channel\",\"idempotency\",\"plan_json\",\"legacy_json\",\"error_code\",\"retryable\",\"parent_submission_id\",\"conversation_id\",\"clarification_child_task_id\",\"version\",\"created_at\",\"updated_at\" FROM \"feedback_tasks\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "submission_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "task_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "schema_version",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "input_text",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "input_hash",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "channel",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "idempotency",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "plan_json",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "legacy_json",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "error_code",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "retryable",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "parent_submission_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "conversation_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "clarification_child_task_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "version",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "created_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "updated_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_tasks",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 17,
+      "operation": "07_snapshot_feedback_todos",
+      "sql_template": "SELECT \"id\",\"task_id\",\"intent_index\",\"student_id\",\"status\",\"legacy\",\"created_at\" FROM \"feedback_todos\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_todos",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_todos",
+          "arg2": "task_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_todos",
+          "arg2": "intent_index",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_todos",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_todos",
+          "arg2": "status",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_todos",
+          "arg2": "legacy",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_todos",
+          "arg2": "created_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedback_todos",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 18,
+      "operation": "07_snapshot_feedbacks",
+      "sql_template": "SELECT \"id\",\"student_id\",\"channel\",\"text\",\"status\",\"intents\",\"reply\",\"created_at\",\"updated_at\" FROM \"feedbacks\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedbacks",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedbacks",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedbacks",
+          "arg2": "channel",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedbacks",
+          "arg2": "text",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedbacks",
+          "arg2": "status",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedbacks",
+          "arg2": "intents",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedbacks",
+          "arg2": "reply",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedbacks",
+          "arg2": "created_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedbacks",
+          "arg2": "updated_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "feedbacks",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 19,
+      "operation": "07_snapshot_lessons",
+      "sql_template": "SELECT \"id\",\"student_id\",\"book_id\",\"seq\",\"status\",\"open_at\",\"started_at\",\"finished_at\",\"batch_word_ids\",\"phase\",\"group_idx\",\"word_idx\",\"repeat_count\",\"tts_seg_idx\",\"quiz_state\",\"cumulative_ids\",\"result\",\"state_upd_at\" FROM \"lessons\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "book_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "seq",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "status",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "open_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "started_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "finished_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "batch_word_ids",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "phase",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "group_idx",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "word_idx",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "repeat_count",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "tts_seg_idx",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "quiz_state",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "cumulative_ids",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "result",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "state_upd_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "lessons",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 20,
+      "operation": "07_snapshot_memory_cards",
+      "sql_template": "SELECT \"id\",\"student_id\",\"book_id\",\"word_id\",\"status\",\"ladder_step\",\"consecutive_correct\",\"wrong_count\",\"boost_flag\",\"boost_sequence\",\"first_learned_at\",\"last_review_at\",\"next_due_at\" FROM \"memory_cards\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "memory_cards",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "memory_cards",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "memory_cards",
+          "arg2": "book_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "memory_cards",
+          "arg2": "word_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "memory_cards",
+          "arg2": "status",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "memory_cards",
+          "arg2": "ladder_step",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "memory_cards",
+          "arg2": "consecutive_correct",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "memory_cards",
+          "arg2": "wrong_count",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "memory_cards",
+          "arg2": "boost_flag",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "memory_cards",
+          "arg2": "boost_sequence",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "memory_cards",
+          "arg2": "first_learned_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "memory_cards",
+          "arg2": "last_review_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "memory_cards",
+          "arg2": "next_due_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "memory_cards",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 21,
+      "operation": "07_snapshot_notifications",
+      "sql_template": "SELECT \"id\",\"user_id\",\"type\",\"title\",\"body\",\"ref_id\",\"read\",\"created_at\" FROM \"notifications\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "notifications",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "notifications",
+          "arg2": "user_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "notifications",
+          "arg2": "type",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "notifications",
+          "arg2": "title",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "notifications",
+          "arg2": "body",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "notifications",
+          "arg2": "ref_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "notifications",
+          "arg2": "read",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "notifications",
+          "arg2": "created_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "notifications",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 22,
+      "operation": "07_snapshot_overdue_tasks",
+      "sql_template": "SELECT \"task_id\",\"lesson_id\",\"student_id\",\"book_id\",\"original_open_at\",\"plan_json\",\"plan_history_json\",\"version\",\"status\",\"new_lesson_id\",\"created_at\",\"planned_at\",\"completed_at\" FROM \"overdue_tasks\" ORDER BY \"task_id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "overdue_tasks",
+          "arg2": "task_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "overdue_tasks",
+          "arg2": "lesson_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "overdue_tasks",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "overdue_tasks",
+          "arg2": "book_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "overdue_tasks",
+          "arg2": "original_open_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "overdue_tasks",
+          "arg2": "plan_json",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "overdue_tasks",
+          "arg2": "plan_history_json",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "overdue_tasks",
+          "arg2": "version",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "overdue_tasks",
+          "arg2": "status",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "overdue_tasks",
+          "arg2": "new_lesson_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "overdue_tasks",
+          "arg2": "created_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "overdue_tasks",
+          "arg2": "planned_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "overdue_tasks",
+          "arg2": "completed_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "overdue_tasks",
+          "arg2": "task_id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 23,
+      "operation": "07_snapshot_placement_drafts",
+      "sql_template": "SELECT \"student_id\",\"book_id\",\"known_ids\",\"updated_at\" FROM \"placement_drafts\" ORDER BY \"student_id\",\"book_id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "placement_drafts",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "placement_drafts",
+          "arg2": "book_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "placement_drafts",
+          "arg2": "known_ids",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "placement_drafts",
+          "arg2": "updated_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "placement_drafts",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "placement_drafts",
+          "arg2": "book_id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 24,
+      "operation": "07_snapshot_runtime_records",
+      "sql_template": "SELECT \"key\",\"value\" FROM \"runtime_records\" ORDER BY \"key\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "runtime_records",
+          "arg2": "key",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "runtime_records",
+          "arg2": "value",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "runtime_records",
+          "arg2": "key",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 25,
+      "operation": "07_snapshot_sqlite_sequence",
+      "sql_template": "SELECT \"name\",\"seq\" FROM \"sqlite_sequence\" ORDER BY \"name\",\"seq\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "sqlite_sequence",
+          "arg2": "name",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "sqlite_sequence",
+          "arg2": "seq",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "sqlite_sequence",
+          "arg2": "name",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "sqlite_sequence",
+          "arg2": "seq",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 26,
+      "operation": "07_snapshot_users",
+      "sql_template": "SELECT \"id\",\"username\",\"nickname\",\"role\",\"status\",\"salt\",\"hash\",\"created_at\",\"updated_at\" FROM \"users\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "users",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "users",
+          "arg2": "username",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "users",
+          "arg2": "nickname",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "users",
+          "arg2": "role",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "users",
+          "arg2": "status",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "users",
+          "arg2": "salt",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "users",
+          "arg2": "hash",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "users",
+          "arg2": "created_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "users",
+          "arg2": "updated_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "users",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 27,
+      "operation": "07_snapshot_word_books",
+      "sql_template": "SELECT \"id\",\"name\",\"grade\",\"description\",\"source\",\"status\",\"created_by\",\"created_at\",\"updated_at\" FROM \"word_books\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_books",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_books",
+          "arg2": "name",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_books",
+          "arg2": "grade",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_books",
+          "arg2": "description",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_books",
+          "arg2": "source",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_books",
+          "arg2": "status",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_books",
+          "arg2": "created_by",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_books",
+          "arg2": "created_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_books",
+          "arg2": "updated_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_books",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 28,
+      "operation": "07_snapshot_word_entries",
+      "sql_template": "SELECT \"id\",\"book_id\",\"word\",\"norm_key\",\"phonetic\",\"meanings\",\"unit\",\"is_phrase\",\"freq_rank\" FROM \"word_entries\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_entries",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_entries",
+          "arg2": "book_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_entries",
+          "arg2": "word",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_entries",
+          "arg2": "norm_key",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_entries",
+          "arg2": "phonetic",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_entries",
+          "arg2": "meanings",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_entries",
+          "arg2": "unit",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_entries",
+          "arg2": "is_phrase",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_entries",
+          "arg2": "freq_rank",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_entries",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 29,
+      "operation": "07_snapshot_ws_tickets",
+      "sql_template": "SELECT \"id\",\"ticket\",\"lesson_id\",\"student_id\",\"expires_at\",\"created_at\" FROM \"ws_tickets\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "ws_tickets",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "ws_tickets",
+          "arg2": "ticket",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "ws_tickets",
+          "arg2": "lesson_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "ws_tickets",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "ws_tickets",
+          "arg2": "expires_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "ws_tickets",
+          "arg2": "created_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "ws_tickets",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    }
+  ]
+}
