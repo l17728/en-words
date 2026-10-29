@@ -1,7 +1,7 @@
 # First-Audio Lesson Primary-Key Cardinality SDD
 
 Date: 2026-10-29  
-Status: SDD reviewed; implementation reviewed; Linux/Windows CI rerun pending.
+Status: implemented; reviewed; protocol CI passed on Linux and Windows (run 40826787583). Full backend regression is tracked separately.
 
 ## Goal and boundary
 
