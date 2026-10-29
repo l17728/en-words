@@ -62,17 +62,34 @@ type App struct {
 	Log               *obs.Logger
 	Clock             Clock
 
-	Rooms          *Hub
-	tickets        map[string]*Ticket          // ticket → 绑定
-	reports        map[int64]*classroom.Result // lessonID → 课报
-	lessonStates   map[int64]*classroom.State  // lessonID → 课堂快照（IT-12）
-	notifications  []Notification
-	nextNotifID    int64
-	feedbackRecs   []FeedbackRecord
-	nextFeedbackID int64
-	TestMode       bool     // -testmode：跳过课程开放时间校验（E2E 用）
-	DB             *gorm.DB // SQLite 持久化句柄（nil=纯内存模式）
-	mu             sync.Mutex
+	Rooms                      *Hub
+	tickets                    map[string]*Ticket          // ticket → 绑定
+	reports                    map[int64]*classroom.Result // lessonID → 课报
+	lessonStates               map[int64]*classroom.State  // lessonID → 课堂快照（IT-12）
+	notifications              []Notification
+	nextNotifID                int64
+	feedbackRecs               []FeedbackRecord
+	nextFeedbackID             int64
+	TestMode                   bool     // -testmode：跳过课程开放时间校验（E2E 用）
+	DB                         *gorm.DB // SQLite 持久化句柄（nil=纯内存模式）
+	mu                         sync.Mutex
+	firstAudioRequestAdmission firstAudioRequestAdmission
+}
+
+// firstAudioRequestAdmission is an internal pilot hook. It stays unset for
+// normal application startup; the isolated harness installs it only after
+// guarded startup has completed. The returned release function must cover the
+// entire HTTP handler, including response/frame enqueue work.
+type firstAudioRequestAdmission interface {
+	AcquireOperation(context.Context) (context.Context, func(), error)
+	OperationContextActive(context.Context) bool
+	ReserveSession(func(context.Context) error) (firstAudioWebSocketSession, error)
+}
+
+type firstAudioWebSocketSession interface {
+	Activate() error
+	Revoked() bool
+	Release()
 }
 
 // SetTestMode 开启测试模式。

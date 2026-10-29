@@ -22,6 +22,7 @@ func (a *App) Router() *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(a.traceMW())
+	r.Use(a.firstAudioOperationLeaseMW())
 	v := r.Group("/api/v1")
 
 	// ---- 首次启动向导（无 admin 时开放；SDD §17）----
@@ -533,4 +534,33 @@ func claimsOf(c *gin.Context) *auth.Claims {
 		return v.(*auth.Claims)
 	}
 	return &auth.Claims{}
+}
+
+// firstAudioOperationLeaseMW is inert in product startup. The isolated
+// first-audio harness installs an admission bridge before serving so reset
+// cannot cross an in-flight REST handler or its response enqueue.
+func (a *App) firstAudioOperationLeaseMW() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		bridge := a.firstAudioRequestAdmission
+		if bridge == nil {
+			c.Next()
+			return
+		}
+		ctx, release, err := bridge.AcquireOperation(c.Request.Context())
+		if err != nil || ctx == nil || release == nil || !bridge.OperationContextActive(ctx) {
+			if release != nil {
+				release()
+			}
+			if a.Log != nil {
+				a.Log.InfoCtx(c.Request.Context(), "first_audio", "operation_rejected", map[string]any{
+					"method": c.Request.Method, "path": c.Request.URL.Path, "reason": "admission_unavailable",
+				})
+			}
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"code": http.StatusServiceUnavailable, "msg": "classroom temporarily unavailable"})
+			return
+		}
+		defer release()
+		c.Request = c.Request.WithContext(ctx)
+		c.Next()
+	}
 }

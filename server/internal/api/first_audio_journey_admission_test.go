@@ -386,7 +386,7 @@ func TestFirstAudioJourneyAdmissionResetBarrier(t *testing.T) {
 	deadline := time.Now().Add(time.Second)
 	for {
 		_, _, _, accepting, _ := gate.counts()
-		if !accepting {
+		if !accepting && closeCalls.Load() == 2 && session.Revoked() && activeSession.Revoked() {
 			break
 		}
 		if time.Now().After(deadline) {
