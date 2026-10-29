@@ -16,6 +16,7 @@ on:
       - "docs/85-first-audio-direct-row-guard-call-negative-sdd.md"
       - "docs/86-first-audio-wrong-trigger-source-negative-sdd.md"
       - "docs/87-first-audio-other-lesson-update-negative-sdd.md"
+      - "docs/88-first-audio-zero-row-update-negative-sdd.md"
       - "docs/79-first-audio-real-sql-preflight-implementation-delta.md"
       - "review/first-audio-direct-row-guard-call-review-20261029.md"
       - "review/first-audio-wrong-trigger-source-review-20261029.md"
@@ -54,6 +55,7 @@ on:
       - "docs/85-first-audio-direct-row-guard-call-negative-sdd.md"
       - "docs/86-first-audio-wrong-trigger-source-negative-sdd.md"
       - "docs/87-first-audio-other-lesson-update-negative-sdd.md"
+      - "docs/88-first-audio-zero-row-update-negative-sdd.md"
       - "docs/79-first-audio-real-sql-preflight-implementation-delta.md"
       - "review/first-audio-direct-row-guard-call-review-20261029.md"
       - "review/first-audio-wrong-trigger-source-review-20261029.md"
@@ -133,7 +135,7 @@ jobs:
         run: go test . -run '^TestFailedCommitCleanupError' -count=1 -timeout=1m
       - name: Race-test immutable guard context publication
         working-directory: server
-        run: go test -race ./internal/api -run '^(TestFirstAudioGuard(Context|Probe|Controller|Publisher)|TestFirstAudioMatrixRealSQLRejectsLessonUpdateBeforeTokenConsumption|TestFirstAudioMatrixRealSQLRejectsOtherLessonUpdate)$' -count=1 -timeout=5m
+        run: go test -race ./internal/api -run '^(TestFirstAudioGuard(Context|Probe|Controller|Publisher)|TestFirstAudioMatrixRealSQLRejectsLessonUpdateBeforeTokenConsumption|TestFirstAudioMatrixRealSQLRejectsOtherLessonUpdate|TestFirstAudioMatrixRealSQLRejectsZeroRowUpdate)$' -count=1 -timeout=5m
       - name: Race-test SQLite journey audit row guard
         working-directory: server
         run: go test -race ./internal/api -run '^TestFirstAudioJourneyAuditGuard' -count=1 -timeout=5m
