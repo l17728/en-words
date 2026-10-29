@@ -1,7 +1,7 @@
 # First-Audio Corrupted Projection Negative SDD
 
 Date: 2026-10-29  
-Status: architecture/security and test-quality SDD review PASS; implementation not started.
+Status: SDD and implementation reviews PASS; Linux/Windows CGO and full Linux backend CI pending.
 
 ## Goal and boundary
 

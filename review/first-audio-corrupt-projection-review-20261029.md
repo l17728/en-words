@@ -13,3 +13,7 @@ Pre-implementation review of docs/89. The test corrupts only the expected INTEGE
 ## Implementation gate
 
 Approved to implement. Code review and Linux/Windows CGO protocol, Linux race/vet/format, and full backend regression remain required. This component does not close other docs/78 cases or pilot gates.
+
+## Implementation review
+
+The isolated child corrupts only the expected projection's INTEGER id value, keeps the type tag and other 35 typed entries unchanged, then updates the seeded lesson A. The test asserts exact trigger source/multiset, one 72-argument callback with the expected-old mismatch, SQLite `ErrConstraint` / `ErrConstraintTrigger` and trigger message, zero successful observations, token-consumed then failed receipt after one rollback, denial evidence, autocommit, unchanged complete snapshot, and terminal JOURNEY rejection. Both reviewers passed. Diagnostics avoid full projection and token values. Linux/Windows CGO protocol CI and full Linux backend regression remain pending.

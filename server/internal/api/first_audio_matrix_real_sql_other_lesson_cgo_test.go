@@ -25,10 +25,11 @@ import (
 
 const firstAudioOtherLessonChildMarker = "ENWORDS_FIRST_AUDIO_OTHER_LESSON_CHILD"
 const firstAudioZeroRowChildMarker = "ENWORDS_FIRST_AUDIO_ZERO_ROW_CHILD"
+const firstAudioCorruptProjectionChildMarker = "ENWORDS_FIRST_AUDIO_CORRUPT_PROJECTION_CHILD"
 
 func TestFirstAudioMatrixRealSQLRejectsOtherLessonUpdate(t *testing.T) {
 	if os.Getenv(firstAudioOtherLessonChildMarker) == "1" {
-		testFirstAudioOtherLessonUpdateChild(t, false)
+		testFirstAudioOtherLessonUpdateChild(t, false, false)
 		return
 	}
 
@@ -60,7 +61,7 @@ func TestFirstAudioMatrixRealSQLRejectsOtherLessonUpdate(t *testing.T) {
 
 func TestFirstAudioMatrixRealSQLRejectsZeroRowUpdate(t *testing.T) {
 	if os.Getenv(firstAudioZeroRowChildMarker) == "1" {
-		testFirstAudioOtherLessonUpdateChild(t, true)
+		testFirstAudioOtherLessonUpdateChild(t, true, false)
 		return
 	}
 	childEnv := make([]string, 0, len(os.Environ())+1)
@@ -85,6 +86,37 @@ func TestFirstAudioMatrixRealSQLRejectsZeroRowUpdate(t *testing.T) {
 	}
 	if err != nil {
 		t.Fatalf("isolated zero-row child failed: %v; output=%s", err, output.String())
+	}
+	t.Log(output.String())
+}
+
+func TestFirstAudioMatrixRealSQLRejectsCorruptedExpectedProjection(t *testing.T) {
+	if os.Getenv(firstAudioCorruptProjectionChildMarker) == "1" {
+		testFirstAudioOtherLessonUpdateChild(t, false, true)
+		return
+	}
+	childEnv := make([]string, 0, len(os.Environ())+1)
+	for _, entry := range os.Environ() {
+		if !strings.HasPrefix(entry, firstAudioCorruptProjectionChildMarker+"=") {
+			childEnv = append(childEnv, entry)
+		}
+	}
+	childEnv = append(childEnv, firstAudioCorruptProjectionChildMarker+"=1")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	command := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestFirstAudioMatrixRealSQLRejectsCorruptedExpectedProjection$", "-test.v")
+	command.Env = childEnv
+	output := &firstAudioCappedChildOutput{limit: 256 << 10}
+	command.Stdout, command.Stderr = output, output
+	err := command.Run()
+	if command.ProcessState == nil || !command.ProcessState.Exited() {
+		t.Fatalf("isolated corrupted-projection child was not reaped: err=%v output=%s", err, output.String())
+	}
+	if ctx.Err() != nil {
+		t.Fatalf("isolated corrupted-projection child exceeded 30-second deadline and was terminated/reaped: %v; output=%s", ctx.Err(), output.String())
+	}
+	if err != nil {
+		t.Fatalf("isolated corrupted-projection child failed: %v; output=%s", err, output.String())
 	}
 	t.Log(output.String())
 }
@@ -152,7 +184,7 @@ func captureFirstAudioOtherLessonSnapshot(path string) (firstAudioOtherLessonSna
 	return snapshot, nil
 }
 
-func testFirstAudioOtherLessonUpdateChild(t *testing.T, zeroRow bool) {
+func testFirstAudioOtherLessonUpdateChild(t *testing.T, zeroRow, corruptProjection bool) {
 	t.Helper()
 	const (
 		lessonA int64 = 701
@@ -214,6 +246,8 @@ func testFirstAudioOtherLessonUpdateChild(t *testing.T, zeroRow bool) {
 	probeID := "probe_other_lesson"
 	if zeroRow {
 		runID, probeID = "zero_row_20261029", "probe_zero_row"
+	} else if corruptProjection {
+		runID, probeID = "corrupt_projection_20261029", "probe_corrupt_projection"
 	}
 	controller := newFirstAudioGuardController()
 	startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
@@ -300,7 +334,11 @@ func testFirstAudioOtherLessonUpdateChild(t *testing.T, zeroRow bool) {
 				return false
 			}
 			if !reflect.DeepEqual(expected.values, actualOld) {
-				callbackErr.Store("other_lesson_old_projection_mismatch")
+				if corruptProjection {
+					callbackErr.Store("corrupt_expected_old_projection_mismatch")
+				} else {
+					callbackErr.Store("other_lesson_old_projection_mismatch")
+				}
 				return false
 			}
 			actualNew := normalizeFirstAudioTypedSQLitePairs(args[36:])
@@ -407,6 +445,30 @@ func testFirstAudioOtherLessonUpdateChild(t *testing.T, zeroRow bool) {
 		t.Fatalf("lesson A typed projection values=%d err=%v", len(projection), err)
 	}
 	session.expectedProjection.Store(&firstAudioExpectedTypedProjection{values: normalizeFirstAudioTypedSQLitePairs(projection)})
+	if corruptProjection {
+		expected := session.expectedProjection.Load()
+		if expected == nil {
+			t.Fatal("expected lesson A id projection is nil")
+		}
+		if len(expected.values) != 36 {
+			t.Fatalf("expected lesson A typed projection length=%d, want 36", len(expected.values))
+		}
+		if expected.values[0] != "integer" {
+			t.Fatalf("expected lesson A id storage tag type=%T, want integer", expected.values[0])
+		}
+		originalID, ok := expected.values[1].(int64)
+		if !ok || originalID != lessonA {
+			t.Fatalf("expected lesson A id Go type=%T matches_seeded_id=%t", expected.values[1], ok && originalID == lessonA)
+		}
+		corrupted := append([]any(nil), expected.values...)
+		corrupted[1] = lessonA + 1000
+		for i := range expected.values {
+			if i != 1 && !reflect.DeepEqual(expected.values[i], corrupted[i]) {
+				t.Fatalf("projection corruption changed unrelated typed value index=%d", i)
+			}
+		}
+		session.expectedProjection.Store(&firstAudioExpectedTypedProjection{values: corrupted})
+	}
 	denialsBefore := authorizer.denials.Load()
 	authorizerEventsMu.Lock()
 	eventStart := len(authorizerEvents)
@@ -414,8 +476,11 @@ func testFirstAudioOtherLessonUpdateChild(t *testing.T, zeroRow bool) {
 	updateTarget := lessonB
 	if zeroRow {
 		updateTarget = lessonB + 1000
+	} else if corruptProjection {
+		updateTarget = lessonA
 	}
 	sqliteCode := 0
+	sqliteExtendedCode := 0
 	var updateRows int64 = -1
 	queryErr := authorizer.withPermit(firstAudioSQLPermitProbeSQL, true, func() error {
 		result, err := tx.ExecContext(context.Background(), "UPDATE main.lessons SET id=id WHERE id=?", updateTarget)
@@ -432,12 +497,38 @@ func testFirstAudioOtherLessonUpdateChild(t *testing.T, zeroRow bool) {
 		if callbackErr.Load() != nil || rowGuardCalls.Load() != 0 || successfulRowObservations.Load() != 0 {
 			t.Fatalf("zero-row UPDATE unexpectedly invoked row guard: callback=%v calls=%d observations=%d", callbackErr.Load(), rowGuardCalls.Load(), successfulRowObservations.Load())
 		}
+	} else if corruptProjection {
+		var sqliteErr sqlite3.Error
+		if queryErr == nil || !errors.As(queryErr, &sqliteErr) || sqliteErr.Code != sqlite3.ErrConstraint || sqliteErr.ExtendedCode != sqlite3.ErrConstraintTrigger || !strings.Contains(queryErr.Error(), "first_audio_guard") {
+			t.Fatalf("lesson A corrupted-projection UPDATE error=%T %v sqlite_code=%d sqlite_extended=%d want trigger constraint abort", queryErr, queryErr, sqliteErr.Code, sqliteErr.ExtendedCode)
+		}
+		sqliteCode = int(sqliteErr.Code)
+		sqliteExtendedCode = int(sqliteErr.ExtendedCode)
+		if callbackErr.Load() != "corrupt_expected_old_projection_mismatch" || rowGuardCalls.Load() != 1 || successfulRowObservations.Load() != 0 {
+			t.Fatalf("corrupted expected projection result=%v callbacks=%d successful_observations=%d", callbackErr.Load(), rowGuardCalls.Load(), successfulRowObservations.Load())
+		}
+		args := callbackArgs.Load()
+		if args == nil || len(args.values) != 72 || args.values[0] != "integer" {
+			argCount, idTagType := 0, "<nil>"
+			if args != nil {
+				argCount = len(args.values)
+				if len(args.values) != 0 {
+					idTagType = fmt.Sprintf("%T", args.values[0])
+				}
+			}
+			t.Fatalf("corrupted projection callback arg_count=%d id_tag_go_type=%s, want 72 arguments and string tag", argCount, idTagType)
+		}
+		oldID, ok := args.values[1].(int64)
+		if !ok || oldID != lessonA {
+			t.Fatalf("actual trigger OLD id Go type=%T matches_seeded_id=%t", args.values[1], ok && oldID == lessonA)
+		}
 	} else {
 		var sqliteErr sqlite3.Error
 		if queryErr == nil || !errors.As(queryErr, &sqliteErr) || sqliteErr.Code != sqlite3.ErrConstraint || !strings.Contains(queryErr.Error(), "first_audio_guard") {
 			t.Fatalf("lesson B no-op UPDATE affected=%d error=%T %v sqlite_code=%d want trigger constraint abort containing first_audio_guard", updateRows, queryErr, queryErr, sqliteErr.Code)
 		}
 		sqliteCode = int(sqliteErr.Code)
+		sqliteExtendedCode = int(sqliteErr.ExtendedCode)
 		if callbackErr.Load() != "other_lesson_old_projection_mismatch" || rowGuardCalls.Load() != 1 || successfulRowObservations.Load() != 0 {
 			t.Fatalf("wrong-row callback outcome=%v calls=%d successful_observations=%d", callbackErr.Load(), rowGuardCalls.Load(), successfulRowObservations.Load())
 		}
@@ -466,12 +557,16 @@ func testFirstAudioOtherLessonUpdateChild(t *testing.T, zeroRow bool) {
 	if allowedTriggerCalls != 1 || !triggerEvent.allowed {
 		t.Fatalf("observed approved update-trigger function tuple count=%d event=%#v want one admitted tuple", allowedTriggerCalls, triggerEvent)
 	}
-	if zeroRow {
+	if zeroRow || corruptProjection {
 		authorizerEventsMu.Lock()
 		statementEvents := append([]firstAudioRealSQLAuthorizerEvent(nil), authorizerEvents[eventStart:]...)
 		authorizerEventsMu.Unlock()
 		tupleSummary := assertFirstAudioZeroRowAuthorizerMultiset(t, statementEvents)
-		t.Logf("trace_id=%s module=first_audio_preflight event=zero_row_authorizer_multiset_verified payload={statement_id:%q,target_class:%q,tuple_count:%d,denial_delta:0,tuple_multiset:%s}", runID, "UPDATE main.lessons SET id=id WHERE id=?", "nonexistent", len(statementEvents), strings.Join(tupleSummary, ";"))
+		targetClass := "lesson_a"
+		if zeroRow {
+			targetClass = "nonexistent"
+		}
+		t.Logf("trace_id=%s module=first_audio_preflight event=update_authorizer_multiset_verified payload={statement_id:%q,target_class:%q,tuple_count:%d,denial_delta:0,tuple_multiset:%s}", runID, "UPDATE main.lessons SET id=id WHERE id=?", targetClass, len(statementEvents), strings.Join(tupleSummary, ";"))
 	}
 	if firstAudioGuardProbeReceiptState(challenge.receipt.state.Load()) != firstAudioGuardProbeTokenConsumed || challenge.receipt.completeFor(challenge.binding, challenge.digest) {
 		t.Fatalf("failed update negative receipt state=%d complete=%t, want token-consumed and incomplete", challenge.receipt.state.Load(), challenge.receipt.completeFor(challenge.binding, challenge.digest))
@@ -481,6 +576,9 @@ func testFirstAudioOtherLessonUpdateChild(t *testing.T, zeroRow bool) {
 	}
 	if trackedConnection.txActive.Load() || !trackedConnection.raw.AutoCommit() || firstAudioGuardProbeReceiptState(challenge.receipt.state.Load()) != firstAudioGuardProbeFailed || challenge.receipt.completeFor(challenge.binding, challenge.digest) {
 		t.Fatalf("rollback/invalidation state txActive=%t autocommit=%t receipt=%d complete=%t", trackedConnection.txActive.Load(), trackedConnection.raw.AutoCommit(), challenge.receipt.state.Load(), challenge.receipt.completeFor(challenge.binding, challenge.digest))
+	}
+	if challenge.receipt.denials.Load() == 0 {
+		t.Fatal("failed probe rollback did not record denial evidence before JOURNEY publication")
 	}
 	if err := pinned.Close(); err != nil {
 		t.Fatal("release rolled-back candidate pin:", err)
@@ -511,8 +609,18 @@ func testFirstAudioOtherLessonUpdateChild(t *testing.T, zeroRow bool) {
 	eventName := "other_lesson_update_rejected"
 	if zeroRow {
 		eventName = "zero_row_update_rejected"
+	} else if corruptProjection {
+		eventName = "corrupted_expected_projection_rejected"
 	}
-	t.Logf("trace_id=%s module=first_audio_preflight event=%s payload={trigger_phase:%q,trigger_permit:%d,trigger_action:%d,trigger_db:%q,trigger_source:%q,trigger_arg1:%q,trigger_arg2:%q,trigger_allowed:%t,affected_rows:%d,sqlite_code:%d,token_accepted:%t,token_calls:%d,row_guard_calls:%d,mismatch:%v,receipt_state:%d,rollback_confirmed:true,snapshot_unchanged:true,journey_rejected:true}", runID, eventName, triggerEvent.phase, triggerEvent.permit, triggerEvent.action, triggerEvent.databaseName, triggerEvent.triggerName, triggerEvent.arg1, triggerEvent.arg2, triggerEvent.allowed, updateRows, sqliteCode, tokenAccepted, tokenCalls.Load(), rowGuardCalls.Load(), callbackErr.Load(), challenge.receipt.state.Load())
+	affectedRows := "unavailable_after_trigger_error"
+	if queryErr == nil {
+		affectedRows = fmt.Sprintf("%d", updateRows)
+	}
+	corruptedField, corruptedStorageType := "", ""
+	if corruptProjection {
+		corruptedField, corruptedStorageType = "id", "integer"
+	}
+	t.Logf("trace_id=%s module=first_audio_preflight event=%s payload={statement_id:%q,trigger_phase:%q,trigger_permit:%d,trigger_action:%d,trigger_db:%q,trigger_source:%q,trigger_arg1:%q,trigger_arg2:%q,trigger_allowed:%t,affected_rows:%s,sqlite_code:%d,sqlite_extended_code:%d,corrupted_field:%q,corrupted_storage_type:%q,token_accepted:%t,token_calls:%d,row_guard_calls:%d,successful_observations:%d,mismatch:%v,receipt_state:%d,receipt_denials:%d,rollback_confirmed:true,autocommit:true,snapshot_unchanged:true,journey_rejected:true}", runID, eventName, "UPDATE main.lessons SET id=id WHERE id=?", triggerEvent.phase, triggerEvent.permit, triggerEvent.action, triggerEvent.databaseName, triggerEvent.triggerName, triggerEvent.arg1, triggerEvent.arg2, triggerEvent.allowed, affectedRows, sqliteCode, sqliteExtendedCode, corruptedField, corruptedStorageType, tokenAccepted, tokenCalls.Load(), rowGuardCalls.Load(), successfulRowObservations.Load(), callbackErr.Load(), challenge.receipt.state.Load(), challenge.receipt.denials.Load())
 }
 
 func assertFirstAudioZeroRowAuthorizerMultiset(t *testing.T, events []firstAudioRealSQLAuthorizerEvent) []string {
