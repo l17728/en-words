@@ -1,4 +1,4 @@
-﻿name: First-audio control protocol checks
+name: First-audio control protocol checks
 
 on:
   workflow_dispatch:
@@ -18,6 +18,9 @@ on:
       - "docs/87-first-audio-other-lesson-update-negative-sdd.md"
       - "docs/88-first-audio-zero-row-update-negative-sdd.md"
       - "docs/89-first-audio-corrupt-projection-negative-sdd.md"
+      - "docs/90-first-audio-lesson-primary-key-cardinality-sdd.md"
+      - "review/first-audio-lesson-primary-key-cardinality-review-20261029.md"
+      - "server/internal/api/first_audio_lesson_primary_key_cardinality_test.go"
       - "review/first-audio-corrupt-projection-review-20261029.md"
       - "docs/79-first-audio-real-sql-preflight-implementation-delta.md"
       - "review/first-audio-direct-row-guard-call-review-20261029.md"
@@ -60,6 +63,9 @@ on:
       - "docs/87-first-audio-other-lesson-update-negative-sdd.md"
       - "docs/88-first-audio-zero-row-update-negative-sdd.md"
       - "docs/89-first-audio-corrupt-projection-negative-sdd.md"
+      - "docs/90-first-audio-lesson-primary-key-cardinality-sdd.md"
+      - "review/first-audio-lesson-primary-key-cardinality-review-20261029.md"
+      - "server/internal/api/first_audio_lesson_primary_key_cardinality_test.go"
       - "review/first-audio-corrupt-projection-review-20261029.md"
       - "docs/79-first-audio-real-sql-preflight-implementation-delta.md"
       - "review/first-audio-direct-row-guard-call-review-20261029.md"
@@ -129,7 +135,7 @@ jobs:
         run: python3 -m unittest discover -s review -p test_first_audio_matrix_control.py -v
       - name: Test JSONL parser, lifecycle, replay, and terminal cleanup
         working-directory: server
-        run: go test -v ./internal/api -run '^TestFirstAudio(Matrix|Guard(Context|Probe|Controller|Publisher|CallbackTerminal|SQLiteCallback))' -count=1 -timeout=5m
+        run: go test -v ./internal/api -run '^(TestFirstAudio(Matrix|Guard(Context|Probe|Controller|Publisher|CallbackTerminal|SQLiteCallback))|TestFirstAudioLessonPrimaryKeyCardinalityRealSchema)$' -count=1 -timeout=5m
       - name: Test strict SQLite journey audit row guard
         working-directory: server
         run: go test ./internal/api -run '^TestFirstAudioJourney' -count=1 -timeout=5m
@@ -141,7 +147,7 @@ jobs:
         run: go test . -run '^TestFailedCommitCleanupError' -count=1 -timeout=1m
       - name: Race-test immutable guard context publication
         working-directory: server
-        run: go test -race ./internal/api -run '^(TestFirstAudioGuard(Context|Probe|Controller|Publisher)|TestFirstAudioMatrixRealSQLRejectsLessonUpdateBeforeTokenConsumption|TestFirstAudioMatrixRealSQLRejectsOtherLessonUpdate|TestFirstAudioMatrixRealSQLRejectsZeroRowUpdate|TestFirstAudioMatrixRealSQLRejectsCorruptedExpectedProjection)$' -count=1 -timeout=5m
+        run: go test -race ./internal/api -run '^(TestFirstAudioGuard(Context|Probe|Controller|Publisher)|TestFirstAudioMatrixRealSQLRejectsLessonUpdateBeforeTokenConsumption|TestFirstAudioMatrixRealSQLRejectsOtherLessonUpdate|TestFirstAudioMatrixRealSQLRejectsZeroRowUpdate|TestFirstAudioMatrixRealSQLRejectsCorruptedExpectedProjection|TestFirstAudioLessonPrimaryKeyCardinalityRealSchema)$' -count=1 -timeout=5m
       - name: Race-test SQLite journey audit row guard
         working-directory: server
         run: go test -race ./internal/api -run '^TestFirstAudioJourneyAuditGuard' -count=1 -timeout=5m
@@ -218,7 +224,7 @@ jobs:
           gcc --version
       - name: Test Go harness path and lifecycle boundaries
         working-directory: server
-        run: go test ./internal/api -run '^TestFirstAudio(Matrix|Guard(Context|Probe|Controller|Publisher|CallbackTerminal|SQLiteCallback))' -count=1 -timeout=10m
+        run: go test ./internal/api -run '^(TestFirstAudio(Matrix|Guard(Context|Probe|Controller|Publisher|CallbackTerminal|SQLiteCallback))|TestFirstAudioLessonPrimaryKeyCardinalityRealSchema)$' -count=1 -timeout=10m
       - name: Test strict SQLite journey audit row guard
         working-directory: server
         run: go test ./internal/api -run '^TestFirstAudioJourney' -count=1 -timeout=5m
