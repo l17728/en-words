@@ -3,12 +3,15 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -808,6 +811,215 @@ func TestFirstAudioMatrixRealSQLRejectsCrossConnectionWrongAndReplayedTokens(t *
 			}
 		})
 	}
+}
+
+const firstAudioDirectRowGuardChildMarker = "ENWORDS_FIRST_AUDIO_DIRECT_ROW_GUARD_CHILD"
+
+type firstAudioCappedChildOutput struct {
+	mu        sync.Mutex
+	buffer    bytes.Buffer
+	limit     int
+	truncated bool
+}
+
+func (b *firstAudioCappedChildOutput) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	remaining := b.limit - b.buffer.Len()
+	if remaining > 0 {
+		write := len(p)
+		if write > remaining {
+			write = remaining
+		}
+		_, _ = b.buffer.Write(p[:write])
+	}
+	if len(p) > remaining {
+		b.truncated = true
+	}
+	return len(p), nil
+}
+
+func (b *firstAudioCappedChildOutput) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	result := b.buffer.String()
+	if b.truncated {
+		result += "\n[child output truncated at 256 KiB]"
+	}
+	return result
+}
+
+func TestFirstAudioMatrixRealSQLRejectsDirectRowGuardUDF(t *testing.T) {
+	if os.Getenv(firstAudioDirectRowGuardChildMarker) == "1" {
+		testFirstAudioDirectRowGuardUDFChild(t)
+		return
+	}
+
+	childEnv := make([]string, 0, len(os.Environ())+1)
+	for _, entry := range os.Environ() {
+		if !strings.HasPrefix(entry, firstAudioDirectRowGuardChildMarker+"=") {
+			childEnv = append(childEnv, entry)
+		}
+	}
+	childEnv = append(childEnv, firstAudioDirectRowGuardChildMarker+"=1")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	command := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestFirstAudioMatrixRealSQLRejectsDirectRowGuardUDF$", "-test.v")
+	command.Env = childEnv
+	output := &firstAudioCappedChildOutput{limit: 256 << 10}
+	command.Stdout = output
+	command.Stderr = output
+	err := command.Run() // Run waits/reaps the child after exit or CommandContext cancellation.
+	if command.ProcessState == nil || !command.ProcessState.Exited() {
+		t.Fatalf("isolated direct-UDF child was not reaped: err=%v output=%s", err, output.String())
+	}
+	if ctx.Err() != nil {
+		t.Fatalf("isolated direct-UDF child exceeded 30-second deadline and was terminated/reaped: %v; output=%s", ctx.Err(), output.String())
+	}
+	if err != nil {
+		t.Fatalf("isolated direct-UDF child failed: %v; output=%s", err, output.String())
+	}
+	t.Log(output.String())
+}
+
+func testFirstAudioDirectRowGuardUDFChild(t *testing.T) {
+	t.Helper()
+	controller := newFirstAudioGuardController()
+	registry := controller.connections
+	sessionRef := &firstAudioRealSQLProbeSessionRef{}
+	var rowGuardCalls atomic.Uint64
+	var registeredRaw *sqlite3.SQLiteConn
+	driverName := fmt.Sprintf("first_audio_direct_row_guard_%d", firstAudioProbeDriverSequence.Add(1))
+	if err := registerFirstAudioTrackedSQLiteDriver(driverName, func(raw *sqlite3.SQLiteConn) error {
+		if _, err := registry.Register(raw); err != nil {
+			return err
+		}
+		registeredRaw = raw
+		return raw.RegisterFunc("first_audio_row_guard", func(args ...any) bool {
+			rowGuardCalls.Add(1)
+			return len(args) == len(firstAudioLessonProbeColumns)*4
+		}, true)
+	}, registry.Retire); err != nil {
+		t.Fatal("register isolated tracked driver:", err)
+	}
+	path := filepath.Join(t.TempDir(), "direct-row-guard.db")
+	pool, err := sql.Open(driverName, path)
+	if err != nil {
+		t.Fatal("open isolated direct-UDF pool:", err)
+	}
+	t.Cleanup(func() { _ = pool.Close() })
+	pool.SetMaxOpenConns(1)
+	pool.SetMaxIdleConns(1)
+	pinned, err := pool.Conn(context.Background())
+	if err != nil {
+		t.Fatal("pin isolated direct-UDF connection:", err)
+	}
+	t.Cleanup(func() { _ = pinned.Close() })
+	var tracked *firstAudioTrackedSQLiteConn
+	if err := pinned.Raw(func(connection any) error {
+		var ok bool
+		tracked, ok = connection.(*firstAudioTrackedSQLiteConn)
+		if !ok || tracked == nil || tracked.raw == nil || tracked.raw != registeredRaw {
+			return fmt.Errorf("pinned direct-UDF connection does not match registered raw identity: %T", connection)
+		}
+		return nil
+	}); err != nil {
+		t.Fatal("resolve registered direct-UDF connection:", err)
+	}
+	registration, live := registry.Lookup(tracked.raw)
+	if !live || registration.ID == "" || !registry.IsLive(registration.ID, tracked.raw) {
+		t.Fatal("direct-UDF physical connection is not live in the registry")
+	}
+	binding := firstAudioGuardProbeBinding{runID: "direct_udf_20261029", lessonID: 501, generation: 1, version: 2, connection: registration.ID, probeID: "probe_direct_udf"}
+	token, challenge, err := newFirstAudioPhysicalProbeChallenge(binding)
+	if err != nil {
+		t.Fatal("create direct-UDF challenge:", err)
+	}
+	defer zeroFirstAudioSecret(token)
+	if !challenge.receipt.arm() {
+		t.Fatal("arm direct-UDF challenge receipt")
+	}
+	preflightSpec := firstAudioValidPreflightSpec(2)
+	preflightSpec.runID = binding.runID
+	preflightSpec.currentLessonID = binding.lessonID
+	preflightSpec.connectionIDs = []string{binding.connection}
+	preflightSpec.probeContracts = []firstAudioGuardProbeContract{challenge.Contract()}
+	preflightSpec.rowContracts = []firstAudioGuardRowContract{{table: "lessons", operation: "UPDATE", identity: fmt.Sprintf("lesson:%d/conn:%s", binding.lessonID, binding.connection), oldRow: []byte("typed-projection"), newRow: []byte("typed-projection")}}
+	controller.probeReceipts[binding.connection] = challenge.receipt
+	preflight, err := newFirstAudioGuardContext(preflightSpec)
+	if err != nil {
+		t.Fatal("construct one-connection direct-UDF PREFLIGHT:", err)
+	}
+	controller.publisher.current.Store(preflight)
+	authorizer := newFirstAudioRealSQLAuthorizer(controller, sessionRef, firstAudioDatabaseSnapshot{})
+	authorizer.tracked = tracked
+	authorizer.pinned = pinned
+	authorizer.probeChallenge.Store(challenge)
+	if err := authorizer.install(tracked.raw); err != nil {
+		t.Fatal("install production-shaped SQL authorizer:", err)
+	}
+	session := &firstAudioRealSQLProbeSession{challenge: challenge, binding: binding, tracked: tracked}
+	sessionRef.session.Store(session)
+	var tx *sql.Tx
+	if err := authorizer.withPermit(firstAudioSQLPermitProbeSQL, false, func() error {
+		var beginErr error
+		tx, beginErr = pinned.BeginTx(context.Background(), nil)
+		return beginErr
+	}); err != nil {
+		t.Fatal("begin isolated direct-UDF transaction:", err)
+	}
+	authorizer.activeTx.Store(tx)
+	t.Cleanup(func() {
+		if !registry.IsLive(binding.connection, tracked.raw) {
+			return
+		}
+		cleanupErr := authorizer.terminalizeAndDiscardUncertainConnection()
+		if !errors.Is(cleanupErr, errFirstAudioGuardProbeRejected) {
+			t.Errorf("terminalize/discard direct-UDF child after early failure: %v", cleanupErr)
+		}
+	})
+	epoch := tracked.txEpoch.Load()
+	if !tracked.txActive.Load() || epoch == 0 {
+		t.Fatal("direct-UDF transaction is not active at a nonzero tracked epoch")
+	}
+	authorizer.txEpoch.Store(epoch)
+	session.txEpoch.Store(epoch)
+	if err := challenge.BindTransactionEpoch(epoch); err != nil {
+		t.Fatal("bind direct-UDF challenge epoch:", err)
+	}
+	arguments := make([]string, len(firstAudioLessonProbeColumns)*4)
+	for i := range arguments {
+		arguments[i] = "NULL"
+	}
+	if len(arguments) != 72 {
+		t.Fatalf("frozen direct-UDF argument count=%d, want 72", len(arguments))
+	}
+	statement := "SELECT first_audio_row_guard(" + strings.Join(arguments, ",") + ")"
+	var result bool
+	queryErr := authorizer.withPermit(firstAudioSQLPermitTokenConsumption, true, func() error {
+		return tx.QueryRowContext(context.Background(), statement).Scan(&result)
+	})
+	var sqliteErr sqlite3.Error
+	if queryErr == nil || !errors.As(queryErr, &sqliteErr) || sqliteErr.Code != sqlite3.ErrAuth {
+		t.Fatalf("direct top-level row-guard call error=%T %v, want SQLITE_AUTH", queryErr, queryErr)
+	}
+	deniedTuple := authorizer.lastDenied.Load()
+	if authorizer.denials.Load() != 1 || deniedTuple == nil || !strings.Contains(deniedTuple.(string), `source=""`) || !strings.Contains(deniedTuple.(string), `arg2="first_audio_row_guard"`) {
+		t.Fatalf("authorizer denial evidence does not identify direct empty-source row guard: count=%d tuple=%v", authorizer.denials.Load(), deniedTuple)
+	}
+	directDenials := authorizer.denials.Load()
+	if rowGuardCalls.Load() != 0 || !controller.IsTerminal() {
+		t.Fatalf("direct row-guard UDF executed or controller remained live: callbacks=%d terminal=%t", rowGuardCalls.Load(), controller.IsTerminal())
+	}
+	cleanupErr := authorizer.terminalizeAndDiscardUncertainConnection()
+	if !errors.Is(cleanupErr, errFirstAudioGuardProbeRejected) {
+		t.Fatalf("terminalize/discard after direct-UDF authorizer denial=%v, want rejected after confirmed retirement", cleanupErr)
+	}
+	if firstAudioGuardProbeReceiptState(challenge.receipt.state.Load()) != firstAudioGuardProbeFailed || challenge.receipt.completeFor(binding, challenge.digest) || tracked.txActive.Load() || !tracked.closeOK.Load() || registry.IsLive(binding.connection, tracked.raw) {
+		t.Fatalf("direct-UDF terminal evidence incomplete: receipt=%d complete=%t txActive=%t closeOK=%t live=%t", challenge.receipt.state.Load(), challenge.receipt.completeFor(binding, challenge.digest), tracked.txActive.Load(), tracked.closeOK.Load(), registry.IsLive(binding.connection, tracked.raw))
+	}
+	cleanupDenials := authorizer.denials.Load() - directDenials
+	t.Logf("trace_id=%s module=first_audio_preflight event=direct_row_guard_udf_denied payload={sqlite_code:%d,direct_denials_before_cleanup:%d,cleanup_rollback_denials:%d,udf_callbacks:%d,receipt_state:%d,physical_close:%t,registry_live:%t}", binding.runID, sqliteErr.Code, directDenials, cleanupDenials, rowGuardCalls.Load(), challenge.receipt.state.Load(), tracked.closeOK.Load(), registry.IsLive(binding.connection, tracked.raw))
 }
 
 func TestFirstAudioMatrixRealSQLMissingCleanupAuthorityTerminalizesAndDiscardsActiveTransaction(t *testing.T) {

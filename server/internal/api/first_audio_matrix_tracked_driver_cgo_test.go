@@ -183,7 +183,15 @@ func (c *firstAudioTrackedSQLiteConn) Close() error {
 		// connection. A later connection can never inherit its probe receipt.
 		c.retire(c.raw)
 		c.closeErr = c.Conn.Close()
-		c.closeOK.Store(c.closeErr == nil)
+		if c.closeErr == nil {
+			// A confirmed physical close destroys any remaining SQLite
+			// transaction, even if database/sql's Rollback was denied after
+			// terminalization. Do not claim this on an uncertain close.
+			c.txActive.Store(false)
+			c.closeOK.Store(true)
+		} else {
+			c.closeOK.Store(false)
+		}
 	})
 	return c.closeErr
 }
