@@ -16,5 +16,6 @@ Scope: `docs/92-first-audio-preflight-prepare-phase-sdd.md`, reconciled with doc
 3. Added strict `requirePreflightPrepare` controller policy for the guarded owner and retained direct transition only for legacy fixtures.
 4. Defined ConnectHook phase as registration provenance; runtime authorization always checks the currently published immutable context.
 5. Synchronized docs/74 and docs/91, including the PREPARE no-SQL exception to general metadata-read policy.
+6. Replaced caller-controlled startup verification flags with a controller-owned, one-use receipt bound to the STARTUP context and matching baseline/readback digests.
 
 This review approves the design only. Code review and CI remain required before accepting the implementation. Parent kill/reap for uncertain cleanup is not yet verified by this slice.

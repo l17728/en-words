@@ -296,6 +296,21 @@ type firstAudioValidatedTransition struct {
 	lease      *firstAudioGuardTransitionLease
 	candidate  *firstAudioGuardContext
 	capability *struct{}
+	evidence   firstAudioGuardTransitionEvidence
+}
+
+type firstAudioStartupVerificationReceipt struct {
+	runID        string
+	lessonID     int64
+	generation   uint64
+	version      uint64
+	baselineHash string
+	verifiedHash string
+	consumed     atomic.Bool
+}
+
+func (r *firstAudioStartupVerificationReceipt) matches(ctx *firstAudioGuardContext, expectedHash string) bool {
+	return r != nil && ctx != nil && r.runID == ctx.runID && r.lessonID == ctx.currentLessonID && r.generation == ctx.generation && r.version == ctx.version && r.baselineHash != "" && r.baselineHash == r.verifiedHash && r.baselineHash == expectedHash && !r.consumed.Load()
 }
 
 const firstAudioGuardContextCASLimit = 128
@@ -321,7 +336,52 @@ func (p *firstAudioGuardContextPublisher) publishGuardedTransition(permit *first
 	if permit.capability == nil || permit.capability != p.transitionCapability || &owner.publisher != p || permit.lease.owner != owner || !owner.exclusive || owner.activeTransition != permit.lease || permit.lease.released || permit.lease.busy || owner.activeLeasesLocked() != 0 || owner.isTerminalLocked() {
 		return errFirstAudioGuardContextTransition
 	}
-	return p.publishCore(permit.candidate, false, permit)
+	active := p.Load()
+	if active == nil || permit.candidate.runID != active.runID || permit.candidate.currentLessonID != active.currentLessonID || permit.candidate.generation != active.generation {
+		return errFirstAudioGuardContextTransition
+	}
+	switch active.phase {
+	case firstAudioGuardStartupProbe:
+		candidate := permit.candidate
+		if candidate.phase != firstAudioGuardPreflightPrepare || candidate.version != active.version+1 || candidate.version != 2 || candidate.generation != 1 || len(candidate.connectionIDs) != 0 || len(candidate.probes) != 0 || len(candidate.rows) != 0 || len(permit.evidence.probeBindings) != 0 || len(permit.evidence.probeReceipts) != 0 || len(permit.evidence.expectedConnections) != 0 || !owner.startupVerificationReceipt.matches(active, owner.startupBaselineHash) {
+			return errFirstAudioGuardContextTransition
+		}
+		if !owner.startupVerificationReceipt.consumed.CompareAndSwap(false, true) {
+			return errFirstAudioGuardContextTransition
+		}
+		return p.publishCore(candidate, false, permit)
+	case firstAudioGuardPreflightPrepare:
+		candidate := permit.candidate
+		registered, ok := permit.evidence.preflightReceiptsFor(candidate)
+		if candidate.phase != firstAudioGuardPreflight || !ok || len(candidate.connectionIDs) != owner.requiredPreflightConnections || candidate.version != active.version+1 || len(permit.evidence.expectedConnections) != len(candidate.connectionIDs) {
+			return errFirstAudioGuardContextTransition
+		}
+		previous := owner.probeReceipts
+		return owner.connections.WithExactLiveIDs(candidate.connectionIDs, func(live map[string]*sqlite3.SQLiteConn) error {
+			for id, receipt := range registered {
+				if receipt == nil || live[id] == nil || permit.evidence.expectedConnections[id] != live[id] || receipt.binding.connection != id {
+					return errFirstAudioGuardContextTransition
+				}
+			}
+			owner.probeReceipts = registered
+			if err := p.publishCore(candidate, false, permit); err != nil {
+				owner.probeReceipts = previous
+				return err
+			}
+			for _, receipt := range registered {
+				if owner.beforeReceiptArm != nil {
+					owner.beforeReceiptArm()
+				}
+				if !receipt.arm() {
+					owner.markOutOfBandTerminalLocked()
+					return errFirstAudioGuardContextTransition
+				}
+			}
+			return nil
+		})
+	default:
+		return errFirstAudioGuardContextTransition
+	}
 }
 
 func (p *firstAudioGuardContextPublisher) publishDriverStartup(candidate *firstAudioGuardContext, receipt *firstAudioDriverProbeReceipt) error {

@@ -468,6 +468,8 @@ type firstAudioGuardController struct {
 	requirePreflightPrepare      bool
 	requiredPreflightConnections int
 	publisher                    firstAudioGuardContextPublisher
+	startupVerificationReceipt   *firstAudioStartupVerificationReceipt
+	startupBaselineHash          string
 	driverProbe                  *firstAudioDriverProbeReceipt
 	beforeReceiptArm             func() // deterministic test seam; called while exact-live registry lock is held
 	connections                  *firstAudioSQLiteConnectionRegistry
@@ -491,11 +493,12 @@ func newFirstAudioGuardControllerWithPolicy(requirePreflightPrepare bool, requir
 	if (requirePreflightPrepare && requiredPreflightConnections < 1) || (!requirePreflightPrepare && requiredPreflightConnections != 0) {
 		panic("invalid first-audio controller policy")
 	}
-	publisher := firstAudioGuardContextPublisher{requirePreflightPrepare: requirePreflightPrepare}
+	controller := &firstAudioGuardController{requirePreflightPrepare: requirePreflightPrepare, requiredPreflightConnections: requiredPreflightConnections, connections: newFirstAudioSQLiteConnectionRegistry(), leases: make(map[uint64]int), probeReceipts: make(map[string]*firstAudioGuardProbeReceipt), changed: make(chan struct{})}
+	controller.publisher.requirePreflightPrepare = requirePreflightPrepare
 	if requirePreflightPrepare {
-		publisher.transitionCapability = &struct{}{}
+		controller.publisher.transitionCapability = &struct{}{}
 	}
-	return &firstAudioGuardController{requirePreflightPrepare: requirePreflightPrepare, requiredPreflightConnections: requiredPreflightConnections, publisher: publisher, connections: newFirstAudioSQLiteConnectionRegistry(), leases: make(map[uint64]int), probeReceipts: make(map[string]*firstAudioGuardProbeReceipt), changed: make(chan struct{})}
+	return controller
 }
 
 // Test fixtures that begin at STARTUP_PROBE must still traverse and prove the
@@ -846,7 +849,7 @@ func (l *firstAudioGuardTransitionLease) Publish(ctx context.Context, candidate 
 			c.mu.Unlock()
 			return errFirstAudioGuardContextTransition
 		}
-		permit := &firstAudioValidatedTransition{owner: c, lease: l, candidate: candidate, capability: c.publisher.transitionCapability}
+		permit := &firstAudioValidatedTransition{owner: c, lease: l, candidate: candidate, capability: c.publisher.transitionCapability, evidence: evidence}
 		err := c.publisher.publishGuardedTransition(permit)
 		if err != nil {
 			c.markOutOfBandTerminalLocked()
@@ -885,43 +888,14 @@ func (l *firstAudioGuardTransitionLease) Publish(ctx context.Context, candidate 
 		return nil
 	}
 	if active != nil && active.phase == firstAudioGuardPreflightPrepare && candidate.phase == firstAudioGuardPreflight {
-		registered, ok := evidence.preflightReceiptsFor(candidate)
-		if !c.requirePreflightPrepare || !ok || len(candidate.connectionIDs) != c.requiredPreflightConnections || candidate.version != active.version+1 || candidate.generation != active.generation || candidate.currentLessonID != active.currentLessonID {
+		if !c.requirePreflightPrepare {
 			c.markOutOfBandTerminalLocked()
 			l.released = true
 			c.mu.Unlock()
 			return errFirstAudioGuardContextTransition
 		}
-		if len(evidence.expectedConnections) != len(candidate.connectionIDs) {
-			c.markOutOfBandTerminalLocked()
-			l.released = true
-			c.mu.Unlock()
-			return errFirstAudioGuardContextTransition
-		}
-		previous := c.probeReceipts
-		err := c.connections.WithExactLiveIDs(candidate.connectionIDs, func(live map[string]*sqlite3.SQLiteConn) error {
-			for id, receipt := range registered {
-				if receipt == nil || live[id] == nil || evidence.expectedConnections[id] != live[id] || receipt.binding.connection != id {
-					return errFirstAudioGuardContextTransition
-				}
-			}
-			c.probeReceipts = registered
-			permit := &firstAudioValidatedTransition{owner: c, lease: l, candidate: candidate, capability: c.publisher.transitionCapability}
-			if publishErr := c.publisher.publishGuardedTransition(permit); publishErr != nil {
-				c.probeReceipts = previous
-				return publishErr
-			}
-			for _, receipt := range registered {
-				if c.beforeReceiptArm != nil {
-					c.beforeReceiptArm()
-				}
-				if !receipt.arm() {
-					c.markOutOfBandTerminalLocked()
-					return errFirstAudioGuardContextTransition
-				}
-			}
-			return nil
-		})
+		permit := &firstAudioValidatedTransition{owner: c, lease: l, candidate: candidate, capability: c.publisher.transitionCapability, evidence: evidence}
+		err := c.publisher.publishGuardedTransition(permit)
 		if err != nil {
 			c.markOutOfBandTerminalLocked()
 			l.released = true

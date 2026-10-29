@@ -62,6 +62,7 @@ type firstAudioPreparedOwner struct {
 	opened                []*firstAudioTrackedSQLiteConn
 	listen                func(string, string) (net.Listener, error)
 	listenerCalls         atomic.Uint64
+	rowGuardCalls         atomic.Uint64
 	closeErr              error
 }
 
@@ -227,6 +228,7 @@ func prepareFirstAudioGuardedOwner(t *testing.T, ctx context.Context, runRoot, d
 	}
 
 	controller := newFirstAudioGuardControllerWithPolicy(true, firstAudioGuardedPreparePoolCapacity)
+	controller.startupBaselineHash = baseline.SHA256
 	registry := controller.connections
 	driverContext, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
 		runID: runID, currentLessonID: identity.LessonID, generation: 1,
@@ -257,7 +259,7 @@ func prepareFirstAudioGuardedOwner(t *testing.T, ctx context.Context, runRoot, d
 			}
 		}
 	}()
-	var tokenCalls, rowGuardCalls atomic.Uint64
+	var tokenCalls atomic.Uint64
 	var callbackErr atomic.Value
 	name := fmt.Sprintf("first_audio_guarded_prepare_%d", firstAudioProbeDriverSequence.Add(1))
 	if err := registerFirstAudioTrackedSQLiteDriver(name, func(raw *sqlite3.SQLiteConn) error {
@@ -293,7 +295,7 @@ func prepareFirstAudioGuardedOwner(t *testing.T, ctx context.Context, runRoot, d
 			return registerErr
 		}
 		if registerErr := raw.RegisterFunc("first_audio_row_guard", func(args ...any) bool {
-			rowGuardCalls.Add(1)
+			owner.rowGuardCalls.Add(1)
 			session := sessionRef.session.Load()
 			if session == nil || session.tracked == nil || !session.tracked.txActive.Load() || session.txEpoch.Load() == 0 || session.txEpoch.Load() != session.tracked.txEpoch.Load() || session.challenge == nil || session.binding.connection != registration.ID || len(args) != 72 {
 				return false
@@ -397,7 +399,7 @@ func prepareFirstAudioGuardedOwner(t *testing.T, ctx context.Context, runRoot, d
 	if err := owner.verifyStartupAutocommit(); err != nil {
 		return nil, errors.New("prepare_new_app_transaction_state_uncertain")
 	}
-	if app == nil || app.DB != guarded || app.StartupError != nil || startupBegins != 1 || startupEnds != 1 || rowGuardCalls.Load() != 0 {
+	if app == nil || app.DB != guarded || app.StartupError != nil || startupBegins != 1 || startupEnds != 1 || owner.rowGuardCalls.Load() != 0 {
 		if err := owner.verifyStartupFailureState(); err != nil {
 			return nil, errors.New("prepare_new_app_failure_cleanup_uncertain")
 		}
@@ -407,11 +409,11 @@ func prepareFirstAudioGuardedOwner(t *testing.T, ctx context.Context, runRoot, d
 	if err := failAt("new_app_ready"); err != nil {
 		return nil, err
 	}
-	startupSnapshot, err := firstAudioCaptureDatabaseSnapshot(guarded)
-	if err != nil || startupSnapshot.SHA256 != baseline.SHA256 || !reflect.DeepEqual(startupSnapshot.Canonical, baseline.Canonical) {
+	startupSnapshot, err := owner.verifyStartupAndRecord(startupTransition)
+	if err != nil {
 		return nil, errors.New("prepare_startup_snapshot_mismatch")
 	}
-	t.Logf("trace_id=%s module=first_audio_prepare event=startup_verified phase=%s version=1 connection_count=%d startup_begin_count=1 startup_end_count=1 baseline_sha256=%s", runID, firstAudioGuardStartupProbe, len(owner.opened), baseline.SHA256)
+	t.Logf("trace_id=%s module=first_audio_prepare event=startup_verified phase=%s version=1 connection_count=%d startup_begin_count=1 startup_end_count=1 baseline_sha256=%s verified_sha256=%s", runID, firstAudioGuardStartupProbe, len(owner.opened), baseline.SHA256, startupSnapshot.SHA256)
 	prepareContext, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{
 		runID: runID, currentLessonID: identity.LessonID, generation: 1,
 		phase: firstAudioGuardPreflightPrepare, version: 2,
@@ -505,7 +507,7 @@ func prepareFirstAudioGuardedOwner(t *testing.T, ctx context.Context, runRoot, d
 		connection.authorizer.tracked, connection.authorizer.pinned, connection.authorizer.db = pinned.tracked, pinned.conn, guarded
 		session := &firstAudioRealSQLProbeSession{challenge: challenges[index], binding: bindings[index], tracked: pinned.tracked}
 		connection.sessionRef.session.Store(session)
-		runFirstAudioRealSQLConnectionProbe(t, connection.authorizer, pinned, challenges[index], bindings[index], tokens[index], session, connection.sessionRef, &tokenCalls, &rowGuardCalls, &callbackErr)
+		runFirstAudioRealSQLConnectionProbe(t, connection.authorizer, pinned, challenges[index], bindings[index], tokens[index], session, connection.sessionRef, &tokenCalls, &owner.rowGuardCalls, &callbackErr)
 	}
 	for _, challenge := range challenges {
 		if !challenge.receipt.completeFor(challenge.binding, challenge.digest) {
@@ -606,6 +608,36 @@ func (o *firstAudioPreparedOwner) verifyStartupAutocommit() error {
 		return errors.New("startup_transaction_count_mismatch")
 	}
 	return nil
+}
+
+// verifyStartupAndRecord runs the startup proof itself, then stores a
+// controller-bound receipt. Callers cannot assert readiness/count/digest flags.
+func (o *firstAudioPreparedOwner) verifyStartupAndRecord(lease *firstAudioGuardTransitionLease) (firstAudioDatabaseSnapshot, error) {
+	if o == nil || lease == nil || o.controller == nil || o.app == nil || o.app.DB != o.db || o.app.StartupError != nil || o.db == nil {
+		return firstAudioDatabaseSnapshot{}, errors.New("startup_app_not_ready")
+	}
+	if err := o.verifyStartupAutocommit(); err != nil {
+		return firstAudioDatabaseSnapshot{}, err
+	}
+	if o.rowGuardCalls.Load() != 0 {
+		return firstAudioDatabaseSnapshot{}, errors.New("startup_row_guard_invoked")
+	}
+	startupSnapshot, err := firstAudioCaptureDatabaseSnapshot(o.db)
+	if err != nil || startupSnapshot.SHA256 != o.baseline.SHA256 || !reflect.DeepEqual(startupSnapshot.Canonical, o.baseline.Canonical) {
+		return firstAudioDatabaseSnapshot{}, errors.New("startup_snapshot_mismatch")
+	}
+	c := o.controller
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	active := c.publisher.Load()
+	if !c.requirePreflightPrepare || lease.owner != c || lease.released || lease.busy || !c.exclusive || c.activeTransition != lease || c.isTerminalLocked() || active == nil || active.phase != firstAudioGuardStartupProbe || active.version != 1 || c.startupBaselineHash != o.baseline.SHA256 || c.startupVerificationReceipt != nil {
+		return firstAudioDatabaseSnapshot{}, errFirstAudioGuardContextTransition
+	}
+	c.startupVerificationReceipt = &firstAudioStartupVerificationReceipt{
+		runID: active.runID, lessonID: active.currentLessonID, generation: active.generation, version: active.version,
+		baselineHash: o.baseline.SHA256, verifiedHash: startupSnapshot.SHA256,
+	}
+	return startupSnapshot, nil
 }
 
 func (o *firstAudioPreparedOwner) verifyPrepareNoAuthorizerEvents(identities []firstAudioPinnedRealSQLConnection) error {

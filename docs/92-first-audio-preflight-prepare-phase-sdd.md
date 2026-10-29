@@ -1,6 +1,6 @@
 # First-Audio PREFLIGHT Preparation Phase SDD
 
-Date: 2026-10-29  
+Date: 2026-10-29
 Status: design reviewed; implementation in progress; CGO CI pending.
 
 ## Problem
@@ -9,7 +9,7 @@ The guarded-app owner must call real `NewApp` while in `STARTUP_PROBE`. The pool
 
 ## Proposed transition
 
-Add a test-only lifecycle phase `PREFLIGHT_PREPARE` between startup verification and final PREFLIGHT. The monotonic versions for this owner are `DRIVER_PROBE v0 → STARTUP_PROBE v1 → PREFLIGHT_PREPARE v2 → PREFLIGHT v3`; later journey versions remain monotonic. `NewApp` runs and its transaction/autocommit plus baseline snapshot are verified in STARTUP_PROBE before this transition.
+Add a test-only lifecycle phase `PREFLIGHT_PREPARE` between startup verification and final PREFLIGHT. The monotonic versions for this owner are `DRIVER_PROBE v0 → STARTUP_PROBE v1 → PREFLIGHT_PREPARE v2 → PREFLIGHT v3`; later journey versions remain monotonic. `NewApp` runs and its transaction/autocommit plus baseline snapshot are verified in STARTUP_PROBE before this transition. After those checks, the owner records a controller-owned, one-use startup verification receipt bound to run, lesson, generation, context version, and equal baseline/readback digests. A caller-supplied boolean is not sufficient proof.
 
 The guarded owner must take `STARTUP v1 → PREFLIGHT_PREPARE v2 → PREFLIGHT v3`; it cannot use the direct legacy transition. Enforce this with controller construction policy: legacy protocol fixtures use the default policy, while the guarded owner constructs its controller with `requirePreflightPrepare=true`; the publisher rejects direct STARTUP→PREFLIGHT for that controller even when evidence is complete. Before entering PREPARE, drain all STARTUP leases. The publisher accepts only the exact next phase/version/generation and an active exclusive transition lease. Skipped, duplicate, backward, foreign-generation, and wrong-phase candidates are rejected without changing the published context; failed identity/evidence checks terminalize the guarded owner.
 

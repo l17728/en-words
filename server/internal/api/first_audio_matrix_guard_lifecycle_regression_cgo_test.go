@@ -27,6 +27,7 @@ func TestFirstAudioPreflightPrepareStrictOwnerPublishesExactUnarmedReceipts(t *t
 	if err != nil {
 		t.Fatal("publish startup:", err)
 	}
+	firstAudioTestMarkStartupVerified(t, transition)
 	prepare, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: startup.runID, currentLessonID: startup.currentLessonID, generation: 1, phase: firstAudioGuardPreflightPrepare, version: 2})
 	if err != nil {
 		t.Fatal("create prepare context:", err)
@@ -183,6 +184,14 @@ func TestFirstAudioPreflightPrepareStrictPublisherRejectsTransitionWithoutLease(
 		t.Fatalf("forged guarded transition error=%v, want transition rejection", guardedErr)
 	}
 	controller.mu.Lock()
+	activeLeaseErr := controller.publisher.publishGuardedTransition(&firstAudioValidatedTransition{
+		owner: controller, lease: transition, candidate: prepare, capability: controller.publisher.transitionCapability,
+	})
+	controller.mu.Unlock()
+	if !errors.Is(activeLeaseErr, errFirstAudioGuardContextTransition) {
+		t.Fatalf("active lease without startup verification error=%v, want rejection", activeLeaseErr)
+	}
+	controller.mu.Lock()
 	rawErr := controller.publisher.publish(prepare, false)
 	controller.mu.Unlock()
 	if !errors.Is(rawErr, errFirstAudioGuardContextTransition) {
@@ -190,6 +199,28 @@ func TestFirstAudioPreflightPrepareStrictPublisherRejectsTransitionWithoutLease(
 	}
 	if !controller.IsActivePhase(firstAudioGuardStartupProbe) {
 		t.Fatal("direct publisher call changed active phase")
+	}
+}
+
+func TestFirstAudioPreflightPrepareHelperRejectsActiveLeaseWithoutPhysicalReceipts(t *testing.T) {
+	controller, transition := firstAudioTestStrictPreflightPrepare(t, "preflight_prepare_helper_receipts", 7034)
+	candidate, evidence, _ := firstAudioTestPhysicalPreflightCandidate(t, controller, "preflight_prepare_helper_receipts", 7034, 3)
+	controller.mu.Lock()
+	err := controller.publisher.publishGuardedTransition(&firstAudioValidatedTransition{
+		owner: controller, lease: transition, candidate: candidate, capability: controller.publisher.transitionCapability,
+		evidence: firstAudioGuardTransitionEvidence{expectedConnections: evidence.expectedConnections},
+	})
+	controller.mu.Unlock()
+	if !errors.Is(err, errFirstAudioGuardContextTransition) {
+		t.Fatalf("active lease without receipts error=%v, want rejection", err)
+	}
+	if !controller.IsActivePhase(firstAudioGuardPreflightPrepare) || controller.IsTerminal() {
+		t.Fatal("missing receipts changed active phase or terminalized outside lease path")
+	}
+	for _, receipt := range evidence.probeReceipts {
+		if receipt.armed.Load() {
+			t.Fatal("helper armed a receipt without validating the complete evidence set")
+		}
 	}
 }
 
@@ -217,6 +248,7 @@ func TestFirstAudioPreflightPrepareRejectsBackwardPhaseAndMutatedVersion(t *test
 		if err != nil {
 			t.Fatal("publish startup:", err)
 		}
+		firstAudioTestMarkStartupVerified(t, transition)
 		candidate, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: startup.runID, currentLessonID: startup.currentLessonID, generation: 1, phase: firstAudioGuardPreflightPrepare, version: 2})
 		if err != nil {
 			t.Fatal("create valid candidate:", err)
@@ -239,6 +271,7 @@ func TestFirstAudioPreflightPrepareRejectsBackwardPhaseAndMutatedVersion(t *test
 		if err != nil {
 			t.Fatal("publish startup:", err)
 		}
+		firstAudioTestMarkStartupVerified(t, transition)
 		candidate, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: startup.runID, currentLessonID: startup.currentLessonID, generation: 1, phase: firstAudioGuardPreflightPrepare, version: 2})
 		if err != nil {
 			t.Fatal("create valid candidate:", err)
@@ -251,6 +284,28 @@ func TestFirstAudioPreflightPrepareRejectsBackwardPhaseAndMutatedVersion(t *test
 			t.Fatal("wrong version was published or owner remained live")
 		}
 	})
+}
+
+func TestFirstAudioPreflightPrepareRejectsMissingStartupVerificationReceipt(t *testing.T) {
+	controller := newFirstAudioGuardControllerWithPolicy(true, 3)
+	startup, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: "preflight_prepare_forged_startup", currentLessonID: 7035, generation: 1, phase: firstAudioGuardStartupProbe, version: 1})
+	if err != nil {
+		t.Fatal("create startup context:", err)
+	}
+	transition, err := firstAudioTestPublishInitialStartup(controller, startup)
+	if err != nil {
+		t.Fatal("publish startup:", err)
+	}
+	prepare, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: startup.runID, currentLessonID: startup.currentLessonID, generation: 1, phase: firstAudioGuardPreflightPrepare, version: 2})
+	if err != nil {
+		t.Fatal("create PREPARE context:", err)
+	}
+	if err := transition.Publish(context.Background(), prepare, firstAudioGuardTransitionEvidence{}); !errors.Is(err, errFirstAudioGuardContextTransition) {
+		t.Fatalf("publish without controller verification receipt=%v, want rejection", err)
+	}
+	if !controller.IsTerminal() || !controller.IsActivePhase(firstAudioGuardStartupProbe) {
+		t.Fatal("forged startup evidence advanced the phase")
+	}
 }
 
 func TestFirstAudioPreflightPrepareLegacyControllerRetainsDirectTransition(t *testing.T) {
@@ -343,6 +398,7 @@ func firstAudioTestStrictPreflightPrepare(t *testing.T, runID string, lessonID i
 	if err != nil {
 		t.Fatal("publish startup:", err)
 	}
+	firstAudioTestMarkStartupVerified(t, transition)
 	prepare, err := newFirstAudioGuardContext(firstAudioGuardContextSpec{runID: runID, currentLessonID: lessonID, generation: 1, phase: firstAudioGuardPreflightPrepare, version: 2})
 	if err != nil {
 		t.Fatal("create prepare context:", err)
@@ -351,6 +407,23 @@ func firstAudioTestStrictPreflightPrepare(t *testing.T, runID string, lessonID i
 		t.Fatal("publish prepare:", err)
 	}
 	return controller, transition
+}
+
+func firstAudioTestMarkStartupVerified(t *testing.T, transition *firstAudioGuardTransitionLease) {
+	t.Helper()
+	controller := transition.owner
+	hash := strings.Repeat("a", 64)
+	controller.mu.Lock()
+	defer controller.mu.Unlock()
+	active := controller.publisher.Load()
+	if active == nil || active.phase != firstAudioGuardStartupProbe || controller.activeTransition != transition {
+		t.Fatal("test startup context is not active")
+	}
+	controller.startupBaselineHash = hash
+	controller.startupVerificationReceipt = &firstAudioStartupVerificationReceipt{
+		runID: active.runID, lessonID: active.currentLessonID, generation: active.generation, version: active.version,
+		baselineHash: hash, verifiedHash: hash,
+	}
 }
 
 func firstAudioTestPhysicalPreflightCandidate(t *testing.T, controller *firstAudioGuardController, runID string, lessonID int64, count int) (*firstAudioGuardContext, firstAudioGuardTransitionEvidence, [][]byte) {
