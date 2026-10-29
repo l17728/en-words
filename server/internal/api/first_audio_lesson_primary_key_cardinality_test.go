@@ -92,10 +92,7 @@ func TestFirstAudioLessonPrimaryKeyCardinalityRealSchema(t *testing.T) {
 	if result.Error != nil {
 		t.Fatalf("trace_id=%s module=store event=fixed_update_failed statement=fixed_lesson_id_noop err=%v", traceID, result.Error)
 	}
-	affected, err := result.RowsAffected()
-	if err != nil {
-		t.Fatalf("trace_id=%s module=store event=rows_affected_failed statement=fixed_lesson_id_noop err=%v", traceID, err)
-	}
+	affected := result.RowsAffected
 	if affected != 1 {
 		t.Fatalf("trace_id=%s module=store event=fixed_update_cardinality_mismatch statement=fixed_lesson_id_noop affected_rows=%d", traceID, affected)
 	}
