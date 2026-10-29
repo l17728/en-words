@@ -21,6 +21,8 @@ on:
       - "docs/90-first-audio-lesson-primary-key-cardinality-sdd.md"
       - "docs/91-first-audio-guarded-app-preparation-sdd.md"
       - "docs/92-first-audio-preflight-prepare-phase-sdd.md"
+      - "docs/93-first-audio-journey-lease-integration-sdd.md"
+      - "review/first-audio-journey-lease-design-review-20261029.md"
       - "review/first-audio-preflight-prepare-design-review-20261029.md"
       - "review/first-audio-guarded-app-preparation-review-20261029.md"
       - "server/internal/api/first_audio_matrix_prepare_backend_cgo_test.go"
