@@ -26,3 +26,8 @@ Security review confirmed the temporary migrated DB, bounded logs, and narrow co
 ## CI finding and follow-up review — PASS
 
 The first compile passed the test source review but CI exposed that importing modernc.org/sqlite.Error directly loaded a second driver instance alongside the active glebarez fork, causing duplicate driver registration. The test now asserts *github.com/glebarez/go-sqlite.Error, the package actually used by store.Open. Security and test-quality reviewers re-reviewed the SDD and implementation and confirmed the driver type, logging, assertions, scope, and selectors. Follow-up protocol CI run 40826787583 passed on Linux and Windows, including the new focused test; Linux race, vet, gofmt, browser build/list discovery, and production symbol-isolation checks also passed.
+
+
+## Full backend regression — PASS
+
+Linux package workflow 40827360242 ran the repository-wide go test ./... step successfully; enwords/internal/api completed in 28.549s. The workflow also completed Linux package, manifest, and runner-preflight jobs successfully. This is package verification only and does not claim VFS or RunRoot acceptance.

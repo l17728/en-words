@@ -1,7 +1,7 @@
 # First-Audio Lesson Primary-Key Cardinality SDD
 
 Date: 2026-10-29  
-Status: implemented; reviewed; protocol CI passed on Linux and Windows (run 40826787583). Full backend regression is tracked separately.
+Status: implemented; reviewed; protocol CI passed on Linux and Windows (run 40826787583). Full backend regression (`go test ./...`) passed in Linux package CI run 40827360242.
 
 ## Goal and boundary
 
