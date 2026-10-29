@@ -403,7 +403,7 @@ func TestFirstAudioResetAuthorizerCaptureOnly(t *testing.T) {
 	// Windows checkouts may use CRLF while Linux checkouts use LF. Hash a
 	// canonical representation so the reviewed trigger manifest is identical
 	// across the platform matrix.
-	triggerBytes = canonicalFirstAudioTriggerManifestBytes(triggerBytes)
+	triggerBytes = canonicalFirstAudioManifestBytes(triggerBytes)
 	triggerDigest := sha256.Sum256(triggerBytes)
 	artifact := struct {
 		FormatVersion          int                                `json:"format_version"`
@@ -440,7 +440,7 @@ func TestFirstAudioResetAuthorizerCaptureOnly(t *testing.T) {
 	}
 	manifestPath := filepath.Join("testdata", "first_audio_reset_authorizer_manifest.json")
 	if os.Getenv("FIRST_AUDIO_WRITE_RESET_MANIFEST") == "1" {
-		if err := writeFirstAudioResetManifestAtomically(manifestPath, append(output, '\n')); err != nil {
+		if err := writeFirstAudioResetManifestAtomically(manifestPath, append(output, '\n'), "."); err != nil {
 			t.Fatal("write capture-only manifest:", err)
 		}
 		t.Logf("trace_id=reset_capture_20261029 module=first_audio_reset_capture event=manifest_written statement_count=%d schema_sha256=%s digest=%s", len(artifact.Statements), artifact.SchemaSHA256, hex.EncodeToString(digest[:]))
@@ -450,23 +450,23 @@ func TestFirstAudioResetAuthorizerCaptureOnly(t *testing.T) {
 	if err != nil {
 		t.Fatal("read reviewed reset authorizer manifest:", err)
 	}
-	if string(want) != string(append(output, '\n')) {
+	if !bytes.Equal(canonicalFirstAudioManifestBytes(want), canonicalFirstAudioManifestBytes(append(output, '\n'))) {
 		t.Fatalf("capture-only reset authorizer manifest drift: %s", firstAudioResetManifestDifference(want, append(output, '\n')))
 	}
 }
 
-func canonicalFirstAudioTriggerManifestBytes(raw []byte) []byte {
+func canonicalFirstAudioManifestBytes(raw []byte) []byte {
 	return bytes.ReplaceAll(raw, []byte("\r\n"), []byte("\n"))
 }
 
 func TestFirstAudioTriggerManifestDigestIgnoresLineEndings(t *testing.T) {
 	lf := []byte("{\n  \"format_version\": 1\n}\n")
 	crlf := bytes.ReplaceAll(lf, []byte("\n"), []byte("\r\n"))
-	if !bytes.Equal(canonicalFirstAudioTriggerManifestBytes(lf), canonicalFirstAudioTriggerManifestBytes(crlf)) {
+	if !bytes.Equal(canonicalFirstAudioManifestBytes(lf), canonicalFirstAudioManifestBytes(crlf)) {
 		t.Fatal("trigger manifest canonical bytes differ between LF and CRLF")
 	}
-	lfDigest := sha256.Sum256(canonicalFirstAudioTriggerManifestBytes(lf))
-	crlfDigest := sha256.Sum256(canonicalFirstAudioTriggerManifestBytes(crlf))
+	lfDigest := sha256.Sum256(canonicalFirstAudioManifestBytes(lf))
+	crlfDigest := sha256.Sum256(canonicalFirstAudioManifestBytes(crlf))
 	if lfDigest != crlfDigest {
 		t.Fatal("trigger manifest digest differs between LF and CRLF")
 	}
@@ -559,7 +559,7 @@ func firstAudioResetManifestDifference(wantJSON, actualJSON []byte) string {
 	return strings.Join(differences, "; ")
 }
 
-func writeFirstAudioResetManifestAtomically(path string, content []byte) (resultErr error) {
+func writeFirstAudioResetManifestAtomically(path string, content []byte, trustedRoot string) (resultErr error) {
 	// This writer is reachable only through the explicit local developer opt-in
 	// below. It rejects static symlinks and atomically replaces the artifact,
 	// but does not claim dirfd-level protection against a hostile process that
@@ -574,7 +574,7 @@ func writeFirstAudioResetManifestAtomically(path string, content []byte) (result
 	}
 	if resolved, err := filepath.EvalSymlinks(parent); err != nil {
 		return err
-	} else if !sameResolvedFirstAudioResetManifestPath(resolved, parent) {
+	} else if !sameResolvedFirstAudioResetManifestPath(resolved, parent, trustedRoot) {
 		return fmt.Errorf("manifest parent resolves through a different path")
 	}
 	if info, err := os.Lstat(path); err == nil {
@@ -612,23 +612,38 @@ func writeFirstAudioResetManifestAtomically(path string, content []byte) (result
 	return replaceFirstAudioResetManifest(temporaryPath, path)
 }
 
-func sameResolvedFirstAudioResetManifestPath(resolved, input string) bool {
+func sameResolvedFirstAudioResetManifestPath(resolved, input, trustedRoot string) bool {
 	resolvedAbs, resolvedErr := filepath.Abs(resolved)
 	inputAbs, inputErr := filepath.Abs(input)
-	if resolvedErr != nil || inputErr != nil {
+	rootAbs, rootErr := filepath.Abs(trustedRoot)
+	if resolvedErr != nil || inputErr != nil || rootErr != nil {
 		return false
 	}
 	resolvedAbs = filepath.Clean(resolvedAbs)
 	inputAbs = filepath.Clean(inputAbs)
-	if runtime.GOOS == "windows" {
-		// EvalSymlinks may return an extended-length path while the caller uses
-		// a drive-letter path. Strip only that representation prefix, then use
-		// Windows' case-insensitive path comparison semantics.
-		resolvedAbs = normalizeWindowsResetManifestPath(resolvedAbs)
-		inputAbs = normalizeWindowsResetManifestPath(inputAbs)
-		return strings.EqualFold(resolvedAbs, inputAbs)
+	rootAbs = filepath.Clean(rootAbs)
+	rootInfo, err := os.Lstat(rootAbs)
+	if err != nil || !rootInfo.IsDir() || rootInfo.Mode()&os.ModeSymlink != 0 {
+		return false
 	}
-	return resolvedAbs == inputAbs
+	relative, err := filepath.Rel(rootAbs, inputAbs)
+	if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) || filepath.IsAbs(relative) {
+		return false
+	}
+	resolvedRoot, err := filepath.EvalSymlinks(rootAbs)
+	if err != nil {
+		return false
+	}
+	expectedResolved := filepath.Clean(filepath.Join(resolvedRoot, relative))
+	if runtime.GOOS == "windows" {
+		// EvalSymlinks may return extended paths and the runner's checkout root
+		// may itself have an alias. Compare relative to the canonical trusted
+		// root, then apply Windows' case-insensitive path semantics.
+		resolvedAbs = normalizeWindowsResetManifestPath(resolvedAbs)
+		expectedResolved = normalizeWindowsResetManifestPath(expectedResolved)
+		return strings.EqualFold(resolvedAbs, expectedResolved)
+	}
+	return resolvedAbs == expectedResolved
 }
 
 func normalizeWindowsResetManifestPath(path string) string {
@@ -649,7 +664,7 @@ func TestFirstAudioResetManifestWriterRejectsSymlinkTargets(t *testing.T) {
 	if err := os.WriteFile(regularTarget, []byte("before"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := writeFirstAudioResetManifestAtomically(regularTarget, []byte("after")); err != nil {
+	if err := writeFirstAudioResetManifestAtomically(regularTarget, []byte("after"), root); err != nil {
 		t.Fatal("atomic regular-file replacement failed:", err)
 	}
 	regularContent, err := os.ReadFile(regularTarget)
@@ -664,7 +679,7 @@ func TestFirstAudioResetManifestWriterRejectsSymlinkTargets(t *testing.T) {
 	if err := os.Symlink(external, link); err != nil {
 		t.Skipf("symlink creation unavailable: %v", err)
 	}
-	if err := writeFirstAudioResetManifestAtomically(link, []byte("replace")); err == nil {
+	if err := writeFirstAudioResetManifestAtomically(link, []byte("replace"), root); err == nil {
 		t.Fatal("writer accepted a symlink target")
 	}
 	content, err := os.ReadFile(external)
@@ -683,7 +698,7 @@ func TestFirstAudioResetManifestWriterRejectsSymlinkTargets(t *testing.T) {
 	if err := os.Symlink(externalDir, parentLink); err != nil {
 		t.Skipf("directory symlink creation unavailable: %v", err)
 	}
-	if err := writeFirstAudioResetManifestAtomically(filepath.Join(parentLink, "manifest.json"), []byte("parent-replace")); err == nil {
+	if err := writeFirstAudioResetManifestAtomically(filepath.Join(parentLink, "manifest.json"), []byte("parent-replace"), root); err == nil {
 		t.Fatal("writer accepted a symlink parent")
 	}
 	content, err = os.ReadFile(externalFile)
@@ -694,7 +709,7 @@ func TestFirstAudioResetManifestWriterRejectsSymlinkTargets(t *testing.T) {
 	if err := os.Symlink(root, ancestorLink); err != nil {
 		t.Skipf("ancestor symlink creation unavailable: %v", err)
 	}
-	if err := writeFirstAudioResetManifestAtomically(filepath.Join(ancestorLink, "external-dir", "manifest.json"), []byte("ancestor-replace")); err == nil {
+	if err := writeFirstAudioResetManifestAtomically(filepath.Join(ancestorLink, "external-dir", "manifest.json"), []byte("ancestor-replace"), root); err == nil {
 		t.Fatal("writer accepted a parent reached through a symlink ancestor")
 	}
 	content, err = os.ReadFile(externalFile)
