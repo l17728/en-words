@@ -1,6 +1,9 @@
 package scheduler
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type settlementPlan struct {
 	cards  []*Card
@@ -10,8 +13,15 @@ type settlementPlan struct {
 // SettleLesson is explicitly keyed by lesson, rather than guessing a scheduled lesson.
 // A durable caller wraps this and the report/next-course writes in one transaction.
 func (s *Service) SettleLesson(id int64, correct map[int64]bool, at time.Time) error {
-	s.settlementMu.Lock()
-	defer s.settlementMu.Unlock()
+	if s.pairedLive {
+		return fmt.Errorf("configuration_work_required")
+	}
+	owner := s
+	if s.workOwner != nil {
+		owner = s.workOwner
+	}
+	owner.settlementMu.Lock()
+	defer owner.settlementMu.Unlock()
 	l, err := s.repo.GetLesson(id)
 	if err != nil {
 		return err
@@ -19,10 +29,10 @@ func (s *Service) SettleLesson(id int64, correct map[int64]bool, at time.Time) e
 	if l.Status == LessonFinishedStr {
 		return nil
 	}
-	if s.pendingSettlements == nil {
-		s.pendingSettlements = map[int64]*settlementPlan{}
+	if owner.pendingSettlements == nil {
+		owner.pendingSettlements = map[int64]*settlementPlan{}
 	}
-	plan := s.pendingSettlements[id]
+	plan := owner.pendingSettlements[id]
 	if plan == nil {
 		plan = &settlementPlan{}
 		ladder := s.cfg.Ladder(l.StudentID)
@@ -65,7 +75,7 @@ func (s *Service) SettleLesson(id int64, correct map[int64]bool, at time.Time) e
 		plan.lesson = &cp
 		// Freeze absolute targets before the first write. An in-process retry after
 		// a partial repository failure must not increment an already saved card.
-		s.pendingSettlements[id] = plan
+		owner.pendingSettlements[id] = plan
 	}
 	for _, c := range plan.cards {
 		if err := s.repo.SaveCard(c); err != nil {
@@ -76,17 +86,24 @@ func (s *Service) SettleLesson(id int64, correct map[int64]bool, at time.Time) e
 		return err
 	}
 	s.rememberFinished(id, *plan.lesson.FinishedAt)
-	delete(s.pendingSettlements, id)
+	delete(owner.pendingSettlements, id)
 	return nil
 }
 
 func (s *Service) finishedTime(id int64) (time.Time, bool) {
+	if s.workOwner != nil {
+		return s.workOwner.finishedTime(id)
+	}
 	s.metaMu.RLock()
 	defer s.metaMu.RUnlock()
 	t, ok := s.finishedAt[id]
 	return t, ok
 }
 func (s *Service) rememberFinished(id int64, at time.Time) {
+	if s.workOwner != nil {
+		s.workOwner.rememberFinished(id, at)
+		return
+	}
 	s.metaMu.Lock()
 	defer s.metaMu.Unlock()
 	s.finishedAt[id] = at

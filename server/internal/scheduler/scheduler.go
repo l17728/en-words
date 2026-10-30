@@ -6,6 +6,7 @@ package scheduler
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -253,6 +254,8 @@ type LadderSource interface {
 }
 
 type Service struct {
+	pairedLive         bool
+	workOwner          *Service
 	settlementMu       sync.Mutex
 	pendingSettlements map[int64]*settlementPlan
 	metaMu             sync.RWMutex
@@ -434,6 +437,9 @@ func (s *Service) PlanNextWithPolicy(studentID, bookID int64, policy PlanPolicy)
 }
 
 func (s *Service) planNext(studentID, bookID int64, policy PlanPolicy) (*Lesson, error) {
+	if s.pairedLive {
+		return nil, fmt.Errorf("configuration_work_required")
+	}
 	now := s.clock.Now()
 	W := s.cfg.Int(studentID, "wordsPerLesson")
 	if W < 50 || W > 100 {
@@ -592,6 +598,9 @@ func (s *Service) lastFinishedAt(studentID, bookID int64) (time.Time, bool) {
 // 答对≥1 → 视为本次复习成功 step+1（新学课 step 0→0 除外——首课不 +1）；
 // 全错 → step 不变但 LastReviewAt 更新；新词 new → learning。
 func (s *Service) SettleLessonFinished(studentID, bookID int64, correct map[int64]bool, finishedAt time.Time) error {
+	if s.pairedLive {
+		return fmt.Errorf("configuration_work_required")
+	}
 	cards, err := s.repo.ListCards(studentID, bookID)
 	if err != nil {
 		return err
@@ -741,6 +750,9 @@ func (s *Service) repoLessonsAll() []*Lesson {
 
 // MaintenanceCheck 维护期抽查（毕业词每 30 天）：答错重置 step=min(5,len-1) 回 learning。
 func (s *Service) MaintenanceCheck(studentID, bookID, wordID int64, correct bool) error {
+	if s.pairedLive {
+		return fmt.Errorf("configuration_work_required")
+	}
 	c, err := s.repo.GetCard(studentID, bookID, wordID)
 	if err != nil {
 		return err
@@ -766,6 +778,12 @@ func (s *Service) MaintenanceCheck(studentID, bookID, wordID int64, correct bool
 
 // TruncateLadderSteps ladder 配置缩短时截断全部 step（R2-AR-02；由 config.OnLadderChanged 触发）。
 func (s *Service) TruncateLadderSteps(newLen int) error {
+	if s.pairedLive || newLen < 1 {
+		return fmt.Errorf("explicit configuration scope required")
+	}
+	if _, ok := s.repo.(*MemRepo); !ok {
+		return fmt.Errorf("explicit configuration scope required")
+	}
 	// 内存版遍历全部卡（GORM 版为 UPDATE ... WHERE）
 	if all, ok := s.repo.(*MemRepo); ok {
 		all.mu.Lock()

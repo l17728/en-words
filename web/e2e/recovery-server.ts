@@ -6,12 +6,13 @@ import { createServer, type ServerResponse } from 'node:http'
 import { ownedExited, stopOwned, cleanupOwned, detachOwnedOutput } from './owned-process'
 import { applySchemaConnectionPolicy, observePlatformTransport } from './schema-platform'
 
-export const test = base.extend<{ duplexPilot: boolean; localModel: boolean; modelSchema: string; overdueHarness: boolean; server: { terminate: () => Promise<void>; restart: (whileStopped?: () => void) => Promise<void>; runOverdue: () => void; timeoutFinished: () => void; log: string; pids: number[]; db: string; model: { pending: number; canceled: number; feedbackCalls: number; judgeCalls: number } } }>({
+export const test = base.extend<{ duplexPilot: boolean; localModel: boolean; modelSchema: string; overdueHarness: boolean; productionSchedule: boolean; server: { terminate: () => Promise<void>; restart: (whileStopped?: () => void) => Promise<void>; runOverdue: () => void; timeoutFinished: () => void; log: string; pids: number[]; db: string; model: { pending: number; canceled: number; feedbackCalls: number; judgeCalls: number } } }>({
   duplexPilot: [false, { option: true }],
   localModel: [false, { option: true }],
   modelSchema: ['valid', { option: true }],
   overdueHarness: [false, { option: true }],
-  server: [async ({ request, localModel, modelSchema, overdueHarness, duplexPilot }, runFixture, info) => {
+  productionSchedule: [false, { option: true }],
+  server: [async ({ request, localModel, modelSchema, overdueHarness, duplexPilot, productionSchedule }, runFixture, info) => {
     const binary = overdueHarness ? process.env.E2E_HARNESS_BINARY : process.env.E2E_SERVER_BINARY
     if (!binary) throw new Error('E2E_SERVER_BINARY is required for owned-process restart acceptance')
     const model = { pending: 0, canceled: 0, feedbackCalls: 0, judgeCalls: 0 }
@@ -77,33 +78,92 @@ export const test = base.extend<{ duplexPilot: boolean; localModel: boolean; mod
     const db = overdueHarness ? resolve('../.test-artifacts', `overdue-${Date.now()}-${process.pid}.db`) : info.outputPath('recovery.db')
     const pids: number[] = []
     const out = createWriteStream(info.outputPath('server.log'))
-    const exits: { pid?: number; exitCode: number | null; signalCode: string | null }[] = []
+    const exits: { generation: number; pid?: number; exitCode: number | null; signalCode: string | null }[] = []
+    const spawnErrors: { generation: number; pid?: number; error: string }[] = []
+    const readiness: { generation: number; pid?: number; lastProbeError: string; timeoutMs: number }[] = []
+    let processGeneration = 0
     let child: ChildProcess | undefined
+    let lifecycleTail: Promise<void> = Promise.resolve()
+    const serializeLifecycle = <T,>(operation: () => Promise<T>): Promise<T> => {
+      const result = lifecycleTail.then(operation, operation)
+      lifecycleTail = result.then(() => undefined, () => undefined)
+      return result
+    }
     const stop = async () => {
-      await stopOwned(child, overdueHarness)
-      if (child) exits.push({ pid: child.pid, exitCode: child.exitCode, signalCode: child.signalCode })
-      child = undefined
+      const stopping = child
+      await stopOwned(stopping, overdueHarness)
+      if (child === stopping) child = undefined
     }
     const start = async () => {
-      const args = overdueHarness ? ['-test.run=^TestBrowserOverdueHarness$', '-test.timeout=5m'] : ['-testmode', '-port', '18081', '-db', db, '-providers', localModel ? 'local' : 'mock']
-      child = spawn(resolve(binary), args, {
+      const generation = ++processGeneration
+      const args = overdueHarness ? ['-test.run=^TestBrowserOverdueHarness$', '-test.timeout=5m'] : [...(productionSchedule ? [] : ['-testmode']), '-port', '18081', '-db', db, '-providers', localModel ? 'local' : 'mock']
+      const startedChild = spawn(resolve(binary), args, {
         cwd: resolve('../server'), windowsHide: true, env: { ...process.env, ENWORDS_DUPLEX_PILOT: duplexPilot ? '1' : '0', ENWORDS_MODEL_CONSOLE: `http://127.0.0.1:${platformPort}`, ...(overdueHarness ? { ENWORDS_BROWSER_HARNESS: '1', ENWORDS_BROWSER_DB: db, ENWORDS_BROWSER_PORT: '18081' } : {}) }, stdio: ['pipe', 'pipe', 'pipe'],
       })
-      child.stdout?.pipe(out, { end: false }); child.stderr?.pipe(out, { end: false })
-      pids.push(child.pid!)
-      await expect.poll(async () => {
-        if (!child || ownedExited(child)) throw new Error('Owned backend exited before readiness')
-        try { return (await request.get('/api/v1/bootstrap/status', { timeout: 1000 })).status() } catch { return 0 }
-      }, { timeout: 30_000 }).toBe(200)
+      child = startedChild
+      let generationSpawnErrors: string[] = []
+      let readinessLastError = ''
+      const readinessRecord = { generation, pid: startedChild.pid, lastProbeError: '', timeoutMs: 120_000 }
+      readiness.push(readinessRecord)
+      startedChild.on('error', error => {
+        generationSpawnErrors.push(error.message)
+        spawnErrors.push({ generation, pid: startedChild.pid, error: error.message })
+      })
+      startedChild.on('exit', (exitCode, signalCode) => exits.push({ generation, pid: startedChild.pid, exitCode, signalCode }))
+      startedChild.stdout?.pipe(out, { end: false }); startedChild.stderr?.pipe(out, { end: false })
+      if (startedChild.pid) pids.push(startedChild.pid)
+      try {
+        await expect.poll(async () => {
+          if (child !== startedChild) throw new Error(`Owned backend generation ${generation} was replaced before readiness`)
+          if (generationSpawnErrors.length) throw new Error(`Owned backend spawn failed: ${generationSpawnErrors.join('; ')}`)
+          if (ownedExited(startedChild)) throw new Error(`Owned backend generation ${generation} exited before readiness (exitCode=${startedChild.exitCode}, signalCode=${startedChild.signalCode})`)
+          try {
+            const status = (await request.get('/api/v1/bootstrap/status', { timeout: 1000 })).status()
+            if (status !== 200) readinessLastError = `HTTP ${status}`
+            readinessRecord.lastProbeError = readinessLastError
+            return status
+          }
+          catch (error) {
+            readinessLastError = error instanceof Error ? error.message : String(error)
+            readinessRecord.lastProbeError = readinessLastError
+            return 0
+          }
+        }, { timeout: 120_000 }).toBe(200)
+      } catch (error) {
+        throw new Error(`Backend readiness failed (generation=${generation}, pid=${startedChild.pid ?? 'unassigned'}, exitCode=${startedChild.exitCode}, signalCode=${startedChild.signalCode}, spawnErrors=${generationSpawnErrors.join('; ') || 'none'}, lastProbeError=${readinessLastError || 'none'}, log=${info.outputPath('server.log')}): ${error instanceof Error ? error.message : String(error)}`)
+      }
     }
-    try { await start(); await runFixture({ terminate: async () => { if (!child) throw new Error('No owned backend'); await stopOwned(child); if (!ownedExited(child)) throw new Error('Owned backend still alive') }, restart: async (whileStopped) => { await stop(); whileStopped?.(); await start() }, runOverdue: () => { if (!overdueHarness || !child?.stdin || ownedExited(child)) throw new Error('Owned overdue harness unavailable'); child.stdin.write('overdue\n') }, timeoutFinished: () => { if (!overdueHarness || !child?.stdin || ownedExited(child)) throw new Error('Owned harness unavailable'); child.stdin.write('timeout-finished\n') }, log: info.outputPath('server.log'), pids, db, model }) }
+    try {
+      await start()
+      await runFixture({
+        terminate: () => serializeLifecycle(async () => {
+          const target = child
+          if (!target) throw new Error('No owned backend')
+          await stopOwned(target)
+          if (!ownedExited(target)) throw new Error(`Owned backend generation ${processGeneration} still alive`)
+          if (child === target) child = undefined
+        }),
+        restart: whileStopped => serializeLifecycle(async () => {
+          await stop()
+          whileStopped?.()
+          await start()
+        }),
+        runOverdue: () => { if (!overdueHarness || !child?.stdin || ownedExited(child)) throw new Error('Owned overdue harness unavailable'); child.stdin.write('overdue\n') },
+        timeoutFinished: () => { if (!overdueHarness || !child?.stdin || ownedExited(child)) throw new Error('Owned harness unavailable'); child.stdin.write('timeout-finished\n') },
+        log: info.outputPath('server.log'), pids, db, model,
+      })
+    }
     finally {
       await cleanupOwned([
         stop,
-        () => { detachOwnedOutput(child); return new Promise<void>((done, reject) => { out.once('error', reject); out.end(done) }) },
+        async () => {
+          detachOwnedOutput(child)
+          await new Promise<void>((done, reject) => { out.once('error', reject); out.end(done) })
+          await info.attach('owned-backend-log', { path: info.outputPath('server.log'), contentType: 'text/plain' })
+        },
         () => { for (const response of pending) response.destroy(); platform.closeAllConnections(); return new Promise<void>((done, reject) => platform.close(error => error ? reject(error) : done())) },
         () => info.attach('model-platform-transport', { body: JSON.stringify(transportEvents), contentType: 'application/json' }),
-        () => info.attach('owned-process-evidence', { body: JSON.stringify({ pids, db, model, exits, exitCode: child?.exitCode, signalCode: child?.signalCode }), contentType: 'application/json' }),
+        () => info.attach('owned-process-evidence', { body: JSON.stringify({ pids, db, model, exits, spawnErrors, readiness, exitCode: child?.exitCode, signalCode: child?.signalCode }), contentType: 'application/json' }),
       ])
     }
   }, { auto: true }],

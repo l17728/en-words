@@ -393,49 +393,7 @@ func (a *App) Router() *gin.Engine {
 
 	// ---- 配置（admin；Agent 走工具）----
 	cfgg := authed.Group("/config", a.roleMW(auth.RoleAdmin))
-	cfgg.GET("", func(c *gin.Context) {
-		out := gin.H{}
-		for _, k := range []string{"wordsPerLesson", "groupSize", "ttsEnRepeat", "repeatTimes",
-			"quizOldWords", "overdueHours", "goalMode", "ladder", "sessionTimeoutMin"} {
-			switch k {
-			case "goalMode":
-				out[k] = a.Cfg.String(0, k)
-			case "ladder":
-				out[k] = a.Cfg.Ladder(0)
-			default:
-				out[k] = a.Cfg.Int(0, k)
-			}
-		}
-		c.JSON(http.StatusOK, ok(out))
-	})
-	cfgg.POST("/set", func(c *gin.Context) {
-		var in struct {
-			Scope     string `json:"scope"`
-			StudentID int64  `json:"studentId"`
-			Key       string `json:"key"`
-			Value     any    `json:"value"`
-			Reason    string `json:"reason"`
-		}
-		_ = c.ShouldBindJSON(&in)
-		who := claimsOf(c).Username
-		var err error
-		if in.Scope == "student" {
-			err = a.Cfg.SetStudent(who, in.StudentID, in.Key, in.Value, in.Reason)
-		} else {
-			err = a.Cfg.SetGlobal(who, in.Key, in.Value, in.Reason)
-		}
-		if err != nil {
-			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
-			return
-		}
-		a.Log.Info("config", "config_set", map[string]any{
-			"actor": who, "scope": in.Scope, "student_id": in.StudentID,
-			"key": in.Key, "value": in.Value})
-		c.JSON(http.StatusOK, ok("set"))
-	})
-	// 覆盖删除（BE-08，总验收门补齐）
-	a.registerConfigRoutes(cfgg.Group(""))
-
+	a.registerEffectiveConfigRoutes(cfgg)
 	// ---- 管理员：用户/审计 ----
 	admin := authed.Group("/admin", a.roleMW(auth.RoleAdmin))
 	a.registerPlaybackRoutes(admin, true)

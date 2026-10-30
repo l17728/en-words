@@ -38,7 +38,8 @@ type Clock interface {
 
 // App 全量装配。
 type App struct {
-	agentWriteMu      sync.Mutex
+	agentWriteMu         sync.Mutex
+	configRefreshPending bool // guarded by agentWriteMu; never a write-retry receipt
 	completionMu      sync.Mutex
 	feedbackState     *feedbackMemoryState
 	overdueTasks      map[string]store.OverdueTask
@@ -252,9 +253,10 @@ func NewApp(clock Clock, db *gorm.DB) *App {
 		app.Log.InfoCtx(ctx, "scheduler", "placement_saved", map[string]any{"student_id": studentID, "book_id": bookID, "input_count": inputCount, "changed_count": changed})
 	}
 	// R4-backend#3：config.ladder 变更 → scheduler 截断记忆卡 step（SDD §6.2 事务联动）
-	cfgStore.OnLadderChanged = func(newLadder []int) error {
-		return sched.TruncateLadderSteps(len(newLadder))
+	if err := cfgStore.BindAtomicMutationHandler(app.ChangeConfig); err != nil {
+		panic(err)
 	}
+	sched.RequireConfigurationWork()
 	app.Rooms = NewHub(app)
 	app.registerTools()
 	app.registerStudentTools()
@@ -358,11 +360,13 @@ func (a *App) PlacementSubmitContext(ctx context.Context, studentID, bookID int6
 		return err
 	}
 	if finish {
-		if err := a.Sched.ResetForReplacement(studentID, bookID); err != nil {
-			a.Log.ErrorCtx(ctx, "scheduler", "placement_plan_failed", map[string]any{"student_id": studentID, "book_id": bookID, "draft_committed": true, "reason": "reset_failed"})
-			return &placementPlanError{cause: err}
-		}
-		l, err := a.Sched.PlanNext(studentID, bookID)
+		var l *scheduler.Lesson
+		err := a.WithCurrentConfigWork(ctx, func(s *scheduler.Service) error {
+			if err := s.ResetForReplacement(studentID, bookID); err != nil { return err }
+			var err error
+			l, err = s.PlanNext(studentID, bookID)
+			return err
+		})
 		if err != nil {
 			a.Log.ErrorCtx(ctx, "scheduler", "placement_plan_failed", map[string]any{"student_id": studentID, "book_id": bookID, "draft_committed": true, "reason": "plan_failed"})
 			return &placementPlanError{cause: err}
@@ -613,10 +617,9 @@ func (a *App) registerTools() {
 				return nil, err
 			}
 			who := string(caller.Role)
-			if err := a.Cfg.SetGlobal(who, in.Key, in.Value, in.Reason); err != nil {
-				return nil, err
-			}
-			return "ok", nil
+			result, err := a.ChangeConfig(ctx, config.Mutation{Operation: "set", Actor: who, Scope: config.ScopeGlobal, Key: in.Key, Value: in.Value, Reason: in.Reason})
+			if err != nil { return nil, err }
+			return result, nil
 		},
 	})
 }

@@ -665,9 +665,10 @@ GET  /feedbacks/mine                   # 历史+处理结果
 
 ### 10.6 配置与管理（admin / system_agent）
 ```
-GET  /config?keys=…                    # 配置读取（全局+学生覆盖）
-POST /config/set                       {scope, studentId?, key, value, reason}
-DELETE /config/override                {studentId, key}   # 删除学生覆盖→回落全局
+GET  /config?keys=…                    # 配置读取（admin，全局视图）
+GET  /config/effective?studentId=…     # admin读取目标学生有效值、来源与 global/student revision
+POST /config/set                       {scope, studentId?, key, value, reason} # admin；敏感配置原子更新
+DELETE /config/override                {studentId, key}   # admin；删除学生覆盖→按继承值原子协调
 GET  /admin/audit?actor&tool&from&to   # 审计查询（admin）
 
 GET/POST  /admin/users                             # 学生账号管理（FR-A1/A4）
@@ -676,6 +677,8 @@ POST /admin/users/:username/disable                # 停用（踢下线）
 POST /admin/users/:username/enable
 GET  /admin/todos                                  # 人工待办（投诉/越权告警）
 ```
+
+配置变更成功响应明确区分 `committed` 与 `refresh_pending`，并返回 `changed_cards`、`affected_students`、`noop`。写入或提交失败整体回滚；提交成功但运行缓存刷新失败时不得重放写请求，后续有效值读取以持久层为准。目标授权、严格 JSON 边界及有效梯度影响范围见 [40-有效复习梯度原子协调器](40-有效复习梯度原子协调器.md)。
 
 ### 10.7 Agent 专用
 ```
@@ -859,6 +862,7 @@ feedbackStore / adminStore —— classroomStore 只由 WS 与本地回执写入
 
 - **trace_id 贯穿**：REST 入口/WS 帧/Agent 决策轮/工具执行/判分/排课——同一请求链路同 ID。
 - **必记事件清单**：登录、工具调用(全量)、状态机每次迁移、TTS/ASR 调用、判分输入输出、配置变更、排课计算（含选词依据）、反馈处理、逾期重排、WS 连接/断开/重连、错误（含堆栈）。
+- 配置原子协调使用同一 trace 记录 `config_mutation_started`，并以 `config_mutation_committed`、`config_mutation_rolled_back` 或 `config_mutation_refresh_pending` 之一结束；摘要仅含 operation/key/scope/student_id、affected_students、changed_cards、transaction_outcome 和固定 error_code，不记录自由原因、配置值或 SQL。
 - 跟读专用事件（38）：`classroom/repeat_evaluated`沿用课堂trace，记录lesson_id、word_id、purpose=repeat、source=target_match、result及duration_ms；result为matched/no_match/unsupported_target/canceled。成功另记`repeat_verified`的ID及answer_length，不记录词面、学生原文或模型正文；此事件仅证明文本匹配，不能代替声学验收。
 - classroom_events 表存课堂事件流（与日志互补：面向回放与 E2E 断言）。
 

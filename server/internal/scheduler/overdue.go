@@ -13,7 +13,25 @@ var ErrOverdueStale = errors.New("overdue stale target")
 // AllLessons propagates read failures; a failed scan is never an empty scan.
 func (s *Service) AllLessons() ([]*Lesson, error) {
 	if repo, ok := s.repo.(allLessoner); ok {
-		return repo.ListLessonsAll()
+		lessons, err := repo.ListLessonsAll()
+		if err != nil {
+			return nil, err
+		}
+		out := make([]*Lesson, 0, len(lessons))
+		for _, lesson := range lessons {
+			if lesson == nil {
+				out = append(out, nil)
+				continue
+			}
+			copy := *lesson
+			copy.BatchWordIDs = append([]int64(nil), lesson.BatchWordIDs...)
+			if lesson.FinishedAt != nil {
+				at := *lesson.FinishedAt
+				copy.FinishedAt = &at
+			}
+			out = append(out, &copy)
+		}
+		return out, nil
 	}
 	if repo, ok := s.repo.(*MemRepo); ok {
 		repo.mu.Lock()

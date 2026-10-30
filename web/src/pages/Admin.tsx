@@ -5,6 +5,7 @@ import { api, type Book, type FeedbackTodo, type Notification } from '../api/cli
 import { useAuthStore } from '../stores/auth'
 import { ExclusiveAction } from '../interaction/exclusive-action'
 import { LatestRead } from '../interaction/latest-read'
+import LadderSettings from '../components/LadderSettings'
 
 export default function AdminPage() {
   const nav = useNavigate()
@@ -57,6 +58,7 @@ export default function AdminPage() {
       <Button onClick={() => nav('/books')}>词库广场</Button>
       <Button onClick={() => nav('/settings')}>学习设置</Button>
       <Button onClick={() => { logout(); nav('/login') }}>退出</Button></Space>
+    <LadderSettings />
     <Card title="学生反馈待办" style={{ marginBottom: 16 }} extra={<Button onClick={() => setTodoAttempt(n => n + 1)}>刷新待办</Button>}>
       {todoError && <Alert type="error" title={todoError} />}
       <List dataSource={todos} locale={{ emptyText: '暂无反馈待办' }} renderItem={todo => <List.Item key={todo.id}

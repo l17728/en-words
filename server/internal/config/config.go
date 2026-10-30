@@ -3,6 +3,7 @@
 package config
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -113,12 +114,14 @@ var specs = map[string]keySpec{
 
 // Store 配置中心。读走内存原子快照（RWMutex），写在校验/回调/持久化全部成功后才换内存。
 type Store struct {
-	mu        sync.RWMutex
-	persist   Persister
-	audit     Auditor
-	globals   map[string]any           // 显式设置过的全局值
-	overrides map[int64]map[string]any // 学生覆盖
-	revisions map[int64]map[string]int64
+	paired          bool
+	mutationHandler MutationHandler
+	mu              sync.RWMutex
+	persist         Persister
+	audit           Auditor
+	globals         map[string]any           // 显式设置过的全局值
+	overrides       map[int64]map[string]any // 学生覆盖
+	revisions       map[int64]map[string]int64
 	// OnLadderChanged 在 ladder 变更持久化前调用（如缩短截断 memory_cards.ladder_step），
 	// 返回错误则整个 Set 中止（R2-AR-02 事务语义）。
 	OnLadderChanged func(newLadder []int) error
@@ -133,7 +136,19 @@ func NewStore(p Persister, a Auditor) (*Store, error) {
 	if p == nil {
 		return s, nil
 	}
-	g, err := p.LoadGlobals()
+	var g map[string]json.RawMessage
+	var o map[int64]map[string]json.RawMessage
+	var err error
+	if atomic, ok := p.(interface {
+		LoadSnapshot() (map[string]json.RawMessage, map[int64]map[string]json.RawMessage, error)
+	}); ok {
+		g, o, err = atomic.LoadSnapshot()
+	} else {
+		g, err = p.LoadGlobals()
+		if err == nil {
+			o, err = p.LoadOverrides()
+		}
+	}
 	if err != nil {
 		return nil, fmt.Errorf("load globals: %w", err)
 	}
@@ -142,10 +157,6 @@ func NewStore(p Persister, a Auditor) (*Store, error) {
 		if ok {
 			s.globals[k] = v
 		} // 越界/损坏数据 → 忽略，回落默认（TestLoadRejectsCorruptPersisted）
-	}
-	o, err := p.LoadOverrides()
-	if err != nil {
-		return nil, fmt.Errorf("load overrides: %w", err)
 	}
 	for sid, m := range o {
 		for k, raw := range m {
@@ -400,11 +411,19 @@ func (s *Store) effInt(studentID int64, key string) int {
 
 // SetGlobal 设置全局默认。管线：校验 → ladder 回调 → 持久化 → 换内存 → 审计（SDD §8.3）。
 func (s *Store) SetGlobal(actor, key string, val any, reason string) error {
+	if s.paired && SensitiveKey(key) {
+		_, err := s.ApplyContext(context.Background(), Mutation{Operation: "set", Actor: actor, Scope: ScopeGlobal, Key: key, Value: val, Reason: reason})
+		return err
+	}
 	return s.set(actor, ScopeGlobal, 0, key, val, reason)
 }
 
 // SetStudent 设置学生覆盖。
 func (s *Store) SetStudent(actor string, studentID int64, key string, val any, reason string) error {
+	if s.paired && SensitiveKey(key) {
+		_, err := s.ApplyContext(context.Background(), Mutation{Operation: "set", Actor: actor, Scope: ScopeStudent, StudentID: studentID, Key: key, Value: val, Reason: reason})
+		return err
+	}
 	return s.set(actor, ScopeStudent, studentID, key, val, reason)
 }
 
@@ -453,6 +472,10 @@ func (s *Store) set(actor string, scope Scope, studentID int64, key string, val 
 
 // DeleteOverride 删除学生覆盖，回落全局（BE-08）。
 func (s *Store) DeleteOverride(actor string, studentID int64, key string) error {
+	if s.paired && SensitiveKey(key) {
+		_, err := s.ApplyContext(context.Background(), Mutation{Operation: "delete_override", Actor: actor, Scope: ScopeStudent, StudentID: studentID, Key: key, Reason: "删除覆盖，回落全局"})
+		return err
+	}
 	if _, ok := specs[key]; !ok {
 		return fmt.Errorf("未知配置键 %q", key)
 	}
