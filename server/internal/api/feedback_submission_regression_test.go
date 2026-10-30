@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http/httptest"
 	"path/filepath"
@@ -18,7 +19,101 @@ import (
 	"enwords/internal/obs"
 	"enwords/internal/store"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 )
+
+func TestFeedbackIntentUncertainCommitDoesNotMarkFailedOrContinue(t *testing.T) {
+	a, _, sid := feedbackTwoApps(t)
+	a.FB.SetLLM(fixedSubmissionIntents(
+		feedback.Intent{Kind: feedback.IntentReduce, TargetWords: 50, Confidence: 1},
+		feedback.Intent{Kind: feedback.IntentFrequency, Confidence: 1, LessonsPerDay: 2},
+	))
+	writes := 0
+	a.atomicWriteObserved = func(ctx context.Context, db *gorm.DB, fn func(*gorm.DB) error, observe func(store.AtomicConnectionTiming)) error {
+		writes++
+		if writes != 3 { // task + frozen plan commit normally; lose the first intent receipt
+			return store.WithAtomicWriteObserved(ctx, db, fn, observe)
+		}
+		if err := store.WithAtomicWrite(ctx, db, fn); err != nil {
+			return err
+		}
+		observe(store.AtomicConnectionTiming{Outcome: "outcome_uncertain"})
+		return errors.New("fixture: commit receipt lost")
+	}
+
+	_, err := a.SubmitFeedback(context.Background(), sid, FeedbackSubmission{SubmissionID: "unknown-intent-commit", Text: "apply two changes", Channel: "page"})
+	var submissionErr *FeedbackSubmissionError
+	require.ErrorAs(t, err, &submissionErr)
+	require.Equal(t, "outcome_uncertain", submissionErr.ErrorCode)
+	require.False(t, submissionErr.Retryable)
+	require.Equal(t, 3, writes, "must not run recovery or a later intent")
+	_, intents, err := a.feedbackRead(context.Background(), sid, "unknown-intent-commit")
+	require.NoError(t, err)
+	require.Equal(t, 50, submissionStoredConfig(t, a, sid).Int(sid, "wordsPerLesson"), "the committed effect remains visible")
+	require.NotEqual(t, 2, submissionStoredConfig(t, a, sid).Int(sid, "lessonsPerDay"), "the next intent must not execute")
+	require.Equal(t, "applied", intents[0].Status)
+	require.Equal(t, "pending", intents[1].Status)
+	require.Zero(t, submissionCount(t, a, "audit_logs", "result LIKE 'rolled_back_%'"))
+	require.EqualValues(t, 1, submissionCount(t, a, "audit_logs", "tool=? AND ok=?", "config.set_student", true))
+}
+
+func TestFeedbackPlanFreezeUncertainCommitDoesNotExecuteOrMarkIntentFailed(t *testing.T) {
+	a, _, sid := feedbackTwoApps(t)
+	a.FB.SetLLM(fixedSubmissionIntents(feedback.Intent{Kind: feedback.IntentReduce, TargetWords: 50, Confidence: 1}))
+	writes := 0
+	a.atomicWriteObserved = func(ctx context.Context, db *gorm.DB, fn func(*gorm.DB) error, observe func(store.AtomicConnectionTiming)) error {
+		writes++
+		if writes != 2 { // first write prepares the task; second freezes the plan
+			return store.WithAtomicWriteObserved(ctx, db, fn, observe)
+		}
+		if err := store.WithAtomicWrite(ctx, db, fn); err != nil {
+			return err
+		}
+		observe(store.AtomicConnectionTiming{Outcome: "outcome_uncertain"})
+		return errors.New("fixture: frozen-plan receipt lost")
+	}
+	_, err := a.SubmitFeedback(context.Background(), sid, FeedbackSubmission{SubmissionID: "unknown-plan-commit", Text: "reduce lesson size", Channel: "page"})
+	var submissionErr *FeedbackSubmissionError
+	require.ErrorAs(t, err, &submissionErr)
+	require.Equal(t, "outcome_uncertain", submissionErr.ErrorCode)
+	require.False(t, submissionErr.Retryable)
+	require.Equal(t, 2, writes)
+	task, intents, err := a.feedbackRead(context.Background(), sid, "unknown-plan-commit")
+	require.NoError(t, err)
+	require.NotEmpty(t, task.PlanJSON, "the plan may have committed despite losing its receipt")
+	require.Equal(t, "pending", intents[0].Status, "no teaching intent is executed before the plan commit is confirmed")
+	require.Zero(t, submissionCount(t, a, "audit_logs", "tool=?", "config.set_student"))
+}
+
+func TestFeedbackRecoveryUncertainCommitStopsWithoutRetry(t *testing.T) {
+	a, _, sid := feedbackTwoApps(t)
+	a.FB.SetLLM(fixedSubmissionIntents(
+		feedback.Intent{Kind: feedback.IntentReduce, TargetWords: 50, Confidence: 1},
+		feedback.Intent{Kind: feedback.IntentFrequency, LessonsPerDay: 2, Confidence: 1},
+	))
+	require.NoError(t, a.DB.Exec(`CREATE TRIGGER reject_feedback_effect BEFORE INSERT ON config_overrides WHEN NEW.key='wordsPerLesson' BEGIN SELECT RAISE(ABORT,'fixture effect failure'); END`).Error)
+	writes := 0
+	a.atomicWriteObserved = func(ctx context.Context, db *gorm.DB, fn func(*gorm.DB) error, observe func(store.AtomicConnectionTiming)) error {
+		writes++
+		if writes != 4 { // task, plan, failed intent, then recovery record
+			return store.WithAtomicWriteObserved(ctx, db, fn, observe)
+		}
+		if err := store.WithAtomicWrite(ctx, db, fn); err != nil {
+			return err
+		}
+		observe(store.AtomicConnectionTiming{Outcome: "outcome_uncertain"})
+		return errors.New("fixture: recovery receipt lost")
+	}
+	_, err := a.SubmitFeedback(context.Background(), sid, FeedbackSubmission{SubmissionID: "unknown-recovery-commit", Text: "reduce and schedule twice", Channel: "page"})
+	var submissionErr *FeedbackSubmissionError
+	require.ErrorAs(t, err, &submissionErr)
+	require.Equal(t, "outcome_uncertain", submissionErr.ErrorCode)
+	require.False(t, submissionErr.Retryable)
+	require.Equal(t, 4, writes, "must not continue to the second intent after uncertain recovery")
+	_, intents, err := a.feedbackRead(context.Background(), sid, "unknown-recovery-commit")
+	require.NoError(t, err)
+	require.Equal(t, "pending", intents[1].Status)
+}
 
 type submissionParser func(context.Context, string, time.Time) ([]feedback.Intent, error)
 

@@ -77,7 +77,9 @@ func TestInteractionBaselineLocks(t *testing.T) {
 				defer release()
 			}
 			start := time.Now()
-			ctx, cancel := context.WithCancel(context.Background())
+			lease, leaseCtx := testGenerationContext(t, app, 1)
+			defer lease.Release()
+			ctx, cancel := context.WithCancel(leaseCtx)
 			done := make(chan time.Duration, 1)
 			before := pool.Stats()
 			go func() { app.saveLessonStateContext(ctx, 1, classroom.State{}); done <- time.Since(start) }()
@@ -156,7 +158,11 @@ func TestInteractionBaselineTimer(t *testing.T) {
 				s.Finished = true
 				require.NoError(t, m.Restore(s))
 			}
-			rooms = append(rooms, &Room{app: app, lessonID: id, bookID: original.bookID, studentID: original.studentID, machine: m, words: original.words, clients: map[Client]bool{}, finished: i < n, lastPhase: m.Phase(), phaseSince: clk.Now()})
+			generation, err := app.generations.acquire(context.Background(), id)
+			require.NoError(t, err)
+			token := generation.Token()
+			generation.Release()
+			rooms = append(rooms, &Room{app: app, lessonID: id, bookID: original.bookID, studentID: original.studentID, generation: token, machine: m, words: original.words, clients: map[Client]bool{}, finished: i < n, lastPhase: m.Phase(), phaseSince: clk.Now()})
 		}
 		for sample := -1; sample < 10; sample++ {
 			before := writes.Load()

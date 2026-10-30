@@ -85,6 +85,15 @@ func TestTeacherClosingOnlyAfterSettlementCommit(t *testing.T) {
 	require.Empty(t, r.maybeFinishLocked(), "successful replay does not speak twice")
 }
 
+func TestUncertainSettlementIsIncludedInReconnectSnapshot(t *testing.T) {
+	_, _, _, room := setupRoom(t)
+	room.mu.Lock()
+	room.settlementUncertain = true
+	snapshot := room.snapshotLocked()
+	room.mu.Unlock()
+	require.Equal(t, true, snapshot["settlement_uncertain"])
+}
+
 func TestTeacherAuditFailureDoesNotPublishSpeech(t *testing.T) {
 	a, _, _, r := setupRoom(t)
 	db, err := store.Open(filepath.Join(t.TempDir(), "teacher-audit.db"))

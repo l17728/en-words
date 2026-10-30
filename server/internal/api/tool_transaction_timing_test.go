@@ -17,7 +17,15 @@ import (
 	"gorm.io/gorm"
 )
 
-var toolTimingKeys = []string{"lock_wait_ms", "transaction_ms", "begin_wait_ms", "config_load_ms", "audit_write_ms", "finalize_ms", "rollback_audit_write_ms"}
+var toolTimingKeys = []string{"lock_wait_ms", "transaction_ms", "begin_wait_ms", "config_load_ms", "audit_write_ms", "finalize_ms", "rollback_audit_write_ms", "storage_callback_ms", "storage_commit_ms", "storage_rollback_ms", "storage_raw_cleanup_ms", "storage_connection_release_ms", "storage_total_ms"}
+
+func TestSafeAtomicTimingLogCannotReplaceResultsOrPanics(t *testing.T) {
+	require.NotPanics(t, func() { safeAtomicTimingLog(func() { panic("diagnostic sink") }) })
+	require.PanicsWithValue(t, "operation panic", func() {
+		defer safeAtomicTimingLog(func() { panic("diagnostic sink") })
+		panic("operation panic")
+	})
+}
 
 func TestToolTransactionTimingIsBoundedAndSeparatesAuditStages(t *testing.T) {
 	for _, mode := range []string{"memory", "commit", "rollback", "canceled_before_begin", "lock_wait"} {
@@ -97,8 +105,16 @@ func TestToolTransactionTimingIsBoundedAndSeparatesAuditStages(t *testing.T) {
 				require.GreaterOrEqual(t, event["audit_write_ms"].(float64), float64(20))
 			}
 			if mode == "rollback" {
-				require.Equal(t, "rolled_back", event["transaction_outcome"])
+				require.Equal(t, "failed_cleaned", event["transaction_outcome"])
 				require.GreaterOrEqual(t, event["rollback_audit_write_ms"].(float64), float64(20))
+				require.Equal(t, "failed_cleaned", event["storage_outcome"])
+				require.Equal(t, "completed", event["storage_rollback_state"])
+				require.Equal(t, "not_started", event["storage_commit_state"])
+			}
+			if mode == "commit" {
+				require.Equal(t, "committed", event["storage_outcome"])
+				require.Equal(t, "completed", event["storage_commit_state"])
+				require.Equal(t, "not_started", event["storage_rollback_state"])
 			}
 			if mode == "canceled_before_begin" {
 				require.Equal(t, event["transaction_ms"], event["begin_wait_ms"])

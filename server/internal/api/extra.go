@@ -148,23 +148,6 @@ func (a *App) registerUserRoutes(g *gin.RouterGroup) {
 }
 
 // registerConfigRoutes 配置覆盖删除（BE-08）。
-func (a *App) registerConfigRoutes(g *gin.RouterGroup) {
-	g.DELETE("/override", func(c *gin.Context) {
-		var in struct {
-			StudentID int64  `json:"studentId"`
-			Key       string `json:"key"`
-		}
-		_ = c.ShouldBindJSON(&in)
-		if err := a.Cfg.DeleteOverride(claimsOf(c).Username, in.StudentID, in.Key); err != nil {
-			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
-			return
-		}
-		a.Log.Info("config", "override_deleted", map[string]any{
-			"student_id": in.StudentID, "key": in.Key})
-		c.JSON(http.StatusOK, ok("deleted"))
-	})
-}
-
 // Todos 公开只读（ws/外部装配用）。
 func (a *App) Todos() []FeedbackRecord {
 	rows, err := a.FeedbackAdminTodosContext(context.Background())

@@ -106,7 +106,10 @@ func TestCov_WSClientBackpressure(t *testing.T) {
 		if err := conn.ReadJSON(&m); err != nil {
 			t.Logf("flood read termination: %T %v", err, err)
 			_, closed = err.(*websocket.CloseError)
-			closed = closed || errors.Is(err, syscall.ECONNRESET) || errors.Is(err, syscall.Errno(10054))
+			// Windows reports this peer-closed socket as WSAECONNABORTED (10053),
+			// while other platforms commonly report ECONNRESET/10054.
+			closed = closed || errors.Is(err, syscall.ECONNRESET) ||
+				errors.Is(err, syscall.Errno(10053)) || errors.Is(err, syscall.Errno(10054))
 			break
 		}
 		if m["type"] == "heartbeat_ack" {

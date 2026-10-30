@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"enwords/internal/agent"
+	"enwords/internal/obs"
 	"enwords/internal/tools"
 )
 
@@ -106,7 +107,11 @@ func (r *Room) teacherUtteranceLocked(ctx context.Context, in agent.TeacherInput
 
 func (r *Room) teacherTaskLocked() (context.Context, error) {
 	// Room turn is the causal trace; each group receives one shared call budget.
-	ctx := r.traceContext()
+	base := r.inputContext
+	if base == nil {
+		base = context.Background()
+	}
+	ctx := obs.WithTrace(base, fmt.Sprintf("lesson-%d", r.lessonID))
 	return r.app.newAgentTaskContext(ctx, r.studentID, r.bookID, r.lessonID, "classroom_event", tools.RoleTeacherAgent)
 }
 

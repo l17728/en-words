@@ -48,6 +48,15 @@ func normalizeFeedback(in FeedbackSubmission) (FeedbackSubmission, error) {
 	return in, nil
 }
 func (a *App) SubmitFeedback(ctx context.Context, sid int64, input FeedbackSubmission) (*FeedbackRecord, error) {
+	if lease := generationLeaseFromContext(ctx, 0); lease != nil {
+		// A lesson-bound voice request holds this permit through the initial task
+		// insert and all follow-up feedback writes.
+		effect, err := lease.Token().Permit()
+		if err != nil {
+			return nil, feedbackErr(503, "classroom_generation_retired", true)
+		}
+		defer effect.Release()
+	}
 	if a.DB == nil && (!a.Cfg.SupportsMemoryTransactions() || !a.Sched.SupportsMemoryTransactions() || !a.Mem.SupportsMemoryTransactions()) {
 		return nil, feedbackErr(409, "atomic_execution_unavailable", false)
 	}
@@ -218,6 +227,10 @@ func (a *App) runFeedback(parent context.Context, task store.FeedbackTask) (*Fee
 			})
 		}
 		if err != nil {
+			if errors.Is(err, errAtomicOutcomeUncertain) {
+				a.feedbackLog(ctx, task, attempt, "feedback_plan_outcome_uncertain", -1, "outcome_uncertain", "outcome_uncertain", 0)
+				return nil, &FeedbackSubmissionError{503, "outcome_uncertain", false, task.SubmissionID}
+			}
 			var parentErr *FeedbackSubmissionError
 			if errors.As(err, &parentErr) && (parentErr.ErrorCode == "clarification_parent_unavailable" || parentErr.ErrorCode == "clarification_already_answered") {
 				if cleanup := a.discardUnplannedFeedback(context.WithoutCancel(ctx), task); cleanup != nil {
@@ -262,7 +275,8 @@ func (a *App) runFeedback(parent context.Context, task store.FeedbackTask) (*Fee
 		buffer := &tools.MemAuditor{}
 		skipped := false
 		escalated := false
-		err = a.withFeedbackWork(ctx, task.TaskID, func(w *feedbackWork) error {
+		outcome := "failed_cleaned"
+		outcome, err = a.withFeedbackWorkOutcome(ctx, task.TaskID, func(w *feedbackWork) error {
 			if item.IntentIndex < 0 || item.IntentIndex >= len(w.intents) {
 				return feedbackErr(400, "invalid_plan", false)
 			}
@@ -304,7 +318,7 @@ func (a *App) runFeedback(parent context.Context, task store.FeedbackTask) (*Fee
 			}
 			result := FeedbackIntentResult{Index: f.Index, Kind: f.Kind, Status: "applied", ResultCode: "applied", Actual: limitFacts}
 			session := &feedbackToolSession{work: w, frozen: f, result: &result}
-			svc := agentServices{config: w.cfg, scheduler: w.sched, memory: w.memory, feedback: session, transactional: w.db != nil}
+			svc := agentServices{configDB: w.db, config: w.cfg, scheduler: w.sched, memory: w.memory, feedback: session, transactional: w.db != nil}
 			reg := tools.New(buffer)
 			if e := a.registerAgentTools(reg, svc); e != nil {
 				return e
@@ -351,8 +365,12 @@ func (a *App) runFeedback(parent context.Context, task store.FeedbackTask) (*Fee
 			continue
 		}
 		if err != nil {
+			if errors.Is(err, errAtomicOutcomeUncertain) || outcome == "outcome_uncertain" {
+				a.feedbackLog(ctx, task, attempt, "feedback_intent_outcome_uncertain", item.IntentIndex, "outcome_uncertain", "outcome_uncertain", time.Since(start))
+				return nil, &FeedbackSubmissionError{503, "outcome_uncertain", false, task.SubmissionID}
+			}
 			code, retry := feedbackErrorCode(err), feedbackRetryable(err)
-			persistErr := a.withFeedbackWork(context.WithoutCancel(ctx), task.TaskID, func(w *feedbackWork) error {
+			persistOutcome, persistErr := a.withFeedbackWorkOutcome(context.WithoutCancel(ctx), task.TaskID, func(w *feedbackWork) error {
 				if item.IntentIndex >= len(w.intents) {
 					return feedbackErr(400, "invalid_plan", false)
 				}
@@ -376,6 +394,10 @@ func (a *App) runFeedback(parent context.Context, task store.FeedbackTask) (*Fee
 				rec := feedbackRecord(w.task, w.intents)
 				return w.notice(-1, task.StudentID, "feedback_result", "反馈处理结果", rec.Reply)
 			})
+			if errors.Is(persistErr, errAtomicOutcomeUncertain) || persistOutcome == "outcome_uncertain" {
+				a.feedbackLog(ctx, task, attempt, "feedback_recovery_outcome_uncertain", item.IntentIndex, "outcome_uncertain", "outcome_uncertain", time.Since(start))
+				return nil, &FeedbackSubmissionError{503, "outcome_uncertain", false, task.SubmissionID}
+			}
 			a.feedbackLog(ctx, task, attempt, "feedback_intent_rolled_back", item.IntentIndex, code, "rolled_back", time.Since(start))
 			if persistErr != nil {
 				a.feedbackLog(ctx, task, attempt, "audit_persist_failed", item.IntentIndex, "storage_unavailable", "failed", time.Since(start))

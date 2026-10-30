@@ -285,6 +285,7 @@ func (a *App) Router() *gin.Engine {
 	a.registerFeedbackRoutes(authed.Group("/feedbacks", a.roleMW(auth.RoleStudent)))
 
 	cr := authed.Group("/classroom", a.roleMW(auth.RoleStudent))
+	cr.Use(a.classroomGenerationMiddleware())
 	cr.POST("/lessons/:id/enter", func(c *gin.Context) {
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 		if !a.ownLesson(c, id) {
@@ -300,7 +301,7 @@ func (a *App) Router() *gin.Engine {
 			c.JSON(http.StatusOK, fail(errForbidden, "lesson not open yet"))
 			return
 		}
-		room, snap, err := a.Rooms.Enter(id, claimsOf(c).UID)
+		room, snap, err := a.Rooms.EnterContext(c.Request.Context(), id, claimsOf(c).UID)
 		if err != nil {
 			code := errBadRequest
 			if errors.Is(err, errLessonUnavailable) {
@@ -309,8 +310,12 @@ func (a *App) Router() *gin.Engine {
 			c.JSON(http.StatusOK, fail(code, err.Error()))
 			return
 		}
-		ticket := a.IssueTicket(id, claimsOf(c).UID)
-		c.JSON(http.StatusOK, ok(gin.H{"ticket": ticket, "snapshot": snap, "status": room.Status()}))
+		ticket, err := a.issueTicketContext(c.Request.Context(), id, claimsOf(c).UID)
+		if err != nil {
+			c.JSON(http.StatusOK, fail(errForbidden, "classroom generation retired"))
+			return
+		}
+		a.writeClassroomResponse(c, id, ok(gin.H{"ticket": ticket, "snapshot": snap, "status": room.Status()}))
 	})
 	// REST 事件通道（WS 不可用/测试/文本兜底；与 WS 同一 Room 管线）
 	// R4-sec#6：event 白名单校验（防任意字符串触发未定义行为）
@@ -335,7 +340,7 @@ func (a *App) Router() *gin.Engine {
 			return
 		}
 		msgs := room.HandleClientEventContext(c.Request.Context(), in.ClientEnvelope, classroom.Event{Type: in.Event, Text: sanitizeText(in.Text)})
-		c.JSON(http.StatusOK, ok(msgs))
+		a.writeClassroomResponse(c, id, ok(msgs))
 	})
 	cr.POST("/lessons/:id/voice", func(c *gin.Context) {
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -376,7 +381,7 @@ func (a *App) Router() *gin.Engine {
 			}
 			out["feedback"] = rec
 		}
-		c.JSON(http.StatusOK, ok(out))
+		a.writeClassroomResponse(c, id, ok(out))
 	})
 	cr.POST("/lessons/:id/resume", func(c *gin.Context) {
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -388,12 +393,13 @@ func (a *App) Router() *gin.Engine {
 			c.JSON(http.StatusOK, fail(errNotFound, "room not found"))
 			return
 		}
-		c.JSON(http.StatusOK, ok(room.Resume()))
+		a.writeClassroomResponse(c, id, ok(room.Resume()))
 	})
 
 	// ---- 配置（admin；Agent 走工具）----
 	cfgg := authed.Group("/config", a.roleMW(auth.RoleAdmin))
 	a.registerEffectiveConfigRoutes(cfgg)
+
 	// ---- 管理员：用户/审计 ----
 	admin := authed.Group("/admin", a.roleMW(auth.RoleAdmin))
 	a.registerPlaybackRoutes(admin, true)
@@ -446,6 +452,56 @@ func (a *App) Router() *gin.Engine {
 	r.GET("/ws/classroom", a.handleWS)
 	r.GET("/api/health", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
 	return r
+}
+
+// writeClassroomResponse keeps the generation's effect permit through JSON
+// serialization and the synchronous response write. The request lease alone
+// only delays retirement; it does not authorize publishing stale frames after
+// admission has closed.
+func (a *App) writeClassroomResponse(c *gin.Context, lessonID int64, payload any) {
+	lease := generationLeaseFromContext(c.Request.Context(), lessonID)
+	if lease == nil || lease.Context().Err() != nil {
+		a.Log.WarnCtx(c.Request.Context(), "classroom", "generation_response_rejected", map[string]any{"lesson_id": lessonID, "reason": "missing_or_canceled_lease"})
+		c.JSON(http.StatusOK, fail(errForbidden, "classroom generation retired"))
+		return
+	}
+	permit, err := lease.Token().Permit()
+	if err != nil {
+		a.Log.WarnCtx(c.Request.Context(), "classroom", "generation_response_rejected", map[string]any{"lesson_id": lessonID, "generation": lease.Token().id, "reason": err.Error()})
+		c.JSON(http.StatusOK, fail(errForbidden, "classroom generation retired"))
+		return
+	}
+	defer permit.Release()
+	if lease.Context().Err() != nil {
+		a.Log.WarnCtx(c.Request.Context(), "classroom", "generation_response_rejected", map[string]any{"lesson_id": lessonID, "generation": lease.Token().id, "reason": "lease_canceled_before_write"})
+		c.JSON(http.StatusOK, fail(errForbidden, "classroom generation retired"))
+		return
+	}
+	c.JSON(http.StatusOK, payload)
+}
+
+func (a *App) classroomGenerationMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		lessonID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+		if err != nil || lessonID <= 0 {
+			c.Next()
+			return
+		}
+		// Authenticate ownership before allocating a persistent generation entry.
+		// The route handler repeats this check under the acquired lease before use.
+		if !a.ownLesson(c, lessonID) {
+			return
+		}
+		lease, err := a.generations.acquire(c.Request.Context(), lessonID)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusOK, fail(errForbidden, "classroom generation unavailable"))
+			return
+		}
+		defer lease.Release()
+		ctx := withGenerationLease(lease.Context(), lease)
+		c.Request = c.Request.WithContext(ctx)
+		c.Next()
+	}
 }
 
 // ---- 中间件 ----

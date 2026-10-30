@@ -71,8 +71,10 @@ func TestClosureRuntimeSurvivesFreshApp(t *testing.T) {
 	first := open()
 	require.NoError(t, first.Cfg.SetStudent("system_agent", 7, "wordsPerLesson", 60, "fixture"))
 	id := classroom.QuizItemID{WordID: 8, Kind: "final", Round: 1, Seq: 2}
-	first.saveLessonState(9, classroom.State{QuizQueue: []classroom.QuizItemID{id}, Judged: map[classroom.QuizItemID]classroom.Judgment{id: classroom.JudgmentWrong}})
-	first.saveReport(9, &classroom.Result{TotalWords: 1, Correct: map[int64]bool{8: false}})
+	lease, leaseCtx := testGenerationContext(t, first, 9)
+	defer lease.Release()
+	require.True(t, first.saveLessonStateWithToken(leaseCtx, 9, classroom.State{QuizQueue: []classroom.QuizItemID{id}, Judged: map[classroom.QuizItemID]classroom.Judgment{id: classroom.JudgmentWrong}}, lease.Token()))
+	require.True(t, first.saveReportWithToken(lease.Token(), 9, &classroom.Result{TotalWords: 1, Correct: map[int64]bool{8: false}}))
 	first.Notify(7, "fixture title", "fixture body")
 	second := open()
 	require.Equal(t, 60, second.Cfg.Int(7, "wordsPerLesson"))

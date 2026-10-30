@@ -94,10 +94,16 @@ func (a *App) feedbackActive(ctx context.Context, sid int64, db *gorm.DB) error 
 	return nil
 }
 func (a *App) withFeedbackWork(ctx context.Context, taskID string, fn func(*feedbackWork) error) error {
+	_, err := a.withFeedbackWorkOutcome(ctx, taskID, fn)
+	return err
+}
+
+func (a *App) withFeedbackWorkOutcome(ctx context.Context, taskID string, fn func(*feedbackWork) error) (string, error) {
 	a.agentWriteMu.Lock()
 	defer a.agentWriteMu.Unlock()
 	if a.DB != nil {
-		return a.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		outcome := "outcome_uncertain"
+		err := a.withAtomicWriteObserved(ctx, a.DB, func(tx *gorm.DB) error {
 			// The first statement obtains the SQLite write lock before any resource read.
 			q := tx.Model(&store.FeedbackTask{}).Where("task_id=?", taskID).UpdateColumn("version", gorm.Expr("version+1"))
 			if q.Error != nil {
@@ -139,7 +145,8 @@ func (a *App) withFeedbackWork(ctx context.Context, taskID string, fn func(*feed
 				}
 			}
 			return nil
-		})
+		}, func(timing store.AtomicConnectionTiming) { outcome = timing.Outcome })
+		return outcome, preserveAtomicOutcome(err, outcome)
 	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -147,16 +154,16 @@ func (a *App) withFeedbackWork(ctx context.Context, taskID string, fn func(*feed
 	raw, _ := json.Marshal(base)
 	cp := newFeedbackMemory()
 	if err := json.Unmarshal(raw, cp); err != nil {
-		return err
+		return "failed_cleaned", err
 	}
 	task, ok := cp.Tasks[taskID]
 	if !ok {
-		return feedbackErr(404, "submission_not_found", false)
+		return "failed_cleaned", feedbackErr(404, "submission_not_found", false)
 	}
 	if err := a.feedbackActive(ctx, task.StudentID, nil); err != nil {
-		return err
+		return "failed_cleaned", err
 	}
-	return a.Cfg.WithMemoryTransaction(func(cfg *config.Store) error {
+	err := a.Cfg.WithMemoryTransaction(func(cfg *config.Store) error {
 		return a.Sched.WithMemoryTransaction(cfg, func(sched *scheduler.Service) error {
 			return a.Mem.WithMemoryTransaction(func(mem *memory.Service) error {
 				w := &feedbackWork{app: a, mem: cp, cfg: cfg, sched: sched, memory: mem, task: task, intents: cp.Intents[taskID]}
@@ -175,6 +182,10 @@ func (a *App) withFeedbackWork(ctx context.Context, taskID string, fn func(*feed
 			})
 		})
 	})
+	if err != nil {
+		return "failed_cleaned", err
+	}
+	return "committed", nil
 }
 func (w *feedbackWork) notice(index int, recipient int64, kind, title, body string) error {
 	now := w.app.Clock.Now()

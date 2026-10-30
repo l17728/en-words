@@ -13,6 +13,7 @@ import (
 	"enwords/internal/scheduler"
 	"enwords/internal/tools"
 	"fmt"
+	"gorm.io/gorm"
 	"io"
 	"strings"
 )
@@ -90,13 +91,15 @@ func taskFromContext(ctx context.Context, caller tools.Caller) (*agentTask, erro
 
 // Handlers must use these services, including when bound to a SQLite transaction.
 type agentServices struct {
-	report        func(int64) (*classroom.Result, error)
-	scheduler     *scheduler.Service
-	publisher     *lessonPublisher
-	feedback      *feedbackToolSession
-	config        *config.Store
-	memory        *memory.Service
-	transactional bool
+	configDB       *gorm.DB
+	configMutation config.MutationHandler
+	report         func(int64) (*classroom.Result, error)
+	scheduler      *scheduler.Service
+	publisher      *lessonPublisher
+	feedback       *feedbackToolSession
+	config         *config.Store
+	memory         *memory.Service
+	transactional  bool
 }
 
 func strictToolArgs(raw json.RawMessage, out any) error {
@@ -134,6 +137,11 @@ func (a *App) registerStudentTools() {
 }
 
 func (a *App) registerAgentTools(reg *tools.Registry, svc agentServices) error {
+	if svc.configMutation == nil && svc.config != nil && svc.scheduler != nil && svc.config != a.Cfg {
+		svc.configMutation = func(ctx context.Context, m config.Mutation) (config.MutationResult, error) {
+			return applyConfigMutationInWork(ctx, &configMutationWork{cfg: svc.config, sched: svc.scheduler, db: svc.configDB}, m)
+		}
+	}
 	check := func(ctx context.Context, caller tools.Caller) (*agentTask, error) {
 		task, err := taskFromContext(ctx, caller)
 		if err != nil {

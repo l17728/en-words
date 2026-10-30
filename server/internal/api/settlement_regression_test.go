@@ -1,6 +1,8 @@
 package api
 
 import (
+	"context"
+	"errors"
 	"path/filepath"
 	"testing"
 	"time"
@@ -10,6 +12,7 @@ import (
 	"enwords/internal/scheduler"
 	"enwords/internal/store"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 )
 
 func durableSettlementFixture(t *testing.T) (*App, int64, int64, int64, *classroom.Result) {
@@ -108,4 +111,59 @@ func TestDurableSettlementRollbackAndRetry(t *testing.T) {
 	require.NoError(t, a.commitLesson(lid, sid, bid, res, classroom.State{Finished: true}))
 	require.Len(t, a.Notifications(sid), 1)
 	require.Equal(t, 50, a.Cfg.Int(sid, "wordsPerLesson"))
+}
+
+func TestDurableSettlementUncertainCommitIsNotReportedAsRollbackOrRetried(t *testing.T) {
+	a, sid, bid, lid, res := durableSettlementFixture(t)
+	writes := 0
+	a.atomicWriteObserved = func(ctx context.Context, db *gorm.DB, fn func(*gorm.DB) error, observe func(store.AtomicConnectionTiming)) error {
+		writes++
+		if err := store.WithAtomicWrite(ctx, db, fn); err != nil {
+			return err
+		}
+		observe(store.AtomicConnectionTiming{Outcome: "outcome_uncertain"})
+		return errors.New("fixture: settlement commit receipt lost")
+	}
+	err := a.commitLesson(lid, sid, bid, res, classroom.State{Finished: true})
+	require.ErrorIs(t, err, errAtomicOutcomeUncertain)
+	require.Equal(t, 1, writes)
+	require.Zero(t, submissionCount(t, a, "audit_logs", "result LIKE 'rolled_back_%'"))
+	lesson, err := a.Sched.Lesson(lid)
+	require.NoError(t, err)
+	require.Equal(t, scheduler.LessonFinishedStr, lesson.Status, "the fixture commits before losing its receipt")
+	require.Len(t, a.Notifications(sid), 1)
+
+	// A duplicate attempt must observe the durable commit and must not repeat side effects.
+	a.atomicWriteObserved = nil
+	require.NoError(t, a.commitLesson(lid, sid, bid, res, classroom.State{Finished: true}))
+	require.Len(t, a.Notifications(sid), 1)
+	require.Equal(t, 1, writes)
+}
+
+func TestRoomDoesNotRetrySettlementAfterUncertainCommit(t *testing.T) {
+	a, sid, _, lid, _ := durableSettlementFixture(t)
+	r, _, err := a.Rooms.Enter(lid, sid)
+	require.NoError(t, err)
+	state := r.machine.Snapshot()
+	state.Phase = classroom.PhaseLessonEnd
+	state.Finished = true
+	require.NoError(t, r.machine.Restore(state))
+	writes := 0
+	a.atomicWriteObserved = func(ctx context.Context, db *gorm.DB, fn func(*gorm.DB) error, observe func(store.AtomicConnectionTiming)) error {
+		writes++
+		if err := store.WithAtomicWrite(ctx, db, fn); err != nil {
+			return err
+		}
+		observe(store.AtomicConnectionTiming{Outcome: "outcome_uncertain"})
+		return errors.New("fixture: settlement receipt lost")
+	}
+	r.mu.Lock()
+	frames := r.maybeFinishLocked()
+	require.True(t, r.settlementUncertain)
+	require.Equal(t, 1, writes)
+	require.Equal(t, "outcome_uncertain", frames[len(frames)-1]["outcome"])
+	require.True(t, r.snapshotLocked()["settlement_uncertain"].(bool))
+	require.Empty(t, r.maybeFinishLocked(), "must not re-run settlement after an unknown commit outcome")
+	require.Equal(t, 1, writes)
+	r.mu.Unlock()
 }

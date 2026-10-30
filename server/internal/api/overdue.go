@@ -42,6 +42,17 @@ func (a *App) RunOverdue(ctx context.Context) error {
 }
 
 func (a *App) runOverdueLesson(ctx context.Context, l *scheduler.Lesson) error {
+	lease, err := a.generations.acquire(ctx, l.ID)
+	if err != nil {
+		return err
+	}
+	defer lease.Release()
+	effect, err := lease.Token().Permit()
+	if err != nil {
+		return err
+	}
+	defer effect.Release()
+	ctx = withGenerationLease(lease.Context(), lease)
 	// Hub -> Room -> agentWriteMu: never reverse the Room/tool lock order.
 	a.Rooms.mu.Lock()
 	defer a.Rooms.mu.Unlock()
@@ -53,7 +64,7 @@ func (a *App) runOverdueLesson(ctx context.Context, l *scheduler.Lesson) error {
 			return nil
 		}
 	}
-	ctx, err := a.newAgentTaskContext(ctx, l.StudentID, l.BookID, l.ID, "cron_overdue", tools.RoleSystemAgent)
+	ctx, err = a.newAgentTaskContext(ctx, l.StudentID, l.BookID, l.ID, "cron_overdue", tools.RoleSystemAgent)
 	if err != nil {
 		return err
 	}

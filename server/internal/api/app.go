@@ -40,30 +40,32 @@ type Clock interface {
 type App struct {
 	agentWriteMu         sync.Mutex
 	configRefreshPending bool // guarded by agentWriteMu; never a write-retry receipt
-	completionMu      sync.Mutex
-	feedbackState     *feedbackMemoryState
-	overdueTasks      map[string]store.OverdueTask
-	completionTargets map[int64]int
-	completionTasks   map[int64]*lessonCompletion
-	StartupError      error
-	Local             *localmodel.Client
-	DuplexPreflight   bool // Explicit isolated device preflight only; never enables teaching.
-	Auth              *auth.Service
-	Books             *wordbook.Service
-	Cfg               *config.Store
-	Sched             *scheduler.Service
-	Judge             *judge.Judge
-	FB                *feedback.Parser
-	Mem               *memory.Service
-	Bank              *scripts.Bank
-	Teacher           *agent.TeacherAgent
-	System            *agent.SystemAgent
-	Tools             *tools.Registry
-	ToolAudit         *tools.MemAuditor
-	Log               *obs.Logger
-	Clock             Clock
+	completionMu         sync.Mutex
+	atomicWriteObserved  func(context.Context, *gorm.DB, func(*gorm.DB) error, func(store.AtomicConnectionTiming)) error
+	feedbackState        *feedbackMemoryState
+	overdueTasks         map[string]store.OverdueTask
+	completionTargets    map[int64]int
+	completionTasks      map[int64]*lessonCompletion
+	StartupError         error
+	Local                *localmodel.Client
+	DuplexPreflight      bool // Explicit isolated device preflight only; never enables teaching.
+	Auth                 *auth.Service
+	Books                *wordbook.Service
+	Cfg                  *config.Store
+	Sched                *scheduler.Service
+	Judge                *judge.Judge
+	FB                   *feedback.Parser
+	Mem                  *memory.Service
+	Bank                 *scripts.Bank
+	Teacher              *agent.TeacherAgent
+	System               *agent.SystemAgent
+	Tools                *tools.Registry
+	ToolAudit            *tools.MemAuditor
+	Log                  *obs.Logger
+	Clock                Clock
 
 	Rooms          *Hub
+	generations    *generationCoordinator
 	tickets        map[string]*Ticket          // ticket → 绑定
 	reports        map[int64]*classroom.Result // lessonID → 课报
 	lessonStates   map[int64]*classroom.State  // lessonID → 课堂快照（IT-12）
@@ -218,21 +220,22 @@ func NewApp(clock Clock, db *gorm.DB) *App {
 	}
 	toolAudit := &tools.MemAuditor{}
 	app := &App{
-		Auth:      authSvc,
-		Books:     wordbook.NewService(bookRepo),
-		Cfg:       cfgStore,
-		Sched:     sched,
-		Judge:     judge.New(judge.DefaultSynonyms()),
-		FB:        fb,
-		Mem:       mem,
-		Bank:      bank,
-		Teacher:   agent.NewTeacherAgent(bank),
-		System:    agent.NewSystemAgent(bank, mem, fb),
-		Tools:     tools.New(toolAudit),
-		ToolAudit: toolAudit,
-		Log:       obs.Nop(),
-		Clock:     clock,
-		tickets:   map[string]*Ticket{},
+		Auth:        authSvc,
+		Books:       wordbook.NewService(bookRepo),
+		Cfg:         cfgStore,
+		Sched:       sched,
+		Judge:       judge.New(judge.DefaultSynonyms()),
+		FB:          fb,
+		Mem:         mem,
+		Bank:        bank,
+		Teacher:     agent.NewTeacherAgent(bank),
+		System:      agent.NewSystemAgent(bank, mem, fb),
+		Tools:       tools.New(toolAudit),
+		ToolAudit:   toolAudit,
+		Log:         obs.Nop(),
+		Clock:       clock,
+		generations: newGenerationCoordinator(),
+		tickets:     map[string]*Ticket{},
 	}
 	app.Judge.OnDecision = func(ctx context.Context, decision judge.Decision) {
 		app.Log.InfoCtx(ctx, "judge", "judge_decision", map[string]any{
@@ -252,7 +255,6 @@ func NewApp(clock Clock, db *gorm.DB) *App {
 	sched.OnPlacementSaved = func(ctx context.Context, studentID, bookID int64, inputCount, changed int) {
 		app.Log.InfoCtx(ctx, "scheduler", "placement_saved", map[string]any{"student_id": studentID, "book_id": bookID, "input_count": inputCount, "changed_count": changed})
 	}
-	// R4-backend#3：config.ladder 变更 → scheduler 截断记忆卡 step（SDD §6.2 事务联动）
 	if err := cfgStore.BindAtomicMutationHandler(app.ChangeConfig); err != nil {
 		panic(err)
 	}
@@ -362,7 +364,9 @@ func (a *App) PlacementSubmitContext(ctx context.Context, studentID, bookID int6
 	if finish {
 		var l *scheduler.Lesson
 		err := a.WithCurrentConfigWork(ctx, func(s *scheduler.Service) error {
-			if err := s.ResetForReplacement(studentID, bookID); err != nil { return err }
+			if err := s.ResetForReplacement(studentID, bookID); err != nil {
+				return err
+			}
 			var err error
 			l, err = s.PlanNext(studentID, bookID)
 			return err
@@ -450,11 +454,38 @@ func (a *App) CronOverdue() ([]int64, error) {
 
 // IssueTicket enter 签发（同 lesson 复用同一 ticket；R4-arch#3：含过期时间，判定时校验）。
 func (a *App) IssueTicket(lessonID, studentID int64) string {
+	lease, err := a.generations.acquire(context.Background(), lessonID)
+	if err != nil {
+		return ""
+	}
+	defer lease.Release()
+	ticket, err := a.issueTicketContext(withGenerationLease(lease.Context(), lease), lessonID, studentID)
+	if err != nil {
+		return ""
+	}
+	return ticket
+}
+
+func (a *App) issueTicketContext(ctx context.Context, lessonID, studentID int64) (string, error) {
+	lease := generationLeaseFromContext(ctx, lessonID)
+	if lease == nil {
+		var err error
+		lease, err = a.generations.acquire(ctx, lessonID)
+		if err != nil {
+			return "", err
+		}
+		defer lease.Release()
+	}
+	effect, err := lease.Token().Permit()
+	if err != nil {
+		return "", err
+	}
+	defer effect.Release()
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	for t, tk := range a.tickets {
 		if tk.LessonID == lessonID && tk.StudentID == studentID && !tk.expired(a) {
-			return t
+			return t, nil
 		}
 		if tk.LessonID == lessonID && tk.StudentID == studentID {
 			delete(a.tickets, t) // 过期清理
@@ -462,7 +493,7 @@ func (a *App) IssueTicket(lessonID, studentID int64) string {
 	}
 	t := newToken()
 	a.tickets[t] = &Ticket{LessonID: lessonID, StudentID: studentID, CreatedAt: a.Clock.Now()}
-	return t
+	return t, nil
 }
 
 // expired ticket 过期判定：创建时间 + open_at 窗口 + overdueHours + 1h（R2-AR-03）。
@@ -501,6 +532,16 @@ func (a *App) RevokeTicket(lessonID, studentID int64) {
 	}
 }
 
+func (a *App) revokeLessonTickets(lessonID int64) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	for ticket, tk := range a.tickets {
+		if tk.LessonID == lessonID {
+			delete(a.tickets, ticket)
+		}
+	}
+}
+
 // ---- 课报存档（D-13，课程详情端点用）----
 
 // LessonReportView 课程详情返回结构。
@@ -510,16 +551,25 @@ type LessonReportView struct {
 	Correct  map[int64]bool         `json:"correct"`
 }
 
-func (a *App) saveReport(lessonID int64, res *classroom.Result) {
+func (a *App) saveReportWithToken(token generationToken, lessonID int64, res *classroom.Result) bool {
+	if token.owner == nil || token.lesson != lessonID {
+		return false
+	}
+	effect, err := token.Permit()
+	if err != nil {
+		return false
+	}
+	defer effect.Release()
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if !a.saveRuntimeLocked(fmt.Sprintf("report/%d", lessonID), res) {
-		return
+		return false
 	}
 	if a.reports == nil {
 		a.reports = map[int64]*classroom.Result{}
 	}
 	a.reports[lessonID] = res
+	return true
 }
 
 // Report 取课报。
@@ -538,20 +588,37 @@ func (a *App) Report(lessonID int64) (*classroom.Result, bool) {
 
 // ---- 课堂状态持久化（IT-12：房间丢失后恢复）----
 
-func (a *App) saveLessonState(lessonID int64, st classroom.State) {
-	a.saveLessonStateContext(context.Background(), lessonID, st)
+func (a *App) saveLessonStateContext(ctx context.Context, lessonID int64, st classroom.State) bool {
+	lease := generationLeaseFromContext(ctx, lessonID)
+	if lease == nil {
+		a.Log.WarnCtx(runtimeTraceContext(ctx, fmt.Sprintf("snapshot/%d", lessonID)), "classroom", "generation_write_rejected", map[string]any{"lesson_id": lessonID, "effect": "snapshot", "reason": "missing_generation_lease"})
+		return false
+	}
+	return a.saveLessonStateWithToken(ctx, lessonID, st, lease.Token())
 }
-func (a *App) saveLessonStateContext(ctx context.Context, lessonID int64, st classroom.State) {
+
+func (a *App) saveLessonStateWithToken(ctx context.Context, lessonID int64, st classroom.State, token generationToken) bool {
+	if token.owner == nil || token.lesson != lessonID {
+		a.Log.WarnCtx(runtimeTraceContext(ctx, fmt.Sprintf("snapshot/%d", lessonID)), "classroom", "generation_write_rejected", map[string]any{"lesson_id": lessonID, "effect": "snapshot", "reason": "invalid_generation_token"})
+		return false
+	}
+	effect, err := token.Permit()
+	if err != nil {
+		a.Log.WarnCtx(runtimeTraceContext(ctx, fmt.Sprintf("snapshot/%d", lessonID)), "classroom", "generation_effect_rejected", map[string]any{"lesson_id": lessonID, "effect": "snapshot", "reason": "generation_retired"})
+		return false
+	}
+	defer effect.Release()
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if !a.saveRuntimeContextLocked(ctx, fmt.Sprintf("snapshot/%d", lessonID), st) {
-		return
+		return false
 	}
 	if a.lessonStates == nil {
 		a.lessonStates = map[int64]*classroom.State{}
 	}
 	cp := st
 	a.lessonStates[lessonID] = &cp
+	return true
 }
 
 func (a *App) lessonState(lessonID int64) *classroom.State {
@@ -618,7 +685,9 @@ func (a *App) registerTools() {
 			}
 			who := string(caller.Role)
 			result, err := a.ChangeConfig(ctx, config.Mutation{Operation: "set", Actor: who, Scope: config.ScopeGlobal, Key: in.Key, Value: in.Value, Reason: in.Reason})
-			if err != nil { return nil, err }
+			if err != nil {
+				return nil, err
+			}
 			return result, nil
 		},
 	})

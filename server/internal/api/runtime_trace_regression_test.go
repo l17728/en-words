@@ -37,7 +37,9 @@ func TestHubSnapshotRestoreLogsStableLessonTrace(t *testing.T) {
 			if mode == "restored" {
 				room, _, err := a.Rooms.Enter(lid, sid)
 				require.NoError(t, err)
-				a.saveLessonState(lid, room.Machine().Snapshot())
+				lease, ctx := testGenerationContext(t, a, lid)
+				require.True(t, a.saveLessonStateContext(ctx, lid, room.Machine().Snapshot()))
+				lease.Release()
 				a.Rooms.Drop(lid)
 			}
 			if mode == "invalid_state" {
@@ -76,7 +78,9 @@ func TestLegacyRuntimeKeysDeriveTraceAndPreserveExplicitTrace(t *testing.T) {
 		requireRuntimeTrace(t, logs.String(), "snapshot_failed", fmt.Sprintf("lesson-%d", lid))
 	}
 	logs.Reset()
-	a.saveLessonState(lid, classroom.State{})
+	lease, ctx := testGenerationContext(t, a, lid)
+	require.True(t, a.saveLessonStateContext(ctx, lid, classroom.State{}))
+	lease.Release()
 	requireRuntimeTrace(t, logs.String(), "snapshot_saved", fmt.Sprintf("lesson-%d", lid))
 	logs.Reset()
 	require.True(t, a.saveRuntimeContextLocked(obs.WithTrace(context.Background(), "explicit-parent"), "report/"+itoa64(lid), map[string]any{}))

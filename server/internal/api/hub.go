@@ -33,37 +33,38 @@ type Client interface {
 
 // Room 一间课堂。
 type Room struct {
-	inputContext      context.Context
-	generation        generationToken
-	pendingJudge      *roomJudgment
-	retired           bool
-	deliveryReady     bool
-	teacherPending    string
-	teacherText       string
-	epoch             string
-	lastTurnSignature string
-	turnVersion       uint64
-	seenEvents        map[string]bool
-	eventOrder        []string
-	mu                sync.Mutex
-	app               *App
-	lessonID          int64
-	bookID            int64
-	studentID         int64
-	machine           *classroom.Machine
-	words             map[int64]classroom.Word
-	clients           map[Client]bool
-	currentCli        Client // 当前活跃学生连接（StrictMode 重复 Join 时踢旧）
-	seq               int
-	lastAnswer        string
-	finished          bool
-	voiceParser       *voicecmd.Parser
-	lessonStatus      string // open | in_progress | finished
-	FeedbackCh        chan string
-	phaseSince        time.Time
-	lastPhase         string
-	lastActions       []classroom.Action // 最近一批 machine 动作（话术层输入）
-	encourageCounter  int                // 自上次鼓励的判对数（encourageEveryN）
+	inputContext        context.Context
+	generation          generationToken
+	pendingJudge        *roomJudgment
+	retired             bool
+	deliveryReady       bool
+	teacherPending      string
+	teacherText         string
+	epoch               string
+	lastTurnSignature   string
+	turnVersion         uint64
+	seenEvents          map[string]bool
+	eventOrder          []string
+	mu                  sync.Mutex
+	app                 *App
+	lessonID            int64
+	bookID              int64
+	studentID           int64
+	machine             *classroom.Machine
+	words               map[int64]classroom.Word
+	clients             map[Client]bool
+	currentCli          Client // 当前活跃学生连接（StrictMode 重复 Join 时踢旧）
+	seq                 int
+	lastAnswer          string
+	finished            bool
+	settlementUncertain bool
+	voiceParser         *voicecmd.Parser
+	lessonStatus        string // open | in_progress | finished
+	FeedbackCh          chan string
+	phaseSince          time.Time
+	lastPhase           string
+	lastActions         []classroom.Action // 最近一批 machine 动作（话术层输入）
+	encourageCounter    int                // 自上次鼓励的判对数（encourageEveryN）
 }
 
 // Hub 房间表。
@@ -342,6 +343,9 @@ func (r *Room) snapshotLocked() Msg {
 		"type": "state_snapshot", "seq": r.nextSeqLocked(), "teacher_text": r.teacherText,
 		"lesson_id": r.lessonID, "phase": phase,
 		"paused": r.machine.Paused(), "context": r.contextLocked(),
+	}
+	if r.settlementUncertain {
+		m["settlement_uncertain"] = true
 	}
 	// 教学相位（show/tts/repeating/reteach）补全 word+zhMeaning：
 	// 重进课堂任何相位都能立即渲染完整中英对照（修复"重进只有…"）
@@ -876,7 +880,7 @@ func (r *Room) maybeFinishLocked() []Msg {
 		return nil
 	}
 	defer effect.Release()
-	if r.finished || r.machine.Phase() != classroom.PhaseLessonEnd {
+	if r.finished || r.settlementUncertain || r.machine.Phase() != classroom.PhaseLessonEnd {
 		return nil
 	}
 	res := r.machine.Result()
@@ -884,8 +888,16 @@ func (r *Room) maybeFinishLocked() []Msg {
 		return nil
 	}
 	if err := r.app.commitLessonWithGeneration(r.inputContext, r.generation, r.lessonID, r.studentID, r.bookID, res, r.machine.Snapshot()); err != nil {
-		r.app.Log.ErrorCtx(r.traceContext(), "scheduler", "settle_failed", map[string]any{"lesson_id": r.lessonID, "error": err.Error()})
-		m := Msg{"type": "settlement_failed", "lesson_id": r.lessonID, "retryable": true}
+		uncertain := errors.Is(err, errAtomicOutcomeUncertain)
+		if uncertain {
+			r.settlementUncertain = true
+		}
+		outcome := "failed_cleaned"
+		if uncertain {
+			outcome = "outcome_uncertain"
+		}
+		r.app.Log.ErrorCtx(r.traceContext(), "scheduler", "settle_failed", map[string]any{"lesson_id": r.lessonID, "error_code": outcome, "transaction_outcome": outcome})
+		m := Msg{"type": "settlement_failed", "lesson_id": r.lessonID, "retryable": !uncertain, "outcome": outcome}
 		r.emitLocked(m)
 		return []Msg{m}
 	}
@@ -946,21 +958,22 @@ func (h *Hub) Room(lessonID int64) (*Room, bool) {
 }
 
 // Drop 模拟进程重启（IT-12）：移除房间但快照已持久化于 App。
-func (h *Hub) Drop(lessonID int64) {
+func (h *Hub) Drop(lessonID int64) error {
 	retirement, err := h.app.generations.retire(lessonID)
 	if err != nil {
-		return
+		return err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	if err := retirement.Wait(ctx); err != nil {
 		retirement.Fail()
-		return
+		return err
 	}
 	h.mu.Lock()
 	r := h.rooms[lessonID]
 	delete(h.rooms, lessonID)
 	h.mu.Unlock()
+	var closeErrors []error
 	if r != nil {
 		r.mu.Lock()
 		r.retired = true
@@ -974,14 +987,22 @@ func (h *Hub) Drop(lessonID int64) {
 		r.mu.Unlock()
 		for _, c := range clients {
 			if closer, ok := c.(interface{ Close() error }); ok {
-				_ = closer.Close()
+				if err := closer.Close(); err != nil {
+					closeErrors = append(closeErrors, err)
+				}
 			}
 		}
 	}
 	h.app.revokeLessonTickets(lessonID)
+	if len(closeErrors) > 0 {
+		retirement.Fail()
+		return fmt.Errorf("classroom: close retired clients: %w", errors.Join(closeErrors...))
+	}
 	if err := retirement.Advance(); err != nil {
 		retirement.Fail()
+		return err
 	}
+	return nil
 }
 
 // RunTimers 生产计时循环（main 启动；测试不启动）。

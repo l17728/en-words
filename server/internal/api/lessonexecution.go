@@ -26,7 +26,10 @@ type lessonCommitRecord struct {
 	Fingerprint string `json:"fingerprint"`
 }
 
-func (a *App) commitLessonWithAgents(id, sid, bid int64, res *classroom.Result, st classroom.State) error {
+func (a *App) commitLessonWithAgents(ctx context.Context, token generationToken, id, sid, bid int64, res *classroom.Result, st classroom.State) error {
+	if token.owner == nil || token.lesson != id {
+		return errGenerationRetired
+	}
 	a.completionMu.Lock()
 	defer a.completionMu.Unlock()
 	a.agentWriteMu.Lock()
@@ -66,7 +69,7 @@ func (a *App) commitLessonWithAgents(id, sid, bid int64, res *classroom.Result, 
 	if err != nil {
 		return err
 	}
-	ctx, err := a.newAgentTaskContext(obs.WithTrace(context.Background(), fmt.Sprintf("lesson-%d", id)), sid, bid, id, "lesson_finished", tools.RoleSystemAgent)
+	ctx, err = a.newAgentTaskContext(obs.WithTrace(ctx, fmt.Sprintf("lesson-%d", id)), sid, bid, id, "lesson_finished", tools.RoleSystemAgent)
 	if err != nil {
 		return err
 	}
@@ -165,7 +168,8 @@ func (a *App) commitLessonWithAgents(id, sid, bid int64, res *classroom.Result, 
 		return write(fmt.Sprintf("settled/%d", id), lessonCommitRecord{Version: 1, StudentID: sid, BookID: bid, Fingerprint: task.Fingerprint})
 	}
 	if a.DB != nil {
-		err = a.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		atomicOutcome := "outcome_uncertain"
+		err = a.withAtomicWriteObserved(ctx, a.DB, func(tx *gorm.DB) error {
 			var existing store.RuntimeRecord
 			if e := tx.Where("key=?", fmt.Sprintf("settled/%d", id)).First(&existing).Error; e == nil {
 				return fmt.Errorf("completion concurrently committed; retry read")
@@ -176,14 +180,15 @@ func (a *App) commitLessonWithAgents(id, sid, bid int64, res *classroom.Result, 
 			if e != nil {
 				return e
 			}
-			svc := agentServices{config: cfg, memory: memory.NewService(store.NewMemoryRepo(tx)), scheduler: scheduler.NewService(store.NewSchedulerRepo(tx), cfg, a.Clock), transactional: true}
+			svc := agentServices{configDB: tx, config: cfg, memory: memory.NewService(store.NewMemoryRepo(tx)), scheduler: scheduler.NewService(store.NewSchedulerRepo(tx), cfg, a.Clock), transactional: true}
 			if e = work(svc, func(key string, value any) error { return writeLessonRuntime(tx, key, value) }); e != nil {
 				return e
 			}
 			return persistToolAudits(tx, buffer.Snapshot(), false)
-		})
+		}, func(timing store.AtomicConnectionTiming) { atomicOutcome = timing.Outcome })
+		err = preserveAtomicOutcome(err, atomicOutcome)
 	} else {
-		err = work(agentServices{config: a.Cfg, memory: a.Mem, scheduler: a.Sched}, func(string, any) error { return nil })
+		err = work(agentServices{config: a.Cfg, memory: a.Mem, scheduler: a.Sched.ConfigWorkView(a.Cfg)}, func(string, any) error { return nil })
 	}
 	entries := buffer.Snapshot()
 	recordAudit := func(entry tools.AuditEntry, outcome string) {
@@ -191,6 +196,10 @@ func (a *App) commitLessonWithAgents(id, sid, bid int64, res *classroom.Result, 
 		a.Log.InfoCtx(ctx, "tools", "tool_called", map[string]any{"task_id": ctx.Value(agentTaskKey{}).(*agentTask).taskID, "student_id": sid, "lesson_id": id, "tool": entry.Tool, "role": entry.ActorRole, "duration_ms": entry.DurationMs, "transaction_outcome": outcome, "ok": entry.OK})
 	}
 	if err != nil {
+		if errors.Is(err, errAtomicOutcomeUncertain) {
+			a.Log.ErrorCtx(ctx, "agent", "lesson_settlement_outcome_uncertain", map[string]any{"lesson_id": id, "student_id": sid, "task_id": ctx.Value(agentTaskKey{}).(*agentTask).taskID, "transaction_outcome": "outcome_uncertain"})
+			return err
+		}
 		if a.DB != nil {
 			for i := range entries {
 				entries[i].OK = false

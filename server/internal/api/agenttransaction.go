@@ -34,7 +34,28 @@ func (a *App) callAgentTool(ctx context.Context, name string, args any) (any, er
 		return nil, err
 	}
 	caller := tools.Caller{Role: task.role, ID: string(task.role)}
-	timings := map[string]int64{"lock_wait_ms": 0, "transaction_ms": 0, "begin_wait_ms": 0, "config_load_ms": 0, "audit_write_ms": 0, "finalize_ms": 0, "rollback_audit_write_ms": 0}
+	timings := map[string]any{"lock_wait_ms": int64(0), "transaction_ms": int64(0), "begin_wait_ms": int64(0), "config_load_ms": int64(0), "audit_write_ms": int64(0), "finalize_ms": int64(0), "rollback_audit_write_ms": int64(0), "storage_callback_ms": int64(0), "storage_commit_ms": int64(0), "storage_rollback_ms": int64(0), "storage_raw_cleanup_ms": int64(0), "storage_connection_release_ms": int64(0), "storage_total_ms": int64(0), "storage_outcome": "not_started"}
+	var storageTiming store.AtomicConnectionTiming
+	storageTimingObserved := false
+	defer func() {
+		if !storageTimingObserved {
+			return
+		}
+		// Emit after WithAtomicWrite has returned (or unwound) and the write lock
+		// has been released; diagnostics do not extend the storage timing spans.
+		safeAtomicTimingLog(func() {
+			a.Log.InfoCtx(ctx, "store", "atomic_write_timing", map[string]any{
+				"task_id": task.taskID, "student_id": task.studentID, "lesson_id": task.lessonID, "tool": name,
+				"transaction_outcome": storageTiming.Outcome,
+				"operation_ms":        storageTiming.Callback.DurationMS, "operation_state": storageTiming.Callback.State,
+				"commit_ms": storageTiming.Commit.DurationMS, "commit_state": storageTiming.Commit.State,
+				"rollback_ms": storageTiming.Rollback.DurationMS, "rollback_state": storageTiming.Rollback.State,
+				"raw_cleanup_ms": storageTiming.RawCleanup.DurationMS, "raw_cleanup_state": storageTiming.RawCleanup.State,
+				"connection_release_ms": storageTiming.ConnectionRelease.DurationMS, "connection_release_state": storageTiming.ConnectionRelease.State,
+				"total_ms": storageTiming.Total.DurationMS,
+			})
+		})
+	}()
 	logCall := func(outcome string, successful bool) {
 		payload := map[string]any{"task_id": task.taskID, "student_id": task.studentID, "lesson_id": task.lessonID, "tool": name, "transaction_outcome": outcome, "ok": successful}
 		for key, value := range timings {
@@ -55,7 +76,7 @@ func (a *App) callAgentTool(ctx context.Context, name string, args any) (any, er
 	var result any
 	transactionStarted := time.Now()
 	var callbackFinished time.Time
-	err = a.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	err = store.WithAtomicWriteObserved(ctx, a.DB, func(tx *gorm.DB) error {
 		timings["begin_wait_ms"] = time.Since(transactionStarted).Milliseconds()
 		defer func() { callbackFinished = time.Now() }()
 		configStarted := time.Now()
@@ -65,7 +86,7 @@ func (a *App) callAgentTool(ctx context.Context, name string, args any) (any, er
 			return e
 		}
 		reg := tools.New(buffer)
-		if e := a.registerAgentTools(reg, agentServices{config: cfg, memory: memory.NewService(store.NewMemoryRepo(tx)), scheduler: scheduler.NewService(store.NewSchedulerRepo(tx), cfg, a.Clock), report: func(id int64) (*classroom.Result, error) { return capabilityReportTx(tx, id) }, transactional: true}); e != nil {
+		if e := a.registerAgentTools(reg, agentServices{configDB: tx, config: cfg, memory: memory.NewService(store.NewMemoryRepo(tx)), scheduler: scheduler.NewService(store.NewSchedulerRepo(tx), cfg, a.Clock), report: func(id int64) (*classroom.Result, error) { return capabilityReportTx(tx, id) }, transactional: true}); e != nil {
 			return e
 		}
 		if e := a.registerTeacherTool(reg); e != nil {
@@ -79,6 +100,21 @@ func (a *App) callAgentTool(ctx context.Context, name string, args any) (any, er
 		e = persistToolAudits(tx, buffer.Snapshot(), false)
 		timings["audit_write_ms"] = time.Since(auditStarted).Milliseconds()
 		return e
+	}, func(storage store.AtomicConnectionTiming) {
+		storageTiming = storage
+		storageTimingObserved = true
+		timings["storage_outcome"] = storage.Outcome
+		timings["storage_callback_ms"] = storage.Callback.DurationMS
+		timings["storage_commit_ms"] = storage.Commit.DurationMS
+		timings["storage_rollback_ms"] = storage.Rollback.DurationMS
+		timings["storage_raw_cleanup_ms"] = storage.RawCleanup.DurationMS
+		timings["storage_connection_release_ms"] = storage.ConnectionRelease.DurationMS
+		timings["storage_total_ms"] = storage.Total.DurationMS
+		timings["storage_callback_state"] = storage.Callback.State
+		timings["storage_commit_state"] = storage.Commit.State
+		timings["storage_rollback_state"] = storage.Rollback.State
+		timings["storage_raw_cleanup_state"] = storage.RawCleanup.State
+		timings["storage_connection_release_state"] = storage.ConnectionRelease.State
 	})
 	transactionFinished := time.Now()
 	timings["transaction_ms"] = transactionFinished.Sub(transactionStarted).Milliseconds()
@@ -90,18 +126,30 @@ func (a *App) callAgentTool(ctx context.Context, name string, args any) (any, er
 	entries := buffer.Snapshot()
 	outcome := "committed"
 	if err != nil {
-		outcome = "rolled_back"
+		outcome = "failed_cleaned"
+		if storageOutcome, ok := timings["storage_outcome"].(string); ok && storageOutcome != "" {
+			outcome = storageOutcome
+		}
+		resultPrefix := "failed_cleaned_"
+		if outcome == "outcome_uncertain" {
+			resultPrefix = "outcome_uncertain_"
+		}
 		for i := range entries {
 			entries[i].OK = false
-			entries[i].Result = "rolled_back_" + entries[i].Result
+			entries[i].Result = resultPrefix + entries[i].Result
 		}
-		// The failed transaction cannot retain its own audit. Record attempts
-		// separately; if storage is still unavailable emit a bounded log event.
-		rollbackAuditStarted := time.Now()
-		if e := persistToolAudits(a.DB, entries, false); e != nil {
-			a.Log.ErrorCtx(ctx, "tools", "audit_persist_failed", map[string]any{"task_id": task.taskID, "tool": name})
+		// A known-clean transaction can safely persist failed-attempt audits. If the
+		// COMMIT outcome is uncertain, retrying the same audit could duplicate a
+		// record that was committed with the operation, so keep it in the bounded log.
+		if outcome == "failed_cleaned" {
+			rollbackAuditStarted := time.Now()
+			if e := persistToolAudits(a.DB, entries, false); e != nil {
+				a.Log.ErrorCtx(ctx, "tools", "audit_persist_failed", map[string]any{"task_id": task.taskID, "tool": name})
+			}
+			timings["rollback_audit_write_ms"] = time.Since(rollbackAuditStarted).Milliseconds()
+		} else if outcome == "outcome_uncertain" {
+			a.Log.ErrorCtx(ctx, "tools", "audit_persist_skipped_outcome_uncertain", map[string]any{"task_id": task.taskID, "tool": name})
 		}
-		timings["rollback_audit_write_ms"] = time.Since(rollbackAuditStarted).Milliseconds()
 	}
 	for _, entry := range entries {
 		a.ToolAudit.ToolCalled(entry)
@@ -117,6 +165,11 @@ func (a *App) callAgentTool(ctx context.Context, name string, args any) (any, er
 		}
 	}
 	return result, nil
+}
+
+func safeAtomicTimingLog(write func()) {
+	defer func() { _ = recover() }()
+	write()
 }
 
 func persistToolAudits(db *gorm.DB, entries []tools.AuditEntry, rolledBack bool) error {

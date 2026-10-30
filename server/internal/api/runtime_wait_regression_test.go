@@ -23,9 +23,11 @@ func TestSnapshotCanceledContextDoesNotSaveOrUpdateMemory(t *testing.T) {
 	app := NewApp(nil, db)
 	var log bytes.Buffer
 	app.SetLogger(obs.New(&log))
-	ctx, cancel := context.WithCancel(context.Background())
+	lease, leaseCtx := testGenerationContext(t, app, 987)
+	defer lease.Release()
+	ctx, cancel := context.WithCancel(leaseCtx)
 	cancel()
-	app.saveLessonStateContext(ctx, 987, classroom.State{LessonID: 987})
+	require.False(t, app.saveLessonStateContext(ctx, 987, classroom.State{LessonID: 987}))
 	var count int64
 	require.NoError(t, db.Model(&store.RuntimeRecord{}).Where("key=?", "snapshot/987").Count(&count).Error)
 	require.Zero(t, count)
@@ -42,9 +44,11 @@ func TestSnapshotCancellationReleasesPoolWaitBeforePoolOwner(t *testing.T) {
 	app := NewApp(nil, db)
 	tx := db.Begin()
 	require.NoError(t, tx.Error)
-	ctx, cancel := context.WithCancel(context.Background())
+	lease, leaseCtx := testGenerationContext(t, app, 987)
+	defer lease.Release()
+	ctx, cancel := context.WithCancel(leaseCtx)
 	done := make(chan struct{})
-	go func() { app.saveLessonStateContext(ctx, 987, classroom.State{LessonID: 987}); close(done) }()
+	go func() { _ = app.saveLessonStateContext(ctx, 987, classroom.State{LessonID: 987}); close(done) }()
 	deadline := time.Now().Add(time.Second)
 	for pool.Stats().WaitCount == 0 && time.Now().Before(deadline) {
 		time.Sleep(time.Millisecond)

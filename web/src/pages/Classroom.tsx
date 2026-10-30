@@ -394,6 +394,7 @@ export default function ClassroomPage() {
       }
       switch (f.type) {
         case 'state_snapshot':
+          if (f.settlement_uncertain === true) setSpeechError('\u8bfe\u5802\u7ed3\u7b97\u7ed3\u679c\u6682\u65f6\u65e0\u6cd5\u786e\u8ba4\u3002\u8bf7\u5237\u65b0\u8bfe\u7a0b\u72b6\u6001\u540e\u518d\u7ee7\u7eed\uff0c\u4e0d\u8981\u91cd\u590d\u63d0\u4ea4\u3002')
           if (typeof f.teacher_text === 'string') setBubble(f.teacher_text)
           console.debug('[classroom_media]', { lesson_id: lessonId, phase: phaseRef.current })
           setSnapshot({ phase: f.phase, word: f.word, quiz_word: f.quiz_word,
@@ -489,7 +490,7 @@ export default function ClassroomPage() {
           setSummary(f.report ?? null)
           break
         case 'settlement_failed':
-          setSpeechError('课报暂未保存，正在重试。请暂时留在课堂。')
+          setSpeechError(f.outcome === 'outcome_uncertain' ? '\u8bfe\u5802\u7ed3\u7b97\u7ed3\u679c\u6682\u65f6\u65e0\u6cd5\u786e\u8ba4\u3002\u8bf7\u5237\u65b0\u8bfe\u7a0b\u72b6\u6001\u540e\u518d\u7ee7\u7eed\uff0c\u4e0d\u8981\u91cd\u590d\u63d0\u4ea4\u3002' : '\u8ba1\u5212\u672a\u4fdd\u5b58\uff0c\u8bf7\u91cd\u8bd5\u3002\u5f53\u524d\u65f6\u6bb5\u53ef\u80fd\u4e0d\u53ef\u7528\u3002')
           break
       }
     },

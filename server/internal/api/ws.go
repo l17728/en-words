@@ -31,13 +31,23 @@ var upgrader = websocket.Upgrader{
 
 // wsClient 适配 Client 接口；写串行化（gorilla 单写者约束）。
 type wsClient struct {
-	conn           *websocket.Conn
+	conn           wsFrameConn
 	send           chan Msg
 	control        chan Msg
 	done           chan struct{}
+	writerDone     chan struct{}
+	writePermit    func() (*generationEffect, error)
 	mu             sync.Mutex
 	closed         bool
+	closeDone      chan struct{}
+	closeErr       error
 	onBackpressure func()
+}
+
+type wsFrameConn interface {
+	SetWriteDeadline(time.Time) error
+	WriteJSON(any) error
+	Close() error
 }
 
 func (c *wsClient) IsClosed() bool { c.mu.Lock(); defer c.mu.Unlock(); return c.closed }
@@ -45,26 +55,72 @@ func (c *wsClient) IsClosed() bool { c.mu.Lock(); defer c.mu.Unlock(); return c.
 func (c *wsClient) Close() error {
 	c.mu.Lock()
 	if c.closed {
+		done := c.closeDone
 		c.mu.Unlock()
-		return nil
+		if done != nil {
+			<-done
+		}
+		c.mu.Lock()
+		err := c.closeErr
+		c.mu.Unlock()
+		return err
 	}
+	if c.closeDone == nil {
+		c.closeDone = make(chan struct{})
+	}
+	done := c.closeDone
 	c.closed = true
 	close(c.done)
 	c.mu.Unlock()
+	var err error
 	if c.conn != nil {
-		_ = c.conn.Close()
+		err = c.conn.Close()
 	}
-	return nil
+	c.mu.Lock()
+	c.closeErr = err
+	close(done)
+	c.mu.Unlock()
+	return err
 }
 
 func newWSClient(conn *websocket.Conn) *wsClient {
-	c := &wsClient{conn: conn, send: make(chan Msg, 64), control: make(chan Msg, 1), done: make(chan struct{})}
+	return newWSClientWithWriter(conn)
+}
+
+func websocketLeaseContext(requestCtx context.Context) context.Context {
+	return obs.WithTrace(context.Background(), obs.TraceID(requestCtx))
+}
+
+func newWSClientWithWriter(conn wsFrameConn) *wsClient {
+	c := &wsClient{conn: conn, send: make(chan Msg, 64), control: make(chan Msg, 1), done: make(chan struct{}), writerDone: make(chan struct{}), closeDone: make(chan struct{})}
 	go c.writePump()
 	return c
 }
 
+func releaseWSLeaseAfterWorkers(lease *generationLease, client *wsClient, workerDone <-chan struct{}, removeCloser func()) {
+	go func() {
+		<-workerDone
+		<-client.writerDone
+		if removeCloser != nil {
+			removeCloser()
+		}
+		lease.Release()
+	}()
+}
+
 func (c *wsClient) writePump() {
+	defer close(c.writerDone)
 	write := func(m Msg) bool {
+		var permit *generationEffect
+		if c.writePermit != nil {
+			var err error
+			permit, err = c.writePermit()
+			if err != nil {
+				_ = c.Close()
+				return false
+			}
+			defer permit.Release()
+		}
 		_ = c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 		if err := c.conn.WriteJSON(m); err != nil {
 			_ = c.Close()
@@ -133,18 +189,25 @@ func (c *wsClient) Send(m Msg) error {
 		// This path must not re-enter Room or acquire c.mu through Close.
 		c.closed = true
 		close(c.done)
+		var closeErr error
 		if c.conn != nil {
-			_ = c.conn.Close()
+			closeErr = c.conn.Close()
 		}
+		c.closeErr = closeErr
+		if c.closeDone == nil {
+			c.closeDone = make(chan struct{})
+		}
+		close(c.closeDone)
 		if c.onBackpressure != nil {
 			c.onBackpressure()
 		}
-		return errBackpressure
+		return errors.Join(errBackpressure, closeErr)
 	}
 }
 
 // handleWS GET /ws/classroom?lessonId=&ticket=
 func (a *App) handleWS(c *gin.Context) {
+	originalRequestCtx := c.Request.Context()
 	lessonID, err := strconv.ParseInt(c.Query("lessonId"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "msg": "bad lessonId"})
@@ -165,26 +228,73 @@ func (a *App) handleWS(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, fail(401, "account unavailable"))
 		return
 	}
+	// Validate the bearer ticket and its bound lesson before allocating a
+	// generation map entry; arbitrary unauthenticated IDs must stay O(1).
+	leaseCtx := websocketLeaseContext(originalRequestCtx)
+	lease, err := a.generations.acquire(leaseCtx, lessonID)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "msg": "classroom generation unavailable"})
+		return
+	}
+	transferredLease := false
+	defer func() {
+		if !transferredLease {
+			lease.Release()
+		}
+	}()
+	requestCtx := withGenerationLease(lease.Context(), lease)
+	c.Request = c.Request.WithContext(requestCtx)
+	// Revalidate against the admitted generation: a reset may have revoked a
+	// previously valid ticket between the preflight check and lease acquisition.
+	currentTicket, stillValid := a.CheckTicket(ticket)
+	currentLesson, lessonErr := a.Sched.Lesson(lessonID)
+	if !stillValid || currentTicket.LessonID != lessonID || currentTicket.StudentID != tk.StudentID || lessonErr != nil || currentLesson.StudentID != tk.StudentID || !a.activeAccount(requestCtx, tk.StudentID, auth.RoleStudent, "") {
+		lease.Release()
+		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "msg": "classroom authorization expired"})
+		return
+	}
+	handshakeEffect, err := lease.Token().Permit()
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "msg": "classroom generation retired"})
+		return
+	}
+	if originalRequestCtx.Err() != nil {
+		handshakeEffect.Release()
+		return
+	}
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
+		handshakeEffect.Release()
 		return
 	}
 	conn.SetReadLimit(16 << 10)
 	client := newWSClient(conn)
+	client.writePermit = lease.Token().Permit
 	client.onBackpressure = func() {
 		a.Log.ErrorCtx(obs.WithTrace(context.Background(), "lesson-"+strconv.FormatInt(lessonID, 10)), "ws", "ws_backpressure", map[string]any{"lesson_id": lessonID, "student_id": tk.StudentID, "capacity": cap(client.send)})
 	}
-	room, _, err := a.Rooms.Enter(lessonID, tk.StudentID)
+	room, _, err := a.Rooms.EnterContext(requestCtx, lessonID, tk.StudentID)
 	if err != nil {
+		handshakeEffect.Release()
 		_ = client.Close()
+		<-client.writerDone
 		return
 	}
-	room.Join(client) // 首帧 state_snapshot（J4）
+	room.JoinContext(requestCtx, client) // 首帧 state_snapshot（J4）
+	handshakeEffect.Release()
+	removeCloser, err := lease.AddCloser(func() { _ = client.Close() })
+	if err != nil {
+		_ = client.Close()
+		room.Leave(client)
+		<-client.writerDone
+		return
+	}
 	a.Log.Info("ws", "client_connected", map[string]any{
 		"lesson_id": lessonID, "student_id": tk.StudentID}) // §14 WS 连接
 
 	// The upgraded connection outlives Gin's HTTP request context.
-	ctx, cancel := context.WithCancel(obs.WithTrace(context.Background(), obs.TraceID(c.Request.Context())))
+	ctx, cancel := context.WithCancel(obs.WithTrace(lease.Context(), obs.TraceID(c.Request.Context())))
+	ctx = withGenerationLease(ctx, lease)
 	go func() {
 		select {
 		case <-client.done:
@@ -323,4 +433,6 @@ func (a *App) handleWS(c *gin.Context) {
 			}
 		}
 	}()
+	transferredLease = true
+	releaseWSLeaseAfterWorkers(lease, client, workerDone, removeCloser)
 }
