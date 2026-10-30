@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "test:config-reconciliation": "node --experimental-strip-types --test tests/config-reconciliation.test.ts",
     "e2e:input-readiness": "playwright test -c playwright.input-readiness.config.ts",
+    "e2e:input-readiness": "playwright test -c playwright.input-readiness.config.ts",
     "test:route-chunks": "node --test tests/route-chunks.test.mjs",
     "verify:route-chunks": "node scripts/verify-route-chunks.mjs",
     "preview": "vite preview",
