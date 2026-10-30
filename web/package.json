@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "test:route-chunks": "node --test tests/route-chunks.test.mjs",
+    "verify:route-chunks": "node scripts/verify-route-chunks.mjs",
     "preview": "vite preview",
     "e2e:serve": "npm run build && vite preview --config e2e/vite.closure.config.ts --host 127.0.0.1 --strictPort"
   },

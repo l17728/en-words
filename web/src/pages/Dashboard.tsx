@@ -2,16 +2,17 @@ import { clientId } from '../interaction/client-id'
 import { ExclusiveAction } from '../interaction/exclusive-action'
 import { LatestRead, type ReadState } from '../interaction/latest-read'
 import { FeedbackDraft } from '../interaction/feedback-draft'
-import { useEffect, useRef, useState } from 'react'
-import { Alert, Card, Typography, Button, List, Badge, Progress, Input, Modal, message } from 'antd'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { Alert, Card, Typography, Button, Input, Modal, message } from 'antd'
 import { BellOutlined, BookOutlined, SoundOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../api/client'
 import type { Book, Lesson, Notification } from '../api/client'
 import { useAuthStore } from '../stores/auth'
 import { useFeedback, feedbackStatus } from '../feedback/useFeedback'
-import { FeedbackResults } from '../feedback/FeedbackResults'
 import { isLessonOpen, watchScheduleClock } from '../schedule/clock'
+
+const FeedbackResults = lazy(() => import('../feedback/FeedbackResults').then((module) => ({ default: module.FeedbackResults })))
 
 // 课程表首页（docs/07 §6.2：下一课卡片/计划一览/通知/反馈入口）
 export default function DashboardPage() {
@@ -148,7 +149,7 @@ export default function DashboardPage() {
           <Button style={{ marginLeft: 8 }} onClick={() => nav('/settings')}>学习设置</Button>
           <Button style={{ marginLeft: 8 }} icon={<BellOutlined />}
             loading={noticeBusy} disabled={noticeBusy} onClick={markRead}>
-            通知 {notifs.filter((n) => !n.read).length ? <Badge count={notifs.filter((n) => !n.read).length} /> : null}
+            通知（未读 {notifs.filter((n) => !n.read).length}）
           </Button>
           <Button style={{ marginLeft: 8 }} onClick={() => { logout(); nav('/login') }}>退出</Button>
         </div>
@@ -235,11 +236,15 @@ export default function DashboardPage() {
           ) : (
             <Typography.Text type="secondary">本词库课程已全部完成 🎉</Typography.Text>
           )}
-          <Progress
-            percent={lessons.length ? Math.round((lessons.filter((l) => l.Status === 'finished').length / lessons.length) * 100) : 0}
-            style={{ marginTop: 12 }}
-            format={(p) => `计划进度 ${p}%`}
-          />
+          <label style={{ display: 'block', marginTop: 12 }}>
+            计划进度 {lessons.length ? Math.round((lessons.filter((l) => l.Status === 'finished').length / lessons.length) * 100) : 0}%
+            <progress
+              aria-label="计划进度"
+              value={lessons.length ? lessons.filter((l) => l.Status === 'finished').length : 0}
+              max={lessons.length || 1}
+              style={{ display: 'block', width: '100%', height: 12, marginTop: 4, accentColor: '#14B8A6' }}
+            />
+          </label>
         </Card>
       )}
 
@@ -250,9 +255,11 @@ export default function DashboardPage() {
         {feedback.error && <Alert type="error" title={feedback.error} />}
         {feedback.pending.filter(id => !feedback.records.some(record => record.submission_id === id)).map(id => <Alert key={id} type="warning" title="反馈送达状态待确认"
           action={<Button disabled={feedback.busy.includes(id)} onClick={() => void feedback.recover(id)}>查询处理进度</Button>} />)}
-        {feedback.records.slice().reverse().map(f => <FeedbackResults key={f.submission_id || f.id} record={f}
-          busy={feedback.busy.includes(f.submission_id || '')}
-          onClarify={(id, text, parent) => feedback.submit(id, text, 'page', parent)} onQuery={() => void feedback.recover(f.submission_id!)} onRetry={() => void feedback.recover(f.submission_id!, true)} />)}
+        <Suspense fallback={<Typography.Text role="status">正在加载反馈结果…</Typography.Text>}>
+          {feedback.records.slice().reverse().map(f => <FeedbackResults key={f.submission_id || f.id} record={f}
+            busy={feedback.busy.includes(f.submission_id || '')}
+            onClarify={(id, text, parent) => feedback.submit(id, text, 'page', parent)} onQuery={() => void feedback.recover(f.submission_id!)} onRetry={() => void feedback.recover(f.submission_id!, true)} />)}
+        </Suspense>
       </Card>
 
       {lessons.filter(l => l.Status === 'finished').map(l => <Button key={l.ID} style={{ marginTop: 12 }} onClick={() => showReport(l.ID)}>查看第 {l.ID} 课课报</Button>)}
@@ -267,15 +274,14 @@ export default function DashboardPage() {
       {noticeRead.status === 'error' && <Alert type="error" title="通知读取失败" description={noticeRead.error} action={<Button onClick={refresh}>重新读取通知</Button>} />}
       {noticeRead.status === 'ready' && notifs.length > 0 && (
         <Card title="通知" style={{ marginTop: 16 }}>
-          <List
-            size="small"
-            dataSource={notifs.slice(-8).reverse()}
-            renderItem={(n) => (
-              <List.Item>
-                <List.Item.Meta title={n.title} description={n.body} />
-              </List.Item>
-            )}
-          />
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0, textAlign: 'left' }}>
+            {notifs.slice(-8).reverse().map((notice) => (
+              <li key={notice.id} style={{ padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+                <strong>{notice.title}</strong>
+                <Typography.Paragraph type="secondary" style={{ margin: '4px 0 0' }}>{notice.body}</Typography.Paragraph>
+              </li>
+            ))}
+          </ul>
         </Card>
       )}
 
