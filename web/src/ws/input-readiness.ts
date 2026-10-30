@@ -14,9 +14,9 @@ export class InputReadiness {
   ready: InputTurn | null = null
   private draft: InputContext | null = null
 
-  grant(context: InputContext, phase: InputTurn['phase']): boolean {
+  grant(context: InputContext, phase: InputTurn['phase'], preserveDraft = false): boolean {
     if (!context?.epoch || !context?.turn) return false
-    const newDraft = phase === 'wait_answer' && !sameContext(this.draft, context)
+    const newDraft = phase === 'wait_answer' && !preserveDraft && !sameContext(this.draft, context)
     if (phase === 'wait_answer') this.draft = { ...context }
     if (!sameContext(this.ready, context) || this.ready?.phase !== phase) this.ready = { ...context, phase }
     return newDraft

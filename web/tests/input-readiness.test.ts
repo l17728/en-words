@@ -26,6 +26,18 @@ test('same business turn replay preserves draft and capture identity', () => {
   assert.equal(gate.ready, capture)
   assert.equal(gate.accepts(context, 'wait_answer', true, capture), true)
 })
+
+test('answer reminder refreshes turn authority without clearing the same question draft', () => {
+  const gate = new InputReadiness()
+  const first = { epoch: 'e1', turn: 't1' }
+  const next = { epoch: 'e1', turn: 't2' }
+
+  assert.equal(gate.grant(first, 'wait_answer'), true)
+  assert.equal(gate.grant(next, 'wait_answer', true), false)
+  assert.deepEqual(gate.ready, { ...next, phase: 'wait_answer' })
+  assert.equal(gate.accepts(next, 'wait_answer', true), true)
+  assert.equal(gate.accepts(first, 'wait_answer', true), false)
+})
 test('same word new turn or room needs a new draft and rejects old capture', () => {
   const gate = new InputReadiness(); gate.grant(context, 'wait_answer'); const capture = gate.ready
   const next = { ...context, turn: 'question-2' }
