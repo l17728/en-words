@@ -189,6 +189,7 @@ test('first use and complete classroom with MOCK browser speech, report and next
   await expect(page.getByText(correction, { exact: true })).toBeVisible()
   await repeatWord()
   // Retry succeeds, then answer the other word; final pool order is server-owned.
+  const reviewSpeechBefore = await page.evaluate(() => window.__mockClassroomSpeech.completed.length)
   for (let i = 0; i < 2; i++) {
     await expect(page.getByLabel('答案输入框')).toBeVisible()
     const word = (await page.getByRole('button', { name: /^(cat|dog)$/ }).textContent()).trim()
@@ -198,6 +199,11 @@ test('first use and complete classroom with MOCK browser speech, report and next
     await expect.poll(() => frames.filter(f => f.type === 'judge_result').length).toBe(judgedBefore + 1)
     if (i === 0) await expect(page.getByRole('button', { name: word === 'cat' ? 'dog' : 'cat', exact: true })).toBeVisible()
   }
+  // A word answered incorrectly once remains in the lightweight review, even
+  // after the retry succeeds. Wait for its four configured playback segments
+  // before asserting the lesson summary; this is review playback, not a retest.
+  await expect.poll(() => page.evaluate(before => window.__mockClassroomSpeech.completed.length - before, reviewSpeechBefore),
+    { timeout: 30_000 }).toBeGreaterThanOrEqual(4)
   await expect(page.getByText('下课啦！叮当老师的小结')).toBeVisible()
   await expect.poll(() => frames.filter(f => f.action?.type === 'say' && f.action.category === 'closing').length).toBe(1)
   const closing = frames.filter(f => f.action?.type === 'say' && f.action.category === 'closing')
