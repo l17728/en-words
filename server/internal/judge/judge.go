@@ -108,6 +108,11 @@ func DefaultSynonyms() map[string][]string {
 
 // Level1 第 1 级确定性判分。
 func (j *Judge) Level1(word string, meanings []string, text string) Judgment {
+	if confirmation := quizConfirmation(text); confirmation == "positive" {
+		return JudgmentCorrect
+	} else if confirmation == "negative" {
+		return JudgmentWrong
+	}
 	ans := normalizeZh(text)
 	if ans == "" || isGiveUp(ans) {
 		return JudgmentWrong
@@ -209,6 +214,12 @@ func (j *Judge) JudgeContext(ctx context.Context, word string, meanings []string
 	if ctx.Err() != nil {
 		return j.decided(ctx, "fallback", "context_canceled", JudgmentWrong)
 	}
+	if confirmation := quizConfirmation(text); confirmation != "" {
+		if confirmation == "positive" {
+			return j.decided(ctx, "confirmation", "self_report_known", JudgmentCorrect)
+		}
+		return j.decided(ctx, "confirmation", "self_report_unknown", JudgmentWrong)
+	}
 	l1 := j.Level1(word, meanings, text)
 	if l1 != JudgmentWrong {
 		return j.decided(ctx, "l1", "match", l1) // L1 命中（correct/near）零成本返回
@@ -241,6 +252,25 @@ func (j *Judge) JudgeContext(ctx context.Context, word string, meanings []string
 	default:
 		return j.decided(ctx, "fallback", "invalid_judgment", JudgmentWrong)
 	}
+}
+
+// quizConfirmation recognizes only complete normalized yes/no self-reports.
+// Richer answers remain on the normal meaning judgment path.
+func quizConfirmation(text string) string {
+	answer := normalizeZh(text)
+	negatives := []string{"不会", "不知道", "不认识", "不记得", "想不起来", "忘了", "不清楚", "没学过"}
+	for _, phrase := range negatives {
+		if answer == phrase {
+			return "negative"
+		}
+	}
+	positives := []string{"会", "会了", "知道", "认识", "记得"}
+	for _, phrase := range positives {
+		if answer == phrase {
+			return "positive"
+		}
+	}
+	return ""
 }
 
 func (j *Judge) decided(ctx context.Context, source, reason string, result Judgment) Judgment {
@@ -276,6 +306,11 @@ func isGiveUp(s string) bool {
 	giveups := []string{"不知道", "不认识", "不记得", "想不起来", "忘了", "不清楚", "没学过"}
 	for _, g := range giveups {
 		if strings.Contains(s, g) {
+			// A negated refusal such as “不是不会” is ordinary semantic text,
+			// not an exact self-report; leave it for the normal answer path.
+			if strings.Contains(s, "不是"+g) || strings.Contains(s, "并不是"+g) {
+				continue
+			}
 			return true
 		}
 	}

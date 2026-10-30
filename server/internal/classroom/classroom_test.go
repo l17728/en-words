@@ -204,6 +204,54 @@ func TestTwoChancesThenSkip(t *testing.T) {
 	assert.Equal(t, 2, m.state.ReteachN[it1.WordID], "未掌握已记录（两轮各+1）")
 }
 
+func TestExplicitQuizSkipIsOneWrongAttemptAndDoesNotCountAsReteach(t *testing.T) {
+	m, cfg := newMachine(t, batchN(5))
+	teachAllWords(m, cfg)
+	m.DrainActions()
+	item := m.CurrentItem().ID()
+	wrongBefore := len(m.state.FirstWrong)
+	reteachBefore := m.state.ReteachN[item.WordID]
+	answerSamplesBefore := len(m.state.AnswerMs)
+
+	require.NoError(t, m.OnEvent(Event{Type: EvQuizSkipped, Item: &item}))
+	require.Equal(t, JudgmentWrong, m.state.Judged[item])
+	assert.True(t, m.state.FirstWrong[item.WordID])
+	assert.Equal(t, reteachBefore, m.state.ReteachN[item.WordID], "skip does not claim a reteach occurred")
+	assert.Len(t, m.state.AnswerMs, answerSamplesBefore+1)
+	assert.Zero(t, m.state.AnswerMs[len(m.state.AnswerMs)-1])
+	assert.NotContains(t, m.state.Mastered, item.WordID)
+	assert.Contains(t, m.state.FinalWrong, item.WordID)
+	actions := m.DrainActions()
+	require.NotNil(t, findAction(actions, ActShowCross))
+	require.NotNil(t, findAction(actions, ActSayHint))
+	assert.Equal(t, PhaseWaitAnswer, m.Phase())
+	next := m.CurrentItem().ID()
+	assert.NotEqual(t, item, next)
+
+	// Replayed/late event for the previous item is stale and cannot consume the next item.
+	require.NoError(t, m.OnEvent(Event{Type: EvQuizSkipped, Item: &item}))
+	assert.Equal(t, next, m.CurrentItem().ID())
+	assert.Equal(t, wrongBefore+1, len(m.state.FirstWrong))
+	assert.Equal(t, reteachBefore, m.state.ReteachN[item.WordID])
+	for m.Phase() == PhaseWaitAnswer {
+		current := m.CurrentItem().ID()
+		if current == item {
+			t.Fatal("skipped item unexpectedly re-entered the quiz")
+		}
+		m.OnJudged(current, JudgmentCorrect)
+	}
+	for i := 0; m.Phase() == PhaseTTSSeg && i < 100; i++ {
+		require.NoError(t, m.OnEvent(Event{Type: EvTTSFinished}))
+	}
+	assert.Equal(t, PhaseLessonEnd, m.Phase(), "light review must finish before reading the lesson result")
+	result := m.Result()
+	require.NotNil(t, result)
+	assert.False(t, result.Correct[item.WordID], "skipped item remains unsettled")
+	assert.Contains(t, result.Report.WrongWords, item.WordID)
+	assert.InDelta(t, float64(len(m.words)-1)/float64(len(m.words)), result.Report.FirstTryRate, 0.0001)
+	assert.Contains(t, m.state.ReviewList, item.WordID)
+}
+
 // 说"不会"（判 wrong）同理：重测轮放弃 → 跳过
 func TestGiveUpSkipsOnRetest(t *testing.T) {
 	m, cfg := newMachine(t, batchN(5))

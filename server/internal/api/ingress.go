@@ -58,12 +58,35 @@ func (r *Room) HandleClientEvent(e ClientEnvelope, ev classroom.Event, source ..
 	return r.HandleClientEventContext(context.Background(), e, ev, source...)
 }
 func (r *Room) HandleClientEventContext(ctx context.Context, e ClientEnvelope, ev classroom.Event, source ...Client) []Msg {
+	lease, ownedLease, leaseErr := r.operationLease(ctx)
+	if leaseErr != nil {
+		return []Msg{{"type": "event_rejected", "reason": "generation_retired", "event_id": e.EventID}}
+	}
+	if ownedLease {
+		defer lease.Release()
+		ctx = withGenerationLease(lease.Context(), lease)
+	}
+	effect, err := r.generation.Permit()
+	if err != nil {
+		return []Msg{{"type": "event_rejected", "reason": "generation_retired", "event_id": e.EventID}}
+	}
+	defer effect.Release()
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.retired || ctx.Err() != nil || (len(source) > 0 && !r.activeLocked(source[0])) || !r.acceptLocked(e) {
 		return r.rejectedLocked(e)
 	}
 	r.inputContext = ctx
+	defer func() { r.inputContext = nil }()
+	if ev.Type == classroom.EvAnswerSubmitted && r.machine.Phase() == classroom.PhaseWaitAnswer &&
+		r.voiceParser.MatchesPhrase(ev.Text, "跳过", "跳过这个词", "过") {
+		item := r.machine.CurrentItem().QuizItemID
+		ev = classroom.Event{Type: classroom.EvQuizSkipped, Item: &item}
+		r.app.Log.InfoCtx(r.traceContext(), "classroom", "quiz_skipped", map[string]any{
+			"lesson_id": r.lessonID, "word_id": item.WordID, "quiz_item": item,
+			"outcome": "wrong_advance", "reason": "explicit_skip",
+		})
+	}
 	r.app.Log.InfoCtx(r.traceContext(), "classroom", "event_received", map[string]any{"lesson_id": r.lessonID, "event_id": e.EventID, "request_trace_id": obs.TraceID(ctx), "event_type": ev.Type})
 	out := r.handleEventLocked(ev)
 	if r.retired {
@@ -84,12 +107,26 @@ func (r *Room) HandleClientVoiceSubmission(e ClientEnvelope, text string, source
 	return r.HandleClientVoiceSubmissionContext(context.Background(), e, text, source...)
 }
 func (r *Room) HandleClientVoiceSubmissionContext(ctx context.Context, e ClientEnvelope, text string, source ...Client) (string, string, []Msg) {
+	lease, ownedLease, leaseErr := r.operationLease(ctx)
+	if leaseErr != nil {
+		return "", "", []Msg{{"type": "event_rejected", "reason": "generation_retired", "event_id": e.EventID, "submission_id": e.SubmissionID}}
+	}
+	if ownedLease {
+		defer lease.Release()
+		ctx = withGenerationLease(lease.Context(), lease)
+	}
+	effect, err := r.generation.Permit()
+	if err != nil {
+		return "", "", []Msg{{"type": "event_rejected", "reason": "generation_retired", "event_id": e.EventID, "submission_id": e.SubmissionID}}
+	}
+	defer effect.Release()
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.retired || ctx.Err() != nil || (len(source) > 0 && !r.activeLocked(source[0])) || !r.acceptLocked(e) {
 		return "", "", r.rejectedLocked(e)
 	}
 	r.inputContext = ctx
+	defer func() { r.inputContext = nil }()
 	r.app.Log.InfoCtx(r.traceContext(), "classroom", "event_received", map[string]any{"lesson_id": r.lessonID, "event_id": e.EventID, "request_trace_id": obs.TraceID(ctx), "event_type": "voice_text", "text_length": len([]rune(text))})
 	var command, payload string
 	var out []Msg

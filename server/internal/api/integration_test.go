@@ -12,8 +12,10 @@ import (
 
 	"enwords/internal/auth"
 	"enwords/internal/classroom"
+	"enwords/internal/obs"
 	"enwords/internal/scheduler"
 	"enwords/internal/tools"
+	"enwords/internal/voicecmd"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -363,6 +365,57 @@ func TestIT05_VoiceDualChannel(t *testing.T) {
 	cmd, _ = room.HandleVoiceText("测试") // 非指令→作答→Mock 判分 correct
 	assert.Equal(t, "", cmd, "非指令文本走作答")
 	assert.True(t, hasFrame(fc.frames, "judge_result"), "语音转写作答判分")
+}
+
+func TestQuizSkipFromAnswerEventUsesSkipTransition(t *testing.T) {
+	app, clk := newTestApp(t)
+	var logs bytes.Buffer
+	app.Log = obs.New(&logs)
+	atok, _ := loginGet(t, app, "admin", "adminpw")
+	bid := seedBook(t, app, atok, "quiz-skip库", "g7", []string{"cat", "dog", "owl", "bee", "fox"})
+	_, _ = app.Auth.CreateUser("quiz-skip-student", "pw", "小", auth.RoleStudent)
+	_, uid := loginGet(t, app, "quiz-skip-student", "pw")
+	require.NoError(t, app.EnableBook(uid, bid))
+	require.NoError(t, app.PlacementSubmit(uid, bid, nil, true))
+	lessons, _ := app.Sched.Lessons(uid, bid)
+	clk.Advance(25 * time.Hour)
+	room, _, err := app.Rooms.Enter(lessons[0].ID, uid)
+	require.NoError(t, err)
+	for i := 0; i < 5; i++ {
+		teachOneRoom(room, ttsCfg{en: 3, rp: 3})
+	}
+	require.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase())
+	item := room.Machine().CurrentItem().QuizItemID
+	before := room.contextLocked()
+	frames := room.HandleClientEvent(ClientEnvelope{Context: before, EventID: "typed-explicit-skip"},
+		classroom.Event{Type: classroom.EvAnswerSubmitted, Text: "跳过！"})
+	assert.NotEqual(t, item, room.Machine().CurrentItem().QuizItemID)
+	assert.Equal(t, classroom.JudgmentWrong, room.Machine().Snapshot().Judged[item])
+	assert.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase())
+	assert.False(t, hasFrame(frames, "judge_result"), "explicit skip advances without invoking judgment")
+	late := room.HandleClientEvent(ClientEnvelope{Context: before, EventID: "late-explicit-skip"},
+		classroom.Event{Type: classroom.EvAnswerSubmitted, Text: "跳过"})
+	assert.Equal(t, item, room.Machine().Snapshot().QuizQueue[0], "the original item stays recorded")
+	assert.True(t, hasFrame(late, "event_rejected"), "stale turn must be rejected")
+	assert.Contains(t, logs.String(), `"event":"quiz_skipped"`)
+	assert.NotContains(t, logs.String(), "跳过")
+	voiceItem := room.Machine().CurrentItem().QuizItemID
+	command, _ := room.HandleVoiceText("跳过")
+	assert.Equal(t, voicecmd.CmdSkip, command)
+	assert.NotEqual(t, voiceItem, room.Machine().CurrentItem().QuizItemID, "voice skip advances one quiz item")
+
+	// A short confirmation arriving while judgement is already in flight cannot
+	// enqueue a second judge request or alter the current quiz item.
+	room.mu.Lock()
+	require.NoError(t, room.machine.OnEvent(classroom.Event{Type: classroom.EvAnswerSubmitted, Text: "未完成的答案"}))
+	room.machine.DrainActions() // discard the deliberately unserviced initial request
+	room.mu.Unlock()
+	judgingItem := room.Machine().CurrentItem().QuizItemID
+	command, _ = room.HandleVoiceText("不会")
+	assert.Equal(t, "confirmation_ignored", command)
+	assert.Equal(t, classroom.PhaseJudging, room.Machine().Phase())
+	assert.Equal(t, judgingItem, room.Machine().CurrentItem().QuizItemID)
+	assert.Empty(t, room.Machine().DrainActions(), "duplicate confirmation must not queue another judge request")
 }
 
 // ---- IT-06 断线重连快照 ----

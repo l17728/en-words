@@ -94,3 +94,18 @@ func TestQuizModeRestriction(t *testing.T) { // 02 §12.1: 测试作答阶段仅
 	assert.False(t, p.AllowedInQuiz(CmdNext))
 	assert.True(t, p.AllowedInQuiz(CmdFeedback), "反馈在答题期也允许")
 }
+
+func TestNormalizedQuizSelfReportMatchesOnlyWholeAnswer(t *testing.T) {
+	p := New(DefaultTable())
+	phrases := []string{"会", "会了", "知道", "认识", "记得", "不会", "不知道", "不认识", "不记得", "想不起来", "忘了", "不清楚", "没学过"}
+	for _, text := range []string{"认识", " 嗯，认识！ ", "不会。", "嗯，不会"} {
+		if !p.MatchesNormalizedAnswer(text, phrases...) {
+			t.Errorf("expected normalized exact match for %q", text)
+		}
+	}
+	for _, text := range []string{"不是不会", "我认识这只猫", "我会说中文"} {
+		if p.MatchesNormalizedAnswer(text, phrases...) {
+			t.Errorf("longer or negated answer must not match %q", text)
+		}
+	}
+}

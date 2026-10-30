@@ -1,3 +1,4 @@
+import { PlaybackContinuationWait, type WaitReason } from '../audio/continuation-wait'
 import { clientId } from '../interaction/client-id'
 import { AnswerFlight } from '../interaction/answer-flight'
 import { speechCache } from '../audio/speech-cache'
@@ -38,7 +39,7 @@ const PHASE_TIP: Record<string, string> = {
   show_word: '点一下这个单词，开始学习',
   tts_seg: '叮当老师在读，注意听～',
   repeating: '轮到你读了！大声一点没关系',
-  wait_answer: '这个单词是什么意思？',
+  wait_answer: '说出中文意思，或确认认识/不会',
   judging: '叮当老师正在判分…',
   reteach_show: '再认识一遍这个词',
   lesson_end: '下课啦！',
@@ -98,6 +99,9 @@ export default function ClassroomPage() {
   const localRecordingRef = useRef<AbortController | null>(null)
   const [speechError, setSpeechError] = useState('')
   const [captionText, setCaptionText] = useState('')
+  const continuation = useRef(new PlaybackContinuationWait(event => console.info('[classroom_wait]', event)))
+  const [waitingForTeacher, setWaitingForTeacher] = useState(false)
+  const clearContinuation = useCallback((reason: WaitReason = 'session_invalidated') => { continuation.current.clear(undefined, reason); setWaitingForTeacher(false) }, [])
   const captionRef = useRef<PlaybackCaption | null>(null)
   if (!captionRef.current) captionRef.current = new PlaybackCaption(setCaptionText)
   const [connectionError, setConnectionError] = useState<{ message: string; retryable: boolean } | null>(null)
@@ -109,6 +113,8 @@ export default function ClassroomPage() {
   const [bubble, setBubble] = useState('')
   const [judge, setJudge] = useState<'ok' | 'bad' | null>(null)
   const [answer, setAnswer] = useState('')
+  const answerDraftRef = useRef('')
+  const updateAnswer = (value: string) => { answerDraftRef.current = value; setAnswer(value) }
   const [ended, setEnded] = useState(false)
   const [summary, setSummary] = useState<Record<string, any> | null>(null)
   const [wsOk, setWsOk] = useState(false)
@@ -116,10 +122,21 @@ export default function ClassroomPage() {
   const inputGate = useRef(new InputReadiness())
   const answerFlight = useRef(new AnswerFlight())
   const [answerPending, setAnswerPending] = useState(false)
+  const [repeatFallbackPending, setRepeatFallbackPending] = useState(false)
+  const repeatFallbackFlight = useRef(false)
   const [inputTurn, setInputTurn] = useState<InputTurn | null>(null)
-  const revokeInput = () => { answerFlight.current.reset(); setAnswerPending(false); inputGate.current.revoke(); setInputTurn(null); stopListening() }
-  const grantInput = (context: TurnContext, phase: InputTurn['phase']) => {
-    if (inputGate.current.grant(context, phase)) setAnswer('')
+  const revokeInput = () => {
+    const previous = inputGate.current.ready
+    if (previous) console.debug('[classroom_input]', { event: 'revoked', phase: previous.phase, epoch: previous.epoch, turn: previous.turn })
+    answerFlight.current.reset(); setAnswerPending(false); inputGate.current.revoke(); setInputTurn(null); stopListening()
+  }
+  const grantInput = (context: TurnContext, phase: InputTurn['phase'], preserveDraft = false, source = 'business_action') => {
+    const newDraft = inputGate.current.grant(context, phase, preserveDraft)
+    console.debug('[classroom_input]', { event: 'granted', source, phase, preserve_draft: preserveDraft, new_draft: newDraft, epoch: context.epoch, turn: context.turn })
+    // Preserve the latest onChange value across same-question reminder frames;
+    // a frame may arrive between the DOM input event and React's next render.
+    if (preserveDraft) updateAnswer(answerDraftRef.current)
+    else if (newDraft) updateAnswer('')
     setInputTurn(inputGate.current.ready)
   }
   const [resuming, setResuming] = useState(false)
@@ -226,7 +243,13 @@ export default function ClassroomPage() {
       console.info(failure ? '[playback_failed]' : '[playback_completed]', {
         lesson_id: lessonId, epoch: next.context.epoch, turn: next.context.turn,
         segment: next.segment, language: next.lang, text_length: next.text.length, failure })
-      if (!failure) sendEventRef.current?.('tts_finished', undefined, next.context)
+      if (!failure) {
+        if (onlineRef.current && localStorage.getItem('token') === sessionToken && sameContext(next.context, contextRef.current)) {
+          continuation.current.begin({ session: feedbackLifetime.current, lesson: lessonId || '', ...next.context, playback: epoch }, lastFrameRef.current.seq)
+          setWaitingForTeacher(continuation.current.waiting)
+        }
+        sendEventRef.current?.('tts_finished', undefined, next.context)
+      }
       pumpTts()
     }
     const once = () => complete()
@@ -278,7 +301,7 @@ export default function ClassroomPage() {
       turn: next.context.turn, segment: next.segment, language: next.lang, delay_before_ms: next.delayMs })
     if (next.delayMs > 0) ttsDelayTimerRef.current = setTimeout(startPlayback, next.delayMs)
     else startPlayback()
-  }, [segDur, pickVoice, lessonId])
+  }, [segDur, pickVoice, lessonId, sessionToken])
 
   // speak = 入队（保持外部签名；word 参数已内聚在 text）
   const speak = useCallback(
@@ -347,6 +370,9 @@ export default function ClassroomPage() {
         if (last.epoch === f.context.epoch && f.seq <= last.seq) return
         lastFrameRef.current = { epoch: f.context.epoch, seq: f.seq }
       }
+      if (continuation.current.advance(f)) setWaitingForTeacher(false)
+      if (['classroom_error', 'session_timeout', 'lesson_summary'].includes(f.type) ||
+        (f.type === 'ui_action' && f.action?.type === 'lesson_paused') || (f.type === 'state_snapshot' && f.paused)) clearContinuation(f.type === 'classroom_error' ? 'classroom_error' : f.type === 'lesson_summary' ? 'lesson_end' : 'paused')
       if (f.context) {
         if (inputGate.current.ready && !sameContext(inputGate.current.ready, f.context)) revokeInput()
         contextRef.current = f.context
@@ -422,7 +448,7 @@ export default function ClassroomPage() {
               setSnapshot((s) => ({ ...(s ?? { phase: 'wait_answer' }), phase: 'wait_answer', quiz_word: a.word, paused: false }))
               phaseRef.current = 'wait_answer'
               setJudge(null)
-              if (f.context) grantInput(f.context, 'wait_answer')
+              if (f.context) grantInput(f.context, 'wait_answer', false, 'show_quiz_item')
               setTimeout(() => inputRef.current?.focus(), 100)
               break
             case 'show_check':
@@ -444,6 +470,7 @@ export default function ClassroomPage() {
               break
             case 'nudge_answer':
               setBubble(a.text ?? '想起来了吗？说出来试试，说错也没事～')
+              if (f.context && phaseRef.current === 'wait_answer') grantInput(f.context, 'wait_answer', true, 'answer_reminder')
               break
             case 'start_quiz': // final 唯一测试（D-21：教学中零测试，教完才测）
               setBubble('词都学完了！来做个完整测试，正常发挥就好～')
@@ -467,7 +494,7 @@ export default function ClassroomPage() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [speak, cancelTts, userId, sessionToken],
+    [speak, cancelTts, clearContinuation, userId, sessionToken],
   )
 
   useEffect(() => {
@@ -476,7 +503,7 @@ export default function ClassroomPage() {
     const current = () => !disposed && useAuthStore.getState().userId === userId && localStorage.getItem('token') === sessionToken
     cancelTts()
     stopListening()
-    onlineRef.current = false; inputGate.current.reset(); setInputTurn(null); setAnswer('')
+    onlineRef.current = false; inputGate.current.reset(); setInputTurn(null); updateAnswer('')
     setSnapshot(null); setBubble(''); setEnded(false); setSummary(null); setWsOk(false)
     resumeRequestRef.current++
     lastFrameRef.current = { epoch: '', seq: 0 }
@@ -498,12 +525,12 @@ export default function ClassroomPage() {
     }, {
       onFrame: frame => { if (current()) handleFrame(frame) },
       onOpen: () => { if (current()) { onlineRef.current = true; setWsOk(true); setConnectionError(null) } },
-      onClose: () => { if (current()) { onlineRef.current = false; revokeInput(); setWsOk(false); cancelTts() } },
-      onError: (message, retryable) => { if (current()) { onlineRef.current = false; revokeInput(); setWsOk(false); setConnectionError({ message, retryable }) } },
+      onClose: () => { if (current()) { onlineRef.current = false; revokeInput(); setWsOk(false); clearContinuation('disconnect'); cancelTts() } },
+      onError: (message, retryable) => { if (current()) { onlineRef.current = false; revokeInput(); setWsOk(false); clearContinuation('transport_error'); setConnectionError({ message, retryable }) } },
     })
     wsRef.current = ws
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Increment the latest resume generation; capturing an old scalar would not invalidate all requests.
-    return () => { disposed = true; onlineRef.current = false; inputGate.current.reset(); resumeRequestRef.current++; ws?.close(); wsRef.current = null; cancelTts(); stopListening() }
+    return () => { disposed = true; onlineRef.current = false; clearContinuation(); inputGate.current.reset(); resumeRequestRef.current++; ws?.close(); wsRef.current = null; cancelTts(); stopListening() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonId, userId, sessionToken])
 
@@ -590,12 +617,16 @@ export default function ClassroomPage() {
       if (answerFlight.current.send(context, envelope.event_id, () => wsRef.current?.sendEvent(event, text, envelope) ?? false)) { setAnswerPending(true); stopListening() }
       return
     }
+    const waitingTicket = event === 'tts_finished' ? continuation.current.ticket : null
     dispatchClassroom(() => wsRef.current?.sendEvent(event, text, envelope) ?? false, () => {
       // WS 未连接降级 REST（双通道保障）
       api
         .post<Frame[]>(`/classroom/lessons/${lessonId}/event`, { event, text, ...envelope })
         .then(applyFrames)
-        .catch((e) => message.error((e as Error).message))
+        .catch((e) => {
+          if (waitingTicket !== null && continuation.current.clear(waitingTicket, 'transport_error')) setWaitingForTeacher(false)
+          message.error((e as Error).message)
+        })
     }, event === 'answer_submitted')
   }
   sendEventRef.current = sendEvent // TTS onend 回执上报通道
@@ -634,6 +665,37 @@ export default function ClassroomPage() {
     }, !!capturedContext || ['wait_answer', 'repeating'].includes(phaseRef.current))
   }
   sendVoiceRef.current = sendVoice // 语音识别结果上报通道
+
+  const submitRepeatFallback = async () => {
+    const text = answer.trim()
+    const context = contextRef.current
+    if (!text || repeatFallbackFlight.current || phaseRef.current !== 'repeating' ||
+      !inputGate.current.accepts(context, phaseRef.current, onlineRef.current, inputTurn)) return
+    repeatFallbackFlight.current = true
+    const lifetime = feedbackLifetime.current
+    const envelope = { context: { ...context }, event_id: `${eventPrefixRef.current}-${++eventCounterRef.current}` }
+    setRepeatFallbackPending(true)
+    setSpeechError('')
+    try {
+      // The server applies the same context gate and RepeatMatch as ASR/WS input.
+      const result = await api.post<{ command: string; frames: Frame[] }>(
+        `/classroom/lessons/${lessonId}/voice`, { text, ...envelope })
+      if (lifetime !== feedbackLifetime.current || localStorage.getItem('token') !== sessionToken) return
+      applyFrames(result.frames || [])
+      if ((result.frames || []).some(frame => frame.type === 'event_rejected')) {
+        updateAnswer('')
+        setSpeechError('跟读状态已更新，请按当前课堂提示继续。')
+        return
+      }
+      if (result.command === 'repeat_read' || result.command === 'skip') updateAnswer('')
+      else setSpeechError('未确认听到当前单词，请核对后重试，或输入“跳过”。')
+    } catch {
+      if (lifetime === feedbackLifetime.current) setSpeechError('文字跟读结果暂未确认，正在等待课堂状态同步；请勿连续重复提交。')
+    } finally {
+      repeatFallbackFlight.current = false
+      if (lifetime === feedbackLifetime.current) setRepeatFallbackPending(false)
+    }
+  }
 
   const phase = snapshot?.phase || 'show_word'
   const resumeClassroom = async () => {
@@ -846,26 +908,43 @@ export default function ClassroomPage() {
         }}
       >
         {phase === 'repeating' && (
-          // 用户定案：不设"我读完了"按钮——老师（语音判读）听学生读完自动进下一词
-          <Tag color={listening ? 'processing' : 'default'} aria-live="polite">
-            {listening ? '🎙 跟读：大声读出这个词～' : '准备跟读…'}
-          </Tag>
+          <>
+            {/* Speech is primary; typed fallback goes through the same server RepeatMatch gate. */}
+            <Tag color={listening ? 'processing' : 'default'} aria-live="polite">
+              {listening ? '🎙 跟读：大声读出这个词～' : '准备跟读…'}
+            </Tag>
+            <Input
+              size="large"
+              style={{ width: 320 }}
+              aria-label="跟读文字输入框"
+              placeholder="输入刚读的英文单词或词组；也可输入“跳过”"
+              value={answer}
+              disabled={repeatFallbackPending || !wsOk || !inputTurn || inputTurn.phase !== 'repeating'}
+              onChange={e => updateAnswer(e.target.value)}
+              onPressEnter={() => void submitRepeatFallback()}
+            />
+            <Button size="large" loading={repeatFallbackPending}
+              disabled={repeatFallbackPending || !wsOk || !inputTurn || inputTurn.phase !== 'repeating' || !answer.trim()}
+              onClick={() => void submitRepeatFallback()}>
+              提交跟读文字
+            </Button>
+          </>
         )}
         {phase === 'wait_answer' && (
           <>
             {/* 默认语音监听指示（无需点击；识别结果自动提交） */}
             <Tag color={listening ? 'processing' : 'default'} aria-live="polite">
-              {!inputTurn ? '正在恢复题目，请稍候' : listening ? '🎙 正在听你说…（说出中文意思即可）' : '语音就绪'}
+              {!inputTurn ? '正在恢复题目，请稍候' : listening ? '🎙 正在听你说…（说出中文意思，或说“认识/不会”）' : '语音就绪'}
             </Tag>
             <Input
               ref={inputRef}
               size="large"
               style={{ width: 320 }}
-              placeholder={listening ? '或直接打字（语音优先）' : '输入中文意思'}
+              placeholder={listening ? '也可输入中文意思，或“认识/不会”' : '输入中文意思，或“认识/不会”'}
               aria-label="答案输入框"
               disabled={answerPending || !wsOk || !inputTurn || inputTurn.phase !== 'wait_answer'}
               value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
+              onChange={(e) => updateAnswer(e.target.value)}
               onPressEnter={() => sendEvent('answer_submitted', answer)}
             />
             <Button type="primary" size="large" disabled={answerPending || !wsOk || !inputTurn || inputTurn.phase !== 'wait_answer' || !answer.trim()} onClick={() => sendEvent('answer_submitted', answer)}>
@@ -873,6 +952,7 @@ export default function ClassroomPage() {
             </Button>
           </>
         )}
+        {waitingForTeacher && wsOk && !connectionError && !answerPending && <div role="status" aria-label="朗读后等待">本段播放结束，正在等待老师继续</div>}
         {(answerPending || phase === 'judging') && <div role="status">正在判分，请稍候 <Spin /></div>}
         {(phase === 'show_word' || phase === 'tts_seg') && (
           <Button size="large" onClick={() => sendVoice('下一个')} aria-label="语音指令：下一个">

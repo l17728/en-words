@@ -105,6 +105,56 @@ func (p *Parser) Match(text string) (string, bool) {
 	return "", false
 }
 
+// MatchesPhrase reports whether text exactly matches one of phrases under the
+// same bounded normalization used by control commands. It never matches a
+// phrase embedded in a longer transcript.
+func (p *Parser) MatchesPhrase(text string, phrases ...string) bool {
+	n := normalizeControl(text)
+	if n == "" {
+		return false
+	}
+	for _, phrase := range phrases {
+		if n == normalizeControl(phrase) {
+			return true
+		}
+	}
+	return false
+}
+
+// MatchesNormalizedAnswer is for short quiz self-reports, not control commands.
+// It tolerates whitespace, punctuation and one leading/trailing filler while
+// still requiring the normalized whole answer to equal an approved phrase.
+func (p *Parser) MatchesNormalizedAnswer(text string, phrases ...string) bool {
+	normalize := func(value string) string {
+		if !utf8.ValidString(value) || utf8.RuneCountInString(value) > 2048 {
+			return ""
+		}
+		var b strings.Builder
+		for _, r := range norm.NFC.String(strings.ToLower(value)) {
+			if unicode.IsSpace(r) || unicode.IsPunct(r) {
+				continue
+			}
+			b.WriteRune(r)
+		}
+		answer := b.String()
+		for _, filler := range []string{"嗯", "啊", "哦", "呃", "呀", "唉", "诶"} {
+			answer = strings.TrimPrefix(answer, filler)
+			answer = strings.TrimSuffix(answer, filler)
+		}
+		return answer
+	}
+	n := normalize(text)
+	if n == "" {
+		return false
+	}
+	for _, phrase := range phrases {
+		if n == normalize(phrase) {
+			return true
+		}
+	}
+	return false
+}
+
 // MatchFeedback 反馈捕获（前缀触发，返回指令与剩余文本作为反馈内容）。
 func (p *Parser) MatchFeedback(text string) (string, string, bool) {
 	// Normalize only the command prefix. The submitted body is user data:

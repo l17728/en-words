@@ -1,6 +1,7 @@
 package judge
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -84,6 +85,35 @@ type fakeLLM struct {
 func (f *fakeLLM) Judge(word string, meanings []string, text string) (string, error) {
 	f.called++
 	return f.ret, f.err
+}
+
+func TestQuizVoiceConfirmationsAreExactAndDeterministic(t *testing.T) {
+	positives := []string{"会", "会了", "知道", "认识", "记得", " 嗯，认识！ "}
+	negatives := []string{"不会", "不知道", "不认识", "不记得", "想不起来", "忘了", "不清楚", "没学过", "嗯，不会。"}
+	for _, tc := range []struct {
+		answers []string
+		want    Judgment
+		reason  string
+	}{{positives, JudgmentCorrect, "self_report_known"}, {negatives, JudgmentWrong, "self_report_unknown"}} {
+		for _, answer := range tc.answers {
+			llm := &fakeLLM{ret: "wrong"}
+			j := New(nil)
+			j.LLM = llm
+			var got Decision
+			j.OnDecision = func(_ context.Context, d Decision) { got = d }
+			assert.Equal(t, tc.want, j.Judge("cat", []string{"猫"}, answer), "answer=%q", answer)
+			assert.Zero(t, llm.called, "exact self-report must bypass L2: %q", answer)
+			assert.Equal(t, "confirmation", got.Source)
+			assert.Equal(t, tc.reason, got.Reason)
+		}
+	}
+	llm := &fakeLLM{ret: "near"}
+	j := New(nil)
+	j.LLM = llm
+	assert.Equal(t, JudgmentNear, j.Judge("cat", []string{"猫"}, "不是不会"))
+	assert.Equal(t, 1, llm.called, "negated refusal follows ordinary semantic path")
+	assert.Equal(t, JudgmentNear, j.Judge("cat", []string{"猫"}, "我认识这只猫"))
+	assert.Equal(t, 2, llm.called, "confirmation embedded in a longer answer is not a shortcut")
 }
 
 func TestTwoLevelFlow(t *testing.T) { // 05 §2.1 两级判分

@@ -54,6 +54,7 @@ const (
 	EvRepeatDone      = "repeat_done"
 	EvRepeatSkipped   = "repeat_skipped"
 	EvAnswerSubmitted = "answer_submitted"
+	EvQuizSkipped     = "quiz_skipped"
 )
 
 type QuizItemID struct {
@@ -520,6 +521,31 @@ func (m *Machine) OnEvent(e Event) error {
 			m.state.PendingText = e.Text // 文本兜底重答
 			m.acts = append(m.acts, Action{Type: ActJudgeRequest, WordID: m.currentQuizItem().WordID})
 		}
+	case EvQuizSkipped:
+		if m.state.Phase != PhaseWaitAnswer {
+			return nil
+		}
+		item := m.currentQuizItem()
+		if e.Item != nil && *e.Item != item {
+			return nil
+		}
+		if _, done := m.state.Judged[item]; done {
+			return nil
+		}
+		m.state.Judged[item] = JudgmentWrong
+		m.state.AnswerMs = append(m.state.AnswerMs, 0)
+		delete(m.state.Mastered, item.WordID)
+		m.state.FirstWrong[item.WordID] = true
+		m.state.Consec[item.WordID] = 0
+		m.state.Streak = 0
+		if item.Kind == "final" {
+			m.state.FinalWrong = appendUnique(m.state.FinalWrong, item.WordID)
+		}
+		m.acts = append(m.acts,
+			Action{Type: ActShowCross, WordID: item.WordID, Reason: "explicit_skip"},
+			Action{Type: ActSayHint, WordID: item.WordID, Reason: "give_up_next"},
+		)
+		return m.quizNext()
 	}
 	return nil
 }
