@@ -118,9 +118,10 @@ func TestModuleLoggerAndLevels(t *testing.T) { // With 子日志器 + Warn/Debug
 	m.Error("plan_failed", map[string]any{"err": "x"})
 	m.InfoCtx(context.Background(), "ctx_event", nil)
 	m.ErrorCtx(context.Background(), "ctx_err", nil)
+	m.WarnCtx(context.Background(), "ctx_warn", nil)
 	m.Warn("w", nil)
 	all := logs.All()
-	assert.GreaterOrEqual(t, len(all), 5, "Info/Warn/Error/InfoCtx/ErrorCtx 应各一条")
+	assert.GreaterOrEqual(t, len(all), 6, "Info/Warn/Error/InfoCtx/ErrorCtx/WarnCtx 应各一条")
 	for _, e := range all {
 		assert.Equal(t, "scheduler", e.ContextMap()["module"], "ModuleLogger 固定 module")
 	}
@@ -137,6 +138,34 @@ func TestWithChildNoTrace(t *testing.T) { // WithChild 无 trace 时补新 trace
 func TestNopLogger(t *testing.T) { // 装配占位不 panic
 	Nop().Info("any", "any", nil)
 	Nop().With("m").Error("e", nil)
+}
+
+func TestWarnCtxContract(t *testing.T) {
+	l, logs := newTestLogger(t)
+	ctx := WithTrace(context.Background(), "tr-warn-context")
+	l.WarnCtx(ctx, "classroom", "generation_response_rejected", map[string]any{
+		"lesson_id": 12,
+		"api_key":   "sk-ws-SECRET",
+	})
+
+	require.Len(t, logs.All(), 1)
+	e := logs.All()[0]
+	assert.Equal(t, zap.WarnLevel, e.Level)
+	assert.Equal(t, "generation_response_rejected", e.Message)
+	assert.Equal(t, "classroom", e.ContextMap()["module"])
+	assert.Equal(t, "generation_response_rejected", e.ContextMap()["event"])
+	assert.Equal(t, int64(12), e.ContextMap()["lesson_id"])
+	assert.Equal(t, "tr-warn-context", e.ContextMap()["trace_id"])
+	assert.Equal(t, "[REDACTED]", e.ContextMap()["api_key"])
+}
+
+func TestWarnCtxGeneratesMissingTrace(t *testing.T) {
+	l, logs := newTestLogger(t)
+	l.WarnCtx(context.Background(), "classroom", "generation_rejected", nil)
+
+	require.Len(t, logs.All(), 1)
+	assert.Equal(t, zap.WarnLevel, logs.All()[0].Level)
+	assert.Regexp(t, `^tr-[0-9a-f]{12,}$`, logs.All()[0].ContextMap()["trace_id"])
 }
 
 type jsonBuffer struct {

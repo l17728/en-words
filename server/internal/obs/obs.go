@@ -174,6 +174,14 @@ func (l *Logger) ErrorCtx(ctx context.Context, module, event string, payload map
 	l.z.Error(event, fields(module, event, payload, extra, tr)...)
 }
 
+func (l *Logger) WarnCtx(ctx context.Context, module, event string, payload map[string]any, extra ...Field) {
+	tr := TraceID(ctx)
+	if tr == "" {
+		tr = NewTraceID()
+	}
+	l.z.Warn(event, fields(module, event, payload, extra, tr)...)
+}
+
 // With 返回带固定模块名的子日志器（糖）。
 func (l *Logger) With(module string) *ModuleLogger {
 	return &ModuleLogger{l: l, module: module}
@@ -199,6 +207,10 @@ func (m *ModuleLogger) Error(event string, payload map[string]any, extra ...Fiel
 
 func (m *ModuleLogger) ErrorCtx(ctx context.Context, event string, payload map[string]any, extra ...Field) {
 	m.l.ErrorCtx(ctx, m.module, event, payload, extra...)
+}
+
+func (m *ModuleLogger) WarnCtx(ctx context.Context, event string, payload map[string]any, extra ...Field) {
+	m.l.WarnCtx(ctx, m.module, event, payload, extra...)
 }
 
 func (m *ModuleLogger) Warn(event string, payload map[string]any, extra ...Field) {
