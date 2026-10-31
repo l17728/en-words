@@ -65,30 +65,36 @@ class MatrixControlBoundaryTests(unittest.TestCase):
 
     @unittest.skipUnless(sys.platform == "linux", "Linux process-group tracking is verified in Linux CI")
     def test_monitor_retains_orphaned_detached_group_until_confirmed_empty(self):
+        scan_count = [0]
+
         class Process:
             pid = 100
-            returncode = None
+
+            @property
+            def returncode(self):
+                return 0 if scan_count[0] >= 4 else None
 
         process = Process()
         groups: set[int] = set()
-        snapshots: list[set[int]] = []
-        membership = iter([True, True, False])
+        membership_checks: list[bool] = []
         discovered = iter([{200}, set(), set(), set()])
 
-        async def finish_after_four_scans(_delay):
-            snapshots.append(set(groups))
-            if len(snapshots) == 4:
-                process.returncode = 0
+        def descendants(_root_pid):
+            scan_count[0] += 1
+            return {100}
 
-        with patch("first_audio_matrix_control._linux_descendant_groups", return_value={100}), \
+        def group_exists(_group):
+            membership_checks.append(200 in groups)
+            return len(membership_checks) < 3
+
+        with patch("first_audio_matrix_control._linux_descendant_groups", side_effect=descendants), \
              patch("first_audio_matrix_control._new_live_detached_groups", side_effect=lambda *_: next(discovered)), \
-             patch("first_audio_matrix_control._linux_process_group_exists", side_effect=lambda *_: next(membership)), \
-             patch("first_audio_matrix_control.asyncio.sleep", side_effect=finish_after_four_scans):
+             patch("first_audio_matrix_control._linux_process_group_exists", side_effect=group_exists):
             asyncio.run(_monitor_linux_descendant_groups(process, groups, Path("unused"), set()))
 
-        self.assertIn(200, snapshots[1], "orphaned group was dropped before its members exited")
-        self.assertIn(200, snapshots[2], "orphaned group was dropped before a second liveness check")
-        self.assertNotIn(200, snapshots[3], "empty process group should be retired")
+        self.assertEqual([True, True, True], membership_checks,
+                         "the detached group must remain tracked through repeated liveness checks")
+        self.assertNotIn(200, groups, "empty process group should be retired after a confirmed empty check")
 
     def test_cli_entry_follows_all_runtime_helpers_and_executes_in_child(self):
         source = Path(__file__).resolve().parent / "first_audio_matrix_control.py"
