@@ -81,6 +81,8 @@ The JSONL controller, test-only entry point, guarded run-root checks, source/bui
 
 Extend the Ubuntu protocol job to install Chromium and Linux system dependencies, then run `review/first_audio_matrix_control.py` after protocol, CGO guarded-backend, and production-symbol checks pass. Use a run ID derived from `GITHUB_RUN_ID` and `GITHUB_RUN_ATTEMPT`, and absolute paths to the job's Go/Node executables. Require the controller's normal successful `two_journeys_passed` result, exactly one reset, and clean shutdown; retain generated synthetic files only in the ephemeral runner workspace and do not upload them as public artifacts. This verifies Linux browser process containment and guarded-app journey behavior. It does not replace the separate 30-cold/100-warm performance matrix or the real classroom pilot.
 
+On Linux CI failure, the parent runner may report only a fixed, path-free internal failure code for `MatrixProtocolError`. It must not print exception chains, process arguments, paths, SQL, payloads, fixture values, secrets, or environment variables. Child JSONL responses remain unchanged and contain only their enumerated protocol error codes.
+
 ### Admission and cleanup hardening follow-up (2026-10-31)
 
 - Classroom REST middleware verifies that the authenticated student owns the lesson before allocating generation state, then the route repeats authorization under its generation lease. WS admission validates the ticket/lesson/account before allocation and revalidates after acquiring the lease, closing the stale-ticket reset race.

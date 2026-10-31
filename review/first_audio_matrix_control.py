@@ -51,6 +51,59 @@ class MatrixProtocolError(RuntimeError):
     pass
 
 
+_SAFE_MATRIX_FAILURE_CODES = {
+    "test-binary build deadline": "test_binary_build_deadline",
+    "compiler process tree did not exit": "compiler_process_tree_did_not_exit",
+    "source tree changed while building test binary": "source_tree_changed_during_build",
+    "response deadline or line limit": "control_response_deadline_or_limit",
+    "missing, oversized, or unterminated response": "control_response_missing_or_malformed",
+    "invalid JSON response": "control_response_invalid_json",
+    "reset count does not match completed journeys": "reset_count_mismatch",
+    "failed shutdown did not terminate child": "failed_shutdown_child_alive",
+    "child reported failed shutdown": "child_reported_failed_shutdown",
+    "child did not exit after shutdown": "child_did_not_exit_after_shutdown",
+    "test process left descendants after shutdown": "test_process_left_descendants",
+    "test binary failed after shutdown": "test_binary_failed_after_shutdown",
+    "controller returned invalid browser binding": "invalid_browser_binding",
+    "dedicated Playwright runtime is unavailable": "playwright_runtime_unavailable",
+    "unsafe browser port allocation": "unsafe_browser_port_allocation",
+    "Linux descendant process monitor failed; known groups were reaped": "linux_process_monitor_failed",
+    "Playwright journey deadline": "playwright_journey_deadline",
+    "Playwright process tree did not exit": "playwright_process_tree_alive",
+    "Playwright exited with child processes still alive": "playwright_child_processes_alive",
+    "Playwright exited with child process groups still alive": "playwright_child_process_groups_alive",
+    "Playwright report is invalid": "playwright_report_invalid",
+    "first-audio evidence is invalid": "first_audio_evidence_invalid",
+    "first-audio timing evidence violates the sample contract": "first_audio_timing_contract_violation",
+    "bind metadata does not identify the same fixture": "bind_metadata_fixture_mismatch",
+    "reset metadata does not prove a new lesson generation": "reset_metadata_generation_mismatch",
+    "private artifact root is unavailable": "private_artifact_root_unavailable",
+    "cannot enumerate Linux process table for containment": "linux_process_table_unavailable",
+    "cannot read Linux process table for containment": "linux_process_table_read_failed",
+    "cannot enumerate Linux process groups": "linux_process_group_enumeration_failed",
+    "cannot validate Linux process group membership": "linux_process_group_membership_invalid",
+    "cannot validate detached process-group identity": "detached_process_group_identity_invalid",
+    "POSIX process groups did not terminate": "posix_process_groups_alive",
+}
+
+
+def _safe_failure_code(exc: Exception) -> str:
+    """Return an allowlisted, path-free CI diagnostic; never expose raw errors."""
+    if not isinstance(exc, MatrixProtocolError):
+        return "controller_failure"
+    message = str(exc)
+    code = _SAFE_MATRIX_FAILURE_CODES.get(message)
+    if code is not None:
+        return code
+    if re.fullmatch(r"Playwright journey [1-2] failed", message, flags=re.ASCII):
+        return "playwright_journey_failed"
+    if re.fullmatch(r"Playwright journey [1-2] did not pass exactly once", message, flags=re.ASCII):
+        return "playwright_journey_count_invalid"
+    if re.fullmatch(r"test-binary build failed \(exit=-?[0-9]{1,3}\)", message, flags=re.ASCII):
+        return "test_binary_build_failed"
+    return "matrix_protocol_error"
+
+
 class MatrixCommandRejected(RuntimeError):
     def __init__(self, response: dict[str, Any]):
         self.response = response
@@ -915,7 +968,7 @@ def main() -> int:
     try:
         result = asyncio.run(run_first_audio_reset_acceptance(repository_root, args.run_id, args.go, args.node))
     except Exception as exc:
-        print(json.dumps({"status": "failed", "reason": type(exc).__name__}, separators=(",", ":")))
+        print(json.dumps({"status": "failed", "reason": _safe_failure_code(exc)}, separators=(",", ":")))
         return 1
     print(json.dumps(result, sort_keys=True, separators=(",", ":")))
     return 0

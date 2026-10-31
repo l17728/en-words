@@ -24,6 +24,7 @@ from first_audio_matrix_control import (
     _read_detached_process_groups,
     _require_matrix_process_containment_platform,
     _read_matrix_timing_evidence,
+    _safe_failure_code,
     _assert_db_absent,
     _child_environment,
     _collect_source_hashes,
@@ -39,6 +40,15 @@ from first_audio_matrix_control import (
 
 
 class MatrixControlBoundaryTests(unittest.TestCase):
+    def test_public_failure_diagnostic_is_allowlisted_and_never_includes_exception_data(self):
+        known = MatrixProtocolError("Linux descendant process monitor failed; known groups were reaped")
+        self.assertEqual(_safe_failure_code(known), "linux_process_monitor_failed")
+
+        unsafe = MatrixProtocolError("failed at /private/run sk-secret-value\nSQL SELECT * FROM users")
+        unsafe.__cause__ = RuntimeError("C:\\private\\path\\api-key")
+        self.assertEqual(_safe_failure_code(unsafe), "matrix_protocol_error")
+        self.assertEqual(_safe_failure_code(RuntimeError("raw exception /private/path")), "controller_failure")
+
     @unittest.skipUnless(sys.platform == "linux", "Linux process table failure contract")
     def test_linux_process_table_failure_is_not_reported_as_empty(self):
         with patch("first_audio_matrix_control.os.scandir", side_effect=PermissionError("denied")):
