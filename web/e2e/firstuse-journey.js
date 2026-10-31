@@ -217,7 +217,8 @@ test('first use and complete classroom with ASR unavailable, typed repeat fallba
   }
   await expect(page.getByLabel('答案输入框')).toBeEnabled()
   await page.getByLabel('答案输入框').fill('香蕉')
-  await expect.poll(() => frames.some(f => f.action?.type === 'nudge_answer' && f.context), { timeout: 30_000 }).toBe(true)
+  // The real answer timeout and teacher tool invocation can take slightly over 30s on a cold first-use journey.
+  await expect.poll(() => frames.some(f => f.action?.type === 'nudge_answer' && f.context), { timeout: 45_000 }).toBe(true)
   await expect(page.getByLabel('答案输入框')).toHaveValue('香蕉')
   await expect(page.getByRole('button', { name: /答/ })).toBeEnabled()
   await postVoiceTranscript('不会')
