@@ -122,8 +122,12 @@ test('FIRST_AUDIO_MATRIX_JOURNEY_V1 first entry reaches subtitle and first audio
   const evidencePath = process.env.FIRST_AUDIO_MATRIX_EVIDENCE || ''
   expect(evidencePath).toBeTruthy()
   expect(observedSocket).toBeTruthy()
-  await page.close()
+  await page.getByRole('button', { name: '退出', exact: true }).click()
+  const exitDialog = page.getByRole('dialog')
+  await exitDialog.getByRole('button', { name: '退出', exact: true }).click()
+  await expect(page).toHaveURL(/\/dashboard$/)
   await expect.poll(() => closedClassroomSockets.size, { timeout: 5000 }).toBe(classroomSockets.size)
+  await page.close()
   expect(classroomSockets.size).toBeGreaterThan(0)
   const wsClosed = closedClassroomSockets.size === classroomSockets.size
   await writeFile(evidencePath, JSON.stringify({
