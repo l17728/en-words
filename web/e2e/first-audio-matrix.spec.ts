@@ -117,7 +117,7 @@ test('FIRST_AUDIO_MATRIX_JOURNEY_V1 first entry reaches subtitle and first audio
   const firstAudioTime = capturedAudioStart()
   expect(firstFrameTime - enteredAt).toBeLessThan(10_000)
   expect(firstAudioTime - enteredAt).toBeLessThan(10_000)
-  await expect(page.getByText(action?.word || '', { exact: true })).toBeVisible()
+  await expect(page.getByRole('status', { name: '当前朗读字幕' }).getByText(action?.word || '', { exact: true })).toBeVisible()
   await expect.poll(() => page.evaluate(() => window.__firstAudioMatrix?.started[0]?.text || '')).toBe(action?.word)
   const evidencePath = process.env.FIRST_AUDIO_MATRIX_EVIDENCE || ''
   expect(evidencePath).toBeTruthy()
