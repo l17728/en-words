@@ -4,6 +4,13 @@ import { postClassroom } from './classroom-protocol'
 import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 
+test('recovery fixture serializes concurrent backend lifecycle changes', async ({ request, server }) => {
+  await Promise.all([server.restart(), server.restart()])
+  expect(server.pids).toHaveLength(3)
+  const status = await request.get('/api/v1/bootstrap/status')
+  expect(status.status()).toBe(200)
+})
+
 test('REC12 automatic recognition waits for business readiness and rejects prior-turn callbacks', async ({ page, request, server }) => {
   expect(server.pids).toHaveLength(1)
   const f = await fixture(request, 'voice-ready', [{ word: 'cat', meanings: ['猫'] }]); const id = await scheduled(request, f)
@@ -300,7 +307,8 @@ test('REC04 two students and administrator stay isolated while one network disco
     await expect(pb.getByRole('button', { name: /^dog/ })).toBeVisible()
     await admin.reload(); await expect(admin.getByLabel('学生用户名')).toBeVisible()
     await contexts[0].setOffline(false)
-    await expect(pa.getByText('已连接', { exact: true })).toBeVisible()
+    // WS recovery uses exponential retry up to 16s for this disconnect. Give the restored network one retry window.
+    await expect(pa.getByText('已连接', { exact: true })).toBeVisible({ timeout: 30_000 })
     await expect(pa.getByRole('button', { name: /^cat/ })).toBeVisible()
     await expect(pb.getByRole('button', { name: /^dog/ })).toBeVisible()
   } finally { await Promise.all(contexts.map(c => c.close())) }
@@ -652,6 +660,10 @@ test.describe('JD28 semantic routing rejects target tokens without answer meanin
         await input.fill(answer); await page.getByRole('button', { name: /^回\s*答$/ }).click()
         await expect.poll(() => server.model.judgeCalls).toBe(attempt + 1)
       }
+      // A successful judgment is followed by the teacher's final four-segment
+      // playback before lesson_summary is emitted. Model call count does not
+      // prove that classroom completion has reached the browser.
+      await expect.poll(() => page.evaluate(() => (window as any).__media.completed.length), { timeout: 30_000 }).toBeGreaterThanOrEqual(12)
       await expect(page.getByText('下课啦！叮当老师的小结')).toBeVisible()
       await expect(page.getByText(/首答率 0%/)).toBeVisible()
       const events = readFileSync(info.outputPath('server.log'), 'utf8').split('\n').flatMap(line => { try { return [JSON.parse(line)] } catch { return [] } })
@@ -768,17 +780,41 @@ for (const recovery of ['phase', 'pause']) test(`SUB03 ${recovery} snapshot canc
   })
   const b = await fixture(request, `snapshot-other-${recovery}`, [{ word: 'bird', meanings: ['鸟'] }]); const bid = await scheduled(request, b)
   const second = await browser.newContext({ baseURL }); const other = await second.newPage()
-  let release = () => {}; let timer: ReturnType<typeof setTimeout> | undefined
-  let bound: any; let delivered: any; let expired = false; let buffered = 0; let bytes = 0; let released = false
+  let release = () => {}; let releaseFirstPlayback = (_reason = 'manual') => {}; let firstPlaybackMessage: string | Buffer | undefined
+  let timer: ReturnType<typeof setTimeout> | undefined
+  let bound: any; let delivered: any; let firstPlayback: any; let frozenClock = 0; let expired = false; let buffered = 0; let bytes = 0; let released = false
+  let firstPlaybackSent = false; let firstPlaybackReleaseReason: string | null = null; let queuedMessages = 0
+  const clientBusinessSeqs: number[] = []
+  const bConsole: string[] = []; const bPageErrors: string[] = []
   const errors: string[] = []
   try {
     // Complete both login flows before observing either student's held playback.
-    await media(page, 'hold'); await login(page, f.username)
+    await media(page, 'hold')
+    // Record any replacement of the fixture media state, including across documents.
+    // The marker is installed after the mock init script so its initial assignment is preserved.
+    await page.addInitScript(() => {
+      const w = window as any
+      const descriptor = Object.getOwnPropertyDescriptor(w, '__media')
+      let current = w.__media
+      w.__sub03InitialMedia = current
+      w.__sub03MediaAssignments = 0
+      Object.defineProperty(w, '__media', {
+        configurable: true,
+        enumerable: descriptor?.enumerable ?? true,
+        get: () => current,
+        set: value => { w.__sub03MediaAssignments++; current = value },
+      })
+    })
+    await login(page, f.username)
     // Install after the media init script has run, before the SPA enters class.
     await page.evaluate(() => {
       const w = window as any; const synth = window.speechSynthesis
       const speak = synth.speak.bind(synth)
+      w.__sub03SpeakCalls = 0
+      w.__sub03SpeechSynthesisAtInstall = synth
       synth.speak = utterance => {
+        w.__sub03SpeakCalls++
+        w.__sub03LastSpeakText = utterance?.text ?? null
         speak(utterance)
         w.__snapshotCurrentUtterance = utterance
         queueMicrotask(() => {
@@ -786,39 +822,74 @@ for (const recovery of ['phase', 'pause']) test(`SUB03 ${recovery} snapshot canc
         })
       }
     })
-    await media(other, 'hold'); await other.clock.install(); await login(other, b.username)
+    await media(other, 'hold'); await login(other, b.username)
+    // Install before the first play_tts frame can schedule its native watchdog.
+    // Keep the fake clock running until the frame is observed, then pause it.
+    await other.clock.install({ time: new Date() })
     await page.evaluate(id => { window.history.pushState({}, '', `/classroom/${id}?e2e=1`); window.dispatchEvent(new PopStateEvent('popstate')) }, id)
     await expect.poll(() => page.evaluate(() => (window as any).__media.utterances.length)).toBeGreaterThan(0)
     await other.routeWebSocket('**/ws/classroom?*', socket => {
       const upstream = socket.connectToServer(); const queue: (string | Buffer)[] = []
-      release = () => { released = true; clearTimeout(timer); for (const message of queue.splice(0)) socket.send(message) }
+      const sendToClient = (message: string | Buffer) => {
+        const frame = JSON.parse(String(message))
+        if (frame.type !== 'heartbeat_ack' && typeof frame.seq === 'number') clientBusinessSeqs.push(frame.seq)
+        socket.send(message)
+      }
+      releaseFirstPlayback = (reason = 'manual') => {
+        if (!firstPlaybackMessage) return
+        const held = firstPlaybackMessage; firstPlaybackMessage = undefined
+        const frame = JSON.parse(String(held)); delivered = { ...frame.context }
+        firstPlaybackSent = true; firstPlaybackReleaseReason = reason
+        sendToClient(held)
+      }
+      release = (reason = 'manual') => {
+        released = true; clearTimeout(timer); releaseFirstPlayback(reason)
+        for (const message of queue.splice(0)) sendToClient(message)
+        queuedMessages = queue.length
+      }
       upstream.onMessage(message => {
         const frame = JSON.parse(String(message)); const c = frame.context
         const business = frame.type !== 'heartbeat_ack' && typeof frame.seq === 'number'
         const valid = c && typeof c.epoch === 'string' && c.epoch.length > 0 && typeof c.turn === 'string' && c.turn.length > 0
         if (business && bound && (!valid || c.epoch !== bound.epoch || aEpochs.has(c.epoch) || (frame.lesson_id !== undefined && frame.lesson_id !== bid))) {
-          errors.push('unexpected_connection_context'); socket.send(message); return
+          errors.push('unexpected_connection_context'); sendToClient(message); return
         }
         if (!bound && frame.type === 'ui_action' && frame.action?.type === 'play_tts' && valid) {
-          if (aEpochs.has(c.epoch) || (frame.lesson_id !== undefined && frame.lesson_id !== bid)) { errors.push('invalid_initial_context'); socket.send(message); return }
-          bound = { ...c }; delivered = { ...c }
-          timer = setTimeout(() => { expired = true; release() }, 15000)
+          if (aEpochs.has(c.epoch) || (frame.lesson_id !== undefined && frame.lesson_id !== bid)) { errors.push('invalid_initial_context'); sendToClient(message); return }
+          bound = { ...c }; delivered = { ...c }; firstPlayback = { segment: frame.action.seg_idx, delay: frame.action.delay_before_ms }
+          firstPlaybackMessage = message
+          timer = setTimeout(() => { expired = true; release('auto_timeout') }, 60000)
+          return
         }
-        if (!released && bound && business && valid && (queue.length > 0 || c.turn !== bound.turn)) {
+        if (!released && bound && business && valid && (firstPlaybackMessage !== undefined || queue.length > 0 || c.turn !== bound.turn)) {
           bytes += Buffer.byteLength(message); buffered++
-          if (buffered > 128 || bytes > 131072) { errors.push('barrier_overflow'); release(); socket.send(message); return }
-          queue.push(message); return
+          if (buffered > 128 || bytes > 131072) { errors.push('barrier_overflow'); release(); sendToClient(message); return }
+          queue.push(message); queuedMessages = queue.length; return
         }
         if (business && valid) delivered = { ...c }
-        socket.send(message)
+        sendToClient(message)
       })
       socket.onMessage(message => upstream.send(message))
     })
+    other.on('console', message => { if (bConsole.length < 100) bConsole.push(`${message.type()}: ${message.text()}`) })
+    other.on('pageerror', error => { if (bPageErrors.length < 30) bPageErrors.push(error.stack || error.message) })
     await other.goto(`/classroom/${bid}?e2e=1`)
-    await expect.poll(() => other.evaluate(() => (window as any).__media.utterances.length)).toBe(1)
+    await expect.poll(() => Boolean(bound && firstPlayback)).toBe(true)
     expect(bound).toBeDefined(); expect(aEpochs.has(bound.epoch)).toBe(false); expect(errors).toEqual([])
-    await other.evaluate(() => (window as any).__media.utterances[0].onstart())
-    await other.clock.pauseAt(new Date())
+    expect(firstPlayback).toEqual({ segment: 1, delay: 0 })
+    // Keep the fake clock running while the client consumes the frame and creates
+    // its zero-delay queue timer and watchdog; freeze immediately after speak begins.
+    releaseFirstPlayback()
+    await expect.poll(() => other.evaluate(() => (window as any).__media.utterances.length)).toBe(1)
+    frozenClock = await other.evaluate(() => Date.now()) + 1000
+    await other.clock.pauseAt(new Date(frozenClock))
+    expect(await other.evaluate(() => Date.now())).toBe(frozenClock)
+    await other.evaluate(() => {
+      const w = window as any; const current = w.__media.utterances.at(-1)
+      if (!current || w.__media.utterances.length !== 1 || w.__ttsDebug?.at(-1)?.status !== 'pending') throw new Error('B playback is not current and pending')
+      w.__snapshotBCurrent = current
+      current.onstart()
+    })
     const bCaption = other.getByRole('status', { name: '当前朗读字幕' })
     await expect(bCaption).toContainText('bird')
     const observed = { ...delivered }; const bCanceled = await other.evaluate(() => (window as any).__media.canceled)
@@ -839,7 +910,13 @@ for (const recovery of ['phase', 'pause']) test(`SUB03 ${recovery} snapshot canc
     await expect(caption).toHaveText('')
     await expect(bCaption).toContainText('bird')
     expect(await other.evaluate(() => (window as any).__media.canceled)).toBe(bCanceled)
+    expect(await other.evaluate(() => {
+      const w = window as any
+      return w.__snapshotBCurrent === w.__media.utterances.at(-1) && w.__ttsDebug?.at(-1)?.status === 'started'
+    })).toBe(true)
+    expect(await other.evaluate(() => Date.now())).toBe(frozenClock)
     expect(delivered).toEqual(observed); expect(errors).toEqual([]); expect(expired).toBe(false)
+    expect(clientBusinessSeqs).toEqual([...clientBusinessSeqs].sort((left, right) => left - right))
     await expect.poll(() => buffered).toBeGreaterThan(0)
     expect(expired).toBe(false); await other.clock.resume(); release()
     // Actual client application of the released successor, not merely socket.send evidence.
@@ -847,9 +924,63 @@ for (const recovery of ['phase', 'pause']) test(`SUB03 ${recovery} snapshot canc
     await expect.poll(() => other.evaluate(() => (window as any).__media.utterances.length)).toBeGreaterThan(1)
     expect(errors).toEqual([])
   } finally {
+    try {
+      const bDiagnostic = await other.evaluate(() => {
+        const w = window as any; const media = w.__media
+        return {
+          href: location.href,
+          mediaKeys: media ? Object.keys(media) : null,
+          spoken: media?.spoken ?? null,
+          utterances: media?.utterances?.map((u: any) => ({ text: u?.text ?? null, lang: u?.lang ?? null })) ?? null,
+          mode: media?.mode ?? null,
+          ttsDebugTail: w.__ttsDebug?.slice(-8) ?? null,
+          captionText: document.querySelector('[aria-label="当前朗读字幕"]')?.textContent ?? null,
+          speechAlert: document.querySelector('[role="alert"]')?.textContent ?? null,
+          connectedTextVisible: [...document.querySelectorAll('body *')].some((e: any) => e.children.length === 0 && e.textContent?.trim() === '已连接'),
+          bodyTextTail: document.body?.innerText?.slice(-1200) ?? null,
+          now: Date.now(),
+        }
+      })
+      await testInfo.attach('sub03-b-runtime-diagnostic', { body: JSON.stringify({
+        ...bDiagnostic, firstPlayback, firstPlaybackMessageHeld: firstPlaybackMessage !== undefined,
+        firstPlaybackSent, firstPlaybackReleaseReason, expired, released, buffered, bytes,
+        queuedMessages, delivered, bound, errors, bConsole, bPageErrors,
+      }, null, 2), contentType: 'application/json' })
+    } catch (error) {
+      await testInfo.attach('sub03-b-runtime-diagnostic-error', { body: String(error), contentType: 'text/plain' })
+    }
     await other.clock.resume().catch(() => {})
-    release(); clearTimeout(timer)
-    await testInfo.attach('bounded-client-isolation', { body: JSON.stringify({ lesson: bid, bound, delivered, buffered, bytes, expired, errors, scope: 'authorized connection plus epoch; no per-frame owner field' }), contentType: 'application/json' })
+    releaseFirstPlayback('finally'); release('finally'); clearTimeout(timer)
+    try {
+      const diagnostic = await page.evaluate(() => {
+        const w = window as any
+        const media = w.__media
+        const synth = window.speechSynthesis as any
+        return {
+          href: location.href,
+          mediaKeys: media ? Object.keys(media) : null,
+          mediaIsInitial: !!media && media === w.__sub03InitialMedia,
+          mediaAssignments: w.__sub03MediaAssignments ?? null,
+          spoken: media?.spoken ?? null,
+          utterances: media?.utterances?.map((u: any) => ({ text: u?.text ?? null, lang: u?.lang ?? null })) ?? null,
+          mode: media?.mode ?? null,
+          speakCalls: w.__sub03SpeakCalls ?? null,
+          lastSpeakText: w.__sub03LastSpeakText ?? null,
+          wrapperCurrentUtterance: w.__snapshotCurrentUtterance?.text ?? null,
+          speechSynthesisExists: !!synth,
+          speechSynthesisHasMockVoices: typeof synth?.getVoices === 'function' ? synth.getVoices().map((v: any) => v.name) : null,
+          speakFunction: typeof synth?.speak === 'function' ? String(synth.speak).slice(0, 500) : null,
+          ttsDebugTail: w.__ttsDebug?.slice(-5) ?? null,
+          captionText: document.querySelector('[aria-label="当前朗读字幕"]')?.textContent ?? null,
+          speechError: document.querySelector('[role="alert"]')?.textContent ?? null,
+          alertTexts: [...document.querySelectorAll('[role="alert"]')].map((e: any) => e.textContent),
+        }
+      })
+      await testInfo.attach('sub03-a-runtime-diagnostic', { body: JSON.stringify(diagnostic, null, 2), contentType: 'application/json' })
+    } catch (error) {
+      await testInfo.attach('sub03-a-runtime-diagnostic-error', { body: String(error), contentType: 'text/plain' })
+    }
+    await testInfo.attach('bounded-client-isolation', { body: JSON.stringify({ lesson: bid, bound, delivered, firstPlayback, frozenClock, buffered, bytes, expired, errors, firstPlaybackSent, firstPlaybackReleaseReason, queuedMessages, clientBusinessSeqs, scope: 'authorized connection plus epoch; no per-frame owner field' }), contentType: 'application/json' })
     await second.close()
   }
 })
