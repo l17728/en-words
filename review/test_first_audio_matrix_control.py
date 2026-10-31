@@ -19,6 +19,7 @@ from first_audio_matrix_control import (
     _matrix_fixture_login,
     _linux_descendant_groups,
     _linux_process_group_exists,
+    _monitor_linux_descendant_groups,
     _new_live_detached_groups,
     _read_detached_process_groups,
     _require_matrix_process_containment_platform,
