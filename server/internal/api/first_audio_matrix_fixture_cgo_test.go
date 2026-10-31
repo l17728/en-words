@@ -5,6 +5,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
@@ -84,6 +85,11 @@ func seedFirstAudioSetupFixture(db *gorm.DB, capability []byte, runID string, no
 		if err := bookRepo.CreateEntry(entry); err != nil {
 			return firstAudioFixtureIdentity{}, "", err
 		}
+	}
+	if err := scheduler.NewService(store.NewSchedulerRepo(db), nil, scheduler.RealClock{}).SeedCards(
+		context.Background(), studentID, firstAudioFixtureBookID, []int64{firstAudioFixtureWordIDOne, firstAudioFixtureWordIDTwo},
+	); err != nil {
+		return firstAudioFixtureIdentity{}, "", fmt.Errorf("seed fixture book enrollment: %w", err)
 	}
 	lesson := &scheduler.Lesson{
 		ID: firstAudioFixtureLessonID, StudentID: studentID, BookID: firstAudioFixtureBookID,

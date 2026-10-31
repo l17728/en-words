@@ -35,10 +35,9 @@ const (
 )
 
 var (
-	firstAudioIDPattern            = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
-	firstAudioRunIDPattern         = regexp.MustCompile(`^[A-Za-z0-9_-]{8,64}$`)
-	errFirstAudioFatal             = errors.New("first-audio matrix protocol failure")
-	errMatrixBackendNotImplemented = errors.New("isolated guarded matrix backend is not implemented")
+	firstAudioIDPattern    = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
+	firstAudioRunIDPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{8,64}$`)
+	errFirstAudioFatal     = errors.New("first-audio matrix protocol failure")
 )
 
 type firstAudioState string
@@ -130,9 +129,8 @@ func newFirstAudioControl(capability []byte, factory firstAudioBackendFactory) *
 }
 
 // TestFirstAudioMatrixControlHarness is selected only by the dedicated test
-// binary invocation. The production implementation of the isolated SQLite
-// bootstrap is intentionally absent; bind therefore fails closed until that
-// reviewed backend is implemented.
+// binary invocation. Its isolated SQLite backend exists only in this test
+// binary; it does not add a production route, CLI, or listener.
 func TestFirstAudioMatrixControlHarness(t *testing.T) {
 	if os.Getenv(firstAudioHarnessGateEnv) != firstAudioHarnessGate {
 		t.Skip("dedicated first-audio matrix harness only")
@@ -142,17 +140,13 @@ func TestFirstAudioMatrixControlHarness(t *testing.T) {
 		t.Errorf("first-audio matrix harness environment rejected: %v", err)
 		return
 	}
-	control := newFirstAudioControl(capability, unavailableFirstAudioBackend)
+	control := newFirstAudioControl(capability, newFirstAudioGuardedBackend)
 	if err := control.serve(os.Stdin, os.Stdout); err != nil {
 		// The Go test runner's failure trailer is emitted only after the protocol
 		// has terminated; never write a non-JSON diagnostic into the control stream.
 		fmt.Fprintf(os.Stderr, "first-audio matrix harness failed: %v\n", err)
 		t.Errorf("first-audio matrix harness failed")
 	}
-}
-
-func unavailableFirstAudioBackend() (firstAudioBackend, error) {
-	return nil, errMatrixBackendNotImplemented
 }
 
 func firstAudioCapabilityFromEnvironment() ([]byte, error) {
@@ -894,10 +888,10 @@ func TestFirstAudioMatrixResetReplayAndShutdownStateMachine(t *testing.T) {
 	}
 }
 
-func TestFirstAudioMatrixBindFailsClosedWithoutIsolationBackend(t *testing.T) {
+func TestFirstAudioMatrixBindFailsClosedWhenBackendInitializationIsUnavailable(t *testing.T) {
 	capability := firstAudioTestCapability()
 	encodedCapability := base64.RawURLEncoding.EncodeToString(capability)
-	control := newFirstAudioControl(capability, unavailableFirstAudioBackend)
+	control := newFirstAudioControl(capability, func() (firstAudioBackend, error) { return nil, errors.New("fixture setup denied") })
 	bind := firstAudioRequestLine(t, "bind-1", encodedCapability, "bind", map[string]any{"fixture": firstAudioFixture})
 	metadata := firstAudioRequestLine(t, "metadata-1", encodedCapability, "metadata", map[string]any{})
 	shutdown := firstAudioRequestLine(t, "shutdown-1", encodedCapability, "shutdown", map[string]any{})
