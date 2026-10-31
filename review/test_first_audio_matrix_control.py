@@ -15,6 +15,7 @@ from unittest.mock import patch
 
 from first_audio_matrix_control import (
     MatrixProtocolError,
+    MatrixCommandRejected,
     RUN_ID_RE,
     _matrix_fixture_login,
     _linux_descendant_groups,
@@ -25,9 +26,13 @@ from first_audio_matrix_control import (
     _require_matrix_process_containment_platform,
     _read_matrix_timing_evidence,
     _safe_failure_code,
+    _safe_failure_stage,
     _assert_db_absent,
     _child_environment,
+    _build_environment,
     _collect_source_hashes,
+    _collect_web_bundle_manifest,
+    _source_manifest_identity,
     CREATE_SUSPENDED_FLAG,
     _pairs_no_duplicates,
     _private_run_paths,
@@ -36,10 +41,21 @@ from first_audio_matrix_control import (
     _kill_process_tree,
     _write_source_manifest,
     valid_first_audio_origin_for_runner,
+    verify_web_bundle_identity,
 )
 
 
 class MatrixControlBoundaryTests(unittest.TestCase):
+    def test_build_environment_keeps_go_caches_explicit_when_home_is_private(self):
+        with patch.dict(os.environ, {"GOPATH": "", "GOMODCACHE": "", "GOCACHE": "",
+                                    "LOCALAPPDATA": "C:/Users/test/AppData/Local"}, clear=False):
+            env = _build_environment(Path("D:/private-run"))
+        self.assertEqual(str(Path("D:/private-run")), env["HOME"])
+        self.assertEqual("1", env["CGO_ENABLED"], "the guarded SQLite backend requires the cgo-tagged test binary")
+        self.assertTrue(env["GOPATH"].endswith("/go") or env["GOPATH"].endswith("\\go"))
+        self.assertTrue(env["GOMODCACHE"].endswith("pkg/mod") or env["GOMODCACHE"].endswith("pkg\\mod"))
+        self.assertTrue(env["GOCACHE"].endswith("go-build"))
+
     def test_public_failure_diagnostic_is_allowlisted_and_never_includes_exception_data(self):
         known = MatrixProtocolError("Linux descendant process monitor failed; known groups were reaped")
         self.assertEqual(_safe_failure_code(known), "linux_process_monitor_failed")
@@ -48,6 +64,15 @@ class MatrixControlBoundaryTests(unittest.TestCase):
         unsafe.__cause__ = RuntimeError("C:\\private\\path\\api-key")
         self.assertEqual(_safe_failure_code(unsafe), "matrix_protocol_error")
         self.assertEqual(_safe_failure_code(RuntimeError("raw exception /private/path")), "controller_failure")
+
+    def test_control_rejection_exposes_only_command_and_allowlisted_error_code(self):
+        rejection = MatrixCommandRejected({"status": "rejected", "error": {"code": "fixture_unavailable"}}, "bind")
+        self.assertEqual(_safe_failure_code(rejection), "control_bind_rejected_fixture_unavailable")
+        self.assertEqual(_safe_failure_stage(rejection), "bind")
+        unsafe = MatrixCommandRejected({"status": "failed", "error": {"code": "raw /private/path"}}, "bind")
+        self.assertEqual(_safe_failure_code(unsafe), "control_response_rejected")
+        staged = MatrixCommandRejected({"status": "failed", "error": {"code": "bind_api_app_startup_failed"}}, "bind")
+        self.assertEqual(_safe_failure_stage(staged), "api_app_startup")
 
     @unittest.skipUnless(sys.platform == "linux", "Linux process table failure contract")
     def test_linux_process_table_failure_is_not_reported_as_empty(self):
@@ -322,23 +347,72 @@ class MatrixControlBoundaryTests(unittest.TestCase):
                     process.wait(timeout=5)
 
     def test_first_audio_timing_evidence_is_minimal_bound_and_under_budget(self):
-        sample = {"lesson_id": 41, "generation": 2, "first_frame_ms": 375.5,
-                  "audio_start_ms": 416.0, "websocket_closed": True}
+        identity = "a" * 64
+        sample = {"lesson_id": 41, "generation": 2, "show_word_ms": 310.0, "first_frame_ms": 375.5,
+                  "audio_start_ms": 416.0, "receipt_to_onstart_ms": 40.5, "websocket_closed": True,
+                  "web_build_identity": identity}
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "sample.json"
             path.write_text(json.dumps(sample), encoding="utf-8")
-            self.assertEqual(sample, _read_matrix_timing_evidence(path, 41, 2))
+            self.assertEqual(sample, _read_matrix_timing_evidence(path, 41, 2, identity))
             for invalid in (
                 {**sample, "lesson_id": 42},
                 {**sample, "audio_start_ms": 10_000},
                 {**sample, "audio_start_ms": 200},
+                {**sample, "show_word_ms": 400},
+                {**sample, "show_word_ms": True},
+                {**sample, "receipt_to_onstart_ms": -1},
+                {**sample, "receipt_to_onstart_ms": 5},
                 {**sample, "first_frame_ms": True},
                 {**sample, "websocket_closed": False},
+                {**sample, "web_build_identity": "b" * 64},
                 {**sample, "transcript": "fixture answer"},
             ):
                 path.write_text(json.dumps(invalid), encoding="utf-8")
                 with self.assertRaises(MatrixProtocolError):
-                    _read_matrix_timing_evidence(path, 41, 2)
+                    _read_matrix_timing_evidence(path, 41, 2, identity)
+
+    def test_frozen_web_bundle_is_bound_to_manifest_and_current_source(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "server").mkdir()
+            source = root / "server" / "main.go"
+            source.write_text("package main\n", encoding="utf-8")
+            web_source = root / "web" / "src"
+            web_public = root / "web" / "public"
+            web_source.mkdir(parents=True)
+            web_public.mkdir(parents=True)
+            app_source = web_source / "App.tsx"
+            public_asset = web_public / "mark.png"
+            app_source.write_text("export const app = 1\n", encoding="utf-8")
+            public_asset.write_bytes(b"asset-v1")
+            build_root = root / ".test-artifacts" / "build"
+            output = build_root / "web-dist"
+            output.mkdir(parents=True)
+            (output / "index.html").write_text("<main>frozen</main>", encoding="utf-8")
+            bundle_files, bundle_id = _collect_web_bundle_manifest(output)
+            source_id = _source_manifest_identity(_collect_source_hashes(root / "server"))
+            (build_root / "web-build-manifest.json").write_text(json.dumps({
+                "schema_version": 1, "identity": bundle_id,
+                "source_identity": source_id, "files": bundle_files,
+            }), encoding="utf-8")
+            verify_web_bundle_identity(output, bundle_id, root)
+
+            (output / "index.html").write_text("<main>changed bundle</main>", encoding="utf-8")
+            with self.assertRaises(MatrixProtocolError):
+                verify_web_bundle_identity(output, bundle_id, root)
+            (output / "index.html").write_text("<main>frozen</main>", encoding="utf-8")
+            source.write_text("package main\n// changed source\n", encoding="utf-8")
+            with self.assertRaises(MatrixProtocolError):
+                verify_web_bundle_identity(output, bundle_id, root)
+            source.write_text("package main\n", encoding="utf-8")
+            app_source.write_text("export const app = 2\n", encoding="utf-8")
+            with self.assertRaises(MatrixProtocolError):
+                verify_web_bundle_identity(output, bundle_id, root)
+            app_source.write_text("export const app = 1\n", encoding="utf-8")
+            public_asset.write_bytes(b"asset-v2")
+            with self.assertRaises(MatrixProtocolError):
+                verify_web_bundle_identity(output, bundle_id, root)
 
     def test_synthetic_browser_login_is_per_run_and_never_uses_capability_as_password(self):
         import base64

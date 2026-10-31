@@ -202,6 +202,37 @@ func TestPlaybackLegacySnapshotKeepsShortReteachAndReview(t *testing.T) {
 	require.Zero(t, a.DelayBeforeMs)
 }
 
+func TestShowWordLeadSnapshotMigrationAndValidation(t *testing.T) {
+	m, _ := newMachine(t, batchN(1))
+	legacy := m.Snapshot()
+	legacy.Config.SnapshotVersion = 0
+	legacy.Config.ShowWordLeadMs = 0
+	require.NoError(t, m.Restore(legacy))
+	require.Equal(t, 800, m.Snapshot().Config.ShowWordLeadMs, "pre-setting snapshots preserve the historical lead")
+	d, ok := m.TimeoutFor()
+	require.True(t, ok)
+	require.Equal(t, 800*time.Millisecond, d)
+
+	invalid := m.Snapshot()
+	invalid.Config.SnapshotVersion = 1
+	invalid.Config.ShowWordLeadMs = 0
+	before := m.Snapshot()
+	require.Error(t, m.Restore(invalid), "versioned snapshots may not omit the required setting")
+	require.Equal(t, before, m.Snapshot(), "invalid restore must be atomic")
+}
+
+func TestShowWordLeadIsFrozenWhenMachineIsCreated(t *testing.T) {
+	cfg := newCfg()
+	cfg.ShowWordLeadMs = 100
+	m := NewMachine(1, 1, 7, batchN(1), cfg, &fakeClock{t: time.Now()})
+	require.NoError(t, m.Start())
+	cfg.ShowWordLeadMs = 2000 // later settings changes affect future machines only
+	d, ok := m.TimeoutFor()
+	require.True(t, ok)
+	require.Equal(t, 100*time.Millisecond, d)
+	require.Equal(t, 100, m.Snapshot().Config.ShowWordLeadMs)
+}
+
 func TestPlaybackMaximumGapAndReviewResumeAreBounded(t *testing.T) {
 	m, _ := newMachine(t, batchN(1))
 	st := m.Snapshot()

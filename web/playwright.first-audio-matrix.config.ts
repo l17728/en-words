@@ -7,11 +7,13 @@ const webPort = Number(process.env.FIRST_AUDIO_MATRIX_WEB_PORT || 0)
 const outputDir = process.env.FIRST_AUDIO_MATRIX_OUTPUT_DIR || ''
 const reportPath = process.env.FIRST_AUDIO_MATRIX_REPORT || ''
 const evidencePath = process.env.FIRST_AUDIO_MATRIX_EVIDENCE || ''
+const webOutDir = process.env.FIRST_AUDIO_MATRIX_WEB_OUT_DIR || ''
 const parsedApi = new URL(apiOrigin)
 
 if (parsedApi.protocol !== 'http:' || parsedApi.hostname !== '127.0.0.1' || !parsedApi.port ||
     !Number.isInteger(webPort) || webPort < 1024 || webPort > 65535 || webPort === 8080 || webPort === 5173 ||
-    !outputDir || !reportPath || !evidencePath) {
+    !outputDir || !reportPath || !evidencePath ||
+    (process.env.FIRST_AUDIO_MATRIX_REUSE_BUILD === '1' && !webOutDir)) {
   throw new Error('First-audio matrix requires explicit loopback API, web port, and private artifact paths')
 }
 
@@ -20,7 +22,8 @@ mkdirSync(dirname(reportPath), { recursive: true })
 
 const webServerEnv: Record<string, string> = {}
 for (const name of ['PATH', 'LANG', 'LC_ALL', 'SystemRoot', 'WINDIR', 'PATHEXT', 'HOME', 'TMPDIR', 'TEMP', 'TMP',
-  'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'PLAYWRIGHT_BROWSERS_PATH', 'NODE_OPTIONS']) {
+  'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'PLAYWRIGHT_BROWSERS_PATH', 'NODE_OPTIONS',
+  'FIRST_AUDIO_MATRIX_REUSE_BUILD', 'FIRST_AUDIO_MATRIX_WEB_OUT_DIR']) {
   const value = process.env[name]
   if (value) webServerEnv[name] = value
 }
@@ -31,6 +34,9 @@ webServerEnv.CI = '1'
 // the browser-only login data before npm/Vite are spawned.
 webServerEnv.FIRST_AUDIO_MATRIX_USERNAME = ''
 webServerEnv.FIRST_AUDIO_MATRIX_PASSWORD = ''
+const webServerCommand = process.env.FIRST_AUDIO_MATRIX_REUSE_BUILD === '1'
+  ? `"${process.execPath}" "${resolve('node_modules/vite/bin/vite.js')}" preview --config e2e/vite.closure.config.ts --host 127.0.0.1 --strictPort --outDir "${resolve(webOutDir)}"`
+  : 'npm run e2e:serve'
 
 export default defineConfig({
   testDir: 'e2e',
@@ -48,7 +54,7 @@ export default defineConfig({
   outputDir: resolve(outputDir),
   reporter: [['list'], ['json', { outputFile: resolve(reportPath) }]],
   webServer: [{
-    command: 'npm run e2e:serve',
+    command: webServerCommand,
     env: webServerEnv,
     url: `http://127.0.0.1:${webPort}`,
     reuseExistingServer: false,

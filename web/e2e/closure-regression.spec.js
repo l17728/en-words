@@ -190,6 +190,27 @@ test('playback settings remain private to their student after relogin', async ({
   await expect(page.getByLabel('英文重复间隔', { exact: true })).toHaveValue('10.0')
 })
 
+test('first-audio lead setting saves millisecond boundaries and survives reload', async ({ page }) => {
+  await login(page, 'closure-a')
+  await page.goto('/settings')
+  const lead = page.locator('#showWordLeadMs')
+  await expect(lead).toHaveValue('0.25')
+
+  for (const [seconds, milliseconds] of [['0.1', 100], ['2', 2000], ['0.25', 250]]) {
+    await lead.fill(seconds)
+    const saved = page.waitForResponse(response => response.url().endsWith('/student/playback-settings') && response.request().method() === 'POST')
+    await page.getByRole('button', { name: /保存设置/ }).click()
+    const response = await saved
+    const body = await response.json()
+    expect(body.code).toBe(0)
+    expect(body.data.settings.showWordLeadMs).toBe(milliseconds)
+    await expect(lead).toHaveValue(seconds)
+  }
+
+  await page.reload()
+  await expect(page.locator('#showWordLeadMs')).toHaveValue('0.25')
+})
+
 test('injected pause/resume protocol cancels delay and deduplicates recovery speech', async ({ page, request }) => {
   // Protocol fixture only: Go FakeClock tests establish real session-timeout facts.
   const admin = await api(request, '/auth/login', null, { username: 'closure-admin', password })

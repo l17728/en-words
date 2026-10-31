@@ -15,14 +15,19 @@ import (
 )
 
 func playbackValues() map[string]any {
-	return map[string]any{"ttsEnRepeat": 2, "ttsZhRepeat": 2, "ttsIntervalMs": 0, "ttsZhIntervalMs": 300, "ttsSwitchIntervalMs": 10000}
+	return map[string]any{"ttsEnRepeat": 2, "ttsZhRepeat": 2, "ttsIntervalMs": 0, "ttsZhIntervalMs": 300, "ttsSwitchIntervalMs": 10000, "showWordLeadMs": 500}
+}
+func legacyPlaybackValues() map[string]any {
+	values := playbackValues()
+	delete(values, "showWordLeadMs")
+	return values
 }
 func playbackExpect() config.PlaybackSettings {
-	return config.PlaybackSettings{TtsEnRepeat: 2, TtsZhRepeat: 2, TtsIntervalMs: 0, TtsZhIntervalMs: 300, TtsSwitchIntervalMs: 10000}
+	return config.PlaybackSettings{TtsEnRepeat: 2, TtsZhRepeat: 2, TtsIntervalMs: 0, TtsZhIntervalMs: 300, TtsSwitchIntervalMs: 10000, ShowWordLeadMs: 500}
 }
 
-func TestPlaybackStrictFiveFieldContract(t *testing.T) {
-	keys := []string{"ttsEnRepeat", "ttsZhRepeat", "ttsIntervalMs", "ttsZhIntervalMs", "ttsSwitchIntervalMs"}
+func TestPlaybackStrictSixFieldAndLegacyFiveFieldContract(t *testing.T) {
+	keys := []string{"ttsEnRepeat", "ttsZhRepeat", "ttsIntervalMs", "ttsZhIntervalMs", "ttsSwitchIntervalMs", "showWordLeadMs"}
 	for _, key := range keys {
 		for _, kind := range []string{"missing", "null", "float", "string", "low", "high"} {
 			t.Run(key+"_"+kind, func(t *testing.T) {
@@ -44,29 +49,49 @@ func TestPlaybackStrictFiveFieldContract(t *testing.T) {
 				if strings.HasSuffix(key, "Repeat") && kind == "low" {
 					data[key] = 0
 				}
+				if key == "showWordLeadMs" && kind == "low" {
+					data[key] = 99
+				}
+				if key == "showWordLeadMs" && kind == "high" {
+					data[key] = 2001
+				}
 				raw, err := json.Marshal(data)
 				require.NoError(t, err)
-				_, err = decodePlaybackSettings(strings.NewReader(string(raw)))
+				_, hasLead, err := decodePlaybackSettings(strings.NewReader(string(raw)))
+				if key == "showWordLeadMs" && kind == "missing" {
+					require.NoError(t, err, "the legacy five-field contract remains supported")
+					require.False(t, hasLead)
+					return
+				}
 				require.Error(t, err)
 			})
 		}
 	}
-	for _, raw := range []string{`null`, `[]`, `{}`, `{"ttsEnRepeat":2}`, strings.Repeat(" ", 4097)} {
-		_, err := decodePlaybackSettings(strings.NewReader(raw))
+	for _, raw := range []string{`null`, `[]`, `{}`, `{"ttsEnRepeat":2}`, strings.Repeat(" ", 4097),
+		`{"ttsEnRepeat":2,"ttsZhRepeat":1,"ttsIntervalMs":1,"ttsZhIntervalMs":1,"ttsSwitchIntervalMs":1,"showWordLeadMs":null}`,
+		`{"ttsEnRepeat":2,"ttsEnRepeat":3,"ttsZhRepeat":1,"ttsIntervalMs":1,"ttsZhIntervalMs":1,"ttsSwitchIntervalMs":1,"showWordLeadMs":250}`} {
+		_, _, err := decodePlaybackSettings(strings.NewReader(raw))
 		require.Error(t, err)
 	}
 	data := playbackValues()
 	data["student_id"] = 99
 	raw, err := json.Marshal(data)
 	require.NoError(t, err)
-	_, err = decodePlaybackSettings(strings.NewReader(string(raw)))
+	_, _, err = decodePlaybackSettings(strings.NewReader(string(raw)))
 	require.Error(t, err)
 	raw, err = json.Marshal(playbackValues())
 	require.NoError(t, err)
-	actual, err := decodePlaybackSettings(strings.NewReader(string(raw)))
+	actual, hasLead, err := decodePlaybackSettings(strings.NewReader(string(raw)))
 	require.NoError(t, err)
 	require.Equal(t, playbackExpect(), actual)
-	_, err = decodePlaybackSettings(playbackBadReader{})
+	require.True(t, hasLead)
+	raw, err = json.Marshal(legacyPlaybackValues())
+	require.NoError(t, err)
+	legacy, hasLead, err := decodePlaybackSettings(strings.NewReader(string(raw)))
+	require.NoError(t, err)
+	require.False(t, hasLead)
+	require.Equal(t, 0, legacy.ShowWordLeadMs)
+	_, _, err = decodePlaybackSettings(playbackBadReader{})
 	require.Error(t, err)
 }
 
@@ -89,14 +114,20 @@ func TestPlaybackScopeIsolationAndAdminDefaults(t *testing.T) {
 	require.Equal(t, 0, resp.Code)
 	require.Equal(t, playbackExpect(), a.Cfg.Playback(sid))
 	require.Equal(t, 3, a.Cfg.Playback(sidB).TtsEnRepeat)
+	legacy := legacyPlaybackValues()
+	legacy["ttsEnRepeat"] = 4
+	resp = req2(t, a.Router(), "POST", "/api/v1/student/playback-settings", tokB, legacy)
+	require.Equal(t, 0, resp.Code)
 	defaults := playbackValues()
 	defaults["ttsEnRepeat"] = 5
 	defaults["ttsZhRepeat"] = 4
+	defaults["showWordLeadMs"] = 900
 	resp = req2(t, a.Router(), "POST", "/api/v1/admin/playback-settings", admin, defaults)
 	require.Equal(t, 0, resp.Code)
+	require.Equal(t, 900, a.Cfg.Playback(sidB).ShowWordLeadMs, "legacy write must not pin a student override for the new key")
 	require.Equal(t, playbackExpect(), a.Cfg.Playback(sid))
-	require.Equal(t, 5, a.Cfg.Playback(sidB).TtsEnRepeat)
-	require.Equal(t, 4, a.Cfg.Playback(sidB).TtsZhRepeat)
+		require.Equal(t, 4, a.Cfg.Playback(sidB).TtsEnRepeat, "global updates must preserve a student's explicit override")
+		require.Equal(t, 2, a.Cfg.Playback(sidB).TtsZhRepeat, "legacy writes pin the original five student overrides")
 	for _, method := range []string{"GET", "POST"} {
 		resp = req2(t, a.Router(), method, "/api/v1/student/playback-settings?student_id=999", tok, playbackValues())
 		require.Equal(t, errBadRequest, resp.Code)
@@ -112,9 +143,9 @@ func TestPlaybackScopeIsolationAndAdminDefaults(t *testing.T) {
 	require.Equal(t, playbackExpect(), a.Cfg.Playback(sid))
 }
 
-func TestPlaybackTransactionFailureRollsBackAllFiveValues(t *testing.T) {
+func TestPlaybackTransactionFailureRollsBackAllSixValues(t *testing.T) {
 	for _, global := range []bool{false, true} {
-		for _, failure := range []string{"config", "audit"} {
+		for _, failure := range []string{"config", "lead_config", "audit"} {
 			t.Run(map[bool]string{false: "student", true: "global"}[global]+"_"+failure, func(t *testing.T) {
 				a, sid, _, _, _ := durableSettlementFixture(t)
 				token, _ := loginGet(t, a, "settlement-student", "fixturepw")
@@ -128,7 +159,9 @@ func TestPlaybackTransactionFailureRollsBackAllFiveValues(t *testing.T) {
 				}
 				before := a.Cfg.Playback(sid)
 				trigger := "CREATE TRIGGER fail_playback BEFORE INSERT ON " + table + " WHEN NEW.key='ttsZhRepeat' BEGIN SELECT RAISE(ABORT,'fixture config failure'); END"
-				if failure == "audit" {
+				if failure == "lead_config" {
+					trigger = "CREATE TRIGGER fail_playback BEFORE INSERT ON " + table + " WHEN NEW.key='showWordLeadMs' BEGIN SELECT RAISE(ABORT,'fixture config failure'); END"
+				} else if failure == "audit" {
 					trigger = "CREATE TRIGGER fail_playback BEFORE INSERT ON audit_logs BEGIN SELECT RAISE(ABORT,'fixture audit failure'); END"
 				}
 				require.NoError(t, a.DB.Exec(trigger).Error)

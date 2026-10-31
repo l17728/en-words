@@ -12,6 +12,12 @@ func playbackDefaults(cfg config.EffectiveSnapshot) config.EffectiveSnapshot {
 	if cfg.TtsZhRepeat == 0 {
 		cfg.TtsZhRepeat = 1
 	}
+	if cfg.ShowWordLeadMs == 0 {
+		cfg.ShowWordLeadMs = 250
+	}
+	if cfg.SnapshotVersion == 0 {
+		cfg.SnapshotVersion = 1
+	}
 	return cfg
 }
 
@@ -25,6 +31,8 @@ func legacySnapshotConfig(saved *config.EffectiveSnapshot) config.EffectiveSnaps
 	}
 	cfg = playbackDefaults(cfg)
 	cfg.PlaybackVersion = 0
+	cfg.ShowWordLeadMs = 800
+	cfg.SnapshotVersion = 1
 	cfg.TtsZhRepeat = 1
 	// Legacy players never applied the stored interval. Keep the actual cadence.
 	cfg.TtsIntervalMs, cfg.TtsZhIntervalMs, cfg.TtsSwitchIntervalMs = 0, 0, 0
@@ -34,6 +42,9 @@ func legacySnapshotConfig(saved *config.EffectiveSnapshot) config.EffectiveSnaps
 func validatePlaybackSnapshot(cfg config.EffectiveSnapshot) error {
 	if cfg.PlaybackVersion < 0 || cfg.PlaybackVersion > 1 {
 		return fmt.Errorf("classroom: unsupported playback snapshot")
+	}
+	if cfg.SnapshotVersion != 1 || cfg.ShowWordLeadMs < 100 || cfg.ShowWordLeadMs > 2000 {
+		return fmt.Errorf("classroom: unsupported show-word lead snapshot")
 	}
 	if cfg.TtsEnRepeat < 1 || cfg.TtsEnRepeat > 5 || cfg.TtsZhRepeat < 1 || cfg.TtsZhRepeat > 5 {
 		return fmt.Errorf("classroom: invalid playback repeat count")

@@ -20,7 +20,7 @@ import subprocess
 import sys
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 from urllib.parse import urlparse
 
 if os.name == "nt":
@@ -34,7 +34,16 @@ MATRIX_E2E_CONFIG = "web/playwright.first-audio-matrix.config.ts"
 MATRIX_E2E_MARKER = "FIRST_AUDIO_MATRIX_JOURNEY_V1"
 RUN_ID_RE = re.compile(r"^[A-Za-z0-9_-]{8,64}$", re.ASCII)
 ERROR_CODES_BY_COMMAND = {
-    "bind": {"rejected": {"invalid_state", "fixture_unavailable"}, "failed": {"bind_setup_failed"}},
+    "bind": {"rejected": {"invalid_state", "fixture_unavailable"}, "failed": {
+        "bind_setup_failed", "bind_backend_factory_failed", "bind_backend_factory_missing",
+        "bind_backend_factory_empty", "bind_invalid_result",
+        "bind_bind_precondition_failed", "bind_setup_database_open_failed",
+        "bind_fixture_seed_and_guard_install_failed", "bind_baseline_schema_snapshot_failed",
+        "bind_guarded_application_pool_open_failed", "bind_guarded_connection_probe_failed",
+        "bind_api_app_startup_failed", "bind_guarded_connection_preflight_failed",
+        "bind_startup_snapshot_invariant_failed", "bind_initial_storage_stat_failed",
+        "bind_loopback_listener_failed", "bind_capability_environment_failed", "bind_cgo_disabled_failed",
+    }},
     "metadata": {},
     "reset": {
         "rejected": {"invalid_state", "lesson_mismatch", "reset_id_payload_conflict"},
@@ -53,6 +62,8 @@ class MatrixProtocolError(RuntimeError):
 
 _SAFE_MATRIX_FAILURE_CODES = {
     "test-binary build deadline": "test_binary_build_deadline",
+    "web production build deadline": "web_production_build_deadline",
+    "web production build failed": "web_production_build_failed",
     "compiler process tree did not exit": "compiler_process_tree_did_not_exit",
     "source tree changed while building test binary": "source_tree_changed_during_build",
     "response deadline or line limit": "control_response_deadline_or_limit",
@@ -89,24 +100,49 @@ _SAFE_MATRIX_FAILURE_CODES = {
 
 def _safe_failure_code(exc: Exception) -> str:
     """Return an allowlisted, path-free CI diagnostic; never expose raw errors."""
+    if isinstance(exc, MatrixCommandRejected):
+        status = exc.response.get("status")
+        code = exc.response.get("error", {}).get("code")
+        if status in ERROR_CODES_BY_COMMAND.get(exc.command, {}) and code in ERROR_CODES_BY_COMMAND[exc.command][status]:
+            return f"control_{exc.command}_{status}_{code}"
+        return "control_response_rejected"
     if not isinstance(exc, MatrixProtocolError):
         return "controller_failure"
     message = str(exc)
     code = _SAFE_MATRIX_FAILURE_CODES.get(message)
     if code is not None:
         return code
-    if re.fullmatch(r"Playwright journey [1-2] failed", message, flags=re.ASCII):
+    if re.fullmatch(r"Playwright journey [1-9][0-9]{0,2} failed", message, flags=re.ASCII):
         return "playwright_journey_failed"
-    if re.fullmatch(r"Playwright journey [1-2] did not pass exactly once", message, flags=re.ASCII):
+    if re.fullmatch(r"Playwright journey [1-9][0-9]{0,2} did not pass exactly once", message, flags=re.ASCII):
         return "playwright_journey_count_invalid"
     if re.fullmatch(r"test-binary build failed \(exit=-?[0-9]{1,3}\)", message, flags=re.ASCII):
         return "test_binary_build_failed"
     return "matrix_protocol_error"
 
 
-class MatrixCommandRejected(RuntimeError):
-    def __init__(self, response: dict[str, Any]):
+def _safe_failure_stage(exc: Exception) -> str:
+    """Expose only an allowlisted operation stage, never exception text or paths."""
+    if isinstance(exc, MatrixCommandRejected):
+        if exc.stage and re.fullmatch(r"[a-z][a-z0-9_]{0,63}", exc.stage, re.ASCII):
+            return exc.stage
+        code = exc.response.get("error", {}).get("code", "")
+        if exc.command == "bind" and code.startswith("bind_") and code.endswith("_failed"):
+            stage = code[5:-7]
+            if re.fullmatch(r"[a-z][a-z0-9_]{0,63}", stage, re.ASCII):
+                return stage
+        return exc.command
+    if isinstance(exc, MatrixProtocolError) and re.fullmatch(
+            r"Playwright journey [1-9][0-9]{0,2} (failed|did not pass exactly once)", str(exc), re.ASCII):
+        return "playwright_journey"
+    return "controller"
+
+
+class MatrixCommandRejected(MatrixProtocolError):
+    def __init__(self, response: dict[str, Any], command: str, stage: str | None = None):
         self.response = response
+        self.command = command
+        self.stage = stage
         super().__init__(response["error"]["code"])
 
 
@@ -271,8 +307,209 @@ def _build_environment(build_root: Path) -> dict[str, str]:
         if value:
             env[name] = value
     env.update({"HOME": str(build_root), "TMPDIR": str(build_root),
-                "TEMP": str(build_root), "TMP": str(build_root)})
+                "TEMP": str(build_root), "TMP": str(build_root), "CGO_ENABLED": "1"})
+    # HOME/TEMP are intentionally private, but Go's module and build caches
+    # must remain explicitly addressable after replacing the caller profile.
+    gopath = os.environ.get("GOPATH") or str(Path.home() / "go")
+    env["GOPATH"] = gopath
+    first_gopath = gopath.split(os.pathsep, 1)[0]
+    env["GOMODCACHE"] = os.environ.get("GOMODCACHE") or str(Path(first_gopath) / "pkg" / "mod")
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    default_cache_root = Path(local_app_data) if local_app_data else Path.home() / "AppData" / "Local"
+    env["GOCACHE"] = os.environ.get("GOCACHE") or str(default_cache_root / "go-build")
     return env
+
+
+async def build_first_audio_web(repository_root: Path, node_binary: Path, build_root: Path,
+                               build_timeout: float = 600.0) -> tuple[str, Path]:
+    """Build one private, content-addressed production web bundle."""
+    repository_root = repository_root.resolve(strict=True)
+    node_binary = node_binary.resolve(strict=True)
+    build_root = build_root.resolve(strict=True)
+    web_dir = repository_root / "web"
+    _assert_no_web_dotenv(web_dir)
+    scripts = (web_dir / "node_modules" / "typescript" / "bin" / "tsc",
+               web_dir / "node_modules" / "vite" / "bin" / "vite.js")
+    if not node_binary.is_file() or any(not script.is_file() for script in scripts):
+        raise MatrixProtocolError("dedicated web build runtime is unavailable")
+    artifact_root = (repository_root / ".test-artifacts").resolve(strict=True)
+    if build_root != artifact_root and not _within(build_root, artifact_root):
+        raise MatrixProtocolError("private artifact root is unavailable")
+    output_dir = build_root / "web-dist"
+    _create_private_directory(output_dir)
+    source_snapshot = _collect_source_hashes(repository_root / "server")
+    source_identity = _source_manifest_identity(source_snapshot)
+    env: dict[str, str] = {}
+    for name in ("PATH", "SystemRoot", "WINDIR", "PATHEXT", "USERPROFILE", "APPDATA",
+                 "LOCALAPPDATA", "PLAYWRIGHT_BROWSERS_PATH"):
+        value = os.environ.get(name)
+        if value:
+            env[name] = value
+    env.update({"HOME": str(build_root), "TMPDIR": str(build_root),
+                "TEMP": str(build_root), "TMP": str(build_root), "CI": "1"})
+    if sys.platform == "linux":
+        spawn_hook = (web_dir / "e2e" / "first-audio-contained-spawn.cjs").resolve(strict=True).as_posix()
+        env["NODE_OPTIONS"] = f'--require "{spawn_hook}"'
+    build_commands = (("tsc", scripts[0], ["-b"]),
+                      ("vite", scripts[1], ["build", "--outDir", str(output_dir)]))
+    for command_name, script, arguments in build_commands:
+        detached_manifest = build_root / f"web-build-{command_name}-detached-groups.txt"
+        descriptor = os.open(detached_manifest, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        os.close(descriptor)
+        env["FIRST_AUDIO_MATRIX_DETACHED_GROUPS_FILE"] = str(detached_manifest)
+        kwargs: dict[str, Any] = {}
+        job = None
+        if os.name == "nt":
+            job = _WindowsJob()
+            kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP | CREATE_SUSPENDED_FLAG
+        else:
+            kwargs["start_new_session"] = True
+        process = None
+        descendant_groups: set[int] = set()
+        seen_records: set[tuple[int, int]] = set()
+        monitor: asyncio.Task[None] | None = None
+        try:
+            process = await asyncio.create_subprocess_exec(
+                str(node_binary), str(script), *arguments, cwd=str(web_dir), env=env,
+                stdin=asyncio.subprocess.DEVNULL, stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE, **kwargs)
+            if job is not None:
+                job.assign_and_resume(process)
+            else:
+                monitor = asyncio.create_task(_monitor_linux_descendant_groups(
+                    process, descendant_groups, detached_manifest, seen_records))
+            stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=build_timeout)
+        except BaseException as exc:
+            if process is not None:
+                monitor_error: BaseException | None = None
+                if monitor is not None:
+                    monitor.cancel()
+                    monitor_result = await asyncio.gather(monitor, return_exceptions=True)
+                    monitor_error = (monitor_result[0] if monitor_result and isinstance(monitor_result[0], BaseException)
+                                     and not isinstance(monitor_result[0], asyncio.CancelledError) else None)
+                    try:
+                        descendant_groups.update(_new_live_detached_groups(detached_manifest, seen_records))
+                        descendant_groups.update(_linux_descendant_groups(process.pid))
+                    except BaseException as scan_error:
+                        monitor_error = monitor_error or scan_error
+                await _kill_process_tree(process, job, descendant_groups)
+            elif job is not None:
+                job.close()
+            if process is not None and monitor_error is not None:
+                raise MatrixProtocolError("Linux descendant process monitor failed; known groups were reaped") from monitor_error
+            if isinstance(exc, asyncio.TimeoutError):
+                raise MatrixProtocolError("web production build deadline") from exc
+            raise
+        del stdout, stderr
+        if monitor is not None:
+            monitor.cancel()
+            monitor_result = await asyncio.gather(monitor, return_exceptions=True)
+            monitor_error = (monitor_result[0] if monitor_result and isinstance(monitor_result[0], BaseException)
+                             and not isinstance(monitor_result[0], asyncio.CancelledError) else None)
+            try:
+                descendant_groups.update(_new_live_detached_groups(detached_manifest, seen_records))
+                descendant_groups.update(_linux_descendant_groups(process.pid))
+            except BaseException as scan_error:
+                monitor_error = monitor_error or scan_error
+            try:
+                remaining_groups = {group for group in descendant_groups if _linux_process_group_exists(group)}
+            except BaseException as scan_error:
+                await _kill_process_tree(process, None, descendant_groups)
+                raise MatrixProtocolError(
+                    "Linux descendant process monitor failed; known groups were reaped") from scan_error
+            if monitor_error is not None or remaining_groups:
+                await _kill_process_tree(process, None, descendant_groups)
+                raise MatrixProtocolError("web production build failed") from monitor_error
+        if job is not None:
+            # Playwright commonly returns just before its managed webServer and
+            # Chromium descendants finish teardown. The containment gate is that
+            # the Job becomes empty within the grace period; observing children
+            # immediately after the parent exits is not itself a leak.
+            empty = await job.wait_empty(5.0)
+            if not empty:
+                job.terminate()
+                empty = await job.wait_empty(5.0)
+            job.close()
+            if not empty:
+                raise MatrixProtocolError("web production build failed")
+        if process.returncode != 0:
+            raise MatrixProtocolError("web production build failed")
+        if _collect_source_hashes(repository_root / "server") != source_snapshot:
+            raise MatrixProtocolError("source tree changed while building test binary")
+    if not (output_dir / "index.html").is_file():
+        raise MatrixProtocolError("web production build failed")
+    if _collect_source_hashes(repository_root / "server") != source_snapshot:
+        raise MatrixProtocolError("source tree changed while building test binary")
+    manifest, identity = _collect_web_bundle_manifest(output_dir)
+    manifest_path = build_root / "web-build-manifest.json"
+    descriptor = os.open(manifest_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    try:
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(json.dumps({"schema_version": 1, "identity": identity,
+                                     "source_identity": source_identity,
+                                     "files": manifest}, sort_keys=True, separators=(",", ":")).encode("utf-8") + b"\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+    except BaseException:
+        try:
+            manifest_path.unlink()
+        except OSError:
+            pass
+        raise
+    return identity, output_dir
+
+
+def _collect_web_bundle_manifest(output_dir: Path) -> tuple[list[dict[str, Any]], str]:
+    root = output_dir.resolve(strict=True)
+    entries: list[dict[str, Any]] = []
+    for path in sorted(root.rglob("*")):
+        if path.is_symlink():
+            raise MatrixProtocolError("web production build failed")
+        if not path.is_file():
+            continue
+        entries.append({"path": path.relative_to(root).as_posix(),
+                        "bytes": path.stat().st_size, "sha256": _hash_file(path)})
+    if not entries or not any(item["path"] == "index.html" for item in entries):
+        raise MatrixProtocolError("web production build failed")
+    canonical = json.dumps(entries, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return entries, hashlib.sha256(canonical).hexdigest()
+
+
+def _source_manifest_identity(sources: list[dict[str, str]]) -> str:
+    canonical = json.dumps(sources, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def _assert_no_web_dotenv(web_dir: Path) -> None:
+    # Vite reads these implicitly in production mode; hidden local values must
+    # never affect a measured bundle without an explicit reviewed input.
+    names = {".env", ".env.local", ".env.production", ".env.production.local"}
+    if any((web_dir / name).exists() or (web_dir / name).is_symlink() for name in names):
+        raise MatrixProtocolError("web production build failed")
+
+
+def verify_web_bundle_identity(output_dir: Path, expected_identity: str,
+                               repository_root: Path | None = None) -> None:
+    if not re.fullmatch(r"[0-9a-f]{64}", expected_identity, re.ASCII):
+        raise MatrixProtocolError("web production build failed")
+    entries, actual = _collect_web_bundle_manifest(output_dir)
+    try:
+        manifest = json.loads((output_dir.parent / "web-build-manifest.json").read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise MatrixProtocolError("web production build failed") from exc
+    if (not isinstance(manifest, dict) or set(manifest) != {"schema_version", "identity", "source_identity", "files"}
+            or manifest["schema_version"] != 1 or manifest["identity"] != actual
+            or manifest["files"] != entries or actual != expected_identity
+            or not isinstance(manifest["source_identity"], str)
+            or not re.fullmatch(r"[0-9a-f]{64}", manifest["source_identity"], re.ASCII)):
+        raise MatrixProtocolError("web production build failed")
+    if repository_root is not None:
+        repo_root = repository_root.resolve(strict=True)
+        _assert_no_web_dotenv(repo_root / "web")
+        server_dir = repo_root / "server"
+        current_source_identity = _source_manifest_identity(_collect_source_hashes(server_dir))
+        if manifest["source_identity"] != current_source_identity:
+            raise MatrixProtocolError("web production build failed")
 
 
 def _hash_file(path: Path) -> str:
@@ -295,12 +532,15 @@ def _collect_source_hashes(server_dir: Path) -> list[dict[str, str]]:
     fixed = (
         "docs/70-classroom-first-audio-latency-sdd.md",
         "docs/74-first-audio-matrix-isolated-backend-sdd.md",
+        "docs/75-first-audio-lead-setting-sdd.md",
         "docs/73-first-audio-matrix-control-protocol-sdd.md",
         "review/first-audio-matrix-isolated-backend-review-20261031.md",
         "review/first-audio-matrix-isolated-backend-review-20261026.md",
         "review/first-audio-matrix-control-protocol-review-20261026.md",
         "review/first_audio_matrix_control.py",
         "review/test_first_audio_matrix_control.py",
+        "review/first_audio_latency_matrix.py",
+        "review/test_first_audio_latency_matrix.py",
         ".github/workflows/first-audio-matrix-protocol.yml",
     )
     for rel in fixed:
@@ -313,9 +553,14 @@ def _collect_source_hashes(server_dir: Path) -> list[dict[str, str]]:
     web_root = repo_root / "web"
     web_source_exts = {".ts", ".tsx", ".js", ".mjs", ".cjs", ".json", ".css", ".html", ".svg"}
     for path in web_root.rglob("*"):
-        if not path.is_file() or path.suffix.lower() not in web_source_exts:
+        if not path.is_file():
             continue
         if any(part in {"node_modules", "dist", ".playwright-mcp"} for part in path.parts):
+            continue
+        # Vite copies public assets verbatim and can import raster/font assets
+        # from src; hash those inputs even when their extensions are not text.
+        if path.suffix.lower() not in web_source_exts and not any(
+                part in {"src", "public"} for part in path.relative_to(web_root).parts):
             continue
         files.add(path)
     sources: list[dict[str, str]] = []
@@ -623,7 +868,12 @@ class MatrixControlProcess:
         status = response["status"]
         if status == "ok":
             return response
-        raise MatrixCommandRejected(response)
+        stage = None
+        if command == "bind":
+            match = re.search(rb"(?:^|\n)first_audio_matrix bind_stage=([a-z][a-z0-9_]{0,63})\r?\n", bytes(self.stderr_tail))
+            if match:
+                stage = match.group(1).decode("ascii")
+        raise MatrixCommandRejected(response, command, stage)
 
     async def bind(self) -> dict[str, Any]:
         return (await self.command("bind", {"fixture": "first_audio_v1"}, 5.0))["data"]
@@ -714,6 +964,7 @@ async def _run_matrix_browser_journey(node_binary: Path, repository_root: Path,
                                       run_root: Path, control: MatrixControlProcess,
                                       bound: dict[str, Any], journey_number: int,
                                       username: str, password: str,
+                                      web_build_identity: str, web_build_dir: Path,
                                       timeout: float = 240.0) -> dict[str, Any]:
     api_origin = bound.get("loopback_origin")
     lesson_id = bound.get("lesson_id")
@@ -722,6 +973,7 @@ async def _run_matrix_browser_journey(node_binary: Path, repository_root: Path,
             or not isinstance(lesson_id, int) or lesson_id <= 0
             or not isinstance(generation, int) or generation <= 0):
         raise MatrixProtocolError("controller returned invalid browser binding")
+    verify_web_bundle_identity(web_build_dir, web_build_identity, repository_root)
     web_dir = repository_root / "web"
     cli = web_dir / "node_modules" / "@playwright" / "test" / "cli.js"
     config = web_dir / "playwright.first-audio-matrix.config.ts"
@@ -764,6 +1016,9 @@ async def _run_matrix_browser_journey(node_binary: Path, repository_root: Path,
         "FIRST_AUDIO_MATRIX_OUTPUT_DIR": str(output_dir),
         "FIRST_AUDIO_MATRIX_REPORT": str(report),
         "FIRST_AUDIO_MATRIX_EVIDENCE": str(evidence),
+        "FIRST_AUDIO_MATRIX_REUSE_BUILD": "1",
+        "FIRST_AUDIO_MATRIX_WEB_OUT_DIR": str(web_build_dir.resolve(strict=True)),
+        "FIRST_AUDIO_MATRIX_WEB_BUILD_IDENTITY": web_build_identity,
         "FIRST_AUDIO_MATRIX_DETACHED_GROUPS_FILE": str(detached_groups_file),
         "E2E_API_PORT": str(urlparse(api_origin).port),
         "E2E_WEB_PORT": str(web_port),
@@ -838,16 +1093,13 @@ async def _run_matrix_browser_journey(node_binary: Path, repository_root: Path,
             await _kill_process_tree(process, None, descendant_groups)
             raise MatrixProtocolError("Linux descendant process monitor failed; known groups were reaped") from monitor_error
     if job is not None:
-        had_descendants = job.active_processes() > 0
         empty = await job.wait_empty(5.0)
         if not empty:
             job.terminate()
-            await job.wait_empty(5.0)
+            empty = await job.wait_empty(5.0)
         job.close()
         if not empty:
             raise MatrixProtocolError("Playwright process tree did not exit")
-        if had_descendants:
-            raise MatrixProtocolError("Playwright exited with child processes still alive")
     else:
         # A successful Node exit is insufficient if Chromium/Vite process
         # groups remain. Detached web-server groups are accumulated while the
@@ -868,9 +1120,16 @@ async def _run_matrix_browser_journey(node_binary: Path, repository_root: Path,
     if (stats.get("expected") != 1 or stats.get("unexpected") != 0
             or stats.get("flaky") != 0 or stats.get("skipped") != 0):
         raise MatrixProtocolError(f"Playwright journey {journey_number} did not pass exactly once")
-    sample = _read_matrix_timing_evidence(evidence, lesson_id, generation)
+    sample = _read_matrix_timing_evidence(evidence, lesson_id, generation, web_build_identity)
+    verify_web_bundle_identity(web_build_dir, web_build_identity, repository_root)
+    if sample["web_build_identity"] != web_build_identity:
+        raise MatrixProtocolError("first-audio timing evidence violates the sample contract")
     return {"journey": journey_number, "lesson_id": lesson_id, "generation": generation,
+            "show_word_ms": sample["show_word_ms"],
             "first_frame_ms": sample["first_frame_ms"], "audio_start_ms": sample["audio_start_ms"],
+            "receipt_to_onstart_ms": sample["receipt_to_onstart_ms"],
+            "web_build_identity": web_build_identity,
+            "source_build_identity": bound["source_build_identity"],
             "websocket_closed": True, "expected": 1, "unexpected": 0, "flaky": 0, "skipped": 0}
 
 
@@ -891,70 +1150,133 @@ def valid_first_audio_origin_for_runner(origin: str) -> bool:
             and not parsed.path and not parsed.query and not parsed.fragment)
 
 
-def _read_matrix_timing_evidence(path: Path, lesson_id: int, generation: int) -> dict[str, int | float]:
+def _read_matrix_timing_evidence(path: Path, lesson_id: int, generation: int,
+                                 web_build_identity: str) -> dict[str, int | float | str]:
     try:
         sample = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise MatrixProtocolError("first-audio evidence is invalid") from exc
-    if (not isinstance(sample, dict) or set(sample) != {"lesson_id", "generation", "first_frame_ms", "audio_start_ms", "websocket_closed"}
+    if (not isinstance(sample, dict) or set(sample) != {"lesson_id", "generation", "show_word_ms", "first_frame_ms", "audio_start_ms", "receipt_to_onstart_ms", "websocket_closed", "web_build_identity"}
             or sample["lesson_id"] != lesson_id or sample["generation"] != generation
+            or sample["web_build_identity"] != web_build_identity
             or sample["websocket_closed"] is not True
+            or isinstance(sample["show_word_ms"], bool) or not isinstance(sample["show_word_ms"], (int, float))
             or isinstance(sample["first_frame_ms"], bool) or not isinstance(sample["first_frame_ms"], (int, float))
             or isinstance(sample["audio_start_ms"], bool) or not isinstance(sample["audio_start_ms"], (int, float))
-            or not 0 <= sample["first_frame_ms"] < 10_000
-            or not sample["first_frame_ms"] <= sample["audio_start_ms"] < 10_000):
+            or isinstance(sample["receipt_to_onstart_ms"], bool) or not isinstance(sample["receipt_to_onstart_ms"], (int, float))
+            or not 0 <= sample["show_word_ms"] <= sample["first_frame_ms"] < 10_000
+            or not sample["first_frame_ms"] <= sample["audio_start_ms"] < 10_000
+            or not 0 <= sample["receipt_to_onstart_ms"] < 10_000
+            or abs((sample["audio_start_ms"] - sample["first_frame_ms"]) - sample["receipt_to_onstart_ms"]) > 2):
         raise MatrixProtocolError("first-audio timing evidence violates the sample contract")
     return sample
 
 
 async def run_first_audio_matrix_browser_journeys(control: MatrixControlProcess,
                                                    repository_root: Path,
-                                                   node_binary: Path) -> dict[str, Any]:
-    """Run two first-entry browser journeys with one child/app/DB and one reset."""
+                                                   node_binary: Path,
+                                                   journey_count: int = 2,
+                                                   warmup_first: bool = False,
+                                                   progress_callback: Callable[[dict[str, Any]], None] | None = None,
+                                                   web_build_identity: str = "",
+                                                   web_build_dir: Path | None = None) -> dict[str, Any]:
+    """Run first-entry journeys with one child/app/DB and controlled resets."""
+    if isinstance(journey_count, bool) or not isinstance(journey_count, int) or not 1 <= journey_count <= 130:
+        raise MatrixProtocolError("invalid journey count")
+    if warmup_first and journey_count < 2:
+        raise MatrixProtocolError("warmup requires at least one measured journey")
     repository_root = repository_root.resolve(strict=True)
     node_binary = node_binary.resolve(strict=True)
+    if web_build_dir is None or not re.fullmatch(r"[0-9a-f]{64}", web_build_identity, re.ASCII):
+        raise MatrixProtocolError("web production build failed")
+    verify_web_bundle_identity(web_build_dir, web_build_identity, repository_root)
     username, password = _matrix_fixture_login(control._capability,
         control.run_root.name.removeprefix("first-audio-matrix-"))
     initial = await control.bind()
     initial_meta = await control.metadata()
     if (not valid_first_audio_origin_for_runner(initial_meta.get("loopback_origin", ""))
             or initial.get("lesson_id") != initial_meta.get("lesson_id")
-            or initial.get("generation") != initial_meta.get("generation")):
+            or initial.get("generation") != initial_meta.get("generation")
+            or not isinstance(initial_meta.get("source_build_identity"), str)
+            or not initial_meta.get("source_build_identity")):
         raise MatrixProtocolError("bind metadata does not identify the same fixture")
     initial_binding = {**initial, **initial_meta}
-    first = await _run_matrix_browser_journey(node_binary, repository_root, control.run_root,
-                                              control, initial_binding, 1, username, password)
-    reset_id = "journey_reset_1"
-    reset = await control.reset(reset_id, initial["lesson_id"])
-    current = await control.metadata()
-    if (reset.get("lesson_id") != current.get("lesson_id")
-            or reset.get("generation") != current.get("generation")
-            or current.get("successful_reset_count") != 1
-            or current.get("lesson_id") == initial.get("lesson_id")
-            or current.get("generation", 0) <= initial.get("generation", 0)
-            or current.get("loopback_origin") != initial_meta.get("loopback_origin")
-            or current.get("student_id") != initial_meta.get("student_id")
-            or current.get("book_id") != initial_meta.get("book_id")
-            or current.get("source_build_identity") != initial_meta.get("source_build_identity")):
-        raise MatrixProtocolError("reset metadata does not prove a new lesson generation")
-    second = await _run_matrix_browser_journey(node_binary, repository_root, control.run_root,
-                                               control, current, 2, username, password)
-    return {"status": "two_journeys_passed", "journeys": [first, second], "reset_count": 1}
+    journeys: list[dict[str, Any]] = []
+    binding = initial_binding
+    reset_count = 0
+    for journey_number in range(1, journey_count + 1):
+        if progress_callback is not None:
+            progress_callback({"event": "attempt_started", "journey": journey_number,
+                               "warmup": bool(warmup_first and journey_number == 1)})
+        journey = await _run_matrix_browser_journey(node_binary, repository_root, control.run_root,
+                                                    control, binding, journey_number, username, password,
+                                                    web_build_identity, web_build_dir)
+        journey["warmup"] = bool(warmup_first and journey_number == 1)
+        journeys.append(journey)
+        needs_reset = journey_number < journey_count or journey_count == 1
+        if not needs_reset:
+            if progress_callback is not None:
+                progress_callback({"event": "journey_completed", **journey})
+            continue
+        reset_id = f"journey_reset_{journey_number}"
+        reset = await control.reset(reset_id, binding["lesson_id"])
+        reset_count += 1
+        current = await control.metadata()
+        if (reset.get("lesson_id") != current.get("lesson_id")
+                or reset.get("generation") != current.get("generation")
+                or current.get("successful_reset_count") != reset_count
+                or current.get("lesson_id") == binding.get("lesson_id")
+                or current.get("generation", 0) <= binding.get("generation", 0)
+                or current.get("loopback_origin") != initial_meta.get("loopback_origin")
+                or current.get("student_id") != initial_meta.get("student_id")
+                or current.get("book_id") != initial_meta.get("book_id")
+                or current.get("source_build_identity") != initial_meta.get("source_build_identity")):
+            raise MatrixProtocolError("reset metadata does not prove a new lesson generation")
+        binding = current
+        if progress_callback is not None:
+            progress_callback({"event": "journey_completed", **journey})
+    expected_resets = max(1, journey_count - 1)
+    if reset_count != expected_resets:
+        raise MatrixProtocolError("reset count does not match completed journeys")
+    status = "two_journeys_passed" if journey_count == 2 and not warmup_first else "journeys_passed"
+    return {"status": status, "journeys": journeys, "reset_count": reset_count}
 
 
 async def run_first_audio_reset_acceptance(repository_root: Path, run_id: str,
-                                           go_binary: Path, node_binary: Path) -> dict[str, Any]:
-    """Build, run the two-journey/reset gate, and close one isolated child."""
+                                           go_binary: Path, node_binary: Path,
+                                           journey_count: int = 2,
+                                           warmup_first: bool = False,
+                                           progress_callback: Callable[[dict[str, Any]], None] | None = None,
+                                           web_build_ready: bool = False,
+                                           web_build_identity: str | None = None,
+                                           web_build_dir: Path | None = None) -> dict[str, Any]:
+    """Build, run isolated first-audio journeys, and close the child."""
+    if isinstance(journey_count, bool) or not isinstance(journey_count, int) or not 1 <= journey_count <= 130:
+        raise MatrixProtocolError("invalid journey count")
+    if not isinstance(warmup_first, bool) or (warmup_first and journey_count < 2):
+        raise MatrixProtocolError("warmup requires at least one measured journey")
+    if not isinstance(web_build_ready, bool) or not RUN_ID_RE.fullmatch(run_id):
+        raise MatrixProtocolError("invalid run id")
     _require_matrix_process_containment_platform()
     repository_root = repository_root.resolve(strict=True)
     server_dir = repository_root / "server"
     artifact_root = repository_root / ".test-artifacts"
     if not artifact_root.is_dir():
         raise MatrixProtocolError("private artifact root is unavailable")
+    if not web_build_ready:
+        web_build_root = artifact_root / ("first-audio-web-build-" + run_id)
+        _create_private_directory(web_build_root)
+        web_build_identity, web_build_dir = await build_first_audio_web(repository_root, node_binary, web_build_root)
+    if (web_build_identity is None or web_build_dir is None
+            or not re.fullmatch(r"[0-9a-f]{64}", web_build_identity, re.ASCII)):
+        raise MatrixProtocolError("web production build failed")
+    verify_web_bundle_identity(web_build_dir, web_build_identity, repository_root)
     control = await MatrixControlProcess.build_and_start(server_dir, artifact_root, run_id, go_binary)
     async with control:
-        result = await run_first_audio_matrix_browser_journeys(control, repository_root, node_binary)
-        await control.shutdown(expected_reset_count=1)
+        result = await run_first_audio_matrix_browser_journeys(
+            control, repository_root, node_binary, journey_count, warmup_first, progress_callback,
+            web_build_identity, web_build_dir)
+        await control.shutdown(expected_reset_count=max(1, journey_count - 1))
         return result
 
 
@@ -963,10 +1285,13 @@ def main() -> int:
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--go", required=True, type=Path)
     parser.add_argument("--node", required=True, type=Path)
+    parser.add_argument("--journeys", type=int, default=2)
+    parser.add_argument("--warmup-first", action="store_true")
     args = parser.parse_args()
     repository_root = Path(__file__).resolve(strict=True).parent.parent
     try:
-        result = asyncio.run(run_first_audio_reset_acceptance(repository_root, args.run_id, args.go, args.node))
+        result = asyncio.run(run_first_audio_reset_acceptance(
+            repository_root, args.run_id, args.go, args.node, args.journeys, args.warmup_first))
     except Exception as exc:
         print(json.dumps({"status": "failed", "reason": _safe_failure_code(exc)}, separators=(",", ":")))
         return 1

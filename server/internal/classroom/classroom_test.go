@@ -325,7 +325,7 @@ func TestShowWordTimeoutAutoPlay(t *testing.T) {
 	m, _ := newMachine(t, batchN(5))
 	d, ok := m.TimeoutFor()
 	require.True(t, ok)
-	assert.Equal(t, 800*time.Millisecond, d) // 用户定案：show_word 0.8s 自动开读（二合一节奏）
+	assert.Equal(t, 250*time.Millisecond, d) // default lead time; scheduler tick may add bounded overshoot
 	require.NoError(t, m.OnTimeout(PhaseShowWord))
 	assert.Equal(t, PhaseTTSSeg, m.Phase())
 	assert.NotNil(t, findAction(m.DrainActions(), ActPlayTTS))
@@ -608,7 +608,7 @@ func TestTimeoutMatrix(t *testing.T) {
 	m, cfg := newMachine(t, batchN(5))
 	d, ok := m.TimeoutFor()
 	require.True(t, ok)
-	assert.Equal(t, 800*time.Millisecond, d) // 用户定案：show_word 0.8s 自动开读（二合一节奏）
+	assert.Equal(t, 250*time.Millisecond, d)
 
 	teachToRepeating(m, cfg)
 	d, ok = m.TimeoutFor()

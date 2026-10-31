@@ -1,11 +1,11 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	"enwords/internal/config"
 	"enwords/internal/obs"
@@ -16,35 +16,65 @@ import (
 
 // Playback settings are a deliberately narrow user capability, not a general
 // configuration or Agent tool endpoint.
-func decodePlaybackSettings(body io.Reader) (config.PlaybackSettings, error) {
+func decodePlaybackSettings(body io.Reader) (config.PlaybackSettings, bool, error) {
 	var values config.PlaybackSettings
 	raw, err := io.ReadAll(io.LimitReader(body, 4097))
 	if err != nil || len(raw) > 4096 {
-		return values, fmt.Errorf("设置内容无效")
+		return values, false, fmt.Errorf("invalid playback settings")
 	}
-	var fields map[string]json.RawMessage
-	if err := json.Unmarshal(raw, &fields); err != nil {
-		return values, fmt.Errorf("设置必须为JSON对象")
+	allowed := map[string]bool{
+		"ttsEnRepeat": true, "ttsZhRepeat": true, "ttsIntervalMs": true,
+		"ttsZhIntervalMs": true, "ttsSwitchIntervalMs": true, "showWordLeadMs": true,
 	}
-	keys := []string{"ttsEnRepeat", "ttsZhRepeat", "ttsIntervalMs", "ttsZhIntervalMs", "ttsSwitchIntervalMs"}
-	if len(fields) != len(keys) {
-		return values, fmt.Errorf("请提交完整的五项朗读设置")
+	d := json.NewDecoder(bytes.NewReader(raw))
+	start, err := d.Token()
+	if err != nil || start != json.Delim('{') {
+		return values, false, fmt.Errorf("playback settings must be an object")
 	}
-	for _, key := range keys {
-		value, ok := fields[key]
+	fields := make(map[string]json.RawMessage, 6)
+	for d.More() {
+		token, tokenErr := d.Token()
+		key, ok := token.(string)
+		if tokenErr != nil || !ok || !allowed[key] {
+			return values, false, fmt.Errorf("invalid playback settings")
+		}
+		if _, duplicate := fields[key]; duplicate {
+			return values, false, fmt.Errorf("invalid playback settings")
+		}
+		var value json.RawMessage
+		if d.Decode(&value) != nil || bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
+			return values, false, fmt.Errorf("playback settings must be non-null integers")
+		}
+		fields[key] = value
+	}
+	if end, tokenErr := d.Token(); tokenErr != nil || end != json.Delim('}') || d.Decode(new(any)) != io.EOF {
+		return values, false, fmt.Errorf("invalid playback settings")
+	}
+	legacyKeys := []string{"ttsEnRepeat", "ttsZhRepeat", "ttsIntervalMs", "ttsZhIntervalMs", "ttsSwitchIntervalMs"}
+	hasLead := fields["showWordLeadMs"] != nil
+	if len(fields) != len(legacyKeys) && !(len(fields) == len(legacyKeys)+1 && hasLead) {
+		return values, false, fmt.Errorf("submit all playback settings")
+	}
+	for _, key := range legacyKeys {
 		var number int
-		if !ok || strings.TrimSpace(string(value)) == "null" || json.Unmarshal(value, &number) != nil {
-			return values, fmt.Errorf("朗读设置必须为整数，且不能为空")
+		value, exists := fields[key]
+		if !exists || json.Unmarshal(value, &number) != nil {
+			return values, false, fmt.Errorf("playback settings must be non-null integers")
 		}
 	}
 	if err := json.Unmarshal(raw, &values); err != nil {
-		return values, fmt.Errorf("设置内容无效")
+		return values, false, fmt.Errorf("invalid playback settings")
 	}
 	validation, _ := config.NewStore(nil, nil)
-	if err := validation.SetPlayback("validation", 0, true, values, "validate playback"); err != nil {
-		return values, err
+	if hasLead {
+		err = validation.SetPlayback("validation", 0, true, values, "validate playback")
+	} else {
+		err = validation.SetPlaybackLegacy("validation", 0, true, values, "validate playback")
 	}
-	return values, nil
+	if err != nil {
+		return values, false, err
+	}
+	return values, hasLead, nil
 }
 
 func (a *App) registerPlaybackRoutes(group *gin.RouterGroup, global bool) {
@@ -69,7 +99,7 @@ func (a *App) registerPlaybackRoutes(group *gin.RouterGroup, global bool) {
 	group.GET("/playback-settings", func(c *gin.Context) {
 		if len(c.Request.URL.Query()) != 0 {
 			logFailure(c, "invalid_query")
-			c.JSON(http.StatusOK, fail(errBadRequest, "朗读设置不接受查询参数"))
+			c.JSON(http.StatusOK, fail(errBadRequest, "playback settings do not accept query parameters"))
 			return
 		}
 		sid := studentID(c)
@@ -90,7 +120,7 @@ func (a *App) registerPlaybackRoutes(group *gin.RouterGroup, global bool) {
 		})
 		if err != nil {
 			logFailure(c, "read_failed")
-			c.JSON(http.StatusOK, fail(500, "无法读取朗读设置，请稍后重试"))
+			c.JSON(http.StatusOK, fail(500, "unable to read playback settings; retry shortly"))
 			return
 		}
 		pending := a.Cfg.Playback(sid) != settings
@@ -102,10 +132,10 @@ func (a *App) registerPlaybackRoutes(group *gin.RouterGroup, global bool) {
 	group.POST("/playback-settings", func(c *gin.Context) {
 		if len(c.Request.URL.Query()) != 0 {
 			logFailure(c, "invalid_query")
-			c.JSON(http.StatusOK, fail(errBadRequest, "朗读设置不接受查询参数"))
+			c.JSON(http.StatusOK, fail(errBadRequest, "playback settings do not accept query parameters"))
 			return
 		}
-		values, err := decodePlaybackSettings(c.Request.Body)
+		values, hasLead, err := decodePlaybackSettings(c.Request.Body)
 		if err != nil {
 			logFailure(c, "invalid_settings")
 			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
@@ -118,12 +148,26 @@ func (a *App) registerPlaybackRoutes(group *gin.RouterGroup, global bool) {
 		defer a.agentWriteMu.Unlock()
 		if err := ctx.Err(); err != nil {
 			logFailure(c, "request_cancelled")
-			c.JSON(http.StatusOK, fail(500, "请求已取消，设置未保存"))
+			c.JSON(http.StatusOK, fail(500, "request cancelled; settings were not saved"))
 			return
 		}
-		summary, _ := json.Marshal(values)
+		var summary []byte
+		if hasLead {
+			summary, _ = json.Marshal(values)
+		} else {
+			summary, _ = json.Marshal(struct {
+				TtsEnRepeat         int `json:"ttsEnRepeat"`
+				TtsZhRepeat         int `json:"ttsZhRepeat"`
+				TtsIntervalMs       int `json:"ttsIntervalMs"`
+				TtsZhIntervalMs     int `json:"ttsZhIntervalMs"`
+				TtsSwitchIntervalMs int `json:"ttsSwitchIntervalMs"`
+			}{values.TtsEnRepeat, values.TtsZhRepeat, values.TtsIntervalMs, values.TtsZhIntervalMs, values.TtsSwitchIntervalMs})
+		}
 		write := func(cfg *config.Store) error {
-			return cfg.SetPlayback(string(claims.Role), sid, global, values, "用户保存朗读设置")
+			if hasLead {
+				return cfg.SetPlayback(string(claims.Role), sid, global, values, "user saved playback settings")
+			}
+			return cfg.SetPlaybackLegacy(string(claims.Role), sid, global, values, "user saved playback settings")
 		}
 		if a.DB != nil {
 			err = a.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -141,14 +185,15 @@ func (a *App) registerPlaybackRoutes(group *gin.RouterGroup, global bool) {
 		}
 		if err != nil {
 			logFailure(c, "save_failed")
-			c.JSON(http.StatusOK, fail(500, "朗读设置未保存，请稍后重试"))
+			c.JSON(http.StatusOK, fail(500, "settings not saved; retry shortly"))
 			return
 		}
 		pending := false
 		if a.DB != nil {
 			pending = a.Cfg.Reload() != nil
 		}
-		a.Log.InfoCtx(ctx, "config", "playback_settings_saved", map[string]any{"student_id": sid, "scope": scope, "settings": values, "refresh_pending": pending})
-		c.JSON(http.StatusOK, ok(response(values, pending)))
+		settings := a.Cfg.Playback(sid)
+		a.Log.InfoCtx(ctx, "config", "playback_settings_saved", map[string]any{"student_id": sid, "scope": scope, "settings": settings, "refresh_pending": pending})
+		c.JSON(http.StatusOK, ok(response(settings, pending)))
 	})
 }

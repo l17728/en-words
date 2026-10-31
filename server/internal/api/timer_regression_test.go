@@ -27,6 +27,25 @@ func TestTTSSegmentGetsFreshDeadlineEvenWhenPhaseNameUnchanged(t *testing.T) {
 	require.NotEqual(t, before, room.Machine().Snapshot(), "fresh deadline still eventually expires")
 }
 
+func TestConfiguredShowWordLeadPreventsEarlyTickAndExpiresAtBoundary(t *testing.T) {
+	_, clock, _, room := setupRoom(t)
+	room.Join(&fakeClient{})
+	before := room.Machine().Snapshot()
+	require.Equal(t, classroom.PhaseShowWord, before.Phase)
+	budget, ok := room.Machine().TimeoutFor()
+	require.True(t, ok)
+	require.Equal(t, 250*time.Millisecond, budget)
+
+	room.Tick()
+	require.Equal(t, before, room.Machine().Snapshot(), "first tick before the configured lead must not start playback")
+	clock.Advance(budget - time.Millisecond)
+	room.Tick()
+	require.Equal(t, before, room.Machine().Snapshot(), "249 ms must not expire a 250 ms lead")
+	clock.Advance(time.Millisecond)
+	room.Tick()
+	require.Equal(t, classroom.PhaseTTSSeg, room.Machine().Phase(), "at 250 ms the next scheduler tick may start playback")
+}
+
 func TestLocalMediaBudgetPreventsPrematureTimeout(t *testing.T) {
 	for _, phase := range []string{classroom.PhaseTTSSeg, classroom.PhaseRepeating, classroom.PhaseWaitAnswer} {
 		t.Run(phase, func(t *testing.T) {

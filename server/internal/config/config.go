@@ -47,6 +47,8 @@ type Auditor interface {
 // EffectiveSnapshot 课堂/调度消费的不可变生效配置（课堂冻结语义：课中持快照不重读）。
 type EffectiveSnapshot struct {
 	PlaybackVersion     int
+	SnapshotVersion     int
+	ShowWordLeadMs      int
 	TtsZhRepeat         int
 	TtsZhIntervalMs     int
 	TtsSwitchIntervalMs int
@@ -98,6 +100,7 @@ var specs = map[string]keySpec{
 	"ttsZhRepeat":         {typ: "int", min: 1, max: 5, def: 1},
 	"ttsZhIntervalMs":     {typ: "int", min: 0, max: 10000, def: 1500},
 	"ttsSwitchIntervalMs": {typ: "int", min: 0, max: 10000, def: 1500},
+	"showWordLeadMs":      {typ: "int", min: 100, max: 2000, def: 250},
 	"repeatTimes":         {typ: "int", min: 1, max: 5, def: 1},
 	"quizOldWords":        {typ: "int", min: 0, max: 10, def: 3},
 	"timeoutShowWordS":    {typ: "int", min: 3, max: 30, def: 8},
@@ -372,6 +375,8 @@ func (s *Store) Snapshot(studentID int64) EffectiveSnapshot {
 	defer s.mu.RUnlock()
 	return EffectiveSnapshot{
 		PlaybackVersion:     1,
+		SnapshotVersion:     1,
+		ShowWordLeadMs:      s.effInt(studentID, "showWordLeadMs"),
 		TtsZhRepeat:         s.effInt(studentID, "ttsZhRepeat"),
 		TtsZhIntervalMs:     s.effInt(studentID, "ttsZhIntervalMs"),
 		TtsSwitchIntervalMs: s.effInt(studentID, "ttsSwitchIntervalMs"),

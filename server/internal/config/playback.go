@@ -8,17 +8,28 @@ type PlaybackSettings struct {
 	TtsIntervalMs       int `json:"ttsIntervalMs"`
 	TtsZhIntervalMs     int `json:"ttsZhIntervalMs"`
 	TtsSwitchIntervalMs int `json:"ttsSwitchIntervalMs"`
+	ShowWordLeadMs      int `json:"showWordLeadMs"`
 }
 
 func (s *Store) Playback(studentID int64) PlaybackSettings {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return PlaybackSettings{TtsEnRepeat: s.effInt(studentID, "ttsEnRepeat"), TtsZhRepeat: s.effInt(studentID, "ttsZhRepeat"), TtsIntervalMs: s.effInt(studentID, "ttsIntervalMs"), TtsZhIntervalMs: s.effInt(studentID, "ttsZhIntervalMs"), TtsSwitchIntervalMs: s.effInt(studentID, "ttsSwitchIntervalMs")}
+	return PlaybackSettings{TtsEnRepeat: s.effInt(studentID, "ttsEnRepeat"), TtsZhRepeat: s.effInt(studentID, "ttsZhRepeat"), TtsIntervalMs: s.effInt(studentID, "ttsIntervalMs"), TtsZhIntervalMs: s.effInt(studentID, "ttsZhIntervalMs"), TtsSwitchIntervalMs: s.effInt(studentID, "ttsSwitchIntervalMs"), ShowWordLeadMs: s.effInt(studentID, "showWordLeadMs")}
 }
 
 // SetPlayback publishes all five values together. A persistent caller must bind
 // the Store's Persister to its outer transaction; this method does not open one.
 func (s *Store) SetPlayback(actor string, studentID int64, global bool, values PlaybackSettings, reason string) error {
+	return s.setPlayback(actor, studentID, global, values, reason, true)
+}
+
+// SetPlaybackLegacy updates only the original five playback keys. It is used
+// for older clients so they do not create or modify a showWordLeadMs override.
+func (s *Store) SetPlaybackLegacy(actor string, studentID int64, global bool, values PlaybackSettings, reason string) error {
+	return s.setPlayback(actor, studentID, global, values, reason, false)
+}
+
+func (s *Store) setPlayback(actor string, studentID int64, global bool, values PlaybackSettings, reason string, includeLead bool) error {
 	if isBlank(reason) {
 		return fmt.Errorf("playback settings require reason")
 	}
@@ -27,6 +38,10 @@ func (s *Store) SetPlayback(actor string, studentID int64, global bool, values P
 	}
 	keys := []string{"ttsEnRepeat", "ttsZhRepeat", "ttsIntervalMs", "ttsZhIntervalMs", "ttsSwitchIntervalMs"}
 	vals := []int{values.TtsEnRepeat, values.TtsZhRepeat, values.TtsIntervalMs, values.TtsZhIntervalMs, values.TtsSwitchIntervalMs}
+	if includeLead {
+		keys = append(keys, "showWordLeadMs")
+		vals = append(vals, values.ShowWordLeadMs)
+	}
 	for i, key := range keys {
 		if _, err := canon(key, vals[i]); err != nil {
 			return err

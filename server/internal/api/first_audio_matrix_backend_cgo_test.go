@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"database/sql"
+	"database/sql/driver"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -65,17 +66,83 @@ type firstAudioGuardContext struct {
 }
 
 type firstAudioMatrixPolicy struct {
-	state             atomic.Pointer[firstAudioGuardContext]
-	hooks             atomic.Uint64
-	denials           atomic.Uint64
-	expectedDenials   atomic.Uint64
-	unexpectedDenials atomic.Uint64
-	guardInvocations  atomic.Uint64
-	probeCalls        atomic.Uint64
-	probeUsed         [3]atomic.Bool
-	rowProbeUsed      [3]atomic.Bool
-	lastDenial        atomic.Value
-	reads             map[string]map[string]struct{}
+	state                 atomic.Pointer[firstAudioGuardContext]
+	storageProfile        atomic.Pointer[firstAudioStorageProfile]
+	runtimeStarted        atomic.Bool
+	runtimePragmaAttempts atomic.Uint64
+	hooks                 atomic.Uint64
+	denials               atomic.Uint64
+	expectedDenials       atomic.Uint64
+	unexpectedDenials     atomic.Uint64
+	guardInvocations      atomic.Uint64
+	probeCalls            atomic.Uint64
+	probeUsed             [3]atomic.Bool
+	rowProbeUsed          [3]atomic.Bool
+	lastDenial            atomic.Value
+	reads                 map[string]map[string]struct{}
+}
+
+type firstAudioStorageSize struct {
+	DatabaseBytes int64 `json:"database_bytes"`
+	WALBytes      int64 `json:"wal_bytes"`
+}
+
+type firstAudioStorageProfile struct {
+	JournalMode string `json:"journal_mode"`
+	Synchronous int64  `json:"synchronous"`
+	BusyTimeout int64  `json:"busy_timeout_ms"`
+}
+
+func firstAudioReadPragma(conn *sqlite3.SQLiteConn, name string) (driver.Value, error) {
+	rows, err := conn.Query("PRAGMA "+name, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	columns := rows.Columns()
+	if len(columns) != 1 {
+		return nil, errors.New("unexpected pragma result shape")
+	}
+	values := make([]driver.Value, 1)
+	if err := rows.Next(values); err != nil {
+		return nil, err
+	}
+	return values[0], nil
+}
+
+func firstAudioReadStorageProfile(conn *sqlite3.SQLiteConn) (firstAudioStorageProfile, error) {
+	modeValue, err := firstAudioReadPragma(conn, "journal_mode")
+	if err != nil {
+		return firstAudioStorageProfile{}, err
+	}
+	syncValue, err := firstAudioReadPragma(conn, "synchronous")
+	if err != nil {
+		return firstAudioStorageProfile{}, err
+	}
+	timeoutValue, err := firstAudioReadPragma(conn, "busy_timeout")
+	if err != nil {
+		return firstAudioStorageProfile{}, err
+	}
+	mode, ok := modeValue.(string)
+	if !ok || mode == "" {
+		return firstAudioStorageProfile{}, errors.New("journal mode pragma returned an invalid value")
+	}
+	toInt := func(value driver.Value) (int64, bool) {
+		switch typed := value.(type) {
+		case int64:
+			return typed, true
+		case int:
+			return int64(typed), true
+		default:
+			return 0, false
+		}
+	}
+	synchronous, okSync := toInt(syncValue)
+	busyTimeout, okTimeout := toInt(timeoutValue)
+	if !okSync || synchronous < 0 || synchronous > 3 || !okTimeout || busyTimeout < 0 || busyTimeout > 120_000 {
+		return firstAudioStorageProfile{}, errors.New("storage pragma returned an invalid numeric value")
+	}
+	return firstAudioStorageProfile{JournalMode: strings.ToLower(mode), Synchronous: synchronous, BusyTimeout: busyTimeout}, nil
 }
 
 func newFirstAudioMatrixPolicy(probe string) *firstAudioMatrixPolicy {
@@ -91,6 +158,17 @@ func (p *firstAudioMatrixPolicy) publish(next firstAudioGuardContext) {
 }
 
 func (p *firstAudioMatrixPolicy) install(conn *sqlite3.SQLiteConn) error {
+	profile, err := firstAudioReadStorageProfile(conn)
+	if err != nil {
+		return err
+	}
+	if p.storageProfile.Load() == nil {
+		copy := profile
+		p.storageProfile.CompareAndSwap(nil, &copy)
+	}
+	if prior := p.storageProfile.Load(); prior == nil || *prior != profile {
+		return errors.New("SQLite connections disagree on effective storage profile")
+	}
 	connectionID := p.hooks.Add(1)
 	if err := conn.RegisterFunc("first_audio_row_guard", func(values ...any) bool {
 		return p.rowGuardForConnection(connectionID, values...)
@@ -114,6 +192,9 @@ func (p *firstAudioMatrixPolicy) install(conn *sqlite3.SQLiteConn) error {
 		return err
 	}
 	conn.RegisterAuthorizerWithTriggerName(func(action int, arg1, arg2, database, trigger string) int {
+		if action == sqlite3.SQLITE_PRAGMA && p.runtimeStarted.Load() {
+			p.runtimePragmaAttempts.Add(1)
+		}
 		if p.authorize(action, arg1, arg2, database, trigger) {
 			return sqlite3.SQLITE_OK
 		}
@@ -414,12 +495,15 @@ type firstAudioGuardedBackend struct {
 	runtimeCancel      context.CancelFunc
 	runtimeDone        chan struct{}
 	runtimeStopTimeout time.Duration
+	storageBefore      firstAudioStorageSize
+	storageAfterWork   firstAudioStorageSize
 }
 
 func newFirstAudioGuardedBackend() (firstAudioBackend, error) {
 	capability, err := firstAudioCapabilityFromEnvironment()
 	if err != nil {
-		return nil, err
+		fmt.Fprintln(os.Stderr, "first_audio_matrix bind_stage=capability_environment")
+		return nil, &firstAudioBackendFailure{stage: "capability_environment", err: err}
 	}
 	return &firstAudioGuardedBackend{
 		runID: os.Getenv(firstAudioHarnessRunEnv), dbPath: os.Getenv(firstAudioHarnessDBEnv),
@@ -427,7 +511,14 @@ func newFirstAudioGuardedBackend() (firstAudioBackend, error) {
 	}, nil
 }
 
-func (b *firstAudioGuardedBackend) Bind(ctx context.Context, fixture string) (firstAudioBound, error) {
+func (b *firstAudioGuardedBackend) Bind(ctx context.Context, fixture string) (result firstAudioBound, resultErr error) {
+	stage := "bind_precondition"
+	defer func() {
+		if resultErr != nil {
+			resultErr = &firstAudioBackendFailure{stage: stage, err: resultErr}
+			fmt.Fprintf(os.Stderr, "first_audio_matrix bind_stage=%s\n", stage)
+		}
+	}()
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	if b.closed || b.db != nil || fixture != firstAudioFixture {
@@ -436,6 +527,7 @@ func (b *firstAudioGuardedBackend) Bind(ctx context.Context, fixture string) (fi
 	if err := ctx.Err(); err != nil {
 		return firstAudioBound{}, err
 	}
+	stage = "setup_database_open"
 	setup, err := store.Open(b.dbPath)
 	if err != nil {
 		return firstAudioBound{}, fmt.Errorf("setup database open failed: %w", err)
@@ -444,6 +536,7 @@ func (b *firstAudioGuardedBackend) Bind(ctx context.Context, fixture string) (fi
 	if err != nil {
 		return firstAudioBound{}, err
 	}
+	stage = "fixture_seed_and_guard_install"
 	identity, password, err := seedFirstAudioSetupFixture(setup, b.capability, b.runID, time.Now().UTC())
 	if err == nil {
 		err = setup.Create(&store.ConfigGlobal{Key: "wordsPerLesson", Value: `60`}).Error
@@ -455,6 +548,7 @@ func (b *firstAudioGuardedBackend) Bind(ctx context.Context, fixture string) (fi
 		_ = setupPool.Close()
 		return firstAudioBound{}, fmt.Errorf("fixture setup failed: %w", err)
 	}
+	stage = "baseline_schema_snapshot"
 	baseline, err := captureFirstAudioSnapshot(context.Background(), setupPool)
 	if err != nil {
 		_ = setupPool.Close()
@@ -471,6 +565,7 @@ func (b *firstAudioGuardedBackend) Bind(ctx context.Context, fixture string) (fi
 		return firstAudioBound{}, errors.New("closed setup pool remained usable")
 	}
 
+	stage = "guarded_application_pool_open"
 	b.probeToken = firstAudioProbeToken(b.capability, b.runID)
 	b.policy = newFirstAudioMatrixPolicy(b.probeToken)
 	driverName := fmt.Sprintf("first_audio_guarded_%d", firstAudioBackendSequence.Add(1))
@@ -491,28 +586,39 @@ func (b *firstAudioGuardedBackend) Bind(ctx context.Context, fixture string) (fi
 	pool.SetMaxIdleConns(3)
 	b.db, b.pool = db, pool
 	b.policy.publish(firstAudioGuardContext{phase: firstAudioRunDriver, lessonID: identity.LessonID, studentID: identity.StudentID, bookID: identity.BookID, wordCount: len(identity.WordIDs), wordIDs: identity.WordIDs, probeToken: b.probeToken})
+	stage = "guarded_connection_probe"
 	if err := pool.PingContext(ctx); err != nil {
 		return firstAudioBound{}, fmt.Errorf("driver probe failed: %w", err)
 	}
 	b.policy.publish(firstAudioGuardContext{phase: firstAudioRunStartup, lessonID: identity.LessonID, studentID: identity.StudentID, bookID: identity.BookID, wordCount: len(identity.WordIDs), wordIDs: identity.WordIDs, probeToken: b.probeToken})
 	b.identity, b.password = identity, password
+	stage = "api_app_startup"
 	b.app = NewApp(scheduler.RealClock{}, db)
 	if b.app == nil || b.app.StartupError != nil {
 		return firstAudioBound{}, errors.New("api.App startup failed under guarded pool")
 	}
 	b.policy.publish(firstAudioGuardContext{phase: firstAudioRunPreflight, lessonID: identity.LessonID, studentID: identity.StudentID, bookID: identity.BookID, wordCount: len(identity.WordIDs), wordIDs: identity.WordIDs, probeToken: b.probeToken})
+	stage = "guarded_connection_preflight"
 	if err := b.preflightConnections(ctx); err != nil {
 		return firstAudioBound{}, err
 	}
 	if b.policy.unexpectedDenials.Load() != 0 {
 		return firstAudioBound{}, errors.New("unexpected denial during guarded startup")
 	}
+	stage = "startup_snapshot_invariant"
 	afterStartup, err := captureFirstAudioSnapshot(ctx, pool)
 	if err != nil || !equalFirstAudioSnapshots(baseline, afterStartup) {
 		return firstAudioBound{}, errors.New("guarded app startup changed the fixture snapshot")
 	}
 	b.policy.publish(firstAudioGuardContext{phase: firstAudioRunJourney, lessonID: identity.LessonID, studentID: identity.StudentID, bookID: identity.BookID, wordCount: len(identity.WordIDs), wordIDs: identity.WordIDs, probeToken: b.probeToken})
+	b.policy.runtimeStarted.Store(true)
+	stage = "initial_storage_stat"
+	b.storageBefore, err = firstAudioCaptureStorageSize(b.dbPath)
+	if err != nil {
+		return firstAudioBound{}, errors.New("initial matrix database and WAL sizes could not be captured")
+	}
 	b.admission = newFirstAudioHTTPAdmission()
+	stage = "loopback_listener"
 	listener, err := net.Listen("tcp4", "127.0.0.1:0")
 	if err != nil {
 		return firstAudioBound{}, err
@@ -545,6 +651,7 @@ func (b *firstAudioGuardedBackend) Bind(ctx context.Context, fixture string) (fi
 	if !validFirstAudioBound(b.bound) || b.bound.SourceBuildIdentity == "" {
 		return firstAudioBound{}, errors.New("initial guarded binding is invalid")
 	}
+	stage = "bind_complete"
 	return b.bound, nil
 }
 
@@ -723,7 +830,7 @@ func (g *firstAudioHTTPAdmission) resume() {
 func (b *firstAudioGuardedBackend) Reset(ctx context.Context, lessonID int64) (firstAudioBound, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	if b.closed || b.db == nil || lessonID != b.bound.LessonID || b.bound.Generation != 1 {
+	if b.closed || b.db == nil || b.bound.Generation == 0 || lessonID != b.bound.LessonID || lessonID != b.identity.LessonID {
 		return firstAudioBound{}, errors.New("reset state or lesson identity invalid")
 	}
 	priorRoom, _ := b.app.Rooms.Room(lessonID)
@@ -873,12 +980,82 @@ func (b *firstAudioGuardedBackend) Close() error {
 		}
 	}
 	if b.pool != nil {
+		var err error
+		b.storageAfterWork, err = firstAudioCaptureStorageSize(b.dbPath)
+		if err != nil {
+			errs = append(errs, errors.New("matrix database and WAL sizes could not be captured after timed work"))
+		}
 		if err := b.pool.Close(); err != nil {
 			errs = append(errs, err)
+		}
+		if b.policy != nil {
+			if err := b.writeStorageProfile(); err != nil {
+				errs = append(errs, err)
+			}
 		}
 	}
 	b.closeErr = errors.Join(errs...)
 	return b.closeErr
+}
+
+func (b *firstAudioGuardedBackend) writeStorageProfile() error {
+	profile := b.policy.storageProfile.Load()
+	if profile == nil || b.policy.hooks.Load() < 3 || b.dbPath == "" || b.storageBefore.DatabaseBytes <= 0 || b.storageAfterWork.DatabaseBytes <= 0 {
+		return errors.New("effective SQLite storage profile is incomplete")
+	}
+	if b.policy.runtimePragmaAttempts.Load() != 0 {
+		return errors.New("runtime SQLite PRAGMA was attempted after storage profile lock")
+	}
+	afterClose, err := firstAudioCaptureStorageSize(b.dbPath)
+	if err != nil {
+		return errors.New("matrix database and WAL sizes could not be measured after close")
+	}
+	record := struct {
+		SchemaVersion         int                      `json:"schema_version"`
+		Profile               firstAudioStorageProfile `json:"effective_profile"`
+		Connections           uint64                   `json:"guarded_connections"`
+		RuntimePragmaAttempts uint64                   `json:"runtime_pragma_attempts"`
+		BeforeTimedWork       firstAudioStorageSize    `json:"before_timed_work"`
+		AfterTimedWork        firstAudioStorageSize    `json:"after_timed_work_before_close"`
+		AfterClose            firstAudioStorageSize    `json:"after_close"`
+	}{SchemaVersion: 1, Profile: *profile, Connections: b.policy.hooks.Load(),
+		RuntimePragmaAttempts: b.policy.runtimePragmaAttempts.Load(), BeforeTimedWork: b.storageBefore,
+		AfterTimedWork: b.storageAfterWork, AfterClose: afterClose}
+	encoded, err := json.Marshal(record)
+	if err != nil {
+		return err
+	}
+	path := filepath.Join(filepath.Dir(b.dbPath), "storage-profile.json")
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	if err != nil {
+		return errors.New("private storage profile artifact could not be created")
+	}
+	_, writeErr := file.Write(append(encoded, '\n'))
+	syncErr := file.Sync()
+	closeErr := file.Close()
+	if err := errors.Join(writeErr, syncErr, closeErr); err != nil {
+		return errors.New("private storage profile artifact could not be persisted")
+	}
+	return nil
+}
+
+func firstAudioCaptureStorageSize(dbPath string) (firstAudioStorageSize, error) {
+	var size firstAudioStorageSize
+	dbInfo, err := os.Lstat(dbPath)
+	if err != nil || !dbInfo.Mode().IsRegular() || dbInfo.Mode()&os.ModeSymlink != 0 {
+		return size, errors.New("matrix database is not a regular file")
+	}
+	size.DatabaseBytes = dbInfo.Size()
+	walPath := dbPath + "-wal"
+	walInfo, err := os.Lstat(walPath)
+	if errors.Is(err, os.ErrNotExist) {
+		return size, nil
+	}
+	if err != nil || !walInfo.Mode().IsRegular() || walInfo.Mode()&os.ModeSymlink != 0 {
+		return firstAudioStorageSize{}, errors.New("matrix WAL is not a regular file")
+	}
+	size.WALBytes = walInfo.Size()
+	return size, nil
 }
 
 type firstAudioSnapshot struct {
@@ -1144,11 +1321,44 @@ func TestFirstAudioMatrixGuardedBackendRunsAppEntryAndSamePoolReset(t *testing.T
 	studentToken = firstAudioLoginToken(t, second.Origin, backend.identity.Username, backend.password)
 	secondTicket := firstAudioEnterLesson(t, second.Origin, studentToken, second.LessonID)
 	firstAudioJoinUntilFirstTTS(t, backend, &appLog, second.Origin, second.LessonID, secondTicket)
+	third, err := backend.Reset(ctx, second.LessonID)
+	if err != nil {
+		t.Fatalf("repeated same-pool reset failed: %v; guard_denials=%d last=%v", err, backend.policy.unexpectedDenials.Load(), backend.policy.lastDenial.Load())
+	}
+	if third.LessonID == second.LessonID || third.Generation != second.Generation+1 || third.Origin != second.Origin {
+		t.Fatalf("repeated reset did not preserve app/listener and advance generation: second=%#v third=%#v", second, third)
+	}
 	if err := backend.Close(); err != nil {
 		t.Fatalf("guarded backend close failed: %v", err)
 	}
 	if err := backend.pool.PingContext(context.Background()); err == nil {
 		t.Fatal("guarded application pool remained usable after close")
+	}
+	profilePath := filepath.Join(filepath.Dir(backend.dbPath), "storage-profile.json")
+	profileBytes, err := os.ReadFile(profilePath)
+	if err != nil {
+		t.Fatalf("effective storage profile was not recorded after close: %v", err)
+	}
+	var profile struct {
+		SchemaVersion int `json:"schema_version"`
+		Effective     struct {
+			JournalMode string `json:"journal_mode"`
+			Synchronous int64  `json:"synchronous"`
+			BusyTimeout int64  `json:"busy_timeout_ms"`
+		} `json:"effective_profile"`
+		Connections uint64                `json:"guarded_connections"`
+		PragmaCalls uint64                `json:"runtime_pragma_attempts"`
+		Before      firstAudioStorageSize `json:"before_timed_work"`
+		AfterWork   firstAudioStorageSize `json:"after_timed_work_before_close"`
+		AfterClose  firstAudioStorageSize `json:"after_close"`
+	}
+	if err := json.Unmarshal(profileBytes, &profile); err != nil || profile.SchemaVersion != 1 || profile.Effective.JournalMode == "" ||
+		profile.Effective.Synchronous < 0 || profile.Effective.Synchronous > 3 || profile.Effective.BusyTimeout < 0 ||
+		profile.Effective.BusyTimeout > 120_000 || profile.Connections < 3 || profile.PragmaCalls != 0 ||
+		profile.Before.DatabaseBytes <= 0 || profile.Before.WALBytes < 0 || profile.AfterWork.DatabaseBytes <= 0 ||
+		profile.AfterWork.WALBytes < 0 || profile.AfterClose.DatabaseBytes <= 0 || profile.AfterClose.WALBytes < 0 ||
+		strings.Contains(string(profileBytes), backend.dbPath) {
+		t.Fatalf("effective storage profile is incomplete or exposes a path: %s", profileBytes)
 	}
 }
 

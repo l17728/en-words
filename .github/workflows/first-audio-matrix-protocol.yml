@@ -6,6 +6,9 @@ on:
     paths:
       - "docs/73-first-audio-matrix-control-protocol-sdd.md"
       - "docs/74-first-audio-matrix-isolated-backend-sdd.md"
+      - "docs/75-first-audio-lead-setting-sdd.md"
+      - "docs/76-first-audio-matrix-result-20261101.md"
+      - "docs/70-classroom-first-audio-latency-sdd.md"
       - "server/internal/api/first_audio_matrix_harness_test.go"
       - "server/go.mod"
       - "server/go.sum"
@@ -17,6 +20,8 @@ on:
       - "server/internal/store/**"
       - "review/first_audio_matrix_control.py"
       - "review/test_first_audio_matrix_control.py"
+      - "review/first_audio_latency_matrix.py"
+      - "review/test_first_audio_latency_matrix.py"
       - "web/src/**"
       - "web/e2e/**"
       - "web/package.json"
@@ -27,6 +32,9 @@ on:
     paths:
       - "docs/73-first-audio-matrix-control-protocol-sdd.md"
       - "docs/74-first-audio-matrix-isolated-backend-sdd.md"
+      - "docs/75-first-audio-lead-setting-sdd.md"
+      - "docs/76-first-audio-matrix-result-20261101.md"
+      - "docs/70-classroom-first-audio-latency-sdd.md"
       - "server/internal/api/first_audio_matrix_harness_test.go"
       - "server/go.mod"
       - "server/go.sum"
@@ -38,6 +46,8 @@ on:
       - "server/internal/store/**"
       - "review/first_audio_matrix_control.py"
       - "review/test_first_audio_matrix_control.py"
+      - "review/first_audio_latency_matrix.py"
+      - "review/test_first_audio_latency_matrix.py"
       - "web/src/**"
       - "web/e2e/**"
       - "web/package.json"
@@ -71,6 +81,8 @@ jobs:
         run: npm ci --prefix web --no-audit --no-fund
       - name: Test parent process boundary helpers
         run: python3 -m unittest discover -s review -p test_first_audio_matrix_control.py -v
+      - name: Test synthetic first-audio matrix statistics and artifacts
+        run: python3 -m unittest discover -s review -p test_first_audio_latency_matrix.py -v
       - name: Test JSONL parser, lifecycle, replay, and terminal cleanup
         working-directory: server
         run: go test ./internal/api -run '^TestFirstAudioMatrix' -count=1 -timeout=5m
@@ -115,6 +127,8 @@ jobs:
         run: npm ci --prefix web --no-audit --no-fund
       - name: Test Windows private DACL and process-tree boundaries
         run: python -m unittest discover -s review -p test_first_audio_matrix_control.py -v
+      - name: Test synthetic first-audio matrix statistics and artifacts
+        run: python -m unittest discover -s review -p test_first_audio_latency_matrix.py -v
       - name: Test Go harness path and lifecycle boundaries
         working-directory: server
         run: go test ./internal/api -run '^TestFirstAudioMatrix' -count=1 -timeout=10m

@@ -78,7 +78,7 @@ func TestFeedbackMemoryConcurrentSettingsAndCompletionPreserveAllWrites(t *testi
 	go func() {
 		defer wg.Done()
 		<-start
-		errs <- a.Cfg.SetPlayback("admin", sid, false, config.PlaybackSettings{TtsEnRepeat: 2, TtsZhRepeat: 2, TtsIntervalMs: 300, TtsZhIntervalMs: 400, TtsSwitchIntervalMs: 500}, "fixture")
+		errs <- a.Cfg.SetPlayback("admin", sid, false, config.PlaybackSettings{TtsEnRepeat: 2, TtsZhRepeat: 2, TtsIntervalMs: 300, TtsZhIntervalMs: 400, TtsSwitchIntervalMs: 500, ShowWordLeadMs: 250}, "fixture")
 	}()
 	close(start)
 	wg.Wait()

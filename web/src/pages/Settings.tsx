@@ -10,6 +10,7 @@ interface PlaybackSettings {
   ttsIntervalMs: number
   ttsZhIntervalMs: number
   ttsSwitchIntervalMs: number
+  showWordLeadMs: number
 }
 interface SettingsResult {
   settings: PlaybackSettings
@@ -48,6 +49,7 @@ export default function SettingsPage() {
         ttsIntervalMs: result.settings.ttsIntervalMs / 1000,
         ttsZhIntervalMs: result.settings.ttsZhIntervalMs / 1000,
         ttsSwitchIntervalMs: result.settings.ttsSwitchIntervalMs / 1000,
+        showWordLeadMs: result.settings.showWordLeadMs / 1000,
       })
       setRefreshPending(result.refresh_pending)
     }).catch((cause: unknown) => {
@@ -68,6 +70,7 @@ export default function SettingsPage() {
         ttsIntervalMs: Math.round(values.ttsIntervalMs * 1000),
         ttsZhIntervalMs: Math.round(values.ttsZhIntervalMs * 1000),
         ttsSwitchIntervalMs: Math.round(values.ttsSwitchIntervalMs * 1000),
+        showWordLeadMs: Math.round(values.showWordLeadMs * 1000),
       })
       if (epoch !== requestEpoch.current) return
       setRefreshPending(result.refresh_pending)
@@ -100,6 +103,9 @@ export default function SettingsPage() {
           {gapFields.map(([key, label]) => <Form.Item key={key} name={key} label={label} rules={[{ required: true, type: 'number', min: 0, max: 10 }]}>
             <InputNumber min={0} max={10} step={0.1} precision={1} addonAfter="秒" />
           </Form.Item>)}
+          <Form.Item name="showWordLeadMs" label="单词显示后开始朗读" rules={[{ required: true, type: 'number', min: 0.1, max: 2 }]}>
+            <InputNumber min={0.1} max={2} step={0.05} precision={2} addonAfter="秒" />
+          </Form.Item>
           <Typography.Paragraph type="secondary">间隔从上一段播放结束计算。英文和中文重复间隔用于同一语言的连续朗读，语言切换只使用切换间隔；合成或网络耗时可能增加等待。</Typography.Paragraph>
           <Button htmlType="submit" type="primary" loading={saving}>保存设置</Button>
         </Form>

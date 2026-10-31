@@ -104,6 +104,14 @@ type firstAudioBackend interface {
 
 type firstAudioBackendFactory func() (firstAudioBackend, error)
 
+type firstAudioBackendFailure struct {
+	stage string
+	err   error
+}
+
+func (e *firstAudioBackendFailure) Error() string              { return e.err.Error() }
+func (e *firstAudioBackendFailure) MatrixFailureStage() string { return e.stage }
+
 type firstAudioControl struct {
 	capability []byte
 	newBackend firstAudioBackendFactory
@@ -474,22 +482,37 @@ func (c *firstAudioControl) handle(request firstAudioRequest) (firstAudioRespons
 			return c.reject(request.RequestID, "fixture_unavailable"), false, nil, nil
 		}
 		if c.newBackend == nil {
-			response, replayable, err := c.failBind(request.RequestID)
+			response, replayable, err := c.failBindWithCode(request.RequestID, "bind_backend_factory_missing")
 			return response, replayable, nil, err
 		}
 		backend, err := c.newBackend()
 		if err != nil {
-			response, replayable, _ := c.failBind(request.RequestID)
+			code := "bind_backend_factory_failed"
+			var staged interface{ MatrixFailureStage() string }
+			if errors.As(err, &staged) && firstAudioBindStageAllowed(staged.MatrixFailureStage()) {
+				code = "bind_" + staged.MatrixFailureStage() + "_failed"
+			}
+			response, replayable, _ := c.failBindWithCode(request.RequestID, code)
 			return response, replayable, nil, nil
 		}
 		if backend == nil {
-			response, replayable, err := c.failBind(request.RequestID)
+			response, replayable, err := c.failBindWithCode(request.RequestID, "bind_backend_factory_empty")
 			return response, replayable, nil, err
 		}
 		c.backend = backend
 		bound, err := backend.Bind(context.Background(), fixture)
 		if err != nil || !validFirstAudioBound(bound) {
-			response, replayable, _ := c.failBind(request.RequestID)
+			code := "bind_setup_failed"
+			var staged interface{ MatrixFailureStage() string }
+			if errors.As(err, &staged) {
+				stage := staged.MatrixFailureStage()
+				if firstAudioBindStageAllowed(stage) {
+					code = "bind_" + stage + "_failed"
+				}
+			} else if err == nil {
+				code = "bind_invalid_result"
+			}
+			response, replayable, _ := c.failBindWithCode(request.RequestID, code)
 			return response, replayable, nil, nil
 		}
 		c.bound = bound
@@ -571,10 +594,25 @@ func (c *firstAudioControl) reject(requestID, code string) firstAudioResponse {
 }
 
 func (c *firstAudioControl) failBind(requestID string) (firstAudioResponse, bool, error) {
+	return c.failBindWithCode(requestID, "bind_setup_failed")
+}
+
+func (c *firstAudioControl) failBindWithCode(requestID, code string) (firstAudioResponse, bool, error) {
 	cleanupErr := c.closeBackend()
 	c.state = firstAudioTerminalFailed
-	c.terminal = "bind_setup_failed"
+	c.terminal = code
 	return firstAudioResponse{RequestID: requestID, Status: "failed", Data: nil, Error: &firstAudioError{Code: c.terminal}}, false, cleanupErr
+}
+
+func firstAudioBindStageAllowed(stage string) bool {
+	switch stage {
+	case "bind_precondition", "setup_database_open", "fixture_seed_and_guard_install", "baseline_schema_snapshot",
+		"guarded_application_pool_open", "guarded_connection_probe", "api_app_startup", "guarded_connection_preflight",
+		"startup_snapshot_invariant", "initial_storage_stat", "loopback_listener", "capability_environment", "cgo_disabled":
+		return true
+	default:
+		return false
+	}
 }
 
 func (c *firstAudioControl) failReset(requestID, resetID string, lessonID int64, uncertain bool) (firstAudioResponse, bool, error) {
@@ -682,6 +720,7 @@ func validFirstAudioOrigin(origin string) bool {
 type firstAudioFakeBackend struct {
 	bound       firstAudioBound
 	resetResult firstAudioBound
+	bindErr     error
 	resetErr    error
 	bindCalls   int
 	resetCalls  int
@@ -693,7 +732,34 @@ func (b *firstAudioFakeBackend) Bind(_ context.Context, fixture string) (firstAu
 	if fixture != firstAudioFixture {
 		return firstAudioBound{}, errors.New("unexpected fixture")
 	}
+	if b.bindErr != nil {
+		return firstAudioBound{}, b.bindErr
+	}
 	return b.bound, nil
+}
+
+func TestFirstAudioMatrixBindFailureUsesSanitizedStageCode(t *testing.T) {
+	capability := firstAudioTestCapability()
+	encoded := base64.RawURLEncoding.EncodeToString(capability)
+	backend := &firstAudioFakeBackend{bindErr: &firstAudioBackendFailure{
+		stage: "api_app_startup", err: errors.New("private path and SQL must not cross the protocol"),
+	}}
+	control := newFirstAudioControl(capability, func() (firstAudioBackend, error) { return backend, nil })
+	line := firstAudioRequestLine(t, "bind-stage", encoded, "bind", map[string]any{"fixture": firstAudioFixture})
+	shutdown := firstAudioRequestLine(t, "shutdown-stage", encoded, "shutdown", map[string]any{})
+	var output bytes.Buffer
+	err := control.serve(bytes.NewReader(bytes.Join([][]byte{line, shutdown}, nil)), &output)
+	if !errors.Is(err, errFirstAudioRunFailed) {
+		t.Fatalf("bind failure did not fail closed: %v", err)
+	}
+	responses := decodeFirstAudioTestResponses(t, output.Bytes())
+	if len(responses) != 2 || responses[0].Error == nil || responses[0].Error.Code != "bind_api_app_startup_failed" ||
+		responses[1].Error == nil || responses[1].Error.Code != "bind_api_app_startup_failed" {
+		t.Fatalf("stage-specific safe failure code missing: %#v", responses)
+	}
+	if strings.Contains(output.String(), "private path") || strings.Contains(output.String(), "SQL") {
+		t.Fatal("raw failure detail leaked into the control response")
+	}
 }
 
 func (b *firstAudioFakeBackend) Reset(_ context.Context, lessonID int64) (firstAudioBound, error) {
@@ -901,13 +967,13 @@ func TestFirstAudioMatrixBindFailsClosedWhenBackendInitializationIsUnavailable(t
 		t.Fatalf("fail-closed bind path did not fail the run: %v", err)
 	}
 	responses := decodeFirstAudioTestResponses(t, output.Bytes())
-	if len(responses) != 3 || responses[0].Status != "failed" || responses[0].Error == nil || responses[0].Error.Code != "bind_setup_failed" {
+	if len(responses) != 3 || responses[0].Status != "failed" || responses[0].Error == nil || responses[0].Error.Code != "bind_backend_factory_failed" {
 		t.Fatalf("missing explicit bind failure response: %#v", responses)
 	}
 	if responses[1].Status != "ok" || responses[1].Data.(map[string]any)["lifecycle_state"] != string(firstAudioTerminalFailed) {
 		t.Fatalf("terminal metadata was not retained safely: %#v", responses[1])
 	}
-	if responses[2].Status != "failed" || responses[2].Error == nil || responses[2].Error.Code != "bind_setup_failed" {
+	if responses[2].Status != "failed" || responses[2].Error == nil || responses[2].Error.Code != "bind_backend_factory_failed" {
 		t.Fatalf("terminal shutdown code mismatch: %#v", responses[2])
 	}
 }

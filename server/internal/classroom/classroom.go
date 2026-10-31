@@ -324,6 +324,11 @@ func (m *Machine) Restore(s State) error {
 		restoredCfg = legacySnapshotConfig(cp.Config)
 	} else {
 		restoredCfg = *cp.Config
+		if restoredCfg.SnapshotVersion == 0 {
+			// Existing playback-version-1 snapshots predate showWordLeadMs.
+			restoredCfg.ShowWordLeadMs = 800
+			restoredCfg.SnapshotVersion = 1
+		}
 	}
 	if err := validatePlaybackSnapshot(restoredCfg); err != nil {
 		return err
@@ -417,8 +422,7 @@ func (m *Machine) buildReport(correct map[int64]bool) LessonReport {
 func (m *Machine) TimeoutFor() (time.Duration, bool) {
 	switch m.state.Phase {
 	case PhaseShowWord:
-		// 用户定案（二合一节奏）：show_word 仅 0.8s 自动开读（不等长思考；点击仍可立即开始）
-		return 800 * time.Millisecond, true
+		return time.Duration(m.cfg.ShowWordLeadMs) * time.Millisecond, true
 	case PhaseRepeating:
 		return time.Duration(m.cfg.TimeoutRepeatS) * time.Second, true
 	case PhaseWaitAnswer:
