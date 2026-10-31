@@ -46,9 +46,9 @@ COMMIT成功才返回DB，随后App构造/恢复完成才允许HTTP监听。启�
 
 ## 5. 启动阶段日志
 
-每次启动生成非空startup trace；固定module=startup、event=`startup_stage_started`/`startup_stage_completed`/`startup_stage_failed`。stage枚举：open、pragmas、schema_probe、fresh_schema、legacy_schema、triggers、index、finalize、app_restore、listen。阶段只出现实际执行分支；fresh字段在probe后才可知，不提前伪填false。
+每次启动生成非空startup trace；固定module=startup、event=`startup_stage_started`/`startup_stage_completed`/`startup_stage_failed`。stage枚举：open、pragmas、schema_probe、fresh_schema、legacy_schema、triggers、index、finalize、pool_cleanup、app_restore、listen。阶段只出现实际执行分支；fresh字段在probe后才可知，不提前伪填false。若startup失败且pool已创建，必须记录`pool_cleanup`结果；关闭错误须合并进startup错误返回，不能被吞掉或把未确认关闭当作已清理。
 
-payload允许stage、duration_ms（单调计时非负）、storage_mode、fresh（已知时）、schema_object_count（已成功探测时）、reason固定枚举、transaction_outcome。reason枚举open_failed/pragma_failed/probe_failed/initialization_conflict/schema_failed/trigger_failed/index_failed/commit_failed/canceled/restore_failed/listen_failed。
+payload允许stage、duration_ms（单调计时非负）、storage_mode、fresh（已知时）、schema_object_count（已成功探测时）、reason固定枚举、transaction_outcome。reason枚举open_failed/pragma_failed/probe_failed/initialization_conflict/schema_failed/trigger_failed/index_failed/commit_failed/canceled/pool_close_failed/restore_failed/listen_failed。
 
 finalize独立测量commit/rollback及清理，不能把整个迁移耗时都叫commit_ms；fresh_schema与其子阶段重叠时报告层次，禁止直接相加。listen成功应以真实绑定成功为准，不在ListenAndServe之前宣称ready；从首stage到ready总耗时另列。不能把total或finalize解释为物理fsync耗时。失败阶段至少一条terminal事件；panic路径也须有有限清理与失败观测，之后保持原panic/退出语义。
 

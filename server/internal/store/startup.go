@@ -193,7 +193,10 @@ func openContext(ctx context.Context, path string, observer func(StageEvent), co
 	published := false
 	defer func() {
 		if !published && pool != nil {
-			_ = pool.Close()
+			closeErr := s.stage("pool_cleanup", "pool_close_failed", func() error { return pool.Close() })
+			if closeErr != nil {
+				err = errors.Join(err, fmt.Errorf("store: close unpublished pool: %w", closeErr))
+			}
 		}
 	}()
 	err = s.stage("open", "open_failed", func() error {
