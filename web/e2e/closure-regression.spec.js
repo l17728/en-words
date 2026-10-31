@@ -210,7 +210,7 @@ test('first-audio lead setting saves millisecond boundaries and survives reload'
     const body = await response.json()
     expect(body.code).toBe(0)
     expect(body.data.settings.showWordLeadMs).toBe(milliseconds)
-    await expect(lead).toHaveValue(seconds)
+    await expect.poll(async () => Number(await lead.inputValue())).toBe(Number(seconds))
   }
 
   await page.reload()
