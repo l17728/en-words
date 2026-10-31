@@ -37,6 +37,7 @@ import (
 	sqlite3 "github.com/mattn/go-sqlite3"
 	gormsqlite "gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type firstAudioRunPhase uint32
@@ -476,7 +477,9 @@ func (b *firstAudioGuardedBackend) Bind(ctx context.Context, fixture string) (fi
 	if err := registerFirstAudioProbeDriver(driverName, b.policy.install); err != nil {
 		return firstAudioBound{}, err
 	}
-	db, err := gorm.Open(gormsqlite.Dialector{DriverName: driverName, DSN: b.dbPath}, &gorm.Config{DisableAutomaticPing: true})
+	db, err := gorm.Open(gormsqlite.Dialector{DriverName: driverName, DSN: b.dbPath}, &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent), DisableAutomaticPing: true,
+	})
 	if err != nil {
 		return firstAudioBound{}, fmt.Errorf("guarded app pool open failed: %w", err)
 	}
