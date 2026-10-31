@@ -6,6 +6,7 @@ test.describe.configure({ mode: 'serial' })
 const password = 'fixture12345'
 let lessonID
 let freezeLessonID
+let nextFreezeLessonID
 let fixtureBookID
 let otherStudentID
 
@@ -52,6 +53,17 @@ test.beforeAll(async ({ request }) => {
   await api(request, `/student/books/${book.ID}/placement`, freezeStudent.token, { knownWordIds: [], finish: true })
   const freezeLessons = await api(request, `/student/lessons?bookId=${book.ID}`, freezeStudent.token, undefined, 'GET')
   freezeLessonID = freezeLessons.find((lesson) => lesson.Status === 'scheduled').ID
+  const nextBook = await api(request, '/wordbooks', admin.token, {
+    name: 'Closure next lesson fixture', grade: 'g7', description: 'sequential lead snapshot regression',
+  })
+  await api(request, `/wordbooks/${nextBook.ID}/import/commit`, admin.token, {
+    entries: [{ word: 'bird', meanings: ['鸟'] }, { word: 'fish', meanings: ['鱼'] }],
+  })
+  await api(request, `/wordbooks/${nextBook.ID}/publish`, admin.token, {})
+  await api(request, `/student/books/${nextBook.ID}/enable`, freezeStudent.token, {})
+  await api(request, `/student/books/${nextBook.ID}/placement`, freezeStudent.token, { knownWordIds: [], finish: true })
+  const nextLessons = await api(request, `/student/lessons?bookId=${nextBook.ID}`, freezeStudent.token, undefined, 'GET')
+  nextFreezeLessonID = nextLessons.find((lesson) => lesson.Status === 'scheduled').ID
 })
 
 test('two students: foreign classroom navigation is denied without damaging owner session', async ({ browser, baseURL }) => {
@@ -225,12 +237,13 @@ test('entered classroom keeps its frozen first-audio lead after settings change'
   expect(frozen.settings.showWordLeadMs).toBe(2000)
   await login(page, 'closure-freeze')
   await page.addInitScript(() => {
-    const state = { frames: [] }
+    const state = { frames: [], closedLessonIds: [] }
     window.__leadFreezeProbe = state
     const NativeWebSocket = window.WebSocket
     class LeadFreezeWebSocket extends NativeWebSocket {
       constructor(url, protocols) {
         super(url, protocols)
+        const lessonId = Number(new URL(String(url), window.location.href).searchParams.get('lessonId'))
         this.addEventListener('message', event => {
           if (typeof event.data !== 'string') return
           try {
@@ -240,12 +253,13 @@ test('entered classroom keeps its frozen first-audio lead after settings change'
             const isSnapshotWord = frame.type === 'state_snapshot' && frame.phase === 'show_word' && frame.word
             const isPlayback = frame.type === 'ui_action' && action.type === 'play_tts'
             if (isShowWord || isSnapshotWord) {
-              state.frames.push({ type: 'show_word', word: action.word || frame.word, at: performance.now() })
+              state.frames.push({ type: 'show_word', lessonId, word: action.word || frame.word, at: performance.now() })
             } else if (isPlayback) {
-              state.frames.push({ type: 'play_tts', word: action.word || '', at: performance.now() })
+              state.frames.push({ type: 'play_tts', lessonId, word: action.word || '', at: performance.now() })
             }
           } catch { /* Ignore non-JSON classroom control frames. */ }
         })
+        this.addEventListener('close', () => state.closedLessonIds.push(lessonId))
       }
     }
     Object.defineProperty(window, 'WebSocket', { configurable: true, writable: true, value: LeadFreezeWebSocket })
@@ -253,7 +267,9 @@ test('entered classroom keeps its frozen first-audio lead after settings change'
 
   await page.goto(`/classroom/${freezeLessonID}?e2e=1`)
   await expect(page.getByText('已连接', { exact: true })).toBeVisible()
-  await expect.poll(() => page.evaluate(() => window.__leadFreezeProbe?.frames.some(frame => frame.type === 'show_word'))).toBe(true)
+  await expect.poll(() => page.evaluate(lessonId =>
+    window.__leadFreezeProbe?.frames.some(frame => frame.type === 'show_word' && frame.lessonId === lessonId),
+  freezeLessonID)).toBe(true)
 
   const update = await page.evaluate(async settings => {
     const token = localStorage.getItem('token')
@@ -269,20 +285,44 @@ test('entered classroom keeps its frozen first-audio lead after settings change'
   expect(update.status).toBe(200)
   expect(update.code).toBe(0)
   expect(update.showWordLeadMs).toBe(100)
-  await expect.poll(() => page.evaluate(() => window.__leadFreezeProbe?.frames.some(frame => frame.type === 'play_tts')),
-    { timeout: 10_000 }).toBe(true)
+  await expect.poll(() => page.evaluate(lessonId =>
+    window.__leadFreezeProbe?.frames.some(frame => frame.type === 'play_tts' && frame.lessonId === lessonId),
+  freezeLessonID), { timeout: 10_000 }).toBe(true)
 
-  const timing = await page.evaluate(updateAt => {
+  const timing = await page.evaluate(({ lessonId, updateAt }) => {
     const frames = window.__leadFreezeProbe?.frames || []
-    const showWord = frames.find(frame => frame.type === 'show_word')
-    const playback = frames.find(frame => frame.type === 'play_tts' && frame.word === showWord?.word)
+    const showWord = frames.find(frame => frame.type === 'show_word' && frame.lessonId === lessonId)
+    const playback = frames.find(frame => frame.type === 'play_tts' && frame.lessonId === lessonId && frame.word === showWord?.word)
     if (!showWord || !playback) throw new Error('same-word show/playback frames are missing')
     return { word: showWord.word, updateBeforePlayback: updateAt < playback.at,
       leadMs: playback.at - showWord.at }
-  }, update.at)
+  }, { lessonId: freezeLessonID, updateAt: update.at })
   expect(timing.word).toBeTruthy()
   expect(timing.updateBeforePlayback).toBe(true)
   expect(timing.leadMs).toBeGreaterThanOrEqual(1500)
+
+  await page.getByRole('button', { name: /^退\s*出$/ }).click()
+  await page.getByRole('dialog').getByRole('button', { name: /^退\s*出$/ }).click()
+  await expect(page).toHaveURL(/\/dashboard$/)
+  await expect.poll(() => page.evaluate(lessonId =>
+    window.__leadFreezeProbe?.closedLessonIds.includes(lessonId), freezeLessonID)).toBe(true)
+
+  await page.goto(`/classroom/${nextFreezeLessonID}?e2e=1`)
+  await expect(page.getByText('已连接', { exact: true })).toBeVisible()
+  await expect.poll(() => page.evaluate(lessonId =>
+    window.__leadFreezeProbe?.frames.some(frame => frame.type === 'show_word' && frame.lessonId === lessonId),
+  nextFreezeLessonID)).toBe(true)
+  await expect.poll(() => page.evaluate(lessonId =>
+    window.__leadFreezeProbe?.frames.some(frame => frame.type === 'play_tts' && frame.lessonId === lessonId),
+  nextFreezeLessonID), { timeout: 10_000 }).toBe(true)
+  const nextLeadMs = await page.evaluate(lessonId => {
+    const frames = window.__leadFreezeProbe?.frames || []
+    const showWord = frames.find(frame => frame.type === 'show_word' && frame.lessonId === lessonId)
+    const playback = frames.find(frame => frame.type === 'play_tts' && frame.lessonId === lessonId && frame.word === showWord?.word)
+    if (!showWord || !playback) throw new Error('next lesson same-word frames are missing')
+    return playback.at - showWord.at
+  }, nextFreezeLessonID)
+  expect(nextLeadMs).toBeLessThan(1500)
 })
 
 test('injected pause/resume protocol cancels delay and deduplicates recovery speech', async ({ page, request }) => {

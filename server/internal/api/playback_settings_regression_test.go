@@ -233,7 +233,9 @@ func TestPlaybackSettingsFreezeEnteredLessonAndApplyToNext(t *testing.T) {
 	a, clock, _, room := setupRoom(t)
 	before := *room.Machine().Snapshot().Config
 	token, sid := loginGet(t, a, "sfin", "pw")
-	resp := req2(t, a.Router(), "POST", "/api/v1/student/playback-settings", token, playbackValues())
+	values := playbackValues()
+	values["showWordLeadMs"] = 100
+	resp := req2(t, a.Router(), "POST", "/api/v1/student/playback-settings", token, values)
 	require.Equal(t, 0, resp.Code)
 	require.Equal(t, before, *room.Machine().Snapshot().Config)
 	admin, _ := loginGet(t, a, "admin", "adminpw")
@@ -252,4 +254,5 @@ func TestPlaybackSettingsFreezeEnteredLessonAndApplyToNext(t *testing.T) {
 	require.Equal(t, 0, cfg.TtsIntervalMs)
 	require.Equal(t, 300, cfg.TtsZhIntervalMs)
 	require.Equal(t, 10000, cfg.TtsSwitchIntervalMs)
+	require.Equal(t, 100, cfg.ShowWordLeadMs)
 }
