@@ -22,4 +22,6 @@ For classroom settlement, latch uncertainty on the Room, suppress subsequent set
 
 Backend review found no remaining P1/P2. Full Go tests, `go vet ./...`, race tests for API/config/scheduler/store, and core coverage gates passed. Coverage: API 81.5%, config 86.5%, scheduler 91.6%, store 80.9%. The six focused uncertainty and reconnect tests also passed with `-race -cover`; the settlement warning Playwright case passed.
 
-This closes transaction-outcome reporting for the current business path. It does not certify the full first-audio guarded SQLite matrix or the real-device classroom pilot.
+Business-loop browser acceptance (2026-10-31): production build passed; classroom closure journey passed 6/6; the visible first-use flow from bootstrap/admin/student setup through placement, classroom teaching, answer timeout, quiz, report, and next lesson passed 1/1. The answer-reminder draft-preservation E2E passed 1/1. The first-use reminder wait was corrected from 30s to 45s after observation that the real server timeout + teacher tool took slightly over 30s on a cold journey; this was a test timeout correction, not a product timer change.
+
+This closes the tested business loop and transaction-outcome reporting for the current path. It does not certify the full first-audio guarded SQLite matrix or the real-device classroom pilot.
