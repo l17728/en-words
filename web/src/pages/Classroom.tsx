@@ -244,11 +244,14 @@ export default function ClassroomPage() {
         lesson_id: lessonId, epoch: next.context.epoch, turn: next.context.turn,
         segment: next.segment, language: next.lang, text_length: next.text.length, failure })
       if (!failure) {
-        if (onlineRef.current && localStorage.getItem('token') === sessionToken && sameContext(next.context, contextRef.current)) {
+        // A cross-tab account change can update localStorage before React runs
+        // this effect's cleanup. Guard the ACK itself, not only the UI wait.
+        const sessionCurrent = localStorage.getItem('token') === sessionToken && sameContext(next.context, contextRef.current)
+        if (onlineRef.current && sessionCurrent) {
           continuation.current.begin({ session: feedbackLifetime.current, lesson: lessonId || '', ...next.context, playback: epoch }, lastFrameRef.current.seq)
           setWaitingForTeacher(continuation.current.waiting)
         }
-        sendEventRef.current?.('tts_finished', undefined, next.context)
+        if (sessionCurrent) sendEventRef.current?.('tts_finished', undefined, next.context)
       }
       pumpTts()
     }
