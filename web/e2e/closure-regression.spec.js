@@ -5,6 +5,7 @@ test.describe.configure({ mode: 'serial' })
 
 const password = 'fixture12345'
 let lessonID
+let freezeLessonID
 let fixtureBookID
 let otherStudentID
 
@@ -33,7 +34,7 @@ test.beforeAll(async ({ request }) => {
   await api(request, '/bootstrap', null, { username: 'closure-admin', password, nickname: 'Fixture admin' })
   const admin = await api(request, '/auth/login', null, { username: 'closure-admin', password })
   expect(await api(request, '/wordbooks', admin.token, undefined, 'GET'), 'testmode must not import production seed books').toEqual([])
-  for (const username of ['closure-a', 'closure-b']) {
+  for (const username of ['closure-a', 'closure-b', 'closure-freeze']) {
     await api(request, '/admin/users', admin.token, { username, password, nickname: username, role: 'student' })
   }
   otherStudentID = (await api(request, '/auth/login', null, { username: 'closure-b', password })).user_id
@@ -46,6 +47,11 @@ test.beforeAll(async ({ request }) => {
   await api(request, `/student/books/${book.ID}/placement`, owner.token, { knownWordIds: [], finish: true })
   const lessons = await api(request, `/student/lessons?bookId=${book.ID}`, owner.token, undefined, 'GET')
   lessonID = lessons.find((lesson) => lesson.Status === 'scheduled').ID
+  const freezeStudent = await api(request, '/auth/login', null, { username: 'closure-freeze', password })
+  await api(request, `/student/books/${book.ID}/enable`, freezeStudent.token, {})
+  await api(request, `/student/books/${book.ID}/placement`, freezeStudent.token, { knownWordIds: [], finish: true })
+  const freezeLessons = await api(request, `/student/lessons?bookId=${book.ID}`, freezeStudent.token, undefined, 'GET')
+  freezeLessonID = freezeLessons.find((lesson) => lesson.Status === 'scheduled').ID
 })
 
 test('two students: foreign classroom navigation is denied without damaging owner session', async ({ browser, baseURL }) => {
@@ -209,6 +215,74 @@ test('first-audio lead setting saves millisecond boundaries and survives reload'
 
   await page.reload()
   await expect(page.locator('#showWordLeadMs')).toHaveValue('0.25')
+})
+
+test('entered classroom keeps its frozen first-audio lead after settings change', async ({ page, request }) => {
+  const student = await api(request, '/auth/login', null, { username: 'closure-freeze', password })
+  const initial = await api(request, '/student/playback-settings', student.token, undefined, 'GET')
+  const frozen = await api(request, '/student/playback-settings', student.token,
+    { ...initial.settings, showWordLeadMs: 2000 })
+  expect(frozen.settings.showWordLeadMs).toBe(2000)
+  await login(page, 'closure-freeze')
+  await page.addInitScript(() => {
+    const state = { frames: [] }
+    window.__leadFreezeProbe = state
+    const NativeWebSocket = window.WebSocket
+    class LeadFreezeWebSocket extends NativeWebSocket {
+      constructor(url, protocols) {
+        super(url, protocols)
+        this.addEventListener('message', event => {
+          if (typeof event.data !== 'string') return
+          try {
+            const frame = JSON.parse(event.data)
+            const action = frame.action || {}
+            const isShowWord = frame.type === 'ui_action' && action.type === 'show_word'
+            const isSnapshotWord = frame.type === 'state_snapshot' && frame.phase === 'show_word' && frame.word
+            const isPlayback = frame.type === 'ui_action' && action.type === 'play_tts'
+            if (isShowWord || isSnapshotWord) {
+              state.frames.push({ type: 'show_word', word: action.word || frame.word, at: performance.now() })
+            } else if (isPlayback) {
+              state.frames.push({ type: 'play_tts', word: action.word || '', at: performance.now() })
+            }
+          } catch { /* Ignore non-JSON classroom control frames. */ }
+        })
+      }
+    }
+    Object.defineProperty(window, 'WebSocket', { configurable: true, writable: true, value: LeadFreezeWebSocket })
+  })
+
+  await page.goto(`/classroom/${freezeLessonID}?e2e=1`)
+  await expect(page.getByText('已连接', { exact: true })).toBeVisible()
+  await expect.poll(() => page.evaluate(() => window.__leadFreezeProbe?.frames.some(frame => frame.type === 'show_word'))).toBe(true)
+
+  const update = await page.evaluate(async settings => {
+    const token = localStorage.getItem('token')
+    const response = await fetch('/api/v1/student/playback-settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ...settings, showWordLeadMs: 100 }),
+    })
+    const body = await response.json()
+    return { at: performance.now(), status: response.status, code: body.code,
+      showWordLeadMs: body.data?.settings?.showWordLeadMs }
+  }, initial.settings)
+  expect(update.status).toBe(200)
+  expect(update.code).toBe(0)
+  expect(update.showWordLeadMs).toBe(100)
+  await expect.poll(() => page.evaluate(() => window.__leadFreezeProbe?.frames.some(frame => frame.type === 'play_tts')),
+    { timeout: 10_000 }).toBe(true)
+
+  const timing = await page.evaluate(updateAt => {
+    const frames = window.__leadFreezeProbe?.frames || []
+    const showWord = frames.find(frame => frame.type === 'show_word')
+    const playback = frames.find(frame => frame.type === 'play_tts' && frame.word === showWord?.word)
+    if (!showWord || !playback) throw new Error('same-word show/playback frames are missing')
+    return { word: showWord.word, updateBeforePlayback: updateAt < playback.at,
+      leadMs: playback.at - showWord.at }
+  }, update.at)
+  expect(timing.word).toBeTruthy()
+  expect(timing.updateBeforePlayback).toBe(true)
+  expect(timing.leadMs).toBeGreaterThanOrEqual(1500)
 })
 
 test('injected pause/resume protocol cancels delay and deduplicates recovery speech', async ({ page, request }) => {
