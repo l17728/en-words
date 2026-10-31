@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - "docs/73-first-audio-matrix-control-protocol-sdd.md"
+      - "docs/74-first-audio-matrix-isolated-backend-sdd.md"
       - "server/internal/api/first_audio_matrix_harness_test.go"
       - "server/go.mod"
       - "server/go.sum"
@@ -25,6 +26,7 @@ on:
   pull_request:
     paths:
       - "docs/73-first-audio-matrix-control-protocol-sdd.md"
+      - "docs/74-first-audio-matrix-isolated-backend-sdd.md"
       - "server/internal/api/first_audio_matrix_harness_test.go"
       - "server/go.mod"
       - "server/go.sum"
@@ -80,6 +82,14 @@ jobs:
             echo "test-only harness symbol leaked into production binary" >&2
             exit 1
           fi
+      - name: Install Chromium for isolated classroom journey
+        run: npx --prefix web playwright install --with-deps chromium
+      - name: Run guarded Linux two-journey reset acceptance
+        run: >-
+          python3 review/first_audio_matrix_control.py
+          --run-id "gha-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          --go "$(command -v go)"
+          --node "$(command -v node)"
 
   windows-boundaries:
     runs-on: windows-latest
