@@ -84,6 +84,8 @@ jobs:
           fi
       - name: Install Chromium for isolated classroom journey
         run: npx --prefix web playwright install --with-deps chromium
+      - name: Create private matrix artifact root
+        run: install -d -m 700 .test-artifacts
       - name: Run guarded Linux two-journey reset acceptance
         run: >-
           python3 review/first_audio_matrix_control.py
