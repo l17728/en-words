@@ -1219,6 +1219,9 @@ async def run_first_audio_matrix_browser_journeys(control: MatrixControlProcess,
                 progress_callback({"event": "journey_completed", **journey})
             continue
         reset_id = f"journey_reset_{journey_number}"
+        if progress_callback is not None:
+            progress_callback({"event": "reset_started", "journey": journey_number,
+                               "warmup": bool(warmup_first and journey_number == 1)})
         reset = await control.reset(reset_id, binding["lesson_id"])
         reset_count += 1
         current = await control.metadata()
@@ -1233,6 +1236,9 @@ async def run_first_audio_matrix_browser_journeys(control: MatrixControlProcess,
                 or current.get("source_build_identity") != initial_meta.get("source_build_identity")):
             raise MatrixProtocolError("reset metadata does not prove a new lesson generation")
         binding = current
+        if progress_callback is not None:
+            progress_callback({"event": "reset_completed", "journey": journey_number,
+                               "warmup": bool(warmup_first and journey_number == 1)})
         if progress_callback is not None:
             progress_callback({"event": "journey_completed", **journey})
     expected_resets = max(1, journey_count - 1)

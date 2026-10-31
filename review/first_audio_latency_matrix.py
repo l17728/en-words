@@ -16,7 +16,6 @@ from first_audio_matrix_control import (
     MatrixProtocolError,
     _create_private_directory,
     _safe_failure_code,
-    _safe_failure_stage,
     build_first_audio_web,
     run_first_audio_reset_acceptance,
 )
@@ -32,6 +31,11 @@ INCOMPLETE_CODES = {
     "playwright_process_tree_alive", "playwright_child_processes_alive",
     "playwright_child_process_groups_alive", "posix_process_groups_alive",
     "web_production_build_deadline",
+}
+SAFE_FAILURE_TYPES = {
+    "MatrixProtocolError", "OSError", "PermissionError", "FileNotFoundError", "ValueError",
+    "TypeError", "KeyError", "IndexError", "AssertionError", "RuntimeError", "MemoryError",
+    "TimeoutError",
 }
 
 
@@ -137,7 +141,8 @@ def _journey_values(journey: dict[str, Any]) -> dict[str, Any]:
 
 
 async def run_matrix(repository_root: Path, go_binary: Path, node_binary: Path,
-                     run_id: str | None = None) -> tuple[dict[str, Any], Path]:
+                     run_id: str | None = None,
+                     failure_context: dict[str, Any] | None = None) -> tuple[dict[str, Any], Path]:
     repository_root = repository_root.resolve(strict=True)
     artifact_root = repository_root / ".test-artifacts"
     if not artifact_root.is_dir():
@@ -161,6 +166,7 @@ async def run_matrix(repository_root: Path, go_binary: Path, node_binary: Path,
     web_build_failure_code: str | None = None
     web_build_identity: str | None = None
     source_build_identity: str | None = None
+    active = {"stage": "matrix_init", "cohort": None, "sample": None}
     result: dict[str, Any] = {"schema_version": 1, "run_id": matrix_id, "status": "running",
                               "cold": cold, "warm": warm, "warmup_status": warmup_status,
                               "cold_run_failures": cold_run_failures, "warm_run_status": warm_run_status,
@@ -186,10 +192,83 @@ async def run_matrix(repository_root: Path, go_binary: Path, node_binary: Path,
         result["source_build_identity"] = source_build_identity
         result["cold_summary"] = summarize_attempts(cold)
         result["warm_summary"] = summarize_attempts(warm)
-        _write_private_results(results_path, result)
+        previous_stage = active["stage"]
+        active["persist_context"] = previous_stage
+        active["stage"] = "results_persist"
+        try:
+            _write_private_results(results_path, result)
+        except Exception:
+            raise
+        else:
+            active["stage"] = previous_stage
+
+    def safe_failure_details(exc: Exception) -> dict[str, Any]:
+        stage = active["stage"]
+        context = active.get("persist_context") if stage == "results_persist" else stage
+        details: dict[str, Any] = {"failure_stage": stage}
+        if context in {"matrix_init", "web_build", "cold_cohort", "warm_cohort", "warm_browser",
+                       "warm_reset", "warm_metadata", "warm_progress"}:
+            details["failure_context"] = context
+        name = type(exc).__name__
+        if name in SAFE_FAILURE_TYPES:
+            details["failure_type"] = name
+        if isinstance(exc, OSError):
+            os_code = getattr(exc, "winerror", None)
+            if not isinstance(os_code, int):
+                os_code = getattr(exc, "errno", None)
+            if isinstance(os_code, int):
+                details["failure_os_code"] = os_code
+        return details
 
     persist()
+    if failure_context is not None:
+        def record_unexpected_failure(exc: Exception) -> None:
+            # This closure is published only after this invocation created its
+            # private directory and persisted its own initial result document.
+            # Never reopen a caller-supplied run ID in main().
+            code = _safe_failure_code(exc)
+            stage = active["stage"]
+            result["status"] = "failed"
+            result["controller_failure_code"] = code
+            result["controller_failure_stage"] = stage
+            if stage == "results_persist" and active.get("persist_context") in {
+                    "matrix_init", "web_build", "cold_cohort", "warm_cohort", "warm_browser",
+                    "warm_reset", "warm_metadata", "warm_progress"}:
+                result["controller_failure_context"] = active["persist_context"]
+            result.update({"controller_" + key: value for key, value in safe_failure_details(exc).items()})
+            if active.get("persist_context") == "web_build" or stage == "web_build":
+                nonlocal web_build_status, web_build_failure_code
+                web_build_status = "failed"
+                web_build_failure_code = code
+            if active["cohort"] == "warm":
+                nonlocal warm_run_status, warm_run_failure_code
+                warm_run_status = "failed"
+                warm_run_failure_code = code
+                result["warm_run_failure_stage"] = stage
+                sample = active["sample"]
+                if isinstance(sample, int) and 1 <= sample <= WARM_SAMPLES:
+                    current = warm[sample - 1]
+                    if current["status"] in {"not_attempted", "incomplete"}:
+                        current.update({"status": "incomplete", "failure_code": code,
+                                        "failure_stage": stage})
+            elif active["cohort"] == "cold":
+                sample = active["sample"]
+                if isinstance(sample, int) and 1 <= sample <= JOURNEYS:
+                    current = cold[sample - 1]
+                    if current["status"] in {"not_attempted", "incomplete"}:
+                        current.update({"status": "incomplete", "failure_code": code,
+                                        "failure_stage": stage})
+            try:
+                persist()
+            except Exception:
+                # A failed result writer must not hide the original fixed-code
+                # stdout failure report or mutate another run's artifacts.
+                pass
+
+        failure_context["record_unexpected_failure"] = record_unexpected_failure
+
     web_build_status = "running"
+    active.update({"stage": "web_build", "cohort": None, "sample": None})
     persist()
     try:
         web_build_identity, web_build_dir = await build_first_audio_web(
@@ -198,7 +277,8 @@ async def run_matrix(repository_root: Path, go_binary: Path, node_binary: Path,
     except Exception as exc:
         web_build_status = _failure_status(_safe_failure_code(exc))
         web_build_failure_code = _safe_failure_code(exc)
-        result.update({"status": "failed"})
+        result.update({"status": "failed", "web_build_failure_code": web_build_failure_code,
+                       **{"web_build_" + key: value for key, value in safe_failure_details(exc).items()}})
         persist()
         cold_summary = summarize_attempts(cold)
         warm_summary = summarize_attempts(warm)
@@ -210,6 +290,7 @@ async def run_matrix(repository_root: Path, go_binary: Path, node_binary: Path,
     for index in range(1, JOURNEYS + 1):
         if cold_stop:
             continue
+        active.update({"stage": "cold_cohort", "cohort": "cold", "sample": index})
         cold[index - 1] = {"sample": index, "status": "incomplete"}
         persist()
         subrun_id = f"{matrix_id}_c{index:02d}"
@@ -240,17 +321,18 @@ async def run_matrix(repository_root: Path, go_binary: Path, node_binary: Path,
             profile_artifacts.append({"cohort": "cold", "sample": index, **profile})
         except Exception as exc:
             code = _safe_failure_code(exc)
+            details = safe_failure_details(exc)
             if cold[index - 1].get("status") != "success":
                 cold[index - 1].update({"status": _failure_status(code), "failure_code": code,
-                                        "failure_stage": _safe_failure_stage(exc)})
-            cold_run_failures.append({"sample": index, "failure_code": code,
-                                      "failure_stage": _safe_failure_stage(exc)})
+                                        **details})
+            cold_run_failures.append({"sample": index, "failure_code": code, **details})
             cold_stop = True
         persist()
     if any(item["status"] != "success" for item in cold) or cold_run_failures:
         warmup_status = "not_attempted"
     else:
         subrun_id = f"{matrix_id}_warm"
+        active.update({"stage": "warm_cohort", "cohort": "warm", "sample": 1})
         warm_run_status = "running"
         persist()
 
@@ -259,10 +341,19 @@ async def run_matrix(repository_root: Path, go_binary: Path, node_binary: Path,
             journey = event.get("journey")
             if not isinstance(journey, int) or not 1 <= journey <= WARM_SAMPLES + 1:
                 raise MatrixProtocolError("first-audio evidence is invalid")
-            if event.get("event") == "attempt_started":
+            active["stage"] = "warm_progress"
+            if event.get("event") == "reset_started":
+                active.update({"stage": "warm_reset", "cohort": "warm",
+                               "sample": max(0, journey - 1)})
+            elif event.get("event") == "reset_completed":
+                active.update({"stage": "warm_metadata", "cohort": "warm",
+                               "sample": max(0, journey - 1)})
+            elif event.get("event") == "attempt_started":
                 if event.get("warmup") is True:
                     warmup_status = "incomplete"
+                    active.update({"stage": "warm_browser", "cohort": "warm", "sample": 0})
                 else:
+                    active.update({"stage": "warm_browser", "cohort": "warm", "sample": journey - 1})
                     warm[journey - 2] = {"sample": journey - 1, "status": "incomplete"}
             elif event.get("event") == "journey_completed":
                 values = _journey_values(event)
@@ -292,15 +383,23 @@ async def run_matrix(repository_root: Path, go_binary: Path, node_binary: Path,
             warm_run_status = "success"
         except Exception as exc:
             code = _safe_failure_code(exc)
+            details = safe_failure_details(exc)
             warm_run_status = "failed"
             warm_run_failure_code = code
-            result["warm_run_failure_stage"] = _safe_failure_stage(exc)
+            result["warm_run_failure_stage"] = details["failure_stage"]
+            if "failure_context" in details:
+                result["warm_run_failure_context"] = details["failure_context"]
+            if "failure_type" in details:
+                result["warm_run_failure_type"] = details["failure_type"]
+            if "failure_os_code" in details:
+                result["warm_run_failure_os_code"] = details["failure_os_code"]
             if warmup_status == "incomplete":
                 warmup_status = _failure_status(code)
             for item in warm:
                 if item["status"] == "incomplete":
                     item["status"] = _failure_status(code)
                     item["failure_code"] = code
+                    item.update(details)
         persist()
     cold_summary = summarize_attempts(cold)
     warm_summary = summarize_attempts(warm)
@@ -326,9 +425,14 @@ def main() -> int:
     parser.add_argument("--run-id")
     args = parser.parse_args()
     repository_root = Path(__file__).resolve(strict=True).parent.parent
+    failure_context: dict[str, Any] = {}
     try:
-        summary, _private_result_path = asyncio.run(run_matrix(repository_root, args.go, args.node, args.run_id))
+        summary, _private_result_path = asyncio.run(
+            run_matrix(repository_root, args.go, args.node, args.run_id, failure_context))
     except Exception as exc:
+        record_failure = failure_context.get("record_unexpected_failure")
+        if callable(record_failure):
+            record_failure(exc)
         print(json.dumps({"status": "failed", "reason": _safe_failure_code(exc)}, separators=(",", ":")))
         return 1
     print(json.dumps(summary, sort_keys=True, separators=(",", ":")))

@@ -5,7 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from first_audio_matrix_control import MatrixProtocolError
-from first_audio_latency_matrix import nearest_rank, run_matrix, summarize_attempts, _load_storage_profile
+from first_audio_latency_matrix import nearest_rank, run_matrix, summarize_attempts, _load_storage_profile, _write_private_results
 
 
 class FirstAudioLatencyMatrixTests(unittest.TestCase):
@@ -145,7 +145,7 @@ class FirstAudioLatencyMatrixTests(unittest.TestCase):
                 warmup = bool(kwargs.get("warmup_first") and journey == 1)
                 callback({"event": "attempt_started", "journey": journey, "warmup": warmup})
                 if run_id.endswith("_warm") and journey == 5:
-                    raise MatrixProtocolError("child did not exit after shutdown")
+                    raise OSError(28, "private control failure")
                 event = {"event": "journey_completed", "journey": journey, "warmup": warmup,
                          "show_word_ms": 100.0, "first_frame_ms": 200.0, "audio_start_ms": 210.0,
                          "receipt_to_onstart_ms": 10.0, "lesson_id": journey,
@@ -167,9 +167,16 @@ class FirstAudioLatencyMatrixTests(unittest.TestCase):
             payload = json.loads(result_path.read_text(encoding="utf-8"))
         self.assertEqual("failed", summary["status"])
         self.assertEqual("failed", payload["warm_run_status"])
+        self.assertEqual("controller_failure", payload["warm_run_failure_code"])
+        self.assertEqual("warm_browser", payload["warm_run_failure_stage"])
+        self.assertEqual("OSError", payload["warm_run_failure_type"])
+        self.assertEqual(28, payload["warm_run_failure_os_code"])
         self.assertEqual("success", payload["warmup_status"])
         self.assertEqual(["success"] * 3 + ["incomplete"] + ["not_attempted"] * 96,
                          [item["status"] for item in payload["warm"]])
+        self.assertEqual("warm_browser", payload["warm"][3]["failure_stage"])
+        self.assertEqual("OSError", payload["warm"][3]["failure_type"])
+        self.assertEqual(28, payload["warm"][3]["failure_os_code"])
         self.assertEqual(3, payload["warm_summary"]["distributions"]["first_frame_ms"]["n"])
 
     def test_final_cold_shutdown_failure_does_not_start_warm_run(self):
@@ -214,6 +221,41 @@ class FirstAudioLatencyMatrixTests(unittest.TestCase):
         self.assertEqual(1, len(payload["cold_run_failures"]))
         self.assertEqual("not_attempted", payload["warm_run_status"])
         self.assertEqual("failed", summary["status"])
+
+    def test_unexpected_result_write_error_persists_owned_terminal_failure(self):
+        async def unused_web_build(repository_root, node_binary, build_root):
+            return "c" * 64, build_root
+
+        writes = 0
+        def fail_once(path, payload):
+            nonlocal writes
+            writes += 1
+            if writes == 2:
+                raise OSError(28, "private write failure")
+            _write_private_results(path, payload)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".test-artifacts").mkdir()
+            failure_context = {}
+            with patch("first_audio_latency_matrix.build_first_audio_web", unused_web_build), \
+                    patch("first_audio_latency_matrix._write_private_results", fail_once):
+                try:
+                    __import__("asyncio").run(run_matrix(
+                        root, Path("go"), Path("node"), "UnexpectedPersist_20261031", failure_context))
+                except OSError as exc:
+                    failure_context["record_unexpected_failure"](exc)
+                else:
+                    self.fail("the injected private result write failure must escape the stage")
+            result_path = root / ".test-artifacts" / "first-audio-latency-UnexpectedPersist_20261031" / "matrix-results.json"
+            payload = json.loads(result_path.read_text(encoding="utf-8"))
+        self.assertEqual("failed", payload["status"])
+        self.assertEqual("failed", payload["web_build_status"])
+        self.assertEqual("controller_failure", payload["controller_failure_code"])
+        self.assertEqual("results_persist", payload["controller_failure_stage"])
+        self.assertEqual("web_build", payload["controller_failure_context"])
+        self.assertEqual("OSError", payload["controller_failure_type"])
+        self.assertNotIn("private write failure", json.dumps(payload))
 
 
 if __name__ == "__main__":
