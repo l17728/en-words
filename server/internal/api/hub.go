@@ -704,8 +704,26 @@ func (r *Room) Tick() {
 		}
 	}
 	if r.app.Clock.Now().Sub(r.phaseSince) >= d {
+		before := r.machine.Snapshot()
+		var reminderItem classroom.QuizItemID
+		if before.Phase == classroom.PhaseWaitAnswer && before.AnswerStage == 0 {
+			reminderItem = r.machine.CurrentItem().ID()
+		}
 		_ = r.machine.OnTimeout(r.machine.Phase())
 		r.broadcastLocked()
+		// The first answer timeout only reminds the student. Teacher effects can
+		// continue while Room is locked after the nudge frame is emitted; start
+		// the second window when that work finishes, not partway through it.
+		after := r.machine.Snapshot()
+		if before.Phase == classroom.PhaseWaitAnswer && before.AnswerStage == 0 &&
+			after.Phase == classroom.PhaseWaitAnswer && after.AnswerStage == 1 &&
+			r.machine.CurrentItem().ID() == reminderItem && !r.retired && !r.finished &&
+			!r.machine.Paused() && r.deliveryReady {
+			r.phaseSince = r.app.Clock.Now()
+			r.app.Log.InfoCtx(r.traceContext(), "classroom", "answer_reminder_window_started", map[string]any{
+				"lesson_id": r.lessonID, "window_ms": d.Milliseconds(),
+			})
+		}
 	}
 }
 

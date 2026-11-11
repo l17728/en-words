@@ -35,6 +35,11 @@ test('answer reminder refreshes turn authority without erasing a typed draft', a
   expect(reminder.context.turn).not.toBe(quizContext.turn)
   await expect(input).toHaveValue('猫')
   await expect(input).toBeEnabled()
+  // A same-phase reminder must start a fresh answer window. The next server
+  // timer tick must not immediately consume the second chance and erase draft.
+  await page.waitForTimeout(2_500)
+  await expect(input).toHaveValue('猫')
+  await expect(input).toBeEnabled()
   await input.press('Enter')
   await expect(page.getByLabel('回答正确')).toBeVisible()
   expect(sent.filter(frame => frame.event === 'answer_submitted').map(frame => frame.text)).toEqual(['猫'])
