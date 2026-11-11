@@ -643,6 +643,23 @@ test('dashboard account switch clears drafts and selection and ignores old notif
   await expect(page.getByPlaceholder('例如：每次词太多了 / 这周三有事 / abandon 我老忘')).toHaveValue('')
 })
 
+test('failed student book removal shows a safe message and keeps the selection', async ({ page }, testInfo) => {
+  const before = studentResources('feedback-a')
+  sql(testInfo, "CREATE TRIGGER reject_student_book_remove BEFORE DELETE ON memory_cards BEGIN SELECT RAISE(ABORT,'private_sql_failure_marker'); END;")
+  try {
+    await login(page, 'feedback-a')
+    await page.getByRole('button', { name: '查看 Feedback fixture 的课程' }).getByRole('button').click()
+    const dialog = page.getByRole('dialog', { name: '移除词库' })
+    await expect(dialog).toBeVisible()
+    await dialog.getByRole('button', { name: /^移\s*除$/ }).click()
+    await expect(page.getByText('暂时无法移除词库，请稍后重试')).toBeVisible()
+    await expect(page.getByRole('button', { name: '查看 Feedback fixture 的课程' })).toBeVisible()
+    expect(studentResources('feedback-a')).toEqual(before)
+  } finally {
+    sql(testInfo, 'DROP TRIGGER IF EXISTS reject_student_book_remove;')
+  }
+})
+
 test('settings account switch reloads the new student values instead of old unsaved edits', async ({ page, context }) => {
   await login(page, 'feedback-a')
   await page.getByRole('button', { name: '学习设置', exact: true }).click()

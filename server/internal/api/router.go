@@ -207,7 +207,9 @@ func (a *App) Router() *gin.Engine {
 	student.DELETE("/books/:bookId", func(c *gin.Context) {
 		bid, _ := strconv.ParseInt(c.Param("bookId"), 10, 64)
 		if err := a.Sched.RemoveBook(claimsOf(c).UID, bid); err != nil {
-			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
+			a.Log.ErrorCtx(c.Request.Context(), "wordbook", "book_remove_failed", map[string]any{
+				"book_id": bid, "student_id": claimsOf(c).UID, "reason": "operation_failed"})
+			c.JSON(http.StatusOK, fail(errBadRequest, "暂时无法移除词库，请稍后重试"))
 			return
 		}
 		a.Log.Info("student", "book_removed", map[string]any{
