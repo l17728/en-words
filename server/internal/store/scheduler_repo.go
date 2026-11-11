@@ -3,6 +3,7 @@ package store
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"enwords/internal/scheduler"
@@ -44,6 +45,8 @@ func lessonFrom(l *scheduler.Lesson) *Lesson {
 // ---- SchedulerRepo ----
 
 type SchedulerRepo struct{ db *gorm.DB }
+
+var errLegacyScopeProtected = errors.New("store: migrated legacy scope protected")
 
 func NewSchedulerRepo(db *gorm.DB) *SchedulerRepo { return &SchedulerRepo{db: db} }
 
@@ -171,6 +174,9 @@ func (r *SchedulerRepo) DeleteStudentBook(studentID, bookID int64) error {
 			}
 			if mode == "pilot" {
 				return errPilotScopeProtected
+			}
+			if mode == "legacy" {
+				return errLegacyScopeProtected
 			}
 		}
 		if err := tx.Where("student_id=? AND book_id=?", studentID, bookID).Delete(&MemoryCard{}).Error; err != nil {

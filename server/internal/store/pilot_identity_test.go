@@ -52,6 +52,35 @@ func TestDeleteStudentBookRejectsPilotScopeBeforeChangingCards(t *testing.T) {
 	require.Equal(t, int64(1), lessons)
 }
 
+func TestDeleteStudentBookRejectsMigratedLegacyHistoryBeforeChangingCards(t *testing.T) {
+	db, _, _, _ := pilotCreationFixtureDraft(t)
+	require.NoError(t, db.Exec("INSERT INTO classroom_scope_reservations(student_id,book_id,mode,schema_version,reserved_at) VALUES(8,9,'legacy',2,0)").Error)
+	lesson := Lesson{StudentID: 8, BookID: 9, Status: "scheduled", OpenAt: time.Now(), BatchWordIDs: "[]"}
+	require.NoError(t, db.Create(&lesson).Error)
+	require.NoError(t, db.Exec("INSERT INTO classroom_mode_reservations(lesson_id,student_id,book_id,mode,schema_version,reserved_at) VALUES(?,8,9,'legacy',2,0)", lesson.ID).Error)
+	require.NoError(t, db.Create(&MemoryCard{StudentID: 8, BookID: 9, WordID: 91, Status: "learning"}).Error)
+
+	err := NewSchedulerRepo(db).DeleteStudentBook(8, 9)
+	require.ErrorIs(t, err, errLegacyScopeProtected)
+	var cards, lessons int64
+	require.NoError(t, db.Model(&MemoryCard{}).Where("student_id=8 AND book_id=9").Count(&cards).Error)
+	require.NoError(t, db.Model(&Lesson{}).Where("id=?", lesson.ID).Count(&lessons).Error)
+	require.Equal(t, int64(1), cards)
+	require.Equal(t, int64(1), lessons)
+}
+
+func TestDeleteStudentBookRejectsMigratedLegacyScopeWithoutLessons(t *testing.T) {
+	db, _, _, _ := pilotCreationFixtureDraft(t)
+	require.NoError(t, db.Exec("INSERT INTO classroom_scope_reservations(student_id,book_id,mode,schema_version,reserved_at) VALUES(8,9,'legacy',2,0)").Error)
+	require.NoError(t, db.Create(&MemoryCard{StudentID: 8, BookID: 9, WordID: 91, Status: "learning"}).Error)
+	require.ErrorIs(t, NewSchedulerRepo(db).DeleteStudentBook(8, 9), errLegacyScopeProtected)
+	var cards, scopes int64
+	require.NoError(t, db.Model(&MemoryCard{}).Where("student_id=8 AND book_id=9").Count(&cards).Error)
+	require.NoError(t, db.Table("classroom_scope_reservations").Where("student_id=8 AND book_id=9 AND mode='legacy'").Count(&scopes).Error)
+	require.Equal(t, int64(1), cards)
+	require.Equal(t, int64(1), scopes)
+}
+
 func TestPilotCreationTwoPoolsDraft(t *testing.T) {
 	for _, scenario := range []string{"same_nonce", "different_nonce_same_scope", "different_scope"} {
 		t.Run(scenario, func(t *testing.T) {
