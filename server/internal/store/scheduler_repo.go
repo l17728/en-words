@@ -153,6 +153,26 @@ func (r *SchedulerRepo) StudentBooks(studentID int64) ([]int64, error) {
 // DeleteStudentBook 移除某生某词库的全部记忆卡和课程（取消选库）。
 func (r *SchedulerRepo) DeleteStudentBook(studentID, bookID int64) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
+		// Reserve the SQLite writer before inspecting the mode. A concurrent
+		// Pilot creation must not slip between a read and the first deletion.
+		if err := tx.Exec("UPDATE runtime_records SET key=key WHERE 1=0").Error; err != nil {
+			return err
+		}
+		state, err := inspectPilotSchemaTx(tx)
+		if err != nil {
+			return err
+		}
+		if state == PilotSchemaReady {
+			var mode string
+			err = tx.Table("classroom_scope_reservations").Select("mode").
+				Where("student_id=? AND book_id=?", studentID, bookID).Scan(&mode).Error
+			if err != nil {
+				return err
+			}
+			if mode == "pilot" {
+				return errPilotScopeProtected
+			}
+		}
 		if err := tx.Where("student_id=? AND book_id=?", studentID, bookID).Delete(&MemoryCard{}).Error; err != nil {
 			return err
 		}

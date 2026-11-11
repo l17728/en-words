@@ -37,6 +37,21 @@ func pilotCreationFixtureDraft(t *testing.T) (*gorm.DB, *PilotStore, PilotSystem
 	return db, facade, principal, plan
 }
 
+func TestDeleteStudentBookRejectsPilotScopeBeforeChangingCards(t *testing.T) {
+	db, facade, principal, plan := pilotCreationFixtureDraft(t)
+	receipt, err := facade.CreateIsolatedPilotLesson(context.Background(), principal, plan)
+	require.NoError(t, err)
+	require.NoError(t, db.Create(&MemoryCard{StudentID: 7, BookID: 9, WordID: 91, Status: "learning"}).Error)
+
+	err = NewSchedulerRepo(db).DeleteStudentBook(7, 9)
+	require.ErrorIs(t, err, errPilotScopeProtected)
+	var cards, lessons int64
+	require.NoError(t, db.Model(&MemoryCard{}).Where("student_id=7 AND book_id=9").Count(&cards).Error)
+	require.NoError(t, db.Model(&Lesson{}).Where("id=?", receipt.LessonID).Count(&lessons).Error)
+	require.Equal(t, int64(1), cards)
+	require.Equal(t, int64(1), lessons)
+}
+
 func TestPilotCreationTwoPoolsDraft(t *testing.T) {
 	for _, scenario := range []string{"same_nonce", "different_nonce_same_scope", "different_scope"} {
 		t.Run(scenario, func(t *testing.T) {
