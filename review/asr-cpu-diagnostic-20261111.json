@@ -1,0 +1,98 @@
+﻿[
+    {
+        "id":  "ASR-ZH-01",
+        "expected":  "苹果",
+        "actual":  "苹果",
+        "exact":  true,
+        "ms":  2968,
+        "critical":  ""
+    },
+    {
+        "id":  "ASR-ZH-02",
+        "expected":  "老师",
+        "actual":  "老师",
+        "exact":  true,
+        "ms":  2362,
+        "critical":  ""
+    },
+    {
+        "id":  "ASR-ZH-03",
+        "expected":  "图书",
+        "actual":  "图书",
+        "exact":  true,
+        "ms":  2351,
+        "critical":  ""
+    },
+    {
+        "id":  "ASR-ZH-04",
+        "expected":  "安静",
+        "actual":  "暗金",
+        "exact":  false,
+        "ms":  2551,
+        "critical":  ""
+    },
+    {
+        "id":  "ASR-ZH-05",
+        "expected":  "我不知道",
+        "actual":  "我不知道",
+        "exact":  true,
+        "ms":  3214,
+        "critical":  "negation"
+    },
+    {
+        "id":  "ASR-ZH-06",
+        "expected":  "我会了",
+        "actual":  "我会了",
+        "exact":  true,
+        "ms":  2526,
+        "critical":  ""
+    },
+    {
+        "id":  "ASR-ZH-07",
+        "expected":  "请再说一遍",
+        "actual":  "请再说一遍",
+        "exact":  true,
+        "ms":  3468,
+        "critical":  ""
+    },
+    {
+        "id":  "ASR-ZH-08",
+        "expected":  "我想跳过",
+        "actual":  "我想挑过",
+        "exact":  false,
+        "ms":  4882,
+        "critical":  ""
+    },
+    {
+        "id":  "ASR-ZH-09",
+        "expected":  "每天两次",
+        "actual":  "每天两次",
+        "exact":  true,
+        "ms":  4286,
+        "critical":  "number:2"
+    },
+    {
+        "id":  "ASR-ZH-10",
+        "expected":  "每课五十个词",
+        "actual":  "每克五十格词",
+        "exact":  false,
+        "ms":  4192,
+        "critical":  "number:50"
+    },
+    {
+        "id":  "ASR-ZH-11",
+        "expected":  "我想减少单词",
+        "actual":  "我想减少单词",
+        "exact":  true,
+        "ms":  4036,
+        "critical":  ""
+    },
+    {
+        "id":  "ASR-ZH-12",
+        "expected":  "课程改到明天",
+        "actual":  "课程改到明天",
+        "exact":  true,
+        "ms":  4568,
+        "critical":  "date:tomorrow"
+    }
+]
