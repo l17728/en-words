@@ -26,27 +26,30 @@ func (a *App) EnableLocalProviders(ctx context.Context) error {
 	if err = c.Discover(ctx); err != nil {
 		return err
 	}
-	// Verify structured output before accepting traffic; audio is independently optional.
+	// Audio and text are independent. A failed text probe leaves deterministic
+	// classroom judgment and feedback available alongside any speech service.
+	a.Local = c
+	a.Judge.LLM = nil
+	a.FB.SetLLM(nil)
+	if !c.Has("vl", "text") {
+		a.Log.WarnCtx(ctx, "provider", "local_text_degraded", map[string]any{"reason": "not_registered"})
+		return nil
+	}
 	var ping struct {
 		OK bool `json:"ok"`
 	}
 	if err = c.ChatJSON(ctx, "Return only JSON.", `Return {"ok":true}.`, &ping); err != nil {
-		return err
+		a.Log.WarnCtx(ctx, "provider", "local_text_degraded", map[string]any{"reason": "health_probe_failed"})
+		return nil
 	}
 	if !ping.OK {
-		return fmtProviderHealth
+		a.Log.WarnCtx(ctx, "provider", "local_text_degraded", map[string]any{"reason": "invalid_health_reply"})
+		return nil
 	}
-	a.Local = c
 	a.Judge.LLM = judge.NewZhipu(c)
 	a.FB.SetLLM(feedback.NewZhipuParser(c))
 	return nil
 }
-
-var fmtProviderHealth = &providerHealthError{}
-
-type providerHealthError struct{}
-
-func (*providerHealthError) Error() string { return "model console: structured health check failed" }
 
 func (a *App) traceMW() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -71,7 +74,11 @@ func (a *App) ownLesson(c *gin.Context, id int64) bool {
 func (a *App) registerProviderRoutes(g *gin.RouterGroup) {
 	g.GET("/providers", func(c *gin.Context) {
 		local := a.Local != nil
-		c.JSON(200, ok(gin.H{"local": local, "asr": local && a.Local.Has("asr", "asr"), "tts_zh": local && a.Local.Has("tts", "tts"), "tts_en": false}))
+		ready := map[string]bool{}
+		if local {
+			ready = a.Local.Ready(c.Request.Context())
+		}
+		c.JSON(200, ok(gin.H{"local": local, "asr": ready["asr"], "tts_zh": ready["tts"], "tts_en": false}))
 	})
 	g.POST("/classroom/lessons/:id/transcribe", a.roleMW(auth.RoleStudent), func(c *gin.Context) {
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)

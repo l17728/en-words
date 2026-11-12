@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"enwords/internal/obs"
@@ -29,6 +30,9 @@ type Client struct {
 	HTTP     *http.Client
 	Log      *obs.Logger
 	Services map[string]Service
+	statusMu sync.Mutex
+	statusAt time.Time
+	status   map[string]bool
 }
 
 func New(base string, log *obs.Logger) (*Client, error) {
@@ -97,11 +101,51 @@ func (c *Client) Discover(ctx context.Context) error {
 			c.Services[s.ID] = s
 		}
 	}
-	if !c.Has("vl", "text") {
-		return fmt.Errorf("model console: text capability missing")
+	if !c.Has("vl", "text") && !c.Has("asr", "asr") && !c.Has("tts", "tts") {
+		return fmt.Errorf("model console: no supported capability")
 	}
-	c.Log.InfoCtx(ctx, "provider", "provider_discovered", map[string]any{"model": c.Services["vl"].Model, "asr": c.Has("asr", "asr"), "tts": c.Has("tts", "tts")})
+	c.Log.InfoCtx(ctx, "provider", "provider_discovered", map[string]any{"text": c.Has("vl", "text"), "asr": c.Has("asr", "asr"), "tts": c.Has("tts", "tts")})
 	return nil
+}
+
+// Ready returns a short-lived, fail-closed snapshot of the manager's live
+// capabilities. The mutex coalesces concurrent refreshes from multiple users.
+func (c *Client) Ready(ctx context.Context) map[string]bool {
+	c.statusMu.Lock()
+	defer c.statusMu.Unlock()
+	if time.Now().Before(c.statusAt) {
+		return map[string]bool{"vl": c.status["vl"], "asr": c.status["asr"], "tts": c.status["tts"]}
+	}
+	ready := map[string]bool{"vl": false, "asr": false, "tts": false}
+	queryCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	raw, err := c.request(queryCtx, "/api/status", "", nil, 1<<20)
+	statusError := err != nil
+	if err == nil {
+		var data struct {
+			Services []struct {
+				ID     string `json:"id"`
+				Status string `json:"status"`
+			} `json:"services"`
+		}
+		if json.Unmarshal(raw, &data) == nil {
+			for _, service := range data.Services {
+				if _, known := ready[service.ID]; known {
+					capability := map[string]string{"vl": "text", "asr": "asr", "tts": "tts"}[service.ID]
+					ready[service.ID] = service.Status == "ready" && c.Has(service.ID, capability)
+				}
+			}
+		} else {
+			statusError = true
+		}
+	}
+	if ctx.Err() != nil {
+		return ready // A canceled caller must not poison another student's cache.
+	}
+	c.status = ready
+	c.statusAt = time.Now().Add(2 * time.Second)
+	c.Log.InfoCtx(ctx, "provider", "model_status_observed", map[string]any{"text": ready["vl"], "asr": ready["asr"], "tts": ready["tts"], "status_error": statusError})
+	return map[string]bool{"vl": ready["vl"], "asr": ready["asr"], "tts": ready["tts"]}
 }
 
 func (c *Client) Has(id, capability string) bool {

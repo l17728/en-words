@@ -1,14 +1,24 @@
 import { test, expect } from '@playwright/test'
 import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { api, fixture, scheduled, login } from './isolated-fixtures'
 
 // No model or media event mocks: independent WAV sources are decoded into real
 // MediaStreams, encoded by MediaRecorder, and recognized by the user's console.
 // This measures automated audio lifecycle/recognition, not human listening.
 test('real local Chinese audio playback and real encoded English/Chinese recognition complete a lesson', async ({ page, request }, info) => {
-  if (!process.env.E2E_EN_AUDIO || !process.env.E2E_ZH_AUDIO) throw new Error('Independent English cat and Chinese 猫 WAV fixtures are required')
+  if (!process.env.E2E_EN_AUDIO || !process.env.E2E_ZH_AUDIO) throw new Error('Independent English teacher and Chinese 老师 WAV fixtures are required')
+  for (const [language, filename, caseId, label] of [
+    ['en', process.env.E2E_EN_AUDIO!, 'ASR-EN-07', 'teacher'],
+    ['zh', process.env.E2E_ZH_AUDIO!, 'ASR-ZH-02', '老师'],
+  ]) {
+    const manifest = JSON.parse(readFileSync(`../review/audio-fixtures/manifest${language === 'zh' ? '-zh' : ''}.json`, 'utf8'))
+    const sample = manifest.samples.find((row: any) => row.case_id === caseId)
+    expect(sample?.text).toBe(label)
+    expect(createHash('sha256').update(readFileSync(filename)).digest('hex')).toBe(sample.sha256)
+  }
   const en = readFileSync(process.env.E2E_EN_AUDIO); const zh = readFileSync(process.env.E2E_ZH_AUDIO)
-  const f = await fixture(request, 'real-media', [{ word: 'cat', meanings: ['猫'] }]); const id = await scheduled(request, f)
+  const f = await fixture(request, 'real-media', [{ word: 'teacher', meanings: ['老师'] }]); const id = await scheduled(request, f)
   await page.route('**/independent-en.wav', route => route.fulfill({ contentType: 'audio/wav', body: en }))
   await page.route('**/independent-zh.wav', route => route.fulfill({ contentType: 'audio/wav', body: zh }))
   await page.addInitScript(() => {

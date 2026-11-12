@@ -3,6 +3,73 @@ import { test, expect } from './recovery-server'
 import { api, fixture, scheduled, login, media } from './isolated-fixtures'
 import { postClassroom } from './classroom-protocol'
 
+test('local speech becomes available after status refresh while text input remains usable', async ({ page, request }) => {
+  const f = await fixture(request, 'speech-refresh', [{ word: 'cat', meanings: ['猫'] }])
+  const id = await scheduled(request, f)
+  await media(page)
+  await page.addInitScript(() => {
+    const state = { captures: 0 }
+    ;(window as any).__speechRefresh = state
+    const nativeInterval = window.setInterval.bind(window)
+    window.setInterval = ((handler: TimerHandler, timeout?: number, ...args: any[]) =>
+      nativeInterval(handler, timeout === 10_000 ? 200 : timeout, ...args)) as typeof window.setInterval
+    navigator.mediaDevices.getUserMedia = async () => {
+      state.captures++
+      throw new DOMException('microphone unavailable', 'NotAllowedError')
+    }
+  })
+  let asrReady = false
+  let checks = 0
+  let uploads = 0
+  page.on('request', request => { if (request.url().endsWith('/transcribe')) uploads++ })
+  await page.route('**/api/v1/providers', route => {
+    checks++
+    return route.fulfill({ json: { code: 0, data: { local: true, asr: asrReady, tts_zh: false, tts_en: false } } })
+  })
+  await login(page, f.username)
+  await page.goto(`/classroom/${id}`)
+  await expect(page.getByText('轮到你读了！大声一点没关系', { exact: true })).toBeVisible({ timeout: 60_000 })
+  await expect(page.getByText('语音暂不可用，请使用文字跟读')).toBeVisible()
+  expect(await page.evaluate(() => (window as any).__speechRefresh.captures)).toBe(0)
+  asrReady = true
+  await expect.poll(() => page.evaluate(() => (window as any).__speechRefresh.captures), { timeout: 12_000 }).toBe(1)
+  asrReady = false
+  const before = checks
+  await expect.poll(() => checks, { timeout: 12_000 }).toBeGreaterThan(before)
+  await expect(page.getByText(/语音暂不可用，请使用文字(跟读|作答)/)).toBeVisible()
+  const repeatVisible = await page.getByLabel('跟读文字输入框').isVisible()
+  const answerVisible = await page.getByLabel('答案输入框').isVisible()
+  expect(repeatVisible || answerVisible).toBe(true)
+  if (repeatVisible) {
+    await page.getByLabel('跟读文字输入框').fill('cat')
+    await expect(page.getByLabel('跟读文字输入框')).toHaveValue('cat')
+    await page.getByRole('button', { name: '提交跟读文字' }).click()
+  }
+  const answer = page.getByLabel('答案输入框')
+  await expect(answer).toBeEnabled()
+  await answer.fill('猫')
+  await expect(answer).toHaveValue('猫')
+  await page.getByRole('button', { name: /^回\s*答/ }).click()
+  await expect(page.getByText('下课啦！叮当老师的小结')).toBeVisible()
+  expect(uploads).toBe(0)
+  expect(await page.evaluate(() => (window as any).__speechRefresh.captures)).toBeGreaterThanOrEqual(1)
+})
+
+test('unknown local capability state never starts browser cloud recognition', async ({ page, request }) => {
+  const f = await fixture(request, 'speech-unknown', [{ word: 'cat', meanings: ['猫'] }])
+  const id = await scheduled(request, f)
+  await media(page)
+  await page.route('**/api/v1/providers', route => route.fulfill({ status: 503, json: { code: 503, msg: 'model manager unavailable' } }))
+  await login(page, f.username)
+  await page.goto(`/classroom/${id}`)
+  await expect(page.getByText('轮到你读了！大声一点没关系', { exact: true })).toBeVisible({ timeout: 60_000 })
+  expect(await page.evaluate(() => (window as any).__media.recognition)).toBeNull()
+  await page.getByLabel('跟读文字输入框').fill('cat')
+  await page.getByRole('button', { name: '提交跟读文字' }).click()
+  await expect(page.getByLabel('答案输入框')).toBeEnabled()
+  expect(await page.evaluate(() => (window as any).__media.recognition)).toBeNull()
+})
+
 async function quiz(page:any,id:number) {
  await page.goto(`/classroom/${id}?e2e=1`)
  for(let i=1;i<=4;i++)await expect.poll(()=>page.evaluate(()=>(window as any).__media.completed.length)).toBeGreaterThanOrEqual(i)

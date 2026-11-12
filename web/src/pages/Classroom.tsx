@@ -105,10 +105,28 @@ export default function ClassroomPage() {
   const captionRef = useRef<PlaybackCaption | null>(null)
   if (!captionRef.current) captionRef.current = new PlaybackCaption(setCaptionText)
   const [connectionError, setConnectionError] = useState<{ message: string; retryable: boolean } | null>(null)
+  const refreshProvidersRef = useRef<() => void>(() => {})
   useEffect(() => {
     let disposed = false
-    capabilities().then(p => { if (!disposed) { providersRef.current = p; setProviders(p) } }).catch(() => {})
-    return () => { disposed = true; localAudioRef.current?.abort() }
+    let pending = false
+    const refresh = async () => {
+      if (disposed || pending) return
+      pending = true
+      try {
+        const p = await capabilities()
+        if (!disposed) { providersRef.current = p; setProviders(p) }
+      } catch {
+        if (!disposed && providersRef.current) {
+          const fallback = { ...providersRef.current, asr: false, tts_zh: false, tts_en: false }
+          providersRef.current = fallback
+          setProviders(fallback)
+        }
+      } finally { pending = false }
+    }
+    refreshProvidersRef.current = () => { void refresh() }
+    void refresh()
+    const timer = window.setInterval(refresh, 10_000)
+    return () => { disposed = true; window.clearInterval(timer); refreshProvidersRef.current = () => {}; localAudioRef.current?.abort() }
   }, [])
   const [bubble, setBubble] = useState('')
   const [judge, setJudge] = useState<'ok' | 'bad' | null>(null)
@@ -118,6 +136,7 @@ export default function ClassroomPage() {
   const [ended, setEnded] = useState(false)
   const [summary, setSummary] = useState<Record<string, any> | null>(null)
   const [wsOk, setWsOk] = useState(false)
+  useEffect(() => { if (wsOk) refreshProvidersRef.current() }, [wsOk])
   const onlineRef = useRef(false)
   const inputGate = useRef(new InputReadiness())
   const answerFlight = useRef(new AnswerFlight())
@@ -560,7 +579,7 @@ export default function ClassroomPage() {
   }, [])
 
   const startListening = useCallback(() => {
-    if (providersRef.current?.local) return // Local mode never silently invokes a browser cloud recognizer.
+    if (providersRef.current?.local !== false) return // Unknown or local mode must not invoke a browser cloud recognizer.
     if (listenActiveRef.current) return
     const capture = inputGate.current.ready
     if (!capture || !inputGate.current.accepts(contextRef.current, phaseRef.current, onlineRef.current, capture)) return
@@ -915,7 +934,7 @@ export default function ClassroomPage() {
           <>
             {/* Speech is primary; typed fallback goes through the same server RepeatMatch gate. */}
             <Tag color={listening ? 'processing' : 'default'} aria-live="polite">
-              {listening ? '🎙 跟读：大声读出这个词～' : '准备跟读…'}
+              {listening ? '🎙 跟读：大声读出这个词～' : providers?.local && !providers.asr ? '语音暂不可用，请使用文字跟读' : '准备跟读…'}
             </Tag>
             <Input
               size="large"
@@ -938,7 +957,7 @@ export default function ClassroomPage() {
           <>
             {/* 默认语音监听指示（无需点击；识别结果自动提交） */}
             <Tag color={listening ? 'processing' : 'default'} aria-live="polite">
-              {!inputTurn ? '正在恢复题目，请稍候' : listening ? '🎙 正在听你说…（说出中文意思，或说“认识/不会”）' : '语音就绪'}
+              {!inputTurn ? '正在恢复题目，请稍候' : listening ? '🎙 正在听你说…（说出中文意思，或说“认识/不会”）' : providers?.local && !providers.asr ? '语音暂不可用，请使用文字作答' : '语音就绪'}
             </Tag>
             <Input
               ref={inputRef}
