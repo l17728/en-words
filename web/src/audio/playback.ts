@@ -3,6 +3,7 @@ export function playAudio(player: HTMLAudioElement, signal: AbortSignal,
   check: () => void, onPlaying?: () => void): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     let settled = false
+    let playing = false
     const cleanup = () => {
       clearTimeout(timer)
       signal.removeEventListener('abort', abort)
@@ -18,11 +19,11 @@ export function playAudio(player: HTMLAudioElement, signal: AbortSignal,
     const timer = setTimeout(() => finish(false, new Error('语音播放超时')), 20000)
     player.onplaying = () => {
       if (settled) return
-      try { check(); onPlaying?.() } catch (error) { finish(false, error) }
+      try { check(); playing = true; onPlaying?.() } catch (error) { finish(false, error) }
     }
     player.onended = () => {
       if (settled) return
-      try { check(); finish(true) } catch (error) { finish(false, error) }
+      try { check(); finish(playing, playing ? undefined : new Error('音频未开始播放')) } catch (error) { finish(false, error) }
     }
     player.onerror = () => finish(false, new Error('语音播放失败'))
     signal.addEventListener('abort', abort, { once: true })

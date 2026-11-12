@@ -97,14 +97,14 @@ func (c *Client) Discover(ctx context.Context) error {
 		return fmt.Errorf("model console: invalid discovery JSON")
 	}
 	for _, s := range data.Services {
-		if s.ID == "vl" || s.ID == "asr" || s.ID == "tts" {
+		if s.ID == "vl" || s.ID == "asr" || s.ID == "tts" || s.ID == "tts-en" {
 			c.Services[s.ID] = s
 		}
 	}
-	if !c.Has("vl", "text") && !c.Has("asr", "asr") && !c.Has("tts", "tts") {
+	if !c.Has("vl", "text") && !c.Has("asr", "asr") && !c.Has("tts", "tts") && !c.Has("tts-en", "tts") {
 		return fmt.Errorf("model console: no supported capability")
 	}
-	c.Log.InfoCtx(ctx, "provider", "provider_discovered", map[string]any{"text": c.Has("vl", "text"), "asr": c.Has("asr", "asr"), "tts": c.Has("tts", "tts")})
+	c.Log.InfoCtx(ctx, "provider", "provider_discovered", map[string]any{"text": c.Has("vl", "text"), "asr": c.Has("asr", "asr"), "tts": c.Has("tts", "tts"), "tts_en": c.Has("tts-en", "tts")})
 	return nil
 }
 
@@ -114,9 +114,9 @@ func (c *Client) Ready(ctx context.Context) map[string]bool {
 	c.statusMu.Lock()
 	defer c.statusMu.Unlock()
 	if time.Now().Before(c.statusAt) {
-		return map[string]bool{"vl": c.status["vl"], "asr": c.status["asr"], "tts": c.status["tts"]}
+		return map[string]bool{"vl": c.status["vl"], "asr": c.status["asr"], "tts": c.status["tts"], "tts-en": c.status["tts-en"]}
 	}
-	ready := map[string]bool{"vl": false, "asr": false, "tts": false}
+	ready := map[string]bool{"vl": false, "asr": false, "tts": false, "tts-en": false}
 	queryCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 	raw, err := c.request(queryCtx, "/api/status", "", nil, 1<<20)
@@ -131,7 +131,7 @@ func (c *Client) Ready(ctx context.Context) map[string]bool {
 		if json.Unmarshal(raw, &data) == nil {
 			for _, service := range data.Services {
 				if _, known := ready[service.ID]; known {
-					capability := map[string]string{"vl": "text", "asr": "asr", "tts": "tts"}[service.ID]
+					capability := map[string]string{"vl": "text", "asr": "asr", "tts": "tts", "tts-en": "tts"}[service.ID]
 					ready[service.ID] = service.Status == "ready" && c.Has(service.ID, capability)
 				}
 			}
@@ -144,8 +144,8 @@ func (c *Client) Ready(ctx context.Context) map[string]bool {
 	}
 	c.status = ready
 	c.statusAt = time.Now().Add(2 * time.Second)
-	c.Log.InfoCtx(ctx, "provider", "model_status_observed", map[string]any{"text": ready["vl"], "asr": ready["asr"], "tts": ready["tts"], "status_error": statusError})
-	return map[string]bool{"vl": ready["vl"], "asr": ready["asr"], "tts": ready["tts"]}
+	c.Log.InfoCtx(ctx, "provider", "model_status_observed", map[string]any{"text": ready["vl"], "asr": ready["asr"], "tts": ready["tts"], "tts_en": ready["tts-en"], "status_error": statusError})
+	return map[string]bool{"vl": ready["vl"], "asr": ready["asr"], "tts": ready["tts"], "tts-en": ready["tts-en"]}
 }
 
 func (c *Client) Has(id, capability string) bool {
@@ -243,11 +243,15 @@ func (c *Client) Synthesize(ctx context.Context, text, lang string) (audio []byt
 	defer cancel()
 	start := time.Now()
 	defer func() { c.mediaResult(ctx, "tts", lang, len(audio), start, err) }()
-	if !c.Has("tts", "tts") || lang != "zh" || len([]rune(text)) > 300 || strings.TrimSpace(text) == "" {
+	id, path := "tts", "/api/tts/speech"
+	if lang == "en" {
+		id, path = "tts-en", "/api/tts-en/speech"
+	}
+	if (lang != "en" && lang != "zh") || !c.Has(id, "tts") || len([]rune(text)) > 300 || strings.TrimSpace(text) == "" {
 		return nil, fmt.Errorf("model console: unsupported speech request")
 	}
-	body, _ := json.Marshal(map[string]any{"model": c.Services["tts"].Model, "input": text, "voice": "default", "response_format": "wav"})
-	raw, err := c.request(ctx, "/api/tts/speech", "application/json", bytes.NewReader(body), MaxAudio)
+	body, _ := json.Marshal(map[string]any{"model": c.Services[id].Model, "input": text, "voice": "default", "response_format": "wav"})
+	raw, err := c.request(ctx, path, "application/json", bytes.NewReader(body), MaxAudio)
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +262,11 @@ func (c *Client) Synthesize(ctx context.Context, text, lang string) (audio []byt
 }
 
 func (c *Client) mediaResult(ctx context.Context, task, lang string, bytes int, start time.Time, err error) {
-	fields := map[string]any{"task": task, "model": c.Services[task].Model, "language": lang, "bytes": bytes, "duration_ms": time.Since(start).Milliseconds()}
+	modelID := task
+	if task == "tts" && lang == "en" {
+		modelID = "tts-en"
+	}
+	fields := map[string]any{"task": task, "model": c.Services[modelID].Model, "language": lang, "bytes": bytes, "duration_ms": time.Since(start).Milliseconds()}
 	if err != nil {
 		fields["reason"] = "invalid_media_or_provider_failure"
 		if ctx.Err() != nil {

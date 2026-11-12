@@ -41,5 +41,6 @@ func TestExplicitRESTEventActivatesDeliveryWithoutWebSocket(t *testing.T) {
 	before := room.Machine().Snapshot().TtsSegIdx
 	clock.Advance(30 * time.Second)
 	room.Tick()
-	require.Greater(t, room.Machine().Snapshot().TtsSegIdx, before, "REST-only delivery retains normal timeout progression")
+	require.Equal(t, before, room.Machine().Snapshot().TtsSegIdx, "unheard audio must remain on the current segment")
+	require.True(t, room.Machine().Paused(), "REST-only delivery retains the safety timeout")
 }

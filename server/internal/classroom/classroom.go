@@ -457,13 +457,9 @@ func (m *Machine) OnTimeout(phase string) error {
 	case PhaseShowWord:
 		return m.enterTTS()
 	case PhaseTTSSeg:
-		if m.state.InReview {
-			return m.reviewAdvance()
-		}
-		m.acts = append(m.acts, Action{Type: ActTTSSkipped, SegIdx: m.state.TtsSegIdx})
-		return m.ttsAdvance()
+		return m.PauseForPlaybackFailure()
 	case PhaseReteachShow:
-		return m.reteachAdvance()
+		return m.PauseForPlaybackFailure()
 	case PhaseRepeating:
 		if !m.state.RepeatNudged {
 			m.acts = append(m.acts, Action{Type: ActNudgeRepeat})
@@ -483,6 +479,34 @@ func (m *Machine) OnTimeout(phase string) error {
 	}
 	return nil
 }
+
+// PauseForPlaybackFailure keeps the current segment in place for a retry.
+func (m *Machine) PauseForPlaybackFailure() error {
+	if m.state.Paused || (m.state.Phase != PhaseTTSSeg && m.state.Phase != PhaseReteachShow) {
+		return nil
+	}
+	m.state.Paused = true
+	m.acts = append(m.acts, Action{Type: ActLessonPaused})
+	return nil
+}
+
+// SkipUnheardSegment is only called after an explicit student confirmation.
+func (m *Machine) SkipUnheardSegment() error {
+	if !m.state.Paused || (m.state.Phase != PhaseTTSSeg && m.state.Phase != PhaseReteachShow) {
+		return nil
+	}
+	m.state.Paused = false
+	m.acts = append(m.acts, Action{Type: ActTTSSkipped, SegIdx: m.PlaybackSegment()})
+	if m.state.Phase == PhaseReteachShow {
+		return m.reteachAdvance()
+	}
+	if m.state.InReview {
+		return m.reviewAdvance()
+	}
+	return m.ttsAdvance()
+}
+
+func (m *Machine) PlaybackSegment() int { return m.currentPlaybackAction().SegIdx }
 
 // ---- 事件 ----
 

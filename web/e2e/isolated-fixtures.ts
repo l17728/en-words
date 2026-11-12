@@ -42,12 +42,12 @@ export async function media(page: Page, mode = 'success', duration = 80) {
     const timers = new Set<ReturnType<typeof setTimeout>>()
     Object.defineProperty(window, 'SpeechSynthesisUtterance', { configurable: true, value: Utterance })
     Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: {
-      getVoices: () => state.mode === 'no_voice' ? [] : ['en-US', 'zh-CN'].map(lang => ({ name: `MOCK ${lang}`, lang, localService: true })),
+      getVoices: () => ['no_voice', 'audio_ended_only'].includes(state.mode) ? [] : ['en-US', 'zh-CN'].map(lang => ({ name: `MOCK ${lang}`, lang, localService: true })),
       speak: (u: any) => {
         state.spoken.push({ text: u.text, lang: u.lang }); state.utterances.push(u)
         if (state.mode === 'throw') throw new Error('Fixture synthesis failure')
         if (state.mode === 'timeout' || state.mode === 'hold' || (state.mode === 'hold_second' && state.spoken.length > 1)) return
-        u.onstart?.()
+        if (state.mode !== 'ended_only') u.onstart?.()
         const timer = setTimeout(() => {
           timers.delete(timer)
           if (state.mode === 'error') { u.onerror?.(); u.onend?.(); return }
@@ -57,6 +57,14 @@ export async function media(page: Page, mode = 'success', duration = 80) {
       },
       cancel: () => { state.canceled++; for (const timer of timers) clearTimeout(timer); timers.clear() },
     } })
+    if (mode === 'audio_ended_only') {
+      const NativeAudio = window.Audio
+      ;(window as any).Audio = function(src?: string) {
+        const player = new NativeAudio(src)
+        player.play = async () => { queueMicrotask(() => player.dispatchEvent(new Event('ended'))) }
+        return player
+      }
+    }
     class Recognition {
       onstart?: () => void
       starts = 0

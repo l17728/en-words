@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test'
 import { api, fixture, scheduled, login } from './isolated-fixtures'
 
-// Real browser voices + real local synthesis. No ASR, answers or judge calls.
-test('real Chinese cache reuses one synthesis for three actual subtitled playbacks', async ({ page, request }, info) => {
+// Real local English and Chinese synthesis. No ASR, answers or judge calls.
+test('real bilingual cache reuses synthesis while all six playbacks show subtitles', async ({ page, request }, info) => {
   const f = await fixture(request, 'real-subtitle', [{ word: 'cat', meanings: ['猫是一种常见的家养动物。'] }])
   const id = await scheduled(request, f)
   for (const [key, value] of Object.entries({ ttsEnRepeat: 3, ttsZhRepeat: 3,
@@ -53,12 +53,12 @@ test('real Chinese cache reuses one synthesis for three actual subtitled playbac
     await expect(page.getByText('轮到你读了！大声一点没关系', { exact: true })).toBeVisible({ timeout: 90_000 })
     await expect(page.getByRole('status', { name: '当前朗读字幕' })).toHaveText('')
     const state = await page.evaluate(() => (window as any).__realSubtitles)
-    expect(responses).toEqual([{ status: 200, mime: 'audio/wav' }]); expect(asr).toEqual([])
+    expect(responses).toEqual([{ status: 200, mime: 'audio/wav' }, { status: 200, mime: 'audio/wav' }]); expect(asr).toEqual([])
     expect(state.captions.filter((c: any) => c.text).map((c: any) => c.text)).toEqual(['cat', 'cat', 'cat', '猫是一种常见的家养动物。', '猫是一种常见的家养动物。', '猫是一种常见的家养动物。'])
-    expect(state.english).toHaveLength(3); expect(state.audio).toHaveLength(3)
-    expect(state.cache.filter((row: any) => row.cache === 'miss')).toHaveLength(1)
-    expect(state.cache.filter((row: any) => row.cache === 'hit')).toHaveLength(2)
-    const media = [...state.english, ...state.audio]
+    expect(state.english).toHaveLength(0); expect(state.audio).toHaveLength(6)
+    expect(state.cache.filter((row: any) => row.cache === 'miss')).toHaveLength(2)
+    expect(state.cache.filter((row: any) => row.cache === 'hit')).toHaveLength(4)
+    const media = state.audio
     expect(media.every(row => row.start > 0 && row.end > row.start && row.errors === 0)).toBe(true)
     for (const [index, row] of media.entries()) {
       const caption = state.captions.filter((c: any) => c.text)[index]

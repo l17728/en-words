@@ -85,7 +85,7 @@ const (
 // validClassroomEvent 课堂事件白名单（防任意 event 字符串触发未定义行为）。
 func validClassroomEvent(ev string) bool {
 	switch ev {
-	case "word_clicked", "tts_finished", "repeat_done", "repeat_skipped", "answer_submitted":
+	case "word_clicked", "tts_finished", "tts_failed", "tts_skip", "repeat_done", "repeat_skipped", "answer_submitted":
 		return true
 	}
 	return false

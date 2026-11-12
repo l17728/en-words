@@ -78,6 +78,25 @@ func (r *Room) HandleClientEventContext(ctx context.Context, e ClientEnvelope, e
 	}
 	r.inputContext = ctx
 	defer func() { r.inputContext = nil }()
+	if ev.Type == "tts_failed" || ev.Type == "tts_skip" {
+		state := r.machine.Snapshot()
+		segment := r.machine.PlaybackSegment()
+		if (state.Phase != classroom.PhaseTTSSeg && state.Phase != classroom.PhaseReteachShow) || ev.Text != fmt.Sprint(segment) ||
+			(ev.Type == "tts_failed" && state.Paused) || (ev.Type == "tts_skip" && !state.Paused) {
+			return r.rejectedLocked(e)
+		}
+		if ev.Type == "tts_failed" {
+			_ = r.machine.PauseForPlaybackFailure()
+			r.app.Log.ErrorCtx(r.traceContext(), "classroom", "tts_playback_failed", map[string]any{"lesson_id": r.lessonID, "segment": segment, "event_id": e.EventID})
+		} else {
+			_ = r.machine.SkipUnheardSegment()
+			r.app.Log.InfoCtx(r.traceContext(), "classroom", "tts_segment_skipped", map[string]any{"lesson_id": r.lessonID, "segment": segment, "reason": "explicit_no_audio", "event_id": e.EventID})
+		}
+		out := r.broadcastLocked()
+		done := Msg{"type": "event_processed", "event_id": e.EventID}
+		r.emitLocked(done)
+		return append(out, done)
+	}
 	if ev.Type == classroom.EvAnswerSubmitted && r.machine.Phase() == classroom.PhaseWaitAnswer && !r.machine.Paused() &&
 		r.voiceParser.MatchesPhrase(ev.Text, "跳过", "跳过这个词", "我想跳过", "过") {
 		item := r.machine.CurrentItem().QuizItemID

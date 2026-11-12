@@ -331,19 +331,19 @@ func TestShowWordTimeoutAutoPlay(t *testing.T) {
 	assert.NotNil(t, findAction(m.DrainActions(), ActPlayTTS))
 }
 
-// ---- R2-05 TTS 段级超时跳段 ----
+// ---- TTS 段级超时暂停，等待显式确认 ----
 
-func TestTTSSegTimeoutSkipsSegment(t *testing.T) {
+func TestTTSSegTimeoutPausesCurrentSegment(t *testing.T) {
 	m, _ := newMachine(t, batchN(5))
 	require.NoError(t, m.OnEvent(Event{Type: EvWordClicked}))
 	m.DrainActions()
 	require.NoError(t, m.OnTimeout(PhaseTTSSeg))
 	as := m.DrainActions()
-	assert.NotNil(t, findAction(as, ActTTSSkipped))
+	assert.NotNil(t, findAction(as, ActLessonPaused))
 	assert.Equal(t, PhaseTTSSeg, m.Phase())
-	p := findAction(as, ActPlayTTS)
-	require.NotNil(t, p)
-	assert.Equal(t, 2, p.SegIdx)
+	assert.True(t, m.Paused())
+	assert.Nil(t, findAction(as, ActTTSSkipped))
+	assert.Equal(t, 1, m.Snapshot().TtsSegIdx)
 }
 
 // ---- SM-04 跟读超时计为完成 ----

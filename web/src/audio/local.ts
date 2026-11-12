@@ -60,12 +60,12 @@ export async function recordLocal(lessonId: string, language: string, signal: Ab
   } finally { stream.getTracks().forEach(t => t.stop()) }
 }
 
-export async function playLocalChinese(text: string, signal: AbortSignal, lessonId?: string, onPlaying?: () => void): Promise<void> {
+export async function playLocalSpeech(text: string, lang: 'zh' | 'en', signal: AbortSignal, lessonId?: string, onPlaying?: () => void): Promise<void> {
   const identity = session(signal)
   const started = performance.now()
-  const hit = await speechCache.play(JSON.stringify([identity.headers.Authorization, lessonId ?? 'preview']), text, signal,
+  const hit = await speechCache.play(JSON.stringify([identity.headers.Authorization, lessonId ?? 'preview', lang]), text, signal,
     () => withMediaDeadline(signal, async requestSignal => {
-      const res = await fetch('/api/v1/speech/synthesize', { method: 'POST', headers: { ...identity.headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ text, lang: 'zh', ...(lessonId ? { lesson_id: Number(lessonId) } : {}) }), signal: requestSignal })
+      const res = await fetch('/api/v1/speech/synthesize', { method: 'POST', headers: { ...identity.headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ text, lang, ...(lessonId ? { lesson_id: Number(lessonId) } : {}) }), signal: requestSignal })
       identity.check()
       if (!res.ok) throw new Error('本机语音合成不可用')
       const blob = await res.blob()

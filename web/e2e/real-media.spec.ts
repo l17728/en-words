@@ -6,7 +6,7 @@ import { api, fixture, scheduled, login } from './isolated-fixtures'
 // No model or media event mocks: independent WAV sources are decoded into real
 // MediaStreams, encoded by MediaRecorder, and recognized by the user's console.
 // This measures automated audio lifecycle/recognition, not human listening.
-test('real local Chinese audio playback and real encoded English/Chinese recognition complete a lesson', async ({ page, request }, info) => {
+test('real local English and Chinese playback and encoded recognition complete a lesson', async ({ page, request }, info) => {
   if (!process.env.E2E_EN_AUDIO || !process.env.E2E_ZH_AUDIO) throw new Error('Independent English teacher and Chinese 老师 WAV fixtures are required')
   for (const [language, filename, caseId, label] of [
     ['en', process.env.E2E_EN_AUDIO!, 'ASR-EN-07', 'teacher'],
@@ -82,7 +82,7 @@ test('real local Chinese audio playback and real encoded English/Chinese recogni
   })
   await login(page, f.username)
   const capabilities = await api(request, '/providers', f.student.token, undefined, 'GET')
-  expect(capabilities.local).toBe(true); expect(capabilities.asr).toBe(true); expect(capabilities.tts_zh).toBe(true)
+  expect(capabilities.local).toBe(true); expect(capabilities.asr).toBe(true); expect(capabilities.tts_zh).toBe(true); expect(capabilities.tts_en).toBe(true)
   await page.goto(`/classroom/${id}`)
   try {
     await expect(page.getByText('下课啦！叮当老师的小结')).toBeVisible({ timeout: 150_000 })
@@ -94,8 +94,9 @@ test('real local Chinese audio playback and real encoded English/Chinese recogni
     expect(state.starts.every((start: any) => start.sourceStartMs >= start.recorderStartMs && start.durationMs > 0 && start.durationMs <= 4000)).toBe(true)
     expect(state.recordings.every((record: any) => record.mime.includes('webm') && record.bytes > 0 && record.magic.join(',') === '26,69,223,163')).toBe(true)
     expect(uploads).toEqual([0, 1].map(() => ({ filename: true, riff: true, format: 1, channels: 1, sampleRate: 16000, bits: 16 })))
-    expect(state.audio.some((row: any) => row.playing > 0 && row.ended > 0 && row.errors === 0)).toBe(true)
-    expect(responses.filter(r => r.kind === 'tts' && r.status === 200 && r.mime?.includes('audio/'))).toHaveLength(1)
+    expect(state.audio.filter((row: any) => row.playing > 0 && row.ended > 0 && row.errors === 0)).toHaveLength(4)
+    // Repeated English segments reuse the verified in-memory WAV; each segment still plays to ended.
+    expect(responses.filter(r => r.kind === 'tts' && r.status === 200 && r.mime?.includes('audio/'))).toHaveLength(2)
     expect(responses.filter(r => r.kind === 'asr')).toHaveLength(2)
     expect(responses.filter(r => r.kind === 'asr').every(r => r.status === 200 && r.body.code === 0)).toBe(true)
     const english = await page.evaluate(() => ((window as any).__ttsDebug || []).filter((s: any) => s.lang === 'en-US'))

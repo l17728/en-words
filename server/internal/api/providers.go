@@ -78,7 +78,7 @@ func (a *App) registerProviderRoutes(g *gin.RouterGroup) {
 		if local {
 			ready = a.Local.Ready(c.Request.Context())
 		}
-		c.JSON(200, ok(gin.H{"local": local, "asr": ready["asr"], "tts_zh": ready["tts"], "tts_en": false}))
+		c.JSON(200, ok(gin.H{"local": local, "asr": ready["asr"], "tts_zh": ready["tts"], "tts_en": ready["tts-en"]}))
 	})
 	g.POST("/classroom/lessons/:id/transcribe", a.roleMW(auth.RoleStudent), func(c *gin.Context) {
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -150,9 +150,9 @@ func (a *App) registerProviderRoutes(g *gin.RouterGroup) {
 			Lang     string `json:"lang"`
 			LessonID int64  `json:"lesson_id,omitempty"`
 		}
-		if c.ShouldBindJSON(&in) != nil || in.Lang != "zh" || strings.TrimSpace(in.Text) == "" || len([]rune(in.Text)) > 300 {
+		if c.ShouldBindJSON(&in) != nil || (in.Lang != "zh" && in.Lang != "en") || strings.TrimSpace(in.Text) == "" || len([]rune(in.Text)) > 300 {
 			a.Log.ErrorCtx(c.Request.Context(), "speech", "synthesis_rejected", map[string]any{"reason": "invalid_text_or_language"})
-			c.JSON(400, fail(400, "仅支持短中文朗读"))
+			c.JSON(400, fail(400, "仅支持短中文或英文朗读"))
 			return
 		}
 		ctx := c.Request.Context()

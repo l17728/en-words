@@ -158,3 +158,26 @@ func TestConsoleMediaContractsAndLimits(t *testing.T) {
 	require.Error(t, err)
 	require.EqualValues(t, 2, calls.Load(), "invalid media must not reach provider")
 }
+
+func TestEnglishSpeechUsesDedicatedLocalRoute(t *testing.T) {
+	wav := pcmWAVFixture()
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/tts-en/speech" {
+			t.Errorf("unexpected route %s", r.URL.Path)
+			w.WriteHeader(404)
+			return
+		}
+		var body map[string]any
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		require.Equal(t, "fixture-en", body["model"])
+		require.Equal(t, "teacher", body["input"])
+		_, _ = w.Write(wav)
+	}))
+	defer s.Close()
+	c, err := New(s.URL, nil)
+	require.NoError(t, err)
+	c.Services["tts-en"] = Service{Model: "fixture-en", Capabilities: []string{"tts"}}
+	got, err := c.Synthesize(context.Background(), "teacher", "en")
+	require.NoError(t, err)
+	require.Equal(t, wav, got)
+}

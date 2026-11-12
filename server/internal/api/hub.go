@@ -341,7 +341,7 @@ func (r *Room) snapshotLocked() Msg {
 	phase := r.machine.Phase()
 	m := Msg{
 		"type": "state_snapshot", "seq": r.nextSeqLocked(), "teacher_text": r.teacherText,
-		"lesson_id": r.lessonID, "phase": phase,
+		"lesson_id": r.lessonID, "phase": phase, "tts_seg_idx": r.machine.PlaybackSegment(),
 		"paused": r.machine.Paused(), "context": r.contextLocked(),
 	}
 	if r.settlementUncertain {
@@ -694,7 +694,7 @@ func (r *Room) Tick() {
 	if r.app.Local != nil {
 		switch r.machine.Phase() {
 		case classroom.PhaseTTSSeg, classroom.PhaseReteachShow:
-			if r.app.Local.Has("tts", "tts") {
+			if r.app.Local.Has("tts", "tts") || r.app.Local.Has("tts-en", "tts") {
 				d += 20 * time.Second
 			}
 		case classroom.PhaseRepeating, classroom.PhaseWaitAnswer:
