@@ -8,14 +8,15 @@ import datetime
 import hashlib
 import json
 import os
+from collections import Counter, defaultdict
 from pathlib import Path
 import shutil
 import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-SUITES = ["recovery", "overdue", "feedback", "legacy", "journey", "closure", "firstuse", "playback", "interaction", "duplex", "repeat"]
-EXPECTED = dict(zip(SUITES, [42, 1, 26, 9, 1, 6, 1, 1, 30, 7, 3]), media=1)
+SUITES = ["recovery", "overdue", "feedback", "legacy", "journey", "closure", "firstuse", "playback", "interaction", "duplex", "repeat", "continuation"]
+EXPECTED = dict(zip(SUITES, [43, 1, 27, 9, 1, 8, 1, 1, 39, 7, 5, 6]), media=1)
 
 
 def sha(path):
@@ -63,6 +64,33 @@ def validate_shards(expected_ids, reports):
     if len(actual) != len(set(actual)) or set(actual) != set(expected_ids):
         raise RuntimeError("Shard test ID union is missing, duplicated or unexpected")
     return actual
+
+
+def validate_global_scenarios(entries, require_complete=False):
+    """Check cross-suite scenario identity; first-use has two intentional configs."""
+    qualified = []
+    owners = defaultdict(list)
+    for entry in entries:
+        suite = entry["suite"]
+        expected = entry["expected_ids"]
+        verified = entry.get("verified_ids", [])
+        if len(expected) != EXPECTED[suite] or Counter(expected) != Counter(verified):
+            raise RuntimeError(f"{suite}: global scenario evidence is incomplete")
+        for case_id in verified:
+            qualified.append(f"{suite}:{case_id}")
+            owners[case_id].append(suite)
+    if len(qualified) != len(set(qualified)):
+        raise RuntimeError("Duplicate suite-qualified scenario IDs")
+    duplicates = {case_id: suites for case_id, suites in owners.items() if len(suites) > 1}
+    if any(sorted(suites) != ["firstuse", "playback"] for suites in duplicates.values()):
+        raise RuntimeError("Unexpected cross-suite spec ID overlap")
+    if require_complete:
+        if {entry["suite"] for entry in entries} != set(SUITES) or len(entries) != len(SUITES):
+            raise RuntimeError("Complete acceptance requires all suites exactly once")
+        if len(qualified) != 148 or len(owners) != 147 or len(duplicates) != 1:
+            raise RuntimeError("Complete acceptance must contain 148 scenarios and 147 unique specs")
+    return {"scenario_executions": len(qualified), "unique_spec_ids": len(owners),
+            "intentional_duplicate": [{"spec_id": case_id, "suites": suites} for case_id, suites in duplicates.items()]}
 
 
 def wait_owned(process, timeout, stop_tree):
@@ -137,16 +165,14 @@ def main():
             config = "playwright.config.ts" if suite == "legacy" else f"playwright.{suite}.config.ts"
             command = [args.node, str(ROOT / "web/node_modules/@playwright/test/cli.js"), "test", "--config", config]
             reports, data_reports = [], []
-            expected_ids = None
             shards = 2 if suite == "recovery" else 1
-            if shards == 2:
-                discovery = output / f"{suite}-discovery.json"
-                env["PLAYWRIGHT_JSON_OUTPUT_FILE"] = str(discovery)
-                code = run(f"{suite}-list", command + ["--fully-parallel", "--list", "--reporter=json"], ROOT / "web")
-                if code: return code
-                expected_ids = [key for key, _ in cases(json.loads(discovery.read_text(encoding="utf-8")))]
-                if len(expected_ids) != EXPECTED[suite] or len(set(expected_ids)) != len(expected_ids):
-                    raise RuntimeError("Discovery count/IDs differ from the full recovery contract")
+            discovery = output / f"{suite}-discovery.json"
+            env["PLAYWRIGHT_JSON_OUTPUT_FILE"] = str(discovery)
+            code = run(f"{suite}-list", command + (["--fully-parallel"] if shards > 1 else []) + ["--list", "--reporter=json"], ROOT / "web")
+            if code: return code
+            expected_ids = [key for key, _ in cases(json.loads(discovery.read_text(encoding="utf-8")))]
+            if len(expected_ids) != EXPECTED[suite] or len(set(expected_ids)) != len(expected_ids):
+                raise RuntimeError(f"{suite}: discovery count/IDs differ from the complete suite contract")
             entry = {"suite": suite, "exit": 0, "reports": reports, "expected_ids": expected_ids}
             manifest["suites"].append(entry)
             for shard in range(1, shards + 1):
@@ -163,13 +189,17 @@ def main():
                 (output / "summary.json").write_text(json.dumps(manifest["suites"], indent=2), encoding="utf-8")
                 if code: return code
                 if not report.is_file(): raise RuntimeError(f"{name}: no JSON report produced")
-                if data["stats"]["expected"] != EXPECTED[suite] // shards or any(data["stats"][key] for key in ("skipped", "unexpected", "flaky")):
+                # Recovery may have an odd number of cases; the exact discovered
+                # ID union is checked after both shards, so each shard must match
+                # its own report rather than floor(total / shards).
+                shard_expected = EXPECTED[suite] if shards == 1 else len(cases(data))
+                if data["stats"]["expected"] != shard_expected or not shard_expected or any(data["stats"][key] for key in ("skipped", "unexpected", "flaky")):
                     raise RuntimeError(f"{name}: missing, skipped, failed or flaky cases")
                 if sources()["sha256"] != baseline["sha256"] or sha(args.server) != manifest["server_sha256"] or sha(args.harness) != manifest["harness_sha256"]:
                     raise RuntimeError("Source/binaries changed between acceptance groups")
-            if expected_ids is not None:
-                entry["verified_ids"] = validate_shards(expected_ids, data_reports)
+            entry["verified_ids"] = validate_shards(expected_ids, data_reports)
             if sources()["sha256"] != baseline["sha256"]: raise RuntimeError("Production source changed during acceptance")
+        manifest["global_scenarios"] = validate_global_scenarios(manifest["suites"], require_complete=args.suites == SUITES)
         return 0
     finally:
         manifest["source_after"] = sources()

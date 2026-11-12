@@ -81,7 +81,9 @@ async function enterVoice(page, request, suffix) {
   const lessons = await api(request, `/student/lessons?bookId=${bookID}`, users[suffix].token, undefined, 'GET')
   await login(page, `feedback-${suffix}`)
   await page.goto(`/classroom/${lessons.find(row => row.Status === 'scheduled').ID}`)
-  await expect.poll(() => page.evaluate(() => !!window.__feedbackRecognizer)).toBe(true)
+  // Initial classroom playback includes three English segments, one Chinese
+  // segment and configured gaps before the first input turn is granted.
+  await expect.poll(() => page.evaluate(() => !!window.__feedbackRecognizer), { timeout: 45_000 }).toBe(true)
 }
 
 test('voice feedback survives a lost WS reply with its complete original text', async ({ page, request }) => {

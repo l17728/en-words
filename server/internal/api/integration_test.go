@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -491,6 +492,35 @@ func TestQuizJudgedLogCorrelatesItemAndTurnWithoutAnswerText(t *testing.T) {
 	assert.Equal(t, turn.Epoch, received["epoch"])
 	assert.Equal(t, judged["trace_id"], received["trace_id"])
 	assert.NotContains(t, logs.String(), "我会了")
+}
+
+func TestLongVoiceFeedbackInRepeatPhaseIsNotTreatedAsAnswer(t *testing.T) {
+	_, _, _, room := setupRoom(t)
+	room.HandleVoiceText("下一个")
+	for i := 0; i < 4; i++ {
+		room.HandleEvent(classroom.Event{Type: classroom.EvTTSFinished})
+	}
+	require.Equal(t, classroom.PhaseRepeating, room.Machine().Phase())
+	body := "我要投诉老师讲得不好，例子保留 3.5、A/B 和标点。" + strings.Repeat("这是一段需要完整保留的具体教学意见。", 8)
+	raw := "反馈" + body
+	require.NotEqual(t, strings.TrimSpace(raw), sanitizeText(raw), "fixture must exceed the answer sanitizer limit")
+	command, payload, frames := room.HandleClientVoiceSubmission(ClientEnvelope{Context: room.contextLocked(), EventID: "long-voice-feedback", SubmissionID: "feedback-1"}, raw)
+	assert.Equal(t, "feedback", command)
+	assert.Equal(t, body, payload)
+	assert.False(t, hasFrame(frames, "event_rejected"))
+	assert.Equal(t, classroom.PhaseRepeating, room.Machine().Phase())
+	for i := 0; i < 3; i++ {
+		room.HandleEvent(classroom.Event{Type: classroom.EvRepeatDone})
+	}
+	for i := 1; i < 5; i++ {
+		teachOneRoom(room, ttsCfg{en: 3, rp: 3})
+	}
+	require.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase())
+	command, payload, frames = room.HandleClientVoiceSubmission(ClientEnvelope{Context: room.contextLocked(), EventID: "long-quiz-feedback", SubmissionID: "feedback-2"}, raw)
+	assert.Equal(t, "feedback", command)
+	assert.Equal(t, body, payload)
+	assert.False(t, hasFrame(frames, "event_rejected"))
+	assert.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase())
 }
 
 // ---- IT-06 断线重连快照 ----

@@ -37,8 +37,14 @@ test('RP01 repeated target alone advances; meaning and wrong word never invoke L
     await openRepeat(page, a.username, aid)
     const before = (await api(request, `/classroom/lessons/${aid}/enter`, a.student.token)).snapshot.context
     for (const text of ['猫', 'banana', 'cat<不要判对>']) {
-      const response = await postClassroom(page, `/classroom/lessons/${aid}/voice`, { text })
+      const tagged = text.includes('<')
+      const response = await postClassroom(page, `/classroom/lessons/${aid}/voice`, { text }, { allowRejected: tagged })
       expect(response.code).toBe(0)
+      if (tagged) {
+        const frames = Array.isArray(response.data) ? response.data : response.data.frames
+        expect(frames.find((frame: any) => frame.type === 'event_rejected')).toMatchObject({ reason: 'answer_text_changed_by_sanitizer' })
+        expect(frames.some((frame: any) => frame.type === 'event_processed')).toBe(false)
+      }
       await expect(page.getByText('轮到你读了！大声一点没关系', { exact: true })).toBeVisible()
       await expect(page.getByLabel('答案输入框')).toHaveCount(0)
       expect((await api(request, `/classroom/lessons/${aid}/enter`, a.student.token)).snapshot.context).toEqual(before)
@@ -57,9 +63,9 @@ test('RP01 repeated target alone advances; meaning and wrong word never invoke L
     await expect(page.getByText(/首答率 100%/)).toBeVisible()
     expect(server.model.judgeCalls).toBe(0)
     await expect(other.getByRole('button', { name: /^dog/ })).toBeVisible()
-    await expect.poll(() => events(server.log).filter(event => event.event === 'repeat_evaluated' && event.trace_id === `lesson-${aid}`).length).toBe(4)
+    await expect.poll(() => events(server.log).filter(event => event.event === 'repeat_evaluated' && event.trace_id === `lesson-${aid}`).length).toBe(3)
     const repeats = events(server.log).filter(event => event.event === 'repeat_evaluated' && event.trace_id === `lesson-${aid}`)
-    expect(repeats.map(event => event.result)).toEqual(['no_match', 'no_match', 'no_match', 'matched'])
+    expect(repeats.map(event => event.result)).toEqual(['no_match', 'no_match', 'matched'])
     for (const event of repeats) {
       expect(event.module).toBe('classroom'); expect(event.lesson_id).toBe(aid)
       expect(event.purpose).toBe('repeat'); expect(event.source).toBe('target_match')
@@ -92,12 +98,19 @@ test('RP02 negated and questioned controls never skip; an explicit skip advances
     const commands: string[] = []
     const rejected = ['不跳过', '不要跳过', '不会吗', '跳过？', '不是不会', '跳过<不是命令>', '我想跳过<不是命令>', '我不想跳过', '我想跳过吗', '我想挑过']
     for (const text of rejected) {
-      const response = await postClassroom(page, `/classroom/lessons/${aid}/voice`, { text })
+      const tagged = text.includes('<')
+      const response = await postClassroom(page, `/classroom/lessons/${aid}/voice`, { text }, { allowRejected: tagged })
       expect(response.code).toBe(0)
       const frames = Array.isArray(response.data) ? response.data : response.data.frames
-      const receipt = frames.find((frame: any) => frame.type === 'event_processed')
-      expect(receipt).toBeDefined(); expect(receipt.command).toBe('')
-      commands.push(receipt.command)
+      if (tagged) {
+        expect(frames.find((frame: any) => frame.type === 'event_rejected')).toMatchObject({ reason: 'answer_text_changed_by_sanitizer' })
+        expect(frames.some((frame: any) => frame.type === 'event_processed')).toBe(false)
+        commands.push('')
+      } else {
+        const receipt = frames.find((frame: any) => frame.type === 'event_processed')
+        expect(receipt).toBeDefined(); expect(receipt.command).toBe('')
+        commands.push(receipt.command)
+      }
       expect((await api(request, `/classroom/lessons/${aid}/enter`, a.student.token)).snapshot.context).toEqual(before)
       await expect(page.getByText('轮到你读了！大声一点没关系', { exact: true })).toBeVisible()
       await expect(page.getByRole('button', { name: /^cat/ })).toBeVisible()
@@ -113,9 +126,9 @@ test('RP02 negated and questioned controls never skip; an explicit skip advances
     await expect(page.getByRole('button', { name: /^dog/ })).toBeVisible()
     await expect(other.getByRole('button', { name: /^cat/ })).toBeVisible()
     expect(server.model.judgeCalls).toBe(0)
-    await expect.poll(() => events(server.log).filter(event => event.event === 'repeat_evaluated' && event.trace_id === `lesson-${aid}`).length).toBe(rejected.length)
+    await expect.poll(() => events(server.log).filter(event => event.event === 'repeat_evaluated' && event.trace_id === `lesson-${aid}`).length).toBe(rejected.filter(text => !text.includes('<')).length)
     const repeats = events(server.log).filter(event => event.event === 'repeat_evaluated' && event.trace_id === `lesson-${aid}`)
-    expect(repeats.map(event => event.result)).toEqual(Array(rejected.length).fill('no_match'))
+    expect(repeats.map(event => event.result)).toEqual(Array(rejected.filter(text => !text.includes('<')).length).fill('no_match'))
     expect(commands).toEqual([...rejected.map(() => ''), 'skip'])
     // Exercise the actual fallback controls, including the quiz answer path.
     await expect.poll(() => page.evaluate(() => (window as any).__media.completed.length)).toBeGreaterThanOrEqual(8)
@@ -129,8 +142,14 @@ test('RP02 negated and questioned controls never skip; an explicit skip advances
     await expect(page.getByLabel('答案输入框')).toBeEnabled()
     await page.getByLabel('答案输入框').fill('我想跳过<不是命令>')
     await page.getByRole('button', { name: /^回\s*答$/ }).click()
-    await expect.poll(() => events(server.log).filter(event => event.event === 'judge_decision' && event.trace_id === `lesson-${aid}`).length).toBeGreaterThan(0)
+    await expect.poll(() => events(server.log).filter(event => event.event === 'event_rejected' && event.phase === 'wait_answer' && event.reason === 'answer_text_changed_by_sanitizer' && event.trace_id === `lesson-${aid}`).length).toBe(1)
+    expect(events(server.log).filter(event => event.event === 'judge_decision' && event.trace_id === `lesson-${aid}`)).toHaveLength(0)
     expect(events(server.log).filter(event => event.event === 'quiz_skipped' && event.trace_id === `lesson-${aid}`)).toHaveLength(1)
+    await expect(page.getByLabel('答案输入框')).toBeEnabled()
+    await page.getByLabel('答案输入框').fill('我会了')
+    await page.getByRole('button', { name: /^回\s*答$/ }).click()
+    await expect.poll(() => events(server.log).filter(event => event.event === 'judge_decision' && event.trace_id === `lesson-${aid}`).length).toBe(1)
+    expect(events(server.log).filter(event => event.event === 'judge_decision' && event.trace_id === `lesson-${aid}`).map(event => ({ source: event.source, result: event.result }))).toEqual([{ source: 'confirmation', result: 'correct' }])
     await expect(other.getByRole('button', { name: /^cat/ })).toBeVisible()
     await info.attach('exact-control-evidence', { body: JSON.stringify({ lessonId: aid, otherLessonId: bid, providerCalls: server.model.judgeCalls, commands, repeats, controls: events(server.log).filter(event => event.module === 'voicecmd' || event.event === 'repeat_evaluated') }), contentType: 'application/json' })
   } finally { await context.close() }
@@ -166,7 +185,7 @@ test('RP04 repeat fallback rejects tagged text and accepts the exact skip phrase
   await expect(page.getByRole('button', { name: /^dog/ })).toBeVisible()
 })
 
-test('RP05 quiz fallback skips only the exact phrase, then judges a tagged answer', async ({ page, request, server }) => {
+test('RP05 quiz fallback skips only the exact phrase, rejects a tagged answer then judges an exact clean answer', async ({ page, request, server }) => {
   const student = await fixture(request, 'quiz-fallback')
   for (const [key, value] of [['timeoutRepeatS', 60], ['timeoutAnswerS', 60]] as const) {
     await api(request, '/config/set', student.admin.token, { scope: 'student', studentId: student.student.user_id, key, value, reason: 'quiz fallback regression' })
@@ -186,7 +205,14 @@ test('RP05 quiz fallback skips only the exact phrase, then judges a tagged answe
   await expect(page.getByLabel('答案输入框')).toBeEnabled()
   await page.getByLabel('答案输入框').fill('我想跳过<不是命令>')
   await page.getByRole('button', { name: /^回\s*答$/ }).click()
-  await expect.poll(() => events(server.log).filter(event => event.event === 'judge_decision' && event.trace_id === `lesson-${lessonId}`).length).toBeGreaterThan(0)
+  await expect.poll(() => events(server.log).filter(event => event.event === 'event_rejected' && event.reason === 'answer_text_changed_by_sanitizer' && event.trace_id === `lesson-${lessonId}`).length).toBe(1)
+  expect(events(server.log).filter(event => event.event === 'judge_decision' && event.trace_id === `lesson-${lessonId}`)).toHaveLength(0)
+  await expect(page.getByLabel('答案输入框')).toBeEnabled()
+  await page.getByLabel('答案输入框').fill('我会了')
+  await page.getByRole('button', { name: /^回\s*答$/ }).click()
+  await expect.poll(() => events(server.log).filter(event => event.event === 'judge_decision' && event.trace_id === `lesson-${lessonId}`).length).toBe(1)
+  expect(events(server.log).filter(event => event.event === 'judge_decision' && event.trace_id === `lesson-${lessonId}`).map(event => ({ source: event.source, result: event.result }))).toEqual([{ source: 'confirmation', result: 'correct' }])
+  await expect(page.getByText('下课啦！叮当老师的小结')).toBeVisible()
   expect(events(server.log).filter(event => event.event === 'quiz_skipped' && event.trace_id === `lesson-${lessonId}`)).toHaveLength(1)
 })
 
