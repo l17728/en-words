@@ -25,4 +25,4 @@
 - Go：注册/ready/stopped、英文路由、限流与格式、租户权限；`tts_failed` 暂停且不推进、重复/迟到失败忽略、`resume` 原段重播、仅显式 `tts_skip` 推进并记录 `explicit_no_audio`、服务端先超时同样暂停、旧 ACK 拒绝；中文路径不回退。
 - Python：模型加载/预热、输入边界、WAV 元数据、并发与取消；7 库 5568 词中含特殊标注的 87 条批量合成至少无错误且 WAV 可解码；日志不含正文。
 - Playwright 无头：teacher／老师真实双语课堂完成，英文三段与中文一段都实际 `playing→ended`，字幕同步；字幕仅在 `playing` 后出现并在 `ended` 后清除；每段 `lesson/turn/segment`、请求、首音、结束、唯一 ACK 有关联证据。故障旅程断言 `tts_failed` 暂停、不推进、重试原段、显式文字跳过才推进，且旧音频/字幕/ACK 全清除。仅有 `ended`、没有 `playing/onstart` 时必须失败暂停，不得 ACK。
-- 性能：热机单词合成目标 p95 <500 ms，首音、打断和多人长尾另列真实试点，不用 3 条合成样本外推。现有 Piper 探针 teacher/cat/apple 回识 3/3，热机 71–81 ms；仍需人工试听英文发音。
+- 性能：热机单词合成目标 p95 <500 ms，首音、打断和多人长尾另列真实试点，不用 3 条合成样本外推。现有 Piper 探针 teacher/cat/apple 回识 3/3，热机 71–81 ms；2026-11-12 用户试听三条均确认清楚、准确、自然。

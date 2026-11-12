@@ -17,8 +17,9 @@ The 8090 model console now registers a separate CPU Piper English service (`tts-
 | Piper annotated lexicon | 87/87 special-format words synthesized and decoded; 4 invalid input classes rejected |
 | Model console | `tts-en=ready`; annotated phrase through 8090 returned WAV 200; startup script and registry installer are idempotent |
 | Cancellation | Disconnected queued request logged `canceled_in_queue` and did not enter synthesis |
+| Human listening | User confirmed `teacher`, `cat`, and `apple` all sound clear, accurate, and natural (2026-11-12) |
 
-The automated ASR and media tests use frozen independent audio fixtures. They establish program behavior and audio lifecycle, but do not establish pronunciation quality to a human listener or the performance of a live multi-student classroom. Those acceptance items remain separate from this code closure.
+The automated ASR and media tests use frozen independent audio fixtures. The three-word human listening check supports pronunciation quality for those samples only. Live classroom sound and broader pronunciation quality remain separate acceptance items.
 
 ## Diagnostic fields
 
