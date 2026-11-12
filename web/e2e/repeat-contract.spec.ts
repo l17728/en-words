@@ -90,21 +90,6 @@ test('RP02 negated and questioned controls never skip; an explicit skip advances
     await openRepeat(page, a.username, aid)
     const before = (await api(request, `/classroom/lessons/${aid}/enter`, a.student.token)).snapshot.context
     const commands: string[] = []
-    const oversized = await page.evaluate(async ({ lessonId, context }) => {
-      const response = await fetch(`/api/v1/classroom/lessons/${lessonId}/event`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
-        body: JSON.stringify({ event: 'answer_submitted', text: '我想跳过' + 'x'.repeat(2048), context, event_id: 'oversized-repeat' }),
-      })
-      return response.json()
-    }, { lessonId: aid, context: before })
-    expect(oversized.code).not.toBe(0)
-    expect((await api(request, `/classroom/lessons/${aid}/enter`, a.student.token)).snapshot.context).toEqual(before)
-    // The visible fallback field must preserve the raw tag until intent routing.
-    await page.getByLabel('跟读文字输入框').fill('我想跳过<不是命令>')
-    await page.getByRole('button', { name: '提交跟读文字' }).click()
-    await expect(page.getByRole('button', { name: /^cat/ })).toBeVisible()
-    expect((await api(request, `/classroom/lessons/${aid}/enter`, a.student.token)).snapshot.context).toEqual(before)
     const rejected = ['不跳过', '不要跳过', '不会吗', '跳过？', '不是不会', '跳过<不是命令>', '我想跳过<不是命令>', '我不想跳过', '我想跳过吗', '我想挑过']
     for (const text of rejected) {
       const response = await postClassroom(page, `/classroom/lessons/${aid}/voice`, { text })
@@ -128,9 +113,9 @@ test('RP02 negated and questioned controls never skip; an explicit skip advances
     await expect(page.getByRole('button', { name: /^dog/ })).toBeVisible()
     await expect(other.getByRole('button', { name: /^cat/ })).toBeVisible()
     expect(server.model.judgeCalls).toBe(0)
-    await expect.poll(() => events(server.log).filter(event => event.event === 'repeat_evaluated' && event.trace_id === `lesson-${aid}`).length).toBe(rejected.length + 1)
+    await expect.poll(() => events(server.log).filter(event => event.event === 'repeat_evaluated' && event.trace_id === `lesson-${aid}`).length).toBe(rejected.length)
     const repeats = events(server.log).filter(event => event.event === 'repeat_evaluated' && event.trace_id === `lesson-${aid}`)
-    expect(repeats.map(event => event.result)).toEqual(Array(rejected.length + 1).fill('no_match'))
+    expect(repeats.map(event => event.result)).toEqual(Array(rejected.length).fill('no_match'))
     expect(commands).toEqual([...rejected.map(() => ''), 'skip'])
     // Exercise the actual fallback controls, including the quiz answer path.
     await expect.poll(() => page.evaluate(() => (window as any).__media.completed.length)).toBeGreaterThanOrEqual(8)
@@ -139,11 +124,11 @@ test('RP02 negated and questioned controls never skip; an explicit skip advances
     await page.getByRole('button', { name: '提交跟读文字' }).click()
     await expect(page.getByLabel('答案输入框')).toBeEnabled()
     await page.getByLabel('答案输入框').fill('我想跳过')
-    await page.getByRole('button', { name: '回答' }).click()
+    await page.getByRole('button', { name: /^回\s*答$/ }).click()
     await expect.poll(() => events(server.log).filter(event => event.event === 'quiz_skipped' && event.trace_id === `lesson-${aid}`).length).toBe(1)
     await expect(page.getByLabel('答案输入框')).toBeEnabled()
     await page.getByLabel('答案输入框').fill('我想跳过<不是命令>')
-    await page.getByRole('button', { name: '回答' }).click()
+    await page.getByRole('button', { name: /^回\s*答$/ }).click()
     await expect.poll(() => events(server.log).filter(event => event.event === 'judge_decision' && event.trace_id === `lesson-${aid}`).length).toBeGreaterThan(0)
     expect(events(server.log).filter(event => event.event === 'quiz_skipped' && event.trace_id === `lesson-${aid}`)).toHaveLength(1)
     await expect(other.getByRole('button', { name: /^cat/ })).toBeVisible()
@@ -151,6 +136,59 @@ test('RP02 negated and questioned controls never skip; an explicit skip advances
   } finally { await context.close() }
 })
 
+
+test('RP04 repeat fallback rejects tagged text and accepts the exact skip phrase', async ({ page, request, server }) => {
+  const student = await fixture(request, 'repeat-fallback')
+  await api(request, '/config/set', student.admin.token, { scope: 'student', studentId: student.student.user_id, key: 'timeoutRepeatS', value: 60, reason: 'repeat fallback regression' })
+  const lessonId = await scheduled(request, student)
+  await openRepeat(page, student.username, lessonId)
+  const before = (await api(request, `/classroom/lessons/${lessonId}/enter`, student.student.token)).snapshot.context
+
+  const oversized = await page.evaluate(async ({ lessonId, context }) => {
+    const response = await fetch(`/api/v1/classroom/lessons/${lessonId}/event`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+      body: JSON.stringify({ event: 'answer_submitted', text: '我想跳过' + 'x'.repeat(2048), context, event_id: 'oversized-repeat' }),
+    })
+    return response.json()
+  }, { lessonId, context: before })
+  expect(oversized.code).not.toBe(0)
+  expect((await api(request, `/classroom/lessons/${lessonId}/enter`, student.student.token)).snapshot.context).toEqual(before)
+
+  await page.getByLabel('跟读文字输入框').fill('我想跳过<不是命令>')
+  await page.getByRole('button', { name: '提交跟读文字' }).click()
+  await expect(page.getByRole('button', { name: /^cat/ })).toBeVisible()
+  expect((await api(request, `/classroom/lessons/${lessonId}/enter`, student.student.token)).snapshot.context).toEqual(before)
+  expect(events(server.log).filter(event => event.event === 'quiz_skipped' && event.trace_id === `lesson-${lessonId}`)).toHaveLength(0)
+
+  await page.getByLabel('跟读文字输入框').fill('我想跳过')
+  await page.getByRole('button', { name: '提交跟读文字' }).click()
+  await expect(page.getByRole('button', { name: /^dog/ })).toBeVisible()
+})
+
+test('RP05 quiz fallback skips only the exact phrase, then judges a tagged answer', async ({ page, request, server }) => {
+  const student = await fixture(request, 'quiz-fallback')
+  for (const [key, value] of [['timeoutRepeatS', 60], ['timeoutAnswerS', 60]] as const) {
+    await api(request, '/config/set', student.admin.token, { scope: 'student', studentId: student.student.user_id, key, value, reason: 'quiz fallback regression' })
+  }
+  const lessonId = await scheduled(request, student)
+  await openRepeat(page, student.username, lessonId)
+  for (const word of ['cat', 'dog']) {
+    await expect(page.getByRole('button', { name: new RegExp(`^${word}`) })).toBeVisible()
+    await expect(page.getByLabel('跟读文字输入框')).toBeEnabled()
+    await page.getByLabel('跟读文字输入框').fill('我想跳过')
+    await page.getByRole('button', { name: '提交跟读文字' }).click()
+  }
+  await expect(page.getByLabel('答案输入框')).toBeEnabled()
+  await page.getByLabel('答案输入框').fill('我想跳过')
+  await page.getByRole('button', { name: /^回\s*答$/ }).click()
+  await expect.poll(() => events(server.log).filter(event => event.event === 'quiz_skipped' && event.trace_id === `lesson-${lessonId}`).length).toBe(1)
+  await expect(page.getByLabel('答案输入框')).toBeEnabled()
+  await page.getByLabel('答案输入框').fill('我想跳过<不是命令>')
+  await page.getByRole('button', { name: /^回\s*答$/ }).click()
+  await expect.poll(() => events(server.log).filter(event => event.event === 'judge_decision' && event.trace_id === `lesson-${lessonId}`).length).toBeGreaterThan(0)
+  expect(events(server.log).filter(event => event.event === 'quiz_skipped' && event.trace_id === `lesson-${lessonId}`)).toHaveLength(1)
+})
 
 test('RP03 Unicode targets and internal apostrophes accept whole words; unsupported targets require explicit skip', async ({ page, request, server, browser, baseURL }, info) => {
   const words = [
