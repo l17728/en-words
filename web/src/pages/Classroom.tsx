@@ -31,8 +31,12 @@ interface Snapshot {
   phase: string
   word?: string
   quiz_word?: string
+  quiz_item?: { seq?: number }
+  word_idx?: number
+  in_reteach?: boolean
   zhMeaning?: string // 教学阶段中英对照（来自 play_tts zh 段文本）
   paused?: boolean
+  input_failed?: boolean
   tts_seg_idx?: number
 }
 
@@ -145,6 +149,14 @@ export default function ClassroomPage() {
   const [repeatFallbackPending, setRepeatFallbackPending] = useState(false)
   const repeatFallbackFlight = useRef(false)
   const [inputTurn, setInputTurn] = useState<InputTurn | null>(null)
+  const [asrFailure, setAsrFailure] = useState(false)
+  const asrFailurePendingRef = useRef('')
+  const asrCaptureStartedRef = useRef('')
+  const textOnlyStorageKey = `enwords.text-only.${userId}.${lessonId}`
+  const textOnlyInputRef = useRef(sessionStorage.getItem(textOnlyStorageKey) || '')
+  const [textOnlyMode, setTextOnlyMode] = useState(!!textOnlyInputRef.current)
+  const inputIdentity = (currentPhase: string, current: Snapshot | null) =>
+    `${lessonId}:${currentPhase}:${currentPhase === 'repeating' ? `${current?.word_idx ?? ''}:${current?.in_reteach ? 1 : 0}:${current?.word ?? ''}` : `${current?.quiz_item?.seq ?? ''}:${current?.quiz_word ?? ''}`}`
   const revokeInput = () => {
     const previous = inputGate.current.ready
     if (previous) console.debug('[classroom_input]', { event: 'revoked', phase: previous.phase, epoch: previous.epoch, turn: previous.turn })
@@ -444,12 +456,14 @@ export default function ClassroomPage() {
       }
       switch (f.type) {
         case 'state_snapshot':
+          setAsrFailure(!!f.paused && !!f.input_failed)
           if (typeof f.tts_seg_idx === 'number') lastTtsSegmentRef.current = f.tts_seg_idx
           if (f.settlement_uncertain === true) setSpeechError('\u8bfe\u5802\u7ed3\u7b97\u7ed3\u679c\u6682\u65f6\u65e0\u6cd5\u786e\u8ba4\u3002\u8bf7\u5237\u65b0\u8bfe\u7a0b\u72b6\u6001\u540e\u518d\u7ee7\u7eed\uff0c\u4e0d\u8981\u91cd\u590d\u63d0\u4ea4\u3002')
           if (typeof f.teacher_text === 'string') setBubble(f.teacher_text)
           console.debug('[classroom_media]', { lesson_id: lessonId, phase: phaseRef.current })
-          setSnapshot({ phase: f.phase, word: f.word, quiz_word: f.quiz_word,
-            zhMeaning: f.zhMeaning, paused: f.paused })
+          setSnapshot({ phase: f.phase, word: f.word, quiz_word: f.quiz_word, quiz_item: f.quiz_item,
+            word_idx: f.word_idx, in_reteach: f.in_reteach,
+            zhMeaning: f.zhMeaning, paused: f.paused, input_failed: f.input_failed })
           phaseRef.current = f.phase
           // 朗读唯一驱动源=play_tts 帧（此快照朗读曾是"英文读两遍"根因——删除）
           break
@@ -492,12 +506,12 @@ export default function ClassroomPage() {
               break
             case 'start_repeat':
               console.log(`[TTS-recv] start_repeat phase=${phaseRef.current} ttsQueueLen=${ttsQueueRef.current.length}`)
-              setSnapshot((s) => ({ ...(s ?? { phase: 'repeating' }), phase: 'repeating', paused: false }))
+              setSnapshot((s) => ({ ...(s ?? { phase: 'repeating' }), phase: 'repeating', word: a.word ?? s?.word, paused: false }))
               if (f.context) grantInput(f.context, 'repeating')
               phaseRef.current = 'repeating' // 禁后续 TTS（回声抑制）
               break
             case 'show_quiz_item':
-              setSnapshot((s) => ({ ...(s ?? { phase: 'wait_answer' }), phase: 'wait_answer', quiz_word: a.word, paused: false }))
+              setSnapshot((s) => ({ ...(s ?? { phase: 'wait_answer' }), phase: 'wait_answer', quiz_word: a.word, quiz_item: f.quiz_item, paused: false }))
               phaseRef.current = 'wait_answer'
               setJudge(null)
               if (f.context) grantInput(f.context, 'wait_answer', false, 'show_quiz_item')
@@ -557,6 +571,8 @@ export default function ClassroomPage() {
     stopListening()
     onlineRef.current = false; inputGate.current.reset(); setInputTurn(null); updateAnswer('')
     setSnapshot(null); setBubble(''); setEnded(false); setSummary(null); setWsOk(false)
+    asrFailurePendingRef.current = ''
+    asrCaptureStartedRef.current = ''
     resumeRequestRef.current++
     lastFrameRef.current = { epoch: '', seq: 0 }
     setResuming(false)
@@ -567,6 +583,7 @@ export default function ClassroomPage() {
       const r = await api.post<EnterResult>(`/classroom/lessons/${lessonId}/enter`)
       if (!current()) throw new ApiError('Session changed', 401)
       setSnapshot(r.snapshot)
+      setAsrFailure(!!r.snapshot.paused && !!r.snapshot.input_failed)
       if (typeof r.snapshot.tts_seg_idx === 'number') lastTtsSegmentRef.current = r.snapshot.tts_seg_idx
       if (typeof r.snapshot.teacher_text === 'string') setBubble(r.snapshot.teacher_text)
       if (r.snapshot.context) {
@@ -595,11 +612,10 @@ export default function ClassroomPage() {
   const [listening, setListening] = useState(false)
   const [localStage, setLocalStage] = useState<'idle' | 'preparing' | 'recording' | 'transcribing'>('idle')
 
-  const stopListening = useCallback(() => {
-    localRecordingRef.current?.abort()
+  const stopBrowserListening = useCallback(() => {
+    const wasBrowserListening = listenActiveRef.current
     listenActiveRef.current = false
-    setListening(false)
-    setLocalStage('idle')
+    if (wasBrowserListening) setListening(false)
     try {
       recogRef.current?.stop()
     } catch {
@@ -608,7 +624,15 @@ export default function ClassroomPage() {
     recogRef.current = null
   }, [])
 
+  const stopListening = useCallback(() => {
+    localRecordingRef.current?.abort()
+    setListening(false)
+    setLocalStage('idle')
+    stopBrowserListening()
+  }, [stopBrowserListening])
+
   const startListening = useCallback(() => {
+    if (textOnlyInputRef.current.startsWith(`${lessonId}:${phaseRef.current}:`)) return
     if (providersRef.current?.local !== false) return // Unknown or local mode must not invoke a browser cloud recognizer.
     if (listenActiveRef.current) return
     const capture = inputGate.current.ready
@@ -660,7 +684,7 @@ export default function ClassroomPage() {
       listenActiveRef.current = false
       setListening(false)
     }
-  }, [])
+  }, [lessonId])
 
   const sendEvent = (event: string, text?: string, context = contextRef.current) => {
     if (event === 'answer_submitted' && (localStorage.getItem('token') !== sessionToken ||
@@ -751,8 +775,26 @@ export default function ClassroomPage() {
   }
 
   const phase = snapshot?.phase || 'show_word'
-  const resumeClassroom = async () => {
+  useEffect(() => {
+    if (snapshot && textOnlyInputRef.current && textOnlyInputRef.current !== inputIdentity(phase, snapshot)) {
+      textOnlyInputRef.current = ''
+      sessionStorage.removeItem(textOnlyStorageKey)
+      setTextOnlyMode(false)
+      setAsrFailure(false)
+    }
+  }, [phase, snapshot?.word, snapshot?.word_idx, snapshot?.in_reteach, snapshot?.quiz_word, snapshot?.quiz_item?.seq, textOnlyStorageKey])
+  const resumeClassroom = async (textOnly = false) => {
     if (resuming) return
+    asrFailurePendingRef.current = ''
+    asrCaptureStartedRef.current = ''
+    const recoveringInput = asrFailure
+    if (asrFailure) {
+      textOnlyInputRef.current = textOnly ? inputIdentity(phase, snapshot) : ''
+      if (textOnly) sessionStorage.setItem(textOnlyStorageKey, textOnlyInputRef.current)
+      else sessionStorage.removeItem(textOnlyStorageKey)
+      setTextOnlyMode(textOnly)
+      setAsrFailure(false)
+    }
     const request = ++resumeRequestRef.current
     const before = { ...lastFrameRef.current }
     setResuming(true)
@@ -761,13 +803,17 @@ export default function ClassroomPage() {
       const frames = await api.post<Frame[]>(`/classroom/lessons/${lessonId}/resume`)
       if (request !== resumeRequestRef.current) return
       applyFrames(frames)
+      setSpeechError('')
       // Nonempty recovery is governed by accepted business frames. An empty
       // successful response means already resumed, but cannot override a newer pause.
       if (frames.length === 0 && lastFrameRef.current.epoch === before.epoch && lastFrameRef.current.seq === before.seq) {
         setSnapshot(s => s ? { ...s, paused: false } : s)
       }
     } catch (error) {
-      if (request === resumeRequestRef.current) setResumeError((error as Error).message)
+      if (request === resumeRequestRef.current) {
+        if (recoveringInput) { textOnlyInputRef.current = ''; sessionStorage.removeItem(textOnlyStorageKey); setTextOnlyMode(false); setAsrFailure(true) }
+        setResumeError((error as Error).message)
+      }
     } finally {
       if (request === resumeRequestRef.current) setResuming(false)
     }
@@ -776,18 +822,36 @@ export default function ClassroomPage() {
     if (snapshot?.paused || phase === 'repeating' || phase === 'lesson_end') cancelTts()
   }, [phase, snapshot?.paused, cancelTts])
 
+  const readyContextKey = inputTurn ? `${inputTurn.epoch}:${inputTurn.turn}:${phase}` : ''
+  const activeTextOnly = !!snapshot && textOnlyInputRef.current === inputIdentity(phase, snapshot)
   useEffect(() => {
-    if (!inputTurn || !inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) return
+    if (!inputTurn || !inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) {
+      if (inputTurn && (phase === 'repeating' || phase === 'wait_answer')) console.debug('[classroom_asr_gate]', { event: 'not_ready', phase, turn: inputTurn.turn })
+      return
+    }
+    const captureKey = readyContextKey
+    if (asrFailurePendingRef.current === captureKey || asrCaptureStartedRef.current === captureKey || activeTextOnly) {
+      console.debug('[classroom_asr_gate]', { event: 'capture_blocked', phase, turn: inputTurn.turn,
+        failed: asrFailurePendingRef.current === captureKey, started: asrCaptureStartedRef.current === captureKey, text_only: activeTextOnly })
+      return
+    }
     if (!wsOk || !providers?.asr || !lessonId || ended || snapshot?.paused || !['repeating', 'wait_answer'].includes(phase)) return
     if (new URLSearchParams(location.search).get('e2e') === '1') return
+    asrCaptureStartedRef.current = captureKey
+    console.debug('[classroom_asr_gate]', { event: 'capture_started', phase, turn: inputTurn.turn })
     const controller = new AbortController()
     localRecordingRef.current = controller
     const listen = async () => {
       try {
         while (!controller.signal.aborted) {
           setLocalStage('preparing')
-          if (!inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) return
+          if (!inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) {
+            console.debug('[classroom_asr_gate]', { event: 'before_record_rejected', phase, turn: inputTurn.turn,
+              online: onlineRef.current, ready: inputGate.current.ready?.turn, current: contextRef.current.turn })
+            return
+          }
           const captureContext = { epoch: inputTurn.epoch, turn: inputTurn.turn }
+          console.debug('[classroom_asr_gate]', { event: 'before_record', phase, turn: inputTurn.turn })
           const text = await recordLocal(lessonId, phase === 'repeating' ? 'en' : 'zh', controller.signal, stage => {
             if (controller.signal.aborted || localRecordingRef.current !== controller || localStorage.getItem('token') !== sessionToken ||
               !inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) return
@@ -795,27 +859,44 @@ export default function ClassroomPage() {
           })
           if (controller.signal.aborted || localStorage.getItem('token') !== sessionToken ||
             !inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) return
+          console.debug('[classroom_asr_gate]', { event: 'transcript_ready', phase, turn: inputTurn.turn, text_length: text.length })
           sendVoiceRef.current?.(text, captureContext)
           // One transcript per turn; a changed question/phase starts a fresh capture.
           break
         }
       } catch (e) {
-        if (!controller.signal.aborted) setSpeechError((e as Error).message)
+        console.debug('[classroom_asr_gate]', { event: 'capture_error', phase, turn: inputTurn.turn,
+          name: (e as Error).name, aborted: controller.signal.aborted })
+        if (!controller.signal.aborted && localRecordingRef.current === controller &&
+          inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) {
+          if (asrFailurePendingRef.current === captureKey) return
+          asrFailurePendingRef.current = captureKey
+          setSpeechError(`语音识别失败：${(e as Error).message}`)
+          setAsrFailure(true)
+          sendEventRef.current?.('asr_failed', undefined, { epoch: inputTurn.epoch, turn: inputTurn.turn })
+        }
       } finally { if (!controller.signal.aborted && localRecordingRef.current === controller) { setListening(false); setLocalStage('idle') } }
     }
     void listen()
-    return () => { controller.abort(); setListening(false); setLocalStage('idle') }
-  }, [inputTurn, wsOk, providers?.asr, lessonId, phase, snapshot?.word, snapshot?.quiz_word, snapshot?.paused, ended, userId, sessionToken])
+    return () => {
+      controller.abort()
+      if (asrCaptureStartedRef.current === captureKey && asrFailurePendingRef.current !== captureKey) {
+        asrCaptureStartedRef.current = ''
+        console.debug('[classroom_asr_gate]', { event: 'capture_aborted', phase, turn: inputTurn.turn })
+      }
+      setListening(false); setLocalStage('idle')
+    }
+  }, [readyContextKey, wsOk, providers?.asr, lessonId, phase, snapshot?.paused, ended, sessionToken, activeTextOnly])
 
   // 相位驱动：进跟读/答题自动开麦；离场停麦（phase 声明之后）
   useEffect(() => {
-    if (inputTurn && inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn) && wsOk && !snapshot?.paused && (phase === 'wait_answer' || phase === 'repeating')) {
+    if (!textOnlyInputRef.current && inputTurn && inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn) && wsOk && !snapshot?.paused && (phase === 'wait_answer' || phase === 'repeating')) {
       const t = setTimeout(() => startListening(), 300) // 等 UI 稳定
-      return () => { clearTimeout(t); stopListening() }
+      return () => { clearTimeout(t); stopBrowserListening() }
     }
-    stopListening()
+    stopBrowserListening()
     return undefined
-  }, [inputTurn, wsOk, snapshot?.paused, phase, startListening, stopListening])
+  }, [inputTurn, wsOk, snapshot?.paused, phase, startListening, stopBrowserListening, textOnlyMode])
   useEffect(() => () => stopListening(), [stopListening])
 
   const bigWord = phase === 'repeating' || phase === 'tts_seg' ? snapshot?.word
@@ -865,8 +946,9 @@ export default function ClassroomPage() {
         <Input.TextArea aria-label="待确认反馈正文" value={undeliveredFeedback?.text || ''}
           onChange={e => setUndeliveredFeedback(value => value ? { ...value, text: e.target.value } : value)} />
       </Modal>
-      {snapshot?.paused && <Alert type="info" title="课堂已暂停" description={resumeError || '休息好了就重试当前学习进度。'}
-        action={<><Button loading={resuming} disabled={resuming} onClick={() => void resumeClassroom()}>重试当前段</Button>
+      {snapshot?.paused && <Alert type="info" title="课堂已暂停" description={resumeError || (asrFailure ? '语音识别失败，当前题目已保留。请选择重试语音或使用文字。' : '休息好了就重试当前学习进度。')}
+        action={<><Button loading={resuming} disabled={resuming} onClick={() => void resumeClassroom(false)}>{asrFailure ? '重试语音' : '重试当前段'}</Button>
+          {asrFailure && <Button loading={resuming} disabled={resuming} onClick={() => void resumeClassroom(true)}>继续并使用文字</Button>}
           {(phase === 'tts_seg' || phase === 'reteach_show') && <Button onClick={() => sendEvent('tts_skip', String(lastTtsSegmentRef.current))}>改用文字，跳过本段</Button>}</>} />}
       {connectionError && <Alert type="error" title={connectionError.message} action={<>
         <Button onClick={() => window.location.reload()}>重新连接课堂</Button>
@@ -965,7 +1047,7 @@ export default function ClassroomPage() {
           <>
             {/* Speech is primary; typed fallback goes through the same server RepeatMatch gate. */}
             <Tag color={listening ? 'processing' : 'default'} aria-live="polite">
-              {listening ? '🎙 跟读：大声读出这个词～' : providers?.local && !providers.asr ? '语音暂不可用，请使用文字跟读' : '准备跟读…'}
+              {textOnlyMode ? '已切换文字跟读' : listening ? '🎙 跟读：大声读出这个词～' : providers?.local && !providers.asr ? '语音暂不可用，请使用文字跟读' : '准备跟读…'}
             </Tag>
             <Input
               size="large"
@@ -988,7 +1070,7 @@ export default function ClassroomPage() {
           <>
             {/* 默认语音监听指示（无需点击；识别结果自动提交） */}
             <Tag color={listening ? 'processing' : 'default'} aria-live="polite">
-              {!inputTurn ? '正在恢复题目，请稍候' : listening ? '🎙 正在听你说…（说出中文意思，或说“认识/不会”）' : providers?.local && !providers.asr ? '语音暂不可用，请使用文字作答' : '语音就绪'}
+              {!inputTurn ? '正在恢复题目，请稍候' : textOnlyMode ? '已切换文字作答' : listening ? '🎙 正在听你说…（说出中文意思，或说“认识/不会”）' : providers?.local && !providers.asr ? '语音暂不可用，请使用文字作答' : '语音就绪'}
             </Tag>
             <Input
               ref={inputRef}

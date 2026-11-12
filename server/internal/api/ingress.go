@@ -78,6 +78,20 @@ func (r *Room) HandleClientEventContext(ctx context.Context, e ClientEnvelope, e
 	}
 	r.inputContext = ctx
 	defer func() { r.inputContext = nil }()
+	if ev.Type == "asr_failed" {
+		state := r.machine.Snapshot()
+		if state.Paused || (state.Phase != classroom.PhaseRepeating && state.Phase != classroom.PhaseWaitAnswer) {
+			return r.rejectedLocked(e)
+		}
+		_ = r.machine.PauseForInputFailure()
+		r.app.Log.ErrorCtx(r.traceContext(), "classroom", "asr_input_failed", map[string]any{
+			"lesson_id": r.lessonID, "event_id": e.EventID, "phase": state.Phase, "epoch": e.Context.Epoch, "turn": e.Context.Turn,
+		})
+		out := r.broadcastLocked()
+		done := Msg{"type": "event_processed", "event_id": e.EventID}
+		r.emitLocked(done)
+		return append(out, done)
+	}
 	if ev.Type == "tts_failed" || ev.Type == "tts_skip" {
 		state := r.machine.Snapshot()
 		segment := r.machine.PlaybackSegment()

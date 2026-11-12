@@ -343,6 +343,9 @@ func (r *Room) snapshotLocked() Msg {
 		"type": "state_snapshot", "seq": r.nextSeqLocked(), "teacher_text": r.teacherText,
 		"lesson_id": r.lessonID, "phase": phase, "tts_seg_idx": r.machine.PlaybackSegment(),
 		"paused": r.machine.Paused(), "context": r.contextLocked(),
+		"input_failed": r.machine.Snapshot().InputFailed,
+		"word_idx":     r.machine.Snapshot().WordIdx,
+		"in_reteach":   r.machine.Snapshot().InReteach,
 	}
 	if r.settlementUncertain {
 		m["settlement_uncertain"] = true
@@ -887,7 +890,16 @@ func (r *Room) Resume() []Msg {
 	defer r.mu.Unlock()
 	r.inputContext = lease.Context()
 	defer func() { r.inputContext = nil }()
+	wasPaused := r.machine.Paused()
 	r.machine.Resume()
+	if wasPaused && !r.machine.Paused() &&
+		(r.machine.Phase() == classroom.PhaseRepeating || r.machine.Phase() == classroom.PhaseWaitAnswer) {
+		// A long ASR outage must not consume the answer window while paused.
+		r.phaseSince = r.app.Clock.Now()
+		r.app.Log.InfoCtx(r.traceContext(), "classroom", "input_window_restarted", map[string]any{
+			"lesson_id": r.lessonID, "phase": r.machine.Phase(), "epoch": r.contextLocked().Epoch, "turn": r.contextLocked().Turn,
+		})
+	}
 	return r.broadcastLocked()
 }
 

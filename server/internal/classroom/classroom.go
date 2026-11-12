@@ -189,18 +189,19 @@ type State struct {
 	ReviewIdx  int
 	ReviewSeg  int
 	// 统计
-	Consec     map[int64]int
-	Judged     map[QuizItemID]Judgment
-	Mastered   map[int64]bool
-	ReteachN   map[int64]int
-	FirstWrong map[int64]bool
-	FinalWrong []int64
-	Streak     int
-	StreakBest int
-	AnswerMs   []int
-	StartedAt  time.Time
-	Paused     bool
-	Finished   bool
+	Consec      map[int64]int
+	Judged      map[QuizItemID]Judgment
+	Mastered    map[int64]bool
+	ReteachN    map[int64]int
+	FirstWrong  map[int64]bool
+	FinalWrong  []int64
+	Streak      int
+	StreakBest  int
+	AnswerMs    []int
+	StartedAt   time.Time
+	Paused      bool
+	InputFailed bool
+	Finished    bool
 }
 
 // Machine 课堂状态机（单课堂单 goroutine 驱动）。
@@ -486,6 +487,17 @@ func (m *Machine) PauseForPlaybackFailure() error {
 		return nil
 	}
 	m.state.Paused = true
+	m.acts = append(m.acts, Action{Type: ActLessonPaused})
+	return nil
+}
+
+// PauseForInputFailure preserves the current answer opportunity when ASR fails.
+func (m *Machine) PauseForInputFailure() error {
+	if m.state.Paused || (m.state.Phase != PhaseRepeating && m.state.Phase != PhaseWaitAnswer) {
+		return nil
+	}
+	m.state.Paused = true
+	m.state.InputFailed = true
 	m.acts = append(m.acts, Action{Type: ActLessonPaused})
 	return nil
 }
@@ -915,6 +927,7 @@ func (m *Machine) Resume() {
 		return
 	}
 	st.Paused = false
+	st.InputFailed = false
 	st.StartedAt = m.clock.Now()
 	switch st.Phase {
 	case PhaseWaitAnswer, PhaseJudging:

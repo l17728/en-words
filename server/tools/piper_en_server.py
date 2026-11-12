@@ -57,7 +57,7 @@ def parse_request(body: bytes) -> str:
 
 
 def serve(voice: PiperVoice, key: str) -> None:
-    slots = threading.BoundedSemaphore(4)
+    slots = threading.BoundedSemaphore(8)
     inference = threading.Lock()
 
     class Handler(BaseHTTPRequestHandler):
@@ -67,17 +67,18 @@ def serve(voice: PiperVoice, key: str) -> None:
             pass
 
         def answer(self, status: int, data: bytes, kind: str = "application/json") -> None:
-            self.send_response(status)
-            self.send_header("Content-Type", kind)
-            self.send_header("Content-Length", str(len(data)))
-            self.send_header("Cache-Control", "no-store")
-            self.send_header("Connection", "close")
-            self.end_headers()
-            self.close_connection = True
             try:
+                self.send_response(status)
+                self.send_header("Content-Type", kind)
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("Connection", "close")
+                self.end_headers()
                 self.wfile.write(data)
-            except (BrokenPipeError, ConnectionResetError):
+            except (ConnectionError, OSError):
                 pass
+            finally:
+                self.close_connection = True
 
         def authenticated(self) -> bool:
             if self.headers.get("Authorization") != f"Bearer {key}":
@@ -154,7 +155,10 @@ def serve(voice: PiperVoice, key: str) -> None:
                                   "model": MODEL, "duration_ms": round((time.monotonic() - started) * 1000),
                                   "outcome": outcome}), flush=True)
 
-    server = ThreadingHTTPServer(("127.0.0.1", 8003), Handler)
+    class BoundedServer(ThreadingHTTPServer):
+        request_queue_size = 32
+
+    server = BoundedServer(("127.0.0.1", 8003), Handler)
     print(json.dumps({"module": "tts_en", "event": "ready", "model": MODEL}), flush=True)
     server.serve_forever(poll_interval=0.2)
 

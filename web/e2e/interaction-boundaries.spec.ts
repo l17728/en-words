@@ -76,7 +76,7 @@ test('unheard English pauses the same segment and retry plays it before advancin
   await media(page, 'no_voice')
   await page.route('**/api/v1/providers', route => route.fulfill({ json: { code: 0, data: { local: true, asr: false, tts_zh: false, tts_en: false } } }))
   await login(page, f.username)
-  await page.goto(`/classroom/${id}?e2e=1`)
+  await page.goto(`/classroom/${id}`)
   await expect(page.getByText('课堂已暂停', { exact: true })).toBeVisible({ timeout: 30_000 })
   await expect(page.getByRole('button', { name: '改用文字，跳过本段' })).toBeVisible()
   const before = await page.evaluate(() => (window as any).__ttsDebug || [])
@@ -106,6 +106,82 @@ test('student can explicitly skip an unheard segment but the next failure pauses
   const entries = await page.evaluate(() => (window as any).__ttsDebug || [])
   expect(entries[0].failure).toBe('no_local_voice')
   await expect.poll(() => readFileSync(server.log, 'utf8').includes('explicit_no_audio')).toBe(true)
+})
+
+test('ASR failure while repeating survives reload and text completes the same lesson without recapture', async ({ page, request }) => {
+  const f = await fixture(request, 'asr-repeat-text', [{ word: 'cat', meanings: ['猫'] }])
+  const id = await scheduled(request, f)
+  await media(page)
+  await page.addInitScript(() => {
+    ;(window as any).__captureFailures = { count: 0 }
+    navigator.mediaDevices.getUserMedia = async () => {
+      ;(window as any).__captureFailures.count++
+      throw new DOMException('microphone unavailable', 'NotAllowedError')
+    }
+  })
+  await page.route('**/api/v1/providers', route => route.fulfill({ json: { code: 0, data: { local: true, asr: true, tts_zh: false, tts_en: false } } }))
+  await login(page, f.username)
+  await page.goto(`/classroom/${id}`)
+  await expect(page.getByText('课堂已暂停', { exact: true })).toBeVisible({ timeout: 60_000 })
+  await expect(page.getByRole('button', { name: '继续并使用文字' })).toBeVisible()
+  await page.reload()
+  await expect(page.getByText('课堂已暂停', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: '继续并使用文字' })).toBeVisible()
+  await page.getByRole('button', { name: '继续并使用文字' }).click()
+  await page.getByLabel('跟读文字输入框').fill('cat')
+  await page.getByRole('button', { name: '提交跟读文字' }).click()
+  await expect(page.getByText('课堂已暂停', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '继续并使用文字' }).click()
+  const captures = await page.evaluate(() => (window as any).__captureFailures.count)
+  expect(captures).toBe(1)
+  await expect(page.getByLabel('答案输入框')).toBeEnabled()
+  await page.getByLabel('答案输入框').fill('猫')
+  await page.getByRole('button', { name: /^回\s*答/ }).click()
+  await expect(page.getByText('下课啦！叮当老师的小结')).toBeVisible({ timeout: 60_000 })
+  expect(await page.evaluate(() => (window as any).__captureFailures.count)).toBe(captures)
+})
+
+test('ASR failure while answering preserves the question and a single text answer settles it', async ({ page, request }) => {
+  const f = await fixture(request, 'asr-answer-text', [{ word: 'cat', meanings: ['猫'] }])
+  const id = await scheduled(request, f)
+  await media(page)
+  await page.addInitScript(() => {
+    ;(window as any).__captureFailures = { count: 0 }
+    navigator.mediaDevices.getUserMedia = async () => {
+      ;(window as any).__captureFailures.count++
+      throw new DOMException('microphone unavailable', 'NotAllowedError')
+    }
+  })
+  let asr = false
+  await page.route('**/api/v1/providers', route => route.fulfill({ json: { code: 0, data: { local: true, asr, tts_zh: false, tts_en: false } } }))
+  await login(page, f.username)
+  await page.goto(`/classroom/${id}`)
+  await expect(page.getByLabel('跟读文字输入框')).toBeEnabled({ timeout: 60_000 })
+  await page.getByLabel('跟读文字输入框').fill('cat')
+  await page.getByRole('button', { name: '提交跟读文字' }).click()
+  await expect(page.getByLabel('答案输入框')).toBeEnabled()
+  asr = true
+  await page.reload()
+  await expect(page.getByText('课堂已暂停', { exact: true })).toBeVisible({ timeout: 30_000 })
+  let resumeCalls = 0
+  await page.route('**/classroom/lessons/*/resume', route => {
+    resumeCalls++
+    if (resumeCalls === 1) return route.fulfill({ status: 503, json: { code: 503, msg: 'temporary failure' } })
+    return route.continue()
+  })
+  await page.getByRole('button', { name: '继续并使用文字' }).click()
+  await expect(page.getByText('课堂已暂停', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: '重试语音' })).toBeEnabled()
+  await expect(page.getByRole('button', { name: '继续并使用文字' })).toBeEnabled()
+  await page.getByRole('button', { name: '继续并使用文字' }).click()
+  const captures = await page.evaluate(() => (window as any).__captureFailures.count)
+  expect(captures).toBe(1)
+  await expect(page.getByLabel('答案输入框')).toBeEnabled()
+  await page.getByLabel('答案输入框').fill('猫')
+  await page.getByRole('button', { name: /^回\s*答/ }).click()
+  await expect(page.getByText('下课啦！叮当老师的小结')).toBeVisible({ timeout: 60_000 })
+  await expect(page.getByText(/首答率 100%/)).toBeVisible()
+  expect(await page.evaluate(() => (window as any).__captureFailures.count)).toBe(captures)
 })
 
 test('browser ended without speech start cannot acknowledge a segment', async ({ page, request }) => {
