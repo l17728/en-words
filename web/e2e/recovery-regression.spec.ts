@@ -328,11 +328,12 @@ for (const mode of ['no_voice', 'error', 'throw', 'timeout']) {
     await page.goto(`/classroom/${id}?e2e=1`)
     expect((await (await entered).json()).code).toBe(0)
     await expect.poll(() => playbackScheduled).toBe(true)
-    await expect(page.getByText('语音播放失败，请先看屏幕文字；老师会稍后继续。', { exact: true })).toBeVisible()
+    await expect(page.getByText('语音播放失败，课堂已暂停。请重试当前段，或确认改用文字。', { exact: true })).toBeVisible()
     await expect(page.getByRole('status', { name: '当前朗读字幕' })).toHaveText('')
     expect(sent.filter(f => f.event === 'tts_finished')).toHaveLength(0)
     expect((await page.evaluate(() => (window as any).__ttsDebug)).some((s: any) => s.status === 'failed')).toBe(true)
-    await expect(page.getByText('轮到你读了！大声一点没关系', { exact: true })).toBeVisible({ timeout: 45_000 })
+    await expect(page.getByText('课堂已暂停', { exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: '重试当前段' })).toBeVisible()
     expect(sent.filter(f => f.event === 'tts_finished')).toHaveLength(0)
   })
 }
@@ -466,7 +467,8 @@ for (const boundary of ['bad_decode', 'exit', 'account_change']) test(`recording
   expect(await page.evaluate(() => (window as any).__decode.stopped)).toBeGreaterThan(0)
   if (boundary === 'bad_decode') {
     await page.evaluate(() => (window as any).__decode.reject())
-    await expect(page.getByText('录音解码失败，请使用文字输入', { exact: true })).toBeVisible()
+    await expect(page.getByRole('alert').filter({ hasText: '录音解码失败，请使用文字输入' })).toBeVisible()
+    await expect(page.getByRole('button', { name: '继续并使用文字' })).toBeVisible()
   } else if (boundary === 'exit') {
     await page.getByRole('button', { name: /^退\s*出$/ }).click()
     await page.getByRole('dialog').getByRole('button', { name: /^退\s*出$/ }).click()
@@ -823,11 +825,13 @@ for (const recovery of ['phase', 'pause']) test(`SUB03 ${recovery} snapshot canc
       }
     })
     await media(other, 'hold'); await login(other, b.username)
+    await page.clock.install({ time: new Date() })
     // Install before the first play_tts frame can schedule its native watchdog.
     // Keep the fake clock running until the frame is observed, then pause it.
     await other.clock.install({ time: new Date() })
     await page.evaluate(id => { window.history.pushState({}, '', `/classroom/${id}?e2e=1`); window.dispatchEvent(new PopStateEvent('popstate')) }, id)
     await expect.poll(() => page.evaluate(() => (window as any).__media.utterances.length)).toBeGreaterThan(0)
+    await page.clock.pauseAt(new Date((await page.evaluate(() => Date.now())) + 1000))
     await other.routeWebSocket('**/ws/classroom?*', socket => {
       const upstream = socket.connectToServer(); const queue: (string | Buffer)[] = []
       const sendToClient = (message: string | Buffer) => {
@@ -918,10 +922,14 @@ for (const recovery of ['phase', 'pause']) test(`SUB03 ${recovery} snapshot canc
     expect(delivered).toEqual(observed); expect(errors).toEqual([]); expect(expired).toBe(false)
     expect(clientBusinessSeqs).toEqual([...clientBusinessSeqs].sort((left, right) => left - right))
     await expect.poll(() => buffered).toBeGreaterThan(0)
-    expect(expired).toBe(false); await other.clock.resume(); release()
-    // Actual client application of the released successor, not merely socket.send evidence.
+    expect(expired).toBe(false); release()
+    // The released successor is this student's own timeout pause. Verify that
+    // the client applies it and never replays stale audio after the other
+    // student's synthetic snapshot.
     await expect.poll(() => other.evaluate(() => (window as any).__media.canceled)).toBeGreaterThan(bCanceled)
-    await expect.poll(() => other.evaluate(() => (window as any).__media.utterances.length)).toBeGreaterThan(1)
+    await expect(other.getByText('课堂已暂停', { exact: true })).toBeVisible()
+    await expect(bCaption).toHaveText('')
+    expect(await other.evaluate(() => (window as any).__media.utterances.length)).toBe(1)
     expect(errors).toEqual([])
   } finally {
     try {
@@ -950,6 +958,7 @@ for (const recovery of ['phase', 'pause']) test(`SUB03 ${recovery} snapshot canc
       await testInfo.attach('sub03-b-runtime-diagnostic-error', { body: String(error), contentType: 'text/plain' })
     }
     await other.clock.resume().catch(() => {})
+    await page.clock.resume().catch(() => {})
     releaseFirstPlayback('finally'); release('finally'); clearTimeout(timer)
     try {
       const diagnostic = await page.evaluate(() => {

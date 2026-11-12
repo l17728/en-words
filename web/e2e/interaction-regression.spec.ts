@@ -127,7 +127,7 @@ test('IX05 media body deadline visibly fails without pretending playback or ACK 
  await login(page,f.username);await page.goto(`/classroom/${id}?e2e=1`);await expect.poll(()=>page.evaluate(()=>(window as any).__networkDeadline.held)).toBe(true)
  expect(sent.filter(f=>f.event==='tts_finished')).toHaveLength(1)
  await page.evaluate(()=>{(window as any).__media.mode='error';for(const expire of (window as any).__networkDeadline.timers.values())expire()})
- await expect(page.getByText(/语音播放失败，请先看屏幕文字/)).toBeVisible();expect(await page.evaluate(()=>(window as any).__networkDeadline.players)).toBe(0)
+ await expect(page.getByText(/语音播放失败，课堂已暂停/)).toBeVisible();expect(await page.evaluate(()=>(window as any).__networkDeadline.players)).toBe(0)
  await expect(page.getByRole('status',{name:'当前朗读字幕'})).toHaveText('');expect(sent.filter(f=>f.event==='tts_finished')).toHaveLength(1)
 })
 

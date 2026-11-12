@@ -21,6 +21,7 @@ export const test = base.extend<{ duplexPilot: boolean; localModel: boolean; mod
       applySchemaConnectionPolicy(modelSchema, res)
       res.setHeader('Content-Type', 'application/json')
       if (req.url === '/api/models') { res.end(JSON.stringify({ services: [{ id: 'vl', model: 'TEST-ONLY', capabilities: ['text'] }] })); return }
+      if (req.url === '/api/status') { res.end(JSON.stringify({ services: [{ id: 'vl', status: 'ready' }] })); return }
       let raw = ''
       req.on('data', chunk => { raw += chunk })
       req.on('end', () => {

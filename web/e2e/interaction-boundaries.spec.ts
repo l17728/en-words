@@ -37,6 +37,8 @@ test('local speech becomes available after status refresh while text input remai
   const before = checks
   await expect.poll(() => checks, { timeout: 12_000 }).toBeGreaterThan(before)
   await expect(page.getByText(/语音暂不可用，请使用文字(跟读|作答)/)).toBeVisible()
+  await expect(page.getByRole('button', { name: '继续并使用文字' })).toBeVisible()
+  await page.getByRole('button', { name: '继续并使用文字' }).click()
   const repeatVisible = await page.getByLabel('跟读文字输入框').isVisible()
   const answerVisible = await page.getByLabel('答案输入框').isVisible()
   expect(repeatVisible || answerVisible).toBe(true)

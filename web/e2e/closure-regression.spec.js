@@ -389,7 +389,7 @@ test('injected pause/resume protocol cancels delay and deduplicates recovery spe
     await new Promise(resolve => setTimeout(resolve, 30))
     await route.fulfill({ json: { code: 0, data: [show, play] } })
   })
-  const resumeButton = page.getByRole('button', { name: /^(?:loading\s*)?继续课堂$/ })
+  const resumeButton = page.getByRole('button', { name: /^(?:loading\s*)?重试当前段$/ })
   await resumeButton.click()
   await expect(page.getByText('网络连接失败；操作结果待确认，请先查询状态，勿重复提交', { exact: true })).toBeVisible()
   await expect(page.getByText('课堂已暂停', { exact: true })).toBeVisible()
