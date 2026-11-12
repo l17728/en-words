@@ -8,14 +8,14 @@ import (
 
 func TestControlsRejectNegationQuestionsAndFuzzySuffixes(t *testing.T) {
 	p := New(nil)
-	for _, text := range []string{"不跳过", "不要跳过", "不会吗", "跳过？", "不是不会", "跳过这个词然后退出", "下一下", "嗯嗯下一个啊", "跳过!!", "跳过.！", "\"跳过\""} {
+	for _, text := range []string{"不跳过", "不要跳过", "我不想跳过", "我想跳过吗", "我想挑过", "不会吗", "跳过？", "不是不会", "跳过这个词然后退出", "下一下", "嗯嗯下一个啊", "跳过!!", "跳过.！", "\"跳过\""} {
 		t.Run(text, func(t *testing.T) { cmd, ok := p.Match(text); assert.False(t, ok); assert.Empty(t, cmd) })
 	}
 }
 
 func TestControlExactNormalizationAndFeedbackIsolation(t *testing.T) {
 	p := New(nil)
-	for _, text := range []string{"跳过", "跳过这个词", "不会", " 跳过。 ", "下一个！", "继续!"} {
+	for _, text := range []string{"跳过", "跳过这个词", "我想跳过", "不会", " 跳过。 ", "下一个！", "继续!"} {
 		_, ok := p.Match(text)
 		assert.True(t, ok, text)
 	}

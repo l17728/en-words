@@ -74,7 +74,7 @@ test('RP01 repeated target alone advances; meaning and wrong word never invoke L
   } finally { await context.close() }
 })
 
-test('RP02 negated and questioned controls never skip; an exact skip advances only its owner', async ({ page, request, server, browser, baseURL }, info) => {
+test('RP02 negated and questioned controls never skip; an explicit skip advances only its owner', async ({ page, request, server, browser, baseURL }, info) => {
   const a = await fixture(request, 'repeat-control'); const b = await fixture(request, 'control-other')
   // Legitimate student policy gives this explicit multi-input scenario enough time;
   // HTTP/expect/startup deadlines remain unchanged, and pre-submit phase is asserted.
@@ -90,7 +90,23 @@ test('RP02 negated and questioned controls never skip; an exact skip advances on
     await openRepeat(page, a.username, aid)
     const before = (await api(request, `/classroom/lessons/${aid}/enter`, a.student.token)).snapshot.context
     const commands: string[] = []
-    for (const text of ['不跳过', '不要跳过', '不会吗', '跳过？', '不是不会', '跳过<不是命令>']) {
+    const oversized = await page.evaluate(async ({ lessonId, context }) => {
+      const response = await fetch(`/api/v1/classroom/lessons/${lessonId}/event`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+        body: JSON.stringify({ event: 'answer_submitted', text: '我想跳过' + 'x'.repeat(2048), context, event_id: 'oversized-repeat' }),
+      })
+      return response.json()
+    }, { lessonId: aid, context: before })
+    expect(oversized.code).not.toBe(0)
+    expect((await api(request, `/classroom/lessons/${aid}/enter`, a.student.token)).snapshot.context).toEqual(before)
+    // The visible fallback field must preserve the raw tag until intent routing.
+    await page.getByLabel('跟读文字输入框').fill('我想跳过<不是命令>')
+    await page.getByRole('button', { name: '提交跟读文字' }).click()
+    await expect(page.getByRole('button', { name: /^cat/ })).toBeVisible()
+    expect((await api(request, `/classroom/lessons/${aid}/enter`, a.student.token)).snapshot.context).toEqual(before)
+    const rejected = ['不跳过', '不要跳过', '不会吗', '跳过？', '不是不会', '跳过<不是命令>', '我想跳过<不是命令>', '我不想跳过', '我想跳过吗', '我想挑过']
+    for (const text of rejected) {
       const response = await postClassroom(page, `/classroom/lessons/${aid}/voice`, { text })
       expect(response.code).toBe(0)
       const frames = Array.isArray(response.data) ? response.data : response.data.frames
@@ -100,9 +116,10 @@ test('RP02 negated and questioned controls never skip; an exact skip advances on
       expect((await api(request, `/classroom/lessons/${aid}/enter`, a.student.token)).snapshot.context).toEqual(before)
       await expect(page.getByText('轮到你读了！大声一点没关系', { exact: true })).toBeVisible()
       await expect(page.getByRole('button', { name: /^cat/ })).toBeVisible()
+      await expect(other.getByRole('button', { name: /^cat/ })).toBeVisible()
       expect(server.model.judgeCalls).toBe(0)
     }
-    const skipped = await postClassroom(page, `/classroom/lessons/${aid}/voice`, { text: '跳过' })
+    const skipped = await postClassroom(page, `/classroom/lessons/${aid}/voice`, { text: '我想跳过' })
     expect(skipped.code).toBe(0)
     const frames = Array.isArray(skipped.data) ? skipped.data : skipped.data.frames
     const receipt = frames.find((frame: any) => frame.type === 'event_processed')
@@ -111,10 +128,25 @@ test('RP02 negated and questioned controls never skip; an exact skip advances on
     await expect(page.getByRole('button', { name: /^dog/ })).toBeVisible()
     await expect(other.getByRole('button', { name: /^cat/ })).toBeVisible()
     expect(server.model.judgeCalls).toBe(0)
-    await expect.poll(() => events(server.log).filter(event => event.event === 'repeat_evaluated' && event.trace_id === `lesson-${aid}`).length).toBe(6)
+    await expect.poll(() => events(server.log).filter(event => event.event === 'repeat_evaluated' && event.trace_id === `lesson-${aid}`).length).toBe(rejected.length + 1)
     const repeats = events(server.log).filter(event => event.event === 'repeat_evaluated' && event.trace_id === `lesson-${aid}`)
-    expect(repeats.map(event => event.result)).toEqual(Array(6).fill('no_match'))
-    expect(commands).toEqual(['', '', '', '', '', '', 'skip'])
+    expect(repeats.map(event => event.result)).toEqual(Array(rejected.length + 1).fill('no_match'))
+    expect(commands).toEqual([...rejected.map(() => ''), 'skip'])
+    // Exercise the actual fallback controls, including the quiz answer path.
+    await expect.poll(() => page.evaluate(() => (window as any).__media.completed.length)).toBeGreaterThanOrEqual(8)
+    await expect(page.getByLabel('跟读文字输入框')).toBeEnabled()
+    await page.getByLabel('跟读文字输入框').fill('我想跳过')
+    await page.getByRole('button', { name: '提交跟读文字' }).click()
+    await expect(page.getByLabel('答案输入框')).toBeEnabled()
+    await page.getByLabel('答案输入框').fill('我想跳过')
+    await page.getByRole('button', { name: '回答' }).click()
+    await expect.poll(() => events(server.log).filter(event => event.event === 'quiz_skipped' && event.trace_id === `lesson-${aid}`).length).toBe(1)
+    await expect(page.getByLabel('答案输入框')).toBeEnabled()
+    await page.getByLabel('答案输入框').fill('我想跳过<不是命令>')
+    await page.getByRole('button', { name: '回答' }).click()
+    await expect.poll(() => events(server.log).filter(event => event.event === 'judge_decision' && event.trace_id === `lesson-${aid}`).length).toBeGreaterThan(0)
+    expect(events(server.log).filter(event => event.event === 'quiz_skipped' && event.trace_id === `lesson-${aid}`)).toHaveLength(1)
+    await expect(other.getByRole('button', { name: /^cat/ })).toBeVisible()
     await info.attach('exact-control-evidence', { body: JSON.stringify({ lessonId: aid, otherLessonId: bid, providerCalls: server.model.judgeCalls, commands, repeats, controls: events(server.log).filter(event => event.module === 'voicecmd' || event.event === 'repeat_evaluated') }), contentType: 'application/json' })
   } finally { await context.close() }
 })

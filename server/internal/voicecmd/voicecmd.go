@@ -34,7 +34,7 @@ type Table map[string][]string
 func DefaultTable() Table {
 	return Table{
 		CmdNext:        {"下一个", "继续", "下一题", "下一词"},
-		CmdSkip:        {"跳过", "跳过这个词", "不会", "过"},
+		CmdSkip:        {"跳过", "跳过这个词", "我想跳过", "不会", "过"},
 		CmdReplay:      {"重听", "再读一遍", "重听一遍"},
 		CmdPause:       {"暂停", "暂停一下", "歇会"},
 		CmdExit:        {"退出", "退出课堂", "下课"},

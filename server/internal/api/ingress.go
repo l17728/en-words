@@ -78,8 +78,8 @@ func (r *Room) HandleClientEventContext(ctx context.Context, e ClientEnvelope, e
 	}
 	r.inputContext = ctx
 	defer func() { r.inputContext = nil }()
-	if ev.Type == classroom.EvAnswerSubmitted && r.machine.Phase() == classroom.PhaseWaitAnswer &&
-		r.voiceParser.MatchesPhrase(ev.Text, "跳过", "跳过这个词", "过") {
+	if ev.Type == classroom.EvAnswerSubmitted && r.machine.Phase() == classroom.PhaseWaitAnswer && !r.machine.Paused() &&
+		r.voiceParser.MatchesPhrase(ev.Text, "跳过", "跳过这个词", "我想跳过", "过") {
 		item := r.machine.CurrentItem().QuizItemID
 		ev = classroom.Event{Type: classroom.EvQuizSkipped, Item: &item}
 		r.app.Log.InfoCtx(r.traceContext(), "classroom", "quiz_skipped", map[string]any{
@@ -87,6 +87,7 @@ func (r *Room) HandleClientEventContext(ctx context.Context, e ClientEnvelope, e
 			"outcome": "wrong_advance", "reason": "explicit_skip",
 		})
 	}
+	ev.Text = sanitizeText(ev.Text)
 	r.app.Log.InfoCtx(r.traceContext(), "classroom", "event_received", map[string]any{"lesson_id": r.lessonID, "event_id": e.EventID, "request_trace_id": obs.TraceID(ctx), "event_type": ev.Type})
 	out := r.handleEventLocked(ev)
 	if r.retired {

@@ -341,7 +341,11 @@ func (a *App) Router() *gin.Engine {
 			c.JSON(http.StatusOK, fail(errBadRequest, "unknown event"))
 			return
 		}
-		msgs := room.HandleClientEventContext(c.Request.Context(), in.ClientEnvelope, classroom.Event{Type: in.Event, Text: sanitizeText(in.Text)})
+		if len(in.Text) > 2048 {
+			c.JSON(http.StatusOK, fail(errBadRequest, "event text too long"))
+			return
+		}
+		msgs := room.HandleClientEventContext(c.Request.Context(), in.ClientEnvelope, classroom.Event{Type: in.Event, Text: in.Text})
 		a.writeClassroomResponse(c, id, ok(msgs))
 	})
 	cr.POST("/lessons/:id/voice", func(c *gin.Context) {

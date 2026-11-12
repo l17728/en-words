@@ -388,7 +388,7 @@ func TestQuizSkipFromAnswerEventUsesSkipTransition(t *testing.T) {
 	item := room.Machine().CurrentItem().QuizItemID
 	before := room.contextLocked()
 	frames := room.HandleClientEvent(ClientEnvelope{Context: before, EventID: "typed-explicit-skip"},
-		classroom.Event{Type: classroom.EvAnswerSubmitted, Text: "跳过！"})
+		classroom.Event{Type: classroom.EvAnswerSubmitted, Text: "我想跳过！"})
 	assert.NotEqual(t, item, room.Machine().CurrentItem().QuizItemID)
 	assert.Equal(t, classroom.JudgmentWrong, room.Machine().Snapshot().Judged[item])
 	assert.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase())
@@ -400,7 +400,7 @@ func TestQuizSkipFromAnswerEventUsesSkipTransition(t *testing.T) {
 	assert.Contains(t, logs.String(), `"event":"quiz_skipped"`)
 	assert.NotContains(t, logs.String(), "跳过")
 	voiceItem := room.Machine().CurrentItem().QuizItemID
-	command, _ := room.HandleVoiceText("跳过")
+	command, _ := room.HandleVoiceText("我想跳过")
 	assert.Equal(t, voicecmd.CmdSkip, command)
 	assert.NotEqual(t, voiceItem, room.Machine().CurrentItem().QuizItemID, "voice skip advances one quiz item")
 
@@ -416,6 +416,35 @@ func TestQuizSkipFromAnswerEventUsesSkipTransition(t *testing.T) {
 	assert.Equal(t, classroom.PhaseJudging, room.Machine().Phase())
 	assert.Equal(t, judgingItem, room.Machine().CurrentItem().QuizItemID)
 	assert.Empty(t, room.Machine().DrainActions(), "duplicate confirmation must not queue another judge request")
+}
+
+func TestQuizSkipChecksRawAnswerBeforeSanitizing(t *testing.T) {
+	app, clk := newTestApp(t)
+	var logs bytes.Buffer
+	app.Log = obs.New(&logs)
+	atok, _ := loginGet(t, app, "admin", "adminpw")
+	bid := seedBook(t, app, atok, "quiz-raw-skip", "g7", []string{"cat", "dog", "owl", "bee", "fox"})
+	_, err := app.Auth.CreateUser("quiz-raw-student", "pw", "学生", auth.RoleStudent)
+	require.NoError(t, err)
+	_, uid := loginGet(t, app, "quiz-raw-student", "pw")
+	require.NoError(t, app.EnableBook(uid, bid))
+	require.NoError(t, app.PlacementSubmit(uid, bid, nil, true))
+	lessons, err := app.Sched.Lessons(uid, bid)
+	require.NoError(t, err)
+	clk.Advance(25 * time.Hour)
+	room, _, err := app.Rooms.Enter(lessons[0].ID, uid)
+	require.NoError(t, err)
+	for i := 0; i < 5; i++ {
+		teachOneRoom(room, ttsCfg{en: 3, rp: 3})
+	}
+	require.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase())
+	raw := "我想跳过<不是命令>"
+	require.Equal(t, "我想跳过", sanitizeText(raw), "fixture must reproduce the lossy sanitizer collision")
+	frames := room.HandleClientEvent(ClientEnvelope{Context: room.contextLocked(), EventID: "tagged-not-command"},
+		classroom.Event{Type: classroom.EvAnswerSubmitted, Text: raw})
+	assert.False(t, hasFrame(frames, "event_rejected"))
+	assert.NotContains(t, logs.String(), `"event":"quiz_skipped"`, "the raw tagged answer must not become a skip command")
+	assert.Contains(t, logs.String(), `"event":"event_received"`)
 }
 
 // ---- IT-06 断线重连快照 ----

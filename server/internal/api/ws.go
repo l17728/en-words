@@ -335,7 +335,11 @@ func (a *App) handleWS(c *gin.Context) {
 				if !validClassroomEvent(ev) {
 					continue
 				}
-				frames := room.HandleClientEventContext(ctx, envelope, classroom.Event{Type: ev, Text: sanitizeText(text)}, client)
+				if len(text) > 2048 {
+					_ = client.Send(Msg{"type": "event_rejected", "reason": "event_text_too_long", "event_id": envelope.EventID})
+					continue
+				}
+				frames := room.HandleClientEventContext(ctx, envelope, classroom.Event{Type: ev, Text: text}, client)
 				if len(frames) > 0 && frames[0]["type"] == "event_rejected" {
 					for _, f := range frames {
 						_ = client.Send(f)
