@@ -81,7 +81,10 @@ func New(w io.Writer) *Logger {
 		EncodeLevel:    zapcore.LowercaseLevelEncoder,
 		EncodeDuration: zapcore.StringDurationEncoder,
 	})
-	core := zapcore.NewCore(enc, zapcore.AddSync(w), zapcore.InfoLevel)
+	// io.Writer is not necessarily safe for concurrent writes (for example,
+	// bytes.Buffer in tests). Keep the logger's concurrency guarantee at this
+	// boundary instead of relying on each caller's sink implementation.
+	core := zapcore.NewCore(enc, zapcore.Lock(zapcore.AddSync(w)), zapcore.InfoLevel)
 	return &Logger{z: zap.New(core)}
 }
 

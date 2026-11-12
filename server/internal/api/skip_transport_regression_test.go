@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -14,13 +15,32 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// WebSocket handlers can still log after the client receives a frame. Keep
+// reads and writes to the test sink synchronized during those callbacks.
+type skipTestLogBuffer struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (b *skipTestLogBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.Write(p)
+}
+
+func (b *skipTestLogBuffer) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.String()
+}
+
 // A sanitizer collision must remain an ordinary answer on both public ingress
 // paths. Only the exact, raw phrase is an explicit classroom skip command.
 func TestTaggedSkipAnswerThroughRESTAndWebSocket(t *testing.T) {
 	for _, transport := range []string{"rest", "websocket"} {
 		t.Run(transport, func(t *testing.T) {
 			app, _, lessonID, room := setupRoom(t)
-			var logs bytes.Buffer
+			var logs skipTestLogBuffer
 			app.Log = obs.New(&logs)
 			for i := 0; i < 5; i++ {
 				teachOneRoom(room, ttsCfg{en: 3, rp: 3})
@@ -77,7 +97,7 @@ func TestTaggedSkipAnswerThroughRESTAndWebSocket(t *testing.T) {
 
 func TestOversizedAnswerRejectedBeforeRoomEventAndPausedSkipHasNoAudit(t *testing.T) {
 	app, clock, lessonID, room := setupRoom(t)
-	var logs bytes.Buffer
+	var logs skipTestLogBuffer
 	app.Log = obs.New(&logs)
 	for i := 0; i < 5; i++ {
 		teachOneRoom(room, ttsCfg{en: 3, rp: 3})

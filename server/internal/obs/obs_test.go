@@ -3,13 +3,50 @@ package obs
 import (
 	"context"
 	"encoding/json"
+	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
 )
+
+type concurrentWriteProbe struct {
+	active   atomic.Bool
+	overlaps atomic.Int32
+}
+
+func (p *concurrentWriteProbe) Write(b []byte) (int, error) {
+	if !p.active.CompareAndSwap(false, true) {
+		p.overlaps.Add(1)
+		return len(b), nil
+	}
+	time.Sleep(100 * time.Microsecond)
+	p.active.Store(false)
+	return len(b), nil
+}
+
+func TestNewSerializesWritesToPlainWriter(t *testing.T) {
+	probe := &concurrentWriteProbe{}
+	logger := New(probe)
+	const writers = 32
+	var group sync.WaitGroup
+	start := make(chan struct{})
+	for i := 0; i < writers; i++ {
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			<-start
+			logger.Info("classroom", "concurrent_log_probe", nil)
+		}()
+	}
+	close(start)
+	group.Wait()
+	require.Zero(t, probe.overlaps.Load(), "logger must serialize writes even when io.Writer is not concurrency safe")
+}
 
 func newTestLogger(t *testing.T) (*Logger, *observer.ObservedLogs) {
 	t.Helper()
