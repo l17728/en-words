@@ -9,6 +9,8 @@ import (
 	"errors"
 	"strings"
 	"unicode"
+
+	"enwords/internal/voicecmd"
 )
 
 // Judgment 判分结果（与 classroom.Judgment 对齐，避免包循环独立定义）。
@@ -257,18 +259,11 @@ func (j *Judge) JudgeContext(ctx context.Context, word string, meanings []string
 // quizConfirmation recognizes only complete normalized yes/no self-reports.
 // Richer answers remain on the normal meaning judgment path.
 func quizConfirmation(text string) string {
-	answer := normalizeZh(text)
-	negatives := []string{"不会", "不知道", "不认识", "不记得", "想不起来", "忘了", "不清楚", "没学过"}
-	for _, phrase := range negatives {
-		if answer == phrase {
-			return "negative"
-		}
+	if voicecmd.MatchesNormalizedAnswer(text, "不会", "我不会", "不知道", "不认识", "不记得", "想不起来", "忘了", "不清楚", "没学过") {
+		return "negative"
 	}
-	positives := []string{"会", "会了", "知道", "认识", "记得"}
-	for _, phrase := range positives {
-		if answer == phrase {
-			return "positive"
-		}
+	if voicecmd.MatchesNormalizedAnswer(text, "会", "会了", "我会了", "知道", "认识", "记得") {
+		return "positive"
 	}
 	return ""
 }

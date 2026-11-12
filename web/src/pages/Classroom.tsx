@@ -759,15 +759,23 @@ export default function ClassroomPage() {
         `/classroom/lessons/${lessonId}/voice`, { text, ...envelope })
       if (lifetime !== feedbackLifetime.current || localStorage.getItem('token') !== sessionToken) return
       applyFrames(result.frames || [])
+      const stillOriginalRepeat = inputGate.current.accepts(context, 'repeating', onlineRef.current, inputTurn)
       if ((result.frames || []).some(frame => frame.type === 'event_rejected')) {
-        updateAnswer('')
-        setSpeechError('跟读状态已更新，请按当前课堂提示继续。')
+        if (stillOriginalRepeat) {
+          updateAnswer('')
+          setSpeechError('跟读状态已更新，请按当前课堂提示继续。')
+        }
         return
       }
-      if (result.command === 'repeat_read' || result.command === 'skip') updateAnswer('')
-      else setSpeechError('未确认听到当前单词，请核对后重试，或输入“跳过”。')
+      if (stillOriginalRepeat) {
+        if (result.command === 'repeat_read' || result.command === 'skip') updateAnswer('')
+        else setSpeechError('未确认听到当前单词，请核对后重试，或输入“跳过”。')
+      }
     } catch {
-      if (lifetime === feedbackLifetime.current) setSpeechError('文字跟读结果暂未确认，正在等待课堂状态同步；请勿连续重复提交。')
+      if (lifetime === feedbackLifetime.current &&
+        inputGate.current.accepts(context, 'repeating', onlineRef.current, inputTurn)) {
+        setSpeechError('文字跟读结果暂未确认，正在等待课堂状态同步；请勿连续重复提交。')
+      }
     } finally {
       repeatFallbackFlight.current = false
       if (lifetime === feedbackLifetime.current) setRepeatFallbackPending(false)

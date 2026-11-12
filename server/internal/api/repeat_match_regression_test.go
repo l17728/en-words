@@ -124,9 +124,17 @@ func TestRepeatDoesNotUseMeaningsOrLLM(t *testing.T) {
 				}
 				assert.Equal(t, 1, observed)
 			}
-			cmd, _, _ = room.HandleClientVoiceSubmissionContext(context.Background(), ClientEnvelope{Context: room.contextLocked(), EventID: "good-repeat"}, "CAT.")
+			repeatTurn := room.contextLocked()
+			var frames []Msg
+			cmd, _, frames = room.HandleClientVoiceSubmissionContext(context.Background(), ClientEnvelope{Context: repeatTurn, EventID: "good-repeat"}, "CAT.")
 			assert.Equal(t, "repeat_read", cmd)
 			assert.Equal(t, classroom.PhaseShowWord, room.machine.Phase())
+			assert.NotEqual(t, repeatTurn, room.contextLocked(), "the successful repeat changes the input turn before the REST response is consumed")
+			for _, frame := range frames {
+				if frame["type"] == "ui_action" {
+					assert.NotEqual(t, repeatTurn, frame["context"], "new business actions must carry the new turn")
+				}
+			}
 			assert.Zero(t, llm.calls)
 			assert.Contains(t, logs.String(), `"result":"matched"`)
 			assert.Contains(t, logs.String(), `"result":"canceled"`)

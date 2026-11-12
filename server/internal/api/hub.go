@@ -583,7 +583,8 @@ func (r *Room) judgeContextLocked(ctx context.Context) []Msg {
 	}
 	r.app.Log.InfoCtx(r.traceContext(), "judge", "quiz_judged", map[string]any{
 		"lesson_id": r.lessonID, "word": w.Word, "word_id": it.WordID,
-		"kind": it.Kind, "round": it.Round,
+		"kind": it.Kind, "round": it.Round, "quiz_seq": it.Seq,
+		"epoch": r.contextLocked().Epoch, "turn": r.contextLocked().Turn,
 		"answer_length": len([]rune(answer)), "judgment": string(j)})
 	jm := Msg{"type": "judge_result", "seq": r.nextSeqLocked(),
 		"quiz_item": itemPayload(it), "judgment": string(j), "asr_text": answer}
@@ -770,7 +771,7 @@ func (r *Room) handleVoiceInputLocked(text, answerText string) (string, []Msg) {
 	ph := r.machine.Phase()
 	quiz := ph == classroom.PhaseWaitAnswer || ph == classroom.PhaseJudging
 	if quiz && r.voiceParser.MatchesNormalizedAnswer(text,
-		"会", "会了", "知道", "认识", "记得", "不会", "不知道", "不认识", "不记得", "想不起来", "忘了", "不清楚", "没学过") {
+		"会", "会了", "我会了", "知道", "认识", "记得", "不会", "我不会", "不知道", "不认识", "不记得", "想不起来", "忘了", "不清楚", "没学过") {
 		if ph == classroom.PhaseWaitAnswer {
 			return "answer_confirmation", r.handleEventLocked(classroom.Event{Type: classroom.EvAnswerSubmitted, Text: answerText})
 		}

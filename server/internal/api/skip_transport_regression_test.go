@@ -34,8 +34,8 @@ func (b *skipTestLogBuffer) String() string {
 	return b.buf.String()
 }
 
-// A sanitizer collision must remain an ordinary answer on both public ingress
-// paths. Only the exact, raw phrase is an explicit classroom skip command.
+// A sanitizer collision is rejected on both public ingress paths. Only the
+// exact, raw phrase is an explicit classroom skip command.
 func TestTaggedSkipAnswerThroughRESTAndWebSocket(t *testing.T) {
 	for _, transport := range []string{"rest", "websocket"} {
 		t.Run(transport, func(t *testing.T) {
@@ -59,6 +59,7 @@ func TestTaggedSkipAnswerThroughRESTAndWebSocket(t *testing.T) {
 				})
 				require.Equal(t, 0, result.Code)
 				require.NotEmpty(t, result.Data)
+				require.Contains(t, logs.String(), `"reason":"answer_text_changed_by_sanitizer"`)
 			} else {
 				server := httptest.NewServer(app.Router())
 				defer server.Close()
@@ -82,13 +83,13 @@ func TestTaggedSkipAnswerThroughRESTAndWebSocket(t *testing.T) {
 				for {
 					var frame Msg
 					require.NoError(t, conn.ReadJSON(&frame))
-					require.NotEqual(t, "event_rejected", frame["type"])
-					if frame["type"] == "event_processed" && frame["event_id"] == "tagged-ws" {
-						require.NotEqual(t, "skip", frame["command"])
+					if frame["type"] == "event_rejected" && frame["event_id"] == "tagged-ws" {
+						require.Equal(t, "answer_text_changed_by_sanitizer", frame["reason"])
 						break
 					}
 				}
 			}
+			require.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase())
 			require.NotContains(t, logs.String(), `"reason":"explicit_skip"`)
 			require.NotContains(t, logs.String(), `"event":"quiz_skipped"`)
 		})

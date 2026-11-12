@@ -88,8 +88,8 @@ func (f *fakeLLM) Judge(word string, meanings []string, text string) (string, er
 }
 
 func TestQuizVoiceConfirmationsAreExactAndDeterministic(t *testing.T) {
-	positives := []string{"会", "会了", "知道", "认识", "记得", " 嗯，认识！ "}
-	negatives := []string{"不会", "不知道", "不认识", "不记得", "想不起来", "忘了", "不清楚", "没学过", "嗯，不会。"}
+	positives := []string{"会", "会了", "我会了", "知道", "认识", "记得", " 嗯，认识！ "}
+	negatives := []string{"不会", "我不会", "不知道", "不认识", "不记得", "想不起来", "忘了", "不清楚", "没学过", "嗯，不会。"}
 	for _, tc := range []struct {
 		answers []string
 		want    Judgment
@@ -114,6 +114,12 @@ func TestQuizVoiceConfirmationsAreExactAndDeterministic(t *testing.T) {
 	assert.Equal(t, 1, llm.called, "negated refusal follows ordinary semantic path")
 	assert.Equal(t, JudgmentNear, j.Judge("cat", []string{"猫"}, "我认识这只猫"))
 	assert.Equal(t, 2, llm.called, "confirmation embedded in a longer answer is not a shortcut")
+	for _, answer := range []string{"“我会了”", "我会了？", "我会，了", "我不会吗", "我不是不会", "不是我会了"} {
+		var decision Decision
+		j.OnDecision = func(_ context.Context, d Decision) { decision = d }
+		j.Judge("cat", []string{"猫"}, answer)
+		assert.NotEqual(t, "confirmation", decision.Source, "unsafe self-report %q", answer)
+	}
 }
 
 func TestTwoLevelFlow(t *testing.T) { // 05 §2.1 两级判分

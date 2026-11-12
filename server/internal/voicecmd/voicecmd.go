@@ -122,37 +122,66 @@ func (p *Parser) MatchesPhrase(text string, phrases ...string) bool {
 }
 
 // MatchesNormalizedAnswer is for short quiz self-reports, not control commands.
-// It tolerates whitespace, punctuation and one leading/trailing filler while
-// still requiring the normalized whole answer to equal an approved phrase.
+// It accepts one declarative ending and one familiar filler, but preserves
+// questions, quotations and punctuation inside the actual answer.
 func (p *Parser) MatchesNormalizedAnswer(text string, phrases ...string) bool {
-	normalize := func(value string) string {
-		if !utf8.ValidString(value) || utf8.RuneCountInString(value) > 2048 {
-			return ""
-		}
-		var b strings.Builder
-		for _, r := range norm.NFC.String(strings.ToLower(value)) {
-			if unicode.IsSpace(r) || unicode.IsPunct(r) {
-				continue
-			}
-			b.WriteRune(r)
-		}
-		answer := b.String()
-		for _, filler := range []string{"嗯", "啊", "哦", "呃", "呀", "唉", "诶"} {
-			answer = strings.TrimPrefix(answer, filler)
-			answer = strings.TrimSuffix(answer, filler)
-		}
-		return answer
-	}
-	n := normalize(text)
+	return MatchesNormalizedAnswer(text, phrases...)
+}
+
+// MatchesNormalizedAnswer is shared by the voice ingress and deterministic
+// judge so speech and typed answers obey the same complete-phrase grammar.
+func MatchesNormalizedAnswer(text string, phrases ...string) bool {
+	n := normalizeAnswer(text)
 	if n == "" {
 		return false
 	}
 	for _, phrase := range phrases {
-		if n == normalize(phrase) {
+		if n == normalizeAnswer(phrase) {
 			return true
 		}
 	}
 	return false
+}
+
+func normalizeAnswer(value string) string {
+	if !utf8.ValidString(value) || utf8.RuneCountInString(value) > 2048 {
+		return ""
+	}
+	value = strings.TrimSpace(strings.ToLower(norm.NFC.String(value)))
+	if value == "" {
+		return ""
+	}
+	runes := []rune(value)
+	if strings.ContainsRune(".。!！", runes[len(runes)-1]) {
+		value = strings.TrimSpace(string(runes[:len(runes)-1]))
+	}
+	for _, filler := range []string{"嗯", "啊", "哦", "呃", "呀", "唉", "诶"} {
+		if strings.HasPrefix(value, filler) {
+			value = strings.TrimSpace(strings.TrimPrefix(value, filler))
+			if strings.HasPrefix(value, "，") {
+				value = strings.TrimSpace(strings.TrimPrefix(value, "，"))
+			} else if strings.HasPrefix(value, ",") {
+				value = strings.TrimSpace(strings.TrimPrefix(value, ","))
+			}
+			break
+		}
+	}
+	for _, filler := range []string{"嗯", "啊", "哦", "呃", "呀", "唉", "诶"} {
+		if strings.HasSuffix(value, filler) {
+			value = strings.TrimSuffix(value, filler)
+			break
+		}
+	}
+	var b strings.Builder
+	for _, r := range value {
+		if unicode.IsPunct(r) {
+			return ""
+		}
+		if !unicode.IsSpace(r) {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }
 
 // MatchFeedback 反馈捕获（前缀触发，返回指令与剩余文本作为反馈内容）。

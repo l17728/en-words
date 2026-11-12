@@ -442,9 +442,55 @@ func TestQuizSkipChecksRawAnswerBeforeSanitizing(t *testing.T) {
 	require.Equal(t, "我想跳过", sanitizeText(raw), "fixture must reproduce the lossy sanitizer collision")
 	frames := room.HandleClientEvent(ClientEnvelope{Context: room.contextLocked(), EventID: "tagged-not-command"},
 		classroom.Event{Type: classroom.EvAnswerSubmitted, Text: raw})
-	assert.False(t, hasFrame(frames, "event_rejected"))
+	assert.True(t, hasFrame(frames, "event_rejected"))
+	assert.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase())
 	assert.NotContains(t, logs.String(), `"event":"quiz_skipped"`, "the raw tagged answer must not become a skip command")
-	assert.Contains(t, logs.String(), `"event":"event_received"`)
+	assert.Contains(t, logs.String(), `"reason":"answer_text_changed_by_sanitizer"`)
+
+	for _, input := range []string{"我会了<不是确认>", "我不会<不是确认>"} {
+		command, _, voiceFrames := room.HandleClientVoiceSubmission(ClientEnvelope{Context: room.contextLocked(), EventID: "tagged-voice-" + input}, input)
+		assert.Empty(t, command)
+		assert.True(t, hasFrame(voiceFrames, "event_rejected"), input)
+		assert.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase(), input)
+	}
+}
+
+func TestQuizJudgedLogCorrelatesItemAndTurnWithoutAnswerText(t *testing.T) {
+	app, _, lessonID, room := setupRoom(t)
+	for i := 0; i < 5; i++ {
+		teachOneRoom(room, ttsCfg{en: 3, rp: 3})
+	}
+	require.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase())
+	var logs bytes.Buffer
+	app.Log = obs.New(&logs)
+	item := room.Machine().CurrentItem().QuizItemID
+	turn := room.contextLocked()
+	room.HandleClientEvent(ClientEnvelope{Context: turn, EventID: "audit-answer"},
+		classroom.Event{Type: classroom.EvAnswerSubmitted, Text: "我会了"})
+	var judged, received map[string]any
+	for _, line := range bytes.Split(logs.Bytes(), []byte("\n")) {
+		var event map[string]any
+		if json.Unmarshal(line, &event) == nil {
+			if event["event"] == "event_received" && event["event_id"] == "audit-answer" {
+				received = event
+			}
+			if event["event"] == "quiz_judged" {
+				judged = event
+			}
+		}
+	}
+	require.NotNil(t, judged)
+	require.NotNil(t, received)
+	assert.Equal(t, float64(lessonID), judged["lesson_id"])
+	assert.Equal(t, "lesson-"+itoa64(lessonID), judged["trace_id"])
+	assert.Equal(t, float64(item.WordID), judged["word_id"])
+	assert.Equal(t, float64(item.Seq), judged["quiz_seq"])
+	assert.Equal(t, turn.Epoch, judged["epoch"])
+	assert.Contains(t, judged["turn"], ":judging/")
+	assert.Equal(t, turn.Turn, received["turn"])
+	assert.Equal(t, turn.Epoch, received["epoch"])
+	assert.Equal(t, judged["trace_id"], received["trace_id"])
+	assert.NotContains(t, logs.String(), "我会了")
 }
 
 // ---- IT-06 断线重连快照 ----

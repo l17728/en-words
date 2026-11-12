@@ -97,13 +97,13 @@ func TestQuizModeRestriction(t *testing.T) { // 02 §12.1: 测试作答阶段仅
 
 func TestNormalizedQuizSelfReportMatchesOnlyWholeAnswer(t *testing.T) {
 	p := New(DefaultTable())
-	phrases := []string{"会", "会了", "知道", "认识", "记得", "不会", "不知道", "不认识", "不记得", "想不起来", "忘了", "不清楚", "没学过"}
-	for _, text := range []string{"认识", " 嗯，认识！ ", "不会。", "嗯，不会"} {
+	phrases := []string{"会", "会了", "我会了", "知道", "认识", "记得", "不会", "我不会", "不知道", "不认识", "不记得", "想不起来", "忘了", "不清楚", "没学过"}
+	for _, text := range []string{"认识", "我会了", "我不会", " 嗯，认识！ ", "不会。", "嗯，不会"} {
 		if !p.MatchesNormalizedAnswer(text, phrases...) {
 			t.Errorf("expected normalized exact match for %q", text)
 		}
 	}
-	for _, text := range []string{"不是不会", "我认识这只猫", "我会说中文"} {
+	for _, text := range []string{"不是不会", "我认识这只猫", "我会说中文", "“我会了”", "我会了？", "我会，了", "我不会吗", "我不是不会", "不是我会了"} {
 		if p.MatchesNormalizedAnswer(text, phrases...) {
 			t.Errorf("longer or negated answer must not match %q", text)
 		}

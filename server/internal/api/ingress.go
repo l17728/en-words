@@ -54,6 +54,19 @@ func (r *Room) rejectedLocked(e ClientEnvelope) []Msg {
 	r.app.Log.InfoCtx(r.traceContext(), "classroom", "event_rejected", map[string]any{"lesson_id": r.lessonID, "reason": "missing_stale_or_duplicate"})
 	return []Msg{{"type": "event_rejected", "reason": "missing_stale_or_duplicate", "context": r.contextLocked(), "event_id": e.EventID, "submission_id": e.SubmissionID}, r.snapshotLocked()}
 }
+
+// A lossy display sanitizer must never turn an ambiguous answer into a
+// deterministic teaching decision (for example, "我会了<不是确认>").
+func (r *Room) rejectLossyAnswerLocked(e ClientEnvelope, raw string) []Msg {
+	if sanitizeText(raw) == strings.TrimSpace(raw) {
+		return nil
+	}
+	r.app.Log.InfoCtx(r.traceContext(), "classroom", "event_rejected", map[string]any{
+		"lesson_id": r.lessonID, "event_id": e.EventID, "reason": "answer_text_changed_by_sanitizer",
+		"phase": r.machine.Phase(), "text_length": len([]rune(raw)),
+	})
+	return []Msg{{"type": "event_rejected", "reason": "answer_text_changed_by_sanitizer", "context": r.contextLocked(), "event_id": e.EventID, "submission_id": e.SubmissionID}, r.snapshotLocked()}
+}
 func (r *Room) HandleClientEvent(e ClientEnvelope, ev classroom.Event, source ...Client) []Msg {
 	return r.HandleClientEventContext(context.Background(), e, ev, source...)
 }
@@ -78,6 +91,11 @@ func (r *Room) HandleClientEventContext(ctx context.Context, e ClientEnvelope, e
 	}
 	r.inputContext = ctx
 	defer func() { r.inputContext = nil }()
+	if ev.Type == classroom.EvAnswerSubmitted {
+		if rejected := r.rejectLossyAnswerLocked(e, ev.Text); rejected != nil {
+			return rejected
+		}
+	}
 	if ev.Type == "asr_failed" {
 		state := r.machine.Snapshot()
 		if state.Paused || (state.Phase != classroom.PhaseRepeating && state.Phase != classroom.PhaseWaitAnswer) {
@@ -121,7 +139,7 @@ func (r *Room) HandleClientEventContext(ctx context.Context, e ClientEnvelope, e
 		})
 	}
 	ev.Text = sanitizeText(ev.Text)
-	r.app.Log.InfoCtx(r.traceContext(), "classroom", "event_received", map[string]any{"lesson_id": r.lessonID, "event_id": e.EventID, "request_trace_id": obs.TraceID(ctx), "event_type": ev.Type})
+	r.app.Log.InfoCtx(r.traceContext(), "classroom", "event_received", map[string]any{"lesson_id": r.lessonID, "event_id": e.EventID, "request_trace_id": obs.TraceID(ctx), "event_type": ev.Type, "epoch": e.Context.Epoch, "turn": e.Context.Turn})
 	out := r.handleEventLocked(ev)
 	if r.retired {
 		return nil
@@ -161,7 +179,12 @@ func (r *Room) HandleClientVoiceSubmissionContext(ctx context.Context, e ClientE
 	}
 	r.inputContext = ctx
 	defer func() { r.inputContext = nil }()
-	r.app.Log.InfoCtx(r.traceContext(), "classroom", "event_received", map[string]any{"lesson_id": r.lessonID, "event_id": e.EventID, "request_trace_id": obs.TraceID(ctx), "event_type": "voice_text", "text_length": len([]rune(text))})
+	r.app.Log.InfoCtx(r.traceContext(), "classroom", "event_received", map[string]any{"lesson_id": r.lessonID, "event_id": e.EventID, "request_trace_id": obs.TraceID(ctx), "event_type": "voice_text", "text_length": len([]rune(text)), "epoch": e.Context.Epoch, "turn": e.Context.Turn})
+	if r.machine.Phase() == classroom.PhaseWaitAnswer || r.machine.Phase() == classroom.PhaseRepeating {
+		if rejected := r.rejectLossyAnswerLocked(e, text); rejected != nil {
+			return "", "", rejected
+		}
+	}
 	var command, payload string
 	var out []Msg
 	if cmd, body, ok := r.voiceParser.MatchFeedback(text); ok {
