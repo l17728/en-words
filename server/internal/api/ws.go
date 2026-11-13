@@ -509,9 +509,8 @@ func (a *App) handleWS(c *gin.Context) {
 					shadowSession = nil
 					continue
 				}
-				shadowIdentity.InputRevision = finalRevision
 				_ = client.Send(Msg{"type": "voice_final", "event_id": envelope.EventID, "session_id": shadowIdentity.Session, "epoch": shadowIdentity.Epoch, "input_revision": finalRevision, "utterance_id": shadowIdentity.Utterance, "text": text})
-				_ = client.Send(Msg{"type": "voice_confirmation_required", "event_id": envelope.EventID, "utterance_id": shadowIdentity.Utterance, "text": text, "expires_ms": 8000})
+				_ = client.Send(Msg{"type": "voice_confirmation_required", "event_id": envelope.EventID, "session_id": shadowIdentity.Session, "epoch": shadowIdentity.Epoch, "input_revision": finalRevision, "utterance_id": shadowIdentity.Utterance, "text": text, "expires_ms": 8000})
 			case "voice_confirm":
 				if shadowSession == nil {
 					_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "stale_stream"})

@@ -187,7 +187,10 @@ func (s *Session) Preview(id Identity, revision uint64, text string) error {
 	if id != s.id || revision <= s.revision {
 		return ErrStale
 	}
-	if s.state != "capturing" {
+	if s.state != "capturing" && s.state != "confirming" {
+		return ErrState
+	}
+	if s.state == "confirming" && s.text != "" {
 		return ErrState
 	}
 	if !utf8.ValidString(text) || strings.TrimSpace(text) == "" || len([]rune(text)) > 2048 {
