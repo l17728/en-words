@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"testing"
+	"time"
 
 	"enwords/internal/duplex"
+	"enwords/internal/store"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,4 +21,14 @@ func TestDuplexWireHelpers(t *testing.T) {
 	require.Equal(t, "text_hash_mismatch", duplexReason(duplex.ErrTextHash))
 	require.Equal(t, "stale_stream", duplexReason(duplex.ErrStale))
 	require.Equal(t, "invalid_schema", duplexReason(errors.New("other")))
+}
+
+func TestDuplexReceiptRecoveryWindow(t *testing.T) {
+	now := time.Now().UTC()
+	receipt := store.DuplexReceipt{Status: "committing", UpdatedAt: now.Add(-duplexReceiptRecoveryWindow)}
+	require.True(t, duplexReceiptNeedsRecovery(receipt, now))
+	receipt.UpdatedAt = now.Add(-duplexReceiptRecoveryWindow + time.Millisecond)
+	require.False(t, duplexReceiptNeedsRecovery(receipt, now))
+	receipt.Status = "committed"
+	require.False(t, duplexReceiptNeedsRecovery(receipt, now))
 }

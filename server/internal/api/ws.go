@@ -48,6 +48,15 @@ func duplexReason(err error) string {
 	}
 }
 
+const duplexReceiptRecoveryWindow = 30 * time.Second
+
+func duplexReceiptNeedsRecovery(receipt store.DuplexReceipt, now time.Time) bool {
+	if receipt.Status != "committing" || receipt.UpdatedAt.IsZero() {
+		return false
+	}
+	return !receipt.UpdatedAt.After(now) && now.Sub(receipt.UpdatedAt) >= duplexReceiptRecoveryWindow
+}
+
 func pcm16WAV(pcm []byte, sampleRate int) []byte {
 	data := make([]byte, 44+len(pcm))
 	copy(data[0:], []byte("RIFF"))
@@ -531,6 +540,10 @@ func (a *App) handleWS(c *gin.Context) {
 					if receipt.Status == "committed" {
 						_ = client.Send(Msg{"type": "voice_confirmed", "event_id": envelope.EventID, "utterance_id": shadowIdentity.Utterance, "command": "replayed", "commit_receipt": receipt.DecisionID, "replayed": true})
 						shadowSession = nil
+						continue
+					}
+					if duplexReceiptNeedsRecovery(receipt, time.Now().UTC()) {
+						_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "commit_pending_recovery", "utterance_id": shadowIdentity.Utterance})
 						continue
 					}
 				}
