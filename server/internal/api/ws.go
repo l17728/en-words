@@ -18,6 +18,7 @@ import (
 
 	"enwords/internal/classroom"
 	"enwords/internal/duplex"
+	"enwords/internal/store"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -514,11 +515,40 @@ func (a *App) handleWS(c *gin.Context) {
 					_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": duplexReason(err)})
 					continue
 				}
+				var receipt store.DuplexReceipt
+				if a.DuplexStore != nil {
+					var err error
+					receipt, err = a.DuplexStore.PrepareReceipt(ctx, store.DuplexReceipt{
+						DecisionID: shadowIdentity.Utterance,
+						LessonID:   lessonID, StudentID: tk.StudentID,
+						Epoch: shadowIdentity.Epoch, InputRevision: uint64(revision),
+						UtteranceID: shadowIdentity.Utterance, TextHash: textHash, Status: "committing",
+					})
+					if err != nil {
+						_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "receipt_conflict"})
+						continue
+					}
+					if receipt.Status == "committed" {
+						_ = client.Send(Msg{"type": "voice_confirmed", "event_id": envelope.EventID, "utterance_id": shadowIdentity.Utterance, "command": "replayed", "commit_receipt": receipt.DecisionID, "replayed": true})
+						shadowSession = nil
+						continue
+					}
+				}
 				cmd, _, frames := room.HandleClientVoiceSubmissionContext(ctx, envelope, final, client)
 				for _, frame := range frames {
 					_ = client.Send(frame)
 				}
-				_ = client.Send(Msg{"type": "voice_confirmed", "event_id": envelope.EventID, "utterance_id": shadowIdentity.Utterance, "command": cmd})
+				if a.DuplexStore != nil && !(len(frames) > 0 && frames[0]["type"] == "event_rejected") {
+					if _, err := a.DuplexStore.FinalizeReceipt(ctx, tk.StudentID, lessonID, receipt.DecisionID); err != nil {
+						_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "commit_pending_recovery", "utterance_id": shadowIdentity.Utterance})
+						continue
+					}
+				}
+				confirmed := Msg{"type": "voice_confirmed", "event_id": envelope.EventID, "utterance_id": shadowIdentity.Utterance, "command": cmd}
+				if a.DuplexStore != nil {
+					confirmed["commit_receipt"] = receipt.DecisionID
+				}
+				_ = client.Send(confirmed)
 				shadowSession = nil
 			case "resume":
 				room.resumeClient(ctx, client)

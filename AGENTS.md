@@ -94,3 +94,7 @@ React18+AntD5+Vite+TS+Zustand / Go(Gin)+GORM+SQLite / Gorilla WS / 阿里 DashSc
 - 密钥统一存 `D:\en-words\secrets\dashscope.local.yaml`（.gitignore 已排除 secrets/ 与 *.local.yaml；**严禁 push**）：
   - DashScope API Key（sk-ws- 前缀）+ WorkspaceId `ws-rcouyh3kd6v0c7g8`：REST(qwen-flash) 与 Omni-Realtime 均实测 200/PASS。
   - 智谱 coding plan Key + 端点 `https://open.bigmodel.cn/api/coding/paas/v4`：glm-4-flash/glm-4.6/glm-4.5-air 三模型实测 200（2026-08-23，key 复用 opencode 配置，用户确认）。
+
+## 本机工具链记录
+- Go 工具链已安装：C:\Program Files\Go\bin\go.exe；格式化工具为同目录 gofmt.exe。若当前会话 PATH 未刷新，使用绝对路径执行。
+- Git 可执行文件：C:\Program Files\Git\cmd\git.exe。
