@@ -64,7 +64,9 @@ type Room struct {
 	phaseSince          time.Time
 	lastPhase           string
 	lastActions         []classroom.Action // 最近一批 machine 动作（话术层输入）
-	encourageCounter    int                // 自上次鼓励的判对数（encourageEveryN）
+	deferEffects        bool
+	deferredActions     []classroom.Action
+	encourageCounter    int // 自上次鼓励的判对数（encourageEveryN）
 }
 
 // Hub 房间表。
@@ -392,6 +394,34 @@ func (r *Room) restoreDurableSnapshot(state classroom.State) error {
 	return nil
 }
 
+// beginDeferredEffects fences external Agent/TTS/judge effects while a duplex
+// confirmation is being committed. State transitions still run and their actions
+// are retained until flushDeferredEffects is called after the commit.
+func (r *Room) beginDeferredEffects() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.deferEffects = true
+	r.deferredActions = nil
+}
+
+func (r *Room) discardDeferredEffects() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.deferEffects = false
+	r.deferredActions = nil
+}
+
+func (r *Room) flushDeferredEffects(ctx context.Context) []Msg {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if len(r.deferredActions) == 0 {
+		r.deferEffects = false
+		return nil
+	}
+	r.deferEffects = false
+	return r.broadcastEffectsLocked(ctx, true)
+}
+
 func (r *Room) currentItemView() (classroom.QuizItemView, bool) {
 	switch r.machine.Phase() {
 	case classroom.PhaseWaitAnswer, classroom.PhaseJudging, classroom.PhaseReteachShow:
@@ -463,7 +493,15 @@ func (r *Room) broadcastEffectsLocked(ctx context.Context, allowJudge bool) []Ms
 	}
 	defer effect.Release()
 	var out []Msg
-	r.lastActions = r.machine.DrainActions()
+	actions := r.machine.DrainActions()
+	if len(r.deferredActions) > 0 {
+		actions = append(r.deferredActions, actions...)
+		r.deferredActions = nil
+	}
+	r.lastActions = actions
+	if r.deferEffects {
+		return nil
+	}
 	bound, err := withTeacherEffects(ctx, r.lastActions, r.machine.Snapshot())
 	if err != nil {
 		return r.effectFailureLocked("invalid_frozen_effects")

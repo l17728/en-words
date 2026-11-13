@@ -549,16 +549,27 @@ func (a *App) handleWS(c *gin.Context) {
 				var beforeState classroom.State
 				if a.DuplexStore != nil {
 					beforeState = room.durableSnapshot()
+					room.beginDeferredEffects()
 				}
 				cmd, _, frames := room.HandleClientVoiceSubmissionContext(ctx, envelope, final, client)
-				if a.DuplexStore != nil && !(len(frames) > 0 && frames[0]["type"] == "event_rejected") {
+				rejected := len(frames) > 0 && frames[0]["type"] == "event_rejected"
+				if a.DuplexStore != nil && rejected {
+					room.discardDeferredEffects()
+				}
+				var deferredFrames []Msg
+				if a.DuplexStore != nil && !rejected {
 					if err := a.DuplexStore.CommitSnapshot(ctx, tk.StudentID, lessonID, receipt.DecisionID, room.durableSnapshot()); err != nil {
+						room.discardDeferredEffects()
 						_ = room.restoreDurableSnapshot(beforeState)
 						_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "commit_pending_recovery", "utterance_id": shadowIdentity.Utterance})
 						continue
 					}
+					deferredFrames = room.flushDeferredEffects(ctx)
 				}
 				for _, frame := range frames {
+					_ = client.Send(frame)
+				}
+				for _, frame := range deferredFrames {
 					_ = client.Send(frame)
 				}
 				confirmed := Msg{"type": "voice_confirmed", "event_id": envelope.EventID, "utterance_id": shadowIdentity.Utterance, "command": cmd}
