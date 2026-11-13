@@ -546,15 +546,20 @@ func (a *App) handleWS(c *gin.Context) {
 						continue
 					}
 				}
-				cmd, _, frames := room.HandleClientVoiceSubmissionContext(ctx, envelope, final, client)
-				for _, frame := range frames {
-					_ = client.Send(frame)
+				var beforeState classroom.State
+				if a.DuplexStore != nil {
+					beforeState = room.durableSnapshot()
 				}
+				cmd, _, frames := room.HandleClientVoiceSubmissionContext(ctx, envelope, final, client)
 				if a.DuplexStore != nil && !(len(frames) > 0 && frames[0]["type"] == "event_rejected") {
 					if err := a.DuplexStore.CommitSnapshot(ctx, tk.StudentID, lessonID, receipt.DecisionID, room.durableSnapshot()); err != nil {
+						_ = room.restoreDurableSnapshot(beforeState)
 						_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "commit_pending_recovery", "utterance_id": shadowIdentity.Utterance})
 						continue
 					}
+				}
+				for _, frame := range frames {
+					_ = client.Send(frame)
 				}
 				confirmed := Msg{"type": "voice_confirmed", "event_id": envelope.EventID, "utterance_id": shadowIdentity.Utterance, "command": cmd}
 				if a.DuplexStore != nil {

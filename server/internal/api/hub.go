@@ -381,6 +381,17 @@ func (r *Room) durableSnapshot() classroom.State {
 	return r.machine.Snapshot()
 }
 
+func (r *Room) restoreDurableSnapshot(state classroom.State) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if err := r.machine.Restore(state); err != nil {
+		return err
+	}
+	r.lastPhase = r.machine.Phase()
+	r.phaseSince = r.app.Clock.Now()
+	return nil
+}
+
 func (r *Room) currentItemView() (classroom.QuizItemView, bool) {
 	switch r.machine.Phase() {
 	case classroom.PhaseWaitAnswer, classroom.PhaseJudging, classroom.PhaseReteachShow:
