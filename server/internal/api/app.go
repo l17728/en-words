@@ -49,6 +49,7 @@ type App struct {
 	StartupError         error
 	Local                *localmodel.Client
 	DuplexPreflight      bool // Explicit isolated device preflight only; never enables teaching.
+	DuplexShadow         bool // Bounded shadow ASR upload; never mutates teaching state.
 	Auth                 *auth.Service
 	Books                *wordbook.Service
 	Cfg                  *config.Store

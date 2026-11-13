@@ -76,6 +76,7 @@ func run() (runErr error) {
 		return err
 	}
 	app.DuplexPreflight = os.Getenv("ENWORDS_DUPLEX_PILOT") == "1"
+	app.DuplexShadow = os.Getenv("ENWORDS_DUPLEX_SHADOW") == "1"
 	app.SetLogger(log)
 	if *testmode {
 		app.SetTestMode()

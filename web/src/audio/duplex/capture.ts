@@ -9,7 +9,7 @@ export class PreflightCapture {
   private context?: AudioContext
   private source?: MediaStreamAudioSourceNode
   private node?: AudioWorkletNode
-  async start(onCapabilities: (value: ReturnType<typeof capabilities>) => void, onObservation: (value: Observation) => void, authorized: () => boolean = () => true) {
+  async start(onCapabilities: (value: ReturnType<typeof capabilities>) => void, onObservation: (value: Observation) => void, authorized: () => boolean = () => true, onFrame?: (frame: Int16Array) => void) {
     this.stop(); const generation = this.generation
     const current = () => this.generation === generation && authorized()
     const releaseStale = () => { if (this.generation === generation) this.stop() }
@@ -39,6 +39,7 @@ export class PreflightCapture {
         if (event.data?.overflow) { releaseStale(); onObservation({ frames: 0, batches: 0, failure: 'buffer_overflow' }); return }
         node.port.postMessage('ack')
         for (const frame of frames.push(event.data)) {
+          onFrame?.(frame)
           count++; const events = vad.push(frame)
           if (count % 4 === 0 || events.length) onObservation({ frames: count, batches: Math.floor(count / 4), event: events.at(-1) })
         }

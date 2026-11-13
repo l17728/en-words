@@ -17,6 +17,7 @@ func TestDuplexPreflightOwnershipAndCapabilityGates(t *testing.T) {
 	router := a.Router()
 	for _, on := range []bool{false, true} {
 		a.DuplexPreflight = on
+		a.DuplexShadow = on
 		for _, tc := range []struct {
 			name, token, id string
 			code            int
@@ -35,9 +36,10 @@ func TestDuplexPreflightOwnershipAndCapabilityGates(t *testing.T) {
 				}
 				data := resp.Data.(map[string]any)
 				require.Equal(t, on, data["pilot_enabled"])
+				require.Equal(t, on, data["shadow_enabled"])
 				require.Equal(t, false, data["native_duplex"])
 				require.Equal(t, false, data["automatic_teaching"])
-				require.Equal(t, "preflight", data["mode"])
+				require.Equal(t, map[bool]string{false: "preflight", true: "shadow"}[on], data["mode"])
 				require.NotEmpty(t, data["reasons"])
 				limits := data["limits"].(map[string]any)
 				require.EqualValues(t, 8000, limits["confirmation_ms"])

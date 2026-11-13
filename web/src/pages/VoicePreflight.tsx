@@ -5,8 +5,9 @@ import { api } from '../api/client'
 import { PreflightCapture } from '../audio/duplex/capture'
 import { capabilities } from '../audio/duplex/capabilities'
 import type { Observation } from '../audio/duplex/capture'
+import { ShadowUtterance } from '../audio/duplex/shadow'
 
-type Pilot = { pilot_enabled: boolean; native_duplex: false; automatic_teaching: false; mode: 'preflight'; reasons: string[]; limits: Record<string, number> }
+type Pilot = { pilot_enabled: boolean; shadow_enabled?: boolean; native_duplex: false; automatic_teaching: false; mode: 'preflight' | 'shadow'; reasons: string[]; limits: Record<string, number> }
 export default function VoicePreflight() {
   const { lessonId } = useParams()
   return <Preflight key={lessonId} lessonId={lessonId || ''} />
@@ -21,6 +22,9 @@ function Preflight({ lessonId }: { lessonId: string }) {
   const lifetime = useRef(0)
   const busy = useRef(false)
   const [active, setActive] = useState(false)
+  const [shadowText, setShadowText] = useState('')
+  const [shadowStatus, setShadowStatus] = useState('影子识别未开始')
+  const shadow = useRef<ShadowUtterance | null>(null)
   useEffect(() => {
     const controller = new AbortController(); const epoch = ++lifetime.current
     void api.get<Pilot>(`/classroom/lessons/${lessonId}/duplex-capabilities`, { signal: controller.signal })
@@ -31,7 +35,7 @@ function Preflight({ lessonId }: { lessonId: string }) {
     return () => { lifetime.current++; busy.current = false; capture.current?.stop(); capture.current = null; controller.abort() }
   }, [lessonId])
   function stop() {
-    lifetime.current++; busy.current = false; capture.current?.stop(); capture.current = null
+    lifetime.current++; busy.current = false; capture.current?.stop(); capture.current = null; shadow.current?.cancel(); shadow.current = null
     console.info('duplex_preflight', { trace_id: `lesson-${lessonId}`, module: 'media', event: 'capture_stopped', reason: 'user' })
     setActive(false); setStatus('已停止'); setValues([]); setObservation({ frames: 0, batches: 0 })
   }
@@ -45,9 +49,21 @@ function Preflight({ lessonId }: { lessonId: string }) {
       await instance.start(value => { if (current()) { setValues(value); console.info('duplex_preflight', { trace_id: `lesson-${lessonId}`, module: 'media', event: 'media_capabilities', capabilities: value }) } }, value => {
         if (!current()) return
         setObservation(previous => ({ ...value, event: value.event || previous.event }))
-        if (value.event) console.info('duplex_preflight', { trace_id: `lesson-${lessonId}`, module: 'media', event: `vad_${value.event.type}`, frames: value.event.frames, short: value.event.short })
+        if (value.event) {
+          console.info('duplex_preflight', { trace_id: `lesson-${lessonId}`, module: 'media', event: `vad_${value.event.type}`, frames: value.event.frames, short: value.event.short })
+          if (value.event.type === 'candidate' && pilot?.shadow_enabled) { const utterance = new ShadowUtterance(); utterance.start(); shadow.current = utterance; setShadowStatus('影子识别采集中') }
+          if (value.event.type === 'endpoint' && pilot?.shadow_enabled && shadow.current) {
+            try {
+              const audio = shadow.current.end(); shadow.current = null; setShadowStatus('影子识别中')
+              const form = new FormData(); form.append('file', audio, 'shadow.wav'); form.append('language', 'zh')
+              void fetch(`/api/v1/classroom/lessons/${lessonId}/transcribe`, { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` }, body: form })
+                .then(async response => { const body = await response.json().catch(() => ({})); if (!current()) return; if (!response.ok || body.code !== 0) throw new Error('shadow_asr_failed'); setShadowText(String(body.data?.text || '')); setShadowStatus('影子识别完成') })
+                .catch(() => { if (current()) { setShadowStatus('影子识别失败，请使用文字'); console.info('duplex_shadow', { trace_id: `lesson-${lessonId}`, module: 'media', event: 'duplex_fallback', reason: 'asr_failed' }) } })
+            } catch { setShadowStatus('影子识别失败，请使用文字') }
+          }
+        }
         if (!value.frames) { setValues([]); setStatus(value.failure ? '音频处理失败，已停止' : '麦克风已断开'); if (value.failure) setError('音频处理失败，请停止后重试或使用文字'); setActive(false); busy.current = false }
-      }, current)
+      }, current, frame => { if (!current() || !pilot?.shadow_enabled || !shadow.current) return; try { shadow.current.append(frame) } catch { shadow.current = null; setShadowStatus('采集超限，请使用文字') } })
       if (current() && busy.current) { setStatus('正在本机预检'); console.info('duplex_preflight', { trace_id: `lesson-${lessonId}`, module: 'media', event: 'capture_started' }) }
       else instance.stop()
     } catch {
@@ -56,7 +72,7 @@ function Preflight({ lessonId }: { lessonId: string }) {
   }
   return <main style={{ maxWidth: 720, margin: '24px auto', padding: 16 }}>
     <Typography.Title level={2}>麦克风能力预检</Typography.Title>
-    <Alert type="info" showIcon title="仅本机观测，不上传音频、不识别、不判分" description="全双工与自动教学尚未启用。能量检测不证明真实人声识别或回声消除有效。" />
+    <Alert type="info" showIcon title={pilot?.shadow_enabled ? '影子识别：仅展示，不判分' : '仅本机观测，不上传音频、不识别、不判分'} description="全双工与自动教学尚未启用。能量检测不证明真实人声识别或回声消除有效。" />
     {error && <Alert role="alert" type="error" title={error} />}
     {!pilot && !error && <p role="status">正在读取预检权限</p>}
     {pilot && !pilot.pilot_enabled && <Alert type="warning" title="此课堂尚未开放麦克风预检" />}
@@ -72,6 +88,8 @@ function Preflight({ lessonId }: { lessonId: string }) {
       </p>)}
       <p>已观测20ms帧：{observation.frames}；80ms批次：{observation.batches}</p>
       <p>声音事件：{observation.event ? ({ candidate: '短起音候选', speech: '持续声音候选', endpoint: '声音结束候选', overflow: '达到上限，未提交' })[observation.event.type] : '等待声音'}</p>
+      <p role="status">{shadowStatus}</p>
+      {shadowText && <p data-testid="shadow-transcript">影子转写（仅展示，不判分）：{shadowText}</p>}
     </Card>
   </main>
 }

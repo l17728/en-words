@@ -1,4 +1,4 @@
-import { test, expect } from './recovery-server'
+﻿import { test, expect } from './recovery-server'
 import { fixture, scheduled, login } from './isolated-fixtures'
 import type { Page } from '@playwright/test'
 
@@ -25,8 +25,8 @@ async function audio(page: Page, mode: 'settings' | 'reject' | 'late' | 'module-
     Object.defineProperty(window, 'AudioWorkletNode', { configurable: true, value: Worklet })
   }, mode)
 }
-async function pilot(page: Page, enabled: boolean) {
-  await page.route('**/duplex-capabilities', route => route.fulfill({ json: { code: 0, data: { pilot_enabled: enabled, native_duplex: false, automatic_teaching: false, mode: 'preflight', reasons: [], limits: {} } } }))
+async function pilot(page: Page, enabled: boolean, shadow = false) {
+  await page.route('**/duplex-capabilities', route => route.fulfill({ json: { code: 0, data: { pilot_enabled: enabled, shadow_enabled: shadow, native_duplex: false, automatic_teaching: false, mode: shadow ? 'shadow' : 'preflight', reasons: [], limits: {} } } }))
 }
 
 test.describe('server pilot disabled', () => {
@@ -75,6 +75,27 @@ test('FD06 denied microphone remains recoverable and exposes text return', async
   await expect(page.getByRole('link', { name: '返回课堂，使用文字继续' })).toHaveAttribute('href', `/classroom/${id}`)
 })
 
+test('FD12 shadow recognition uploads bounded WAV for display only', async ({ page, request }) => {
+  test.setTimeout(120_000)
+  const f = await fixture(request, 'preflight-shadow'); const id = await scheduled(request, f)
+  await audio(page, 'settings'); await pilot(page, true, true); await login(page, f.username)
+  const uploads: string[] = []
+  await page.route('**/transcribe', route => { uploads.push(route.request().url()); return route.fulfill({ json: { code: 0, data: { text: '猫' } } }) })
+  await page.goto(`/classroom/${id}/voice-preflight`)
+  await page.locator('button').filter({ hasText: /开始麦克风预检/ }).click()
+  await page.evaluate(() => {
+    const state = (window as any).__preflight
+    const onmessage = state.nodes[0].port.onmessage
+    const voice = new Float32Array(320).fill(0.2)
+    const silence = new Float32Array(320)
+    onmessage({ data: voice }); for (let i = 0; i < 5; i++) onmessage({ data: voice })
+    for (let i = 0; i < 30; i++) onmessage({ data: silence })
+  })
+  await expect(page.getByTestId('shadow-transcript')).toBeVisible()
+  expect(uploads).toHaveLength(1)
+  expect(await page.evaluate(() => (window as any).__preflight.nodes.length)).toBe(1)
+})
+
 test('FD11 permission resolved after cancellation closes track and never starts old session', async ({ page, request }) => {
   const f = await fixture(request, 'preflight-late'); const id = await scheduled(request, f)
   await audio(page, 'late'); await pilot(page, true); await login(page, f.username)
@@ -99,7 +120,7 @@ test('FD01 real capability route gates owner and exposes no remote credentials',
   const response = await request.get(path, { headers: { Authorization: `Bearer ${a.student.token}` } })
   expect(response.status()).toBe(200)
   const { data } = await response.json()
-  expect(Object.keys(data).sort()).toEqual(['automatic_teaching', 'limits', 'mode', 'native_duplex', 'pilot_enabled', 'reasons'])
+  expect(Object.keys(data).sort()).toEqual(['automatic_teaching', 'limits', 'mode', 'native_duplex', 'pilot_enabled', 'reasons', 'shadow_enabled'])
   expect(data).toMatchObject({ pilot_enabled: true, native_duplex: false, automatic_teaching: false, mode: 'preflight' })
   await audio(page, 'settings'); await login(page, a.username); await page.goto(`/classroom/${id}/voice-preflight`)
   await expect(page.getByRole('button', { name: '开始麦克风预检' })).toBeEnabled()

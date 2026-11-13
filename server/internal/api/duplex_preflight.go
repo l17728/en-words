@@ -23,7 +23,15 @@ func (a *App) registerDuplexPreflight(g *gin.RouterGroup) {
 		if !a.DuplexPreflight {
 			reasons = append([]string{"pilot_disabled"}, reasons...)
 		}
-		c.JSON(200, ok(gin.H{"pilot_enabled": a.DuplexPreflight, "mode": "preflight", "native_duplex": false, "automatic_teaching": false,
+		shadowEnabled := a.DuplexPreflight && a.DuplexShadow
+		if a.DuplexPreflight && !a.DuplexShadow {
+			reasons = append([]string{"shadow_disabled"}, reasons...)
+		}
+		mode := "preflight"
+		if shadowEnabled {
+			mode = "shadow"
+		}
+		c.JSON(200, ok(gin.H{"pilot_enabled": a.DuplexPreflight, "shadow_enabled": shadowEnabled, "mode": mode, "native_duplex": false, "automatic_teaching": false,
 			"reasons": reasons, "limits": gin.H{"sample_rate": 16000, "frame_ms": 20, "batch_ms": 80, "preroll_ms": 300, "tail_ms": 200, "endpoint_ms": 600, "max_utterance_ms": 15000, "confirmation_ms": 8000}}))
 	})
 }
