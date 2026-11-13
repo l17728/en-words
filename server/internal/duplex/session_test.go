@@ -133,6 +133,19 @@ func TestConfirmationSingleCommitAndOutputCancellation(t *testing.T) {
 	require.False(t, s.OutputValid("r", "l"))
 	require.Error(t, s.Start(n))
 }
+
+func TestConfirmWithHashBindsDisplayedText(t *testing.T) {
+	now := time.Unix(100, 0)
+	s, err := New(Identity{Session: "s", Epoch: "e", InputRevision: 1, Utterance: "u"})
+	require.NoError(t, err)
+	require.NoError(t, s.Start(now))
+	require.NoError(t, s.Chunk(s.id, 0, make([]byte, 640), now.Add(time.Millisecond)))
+	require.NoError(t, s.Preview(s.id, 1, "cat"))
+	require.NoError(t, s.End(now.Add(3*time.Millisecond)))
+	require.ErrorIs(t, s.ConfirmWithHash(s.id, 1, "cat", TextHash("dog"), now.Add(4*time.Millisecond)), ErrTextHash)
+	// A mismatch must not consume the confirmation state.
+	require.NoError(t, s.ConfirmWithHash(s.id, 1, "cat", TextHash("cat"), now.Add(5*time.Millisecond)))
+}
 func TestInputFailuresNeverBecomeTeachingCommit(t *testing.T) {
 	for _, mode := range []string{"gap", "odd", "empty", "oversize", "capture_timeout", "end_timeout", "confirm_timeout", "conflict", "cancel"} {
 		t.Run(mode, func(t *testing.T) {

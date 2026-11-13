@@ -3,6 +3,8 @@ package duplex
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
@@ -21,6 +23,7 @@ var (
 	ErrState    = errors.New("duplex: invalid state")
 	ErrConflict = errors.New("duplex: confirmation required")
 	ErrTimeout  = errors.New("duplex: deadline exceeded")
+	ErrTextHash = errors.New("duplex: text hash mismatch")
 )
 
 type Identity struct {
@@ -209,6 +212,16 @@ func (s *Session) End(now time.Time) error {
 	return nil
 }
 func (s *Session) Confirm(id Identity, revision uint64, final string, now time.Time) error {
+	return s.confirm(id, revision, final, "", now)
+}
+
+// ConfirmWithHash is the production-safe confirmation path. The hash binds
+// the text shown to the user to the text that will enter the teaching line.
+func (s *Session) ConfirmWithHash(id Identity, revision uint64, final, textHash string, now time.Time) error {
+	return s.confirm(id, revision, final, textHash, now)
+}
+
+func (s *Session) confirm(id Identity, revision uint64, final, textHash string, now time.Time) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if id != s.id || revision != s.revision {
@@ -224,12 +237,22 @@ func (s *Session) Confirm(id Identity, revision uint64, final string, now time.T
 	if !utf8.ValidString(final) || len([]rune(final)) > 2048 || strings.TrimSpace(final) == "" {
 		return ErrProtocol
 	}
+	if textHash != "" && textHash != TextHash(final) {
+		return ErrTextHash
+	}
 	if !Agree(s.text, final) {
 		s.state = "needs_confirmation"
 		return ErrConflict
 	}
 	s.state = "verified"
 	return nil
+}
+
+// TextHash returns the stable SHA-256 binding used by voice_confirm and the
+// durable commit receipt. It hashes the exact UTF-8 confirmation text.
+func TextHash(text string) string {
+	sum := sha256.Sum256([]byte(text))
+	return hex.EncodeToString(sum[:])
 }
 func (s *Session) Cancel() {
 	s.mu.Lock()
