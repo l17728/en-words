@@ -12,10 +12,12 @@ import unittest
 from types import SimpleNamespace
 from pathlib import Path
 from unittest.mock import patch
+from unittest.mock import AsyncMock
 
 from first_audio_matrix_control import (
     MatrixProtocolError,
     MatrixCommandRejected,
+    MatrixControlProcess,
     RUN_ID_RE,
     _matrix_fixture_login,
     _linux_descendant_groups,
@@ -46,6 +48,17 @@ from first_audio_matrix_control import (
 
 
 class MatrixControlBoundaryTests(unittest.TestCase):
+    def test_bind_uses_cold_start_budget_for_cgo_sqlite_startup(self):
+        control = object.__new__(MatrixControlProcess)
+        control.command = AsyncMock(return_value={"data": {}})
+
+        result = asyncio.run(control.bind())
+
+        self.assertEqual({}, result)
+        control.command.assert_awaited_once_with(
+            "bind", {"fixture": "first_audio_v1"}, 60.0
+        )
+
     def test_build_environment_keeps_go_caches_explicit_when_home_is_private(self):
         with patch.dict(os.environ, {"GOPATH": "", "GOMODCACHE": "", "GOCACHE": "",
                                     "LOCALAPPDATA": "C:/Users/test/AppData/Local"}, clear=False):

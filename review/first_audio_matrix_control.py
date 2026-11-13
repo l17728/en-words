@@ -876,7 +876,11 @@ class MatrixControlProcess:
         raise MatrixCommandRejected(response, command, stage)
 
     async def bind(self) -> dict[str, Any]:
-        return (await self.command("bind", {"fixture": "first_audio_v1"}, 5.0))["data"]
+        # The first bind performs CGO SQLite initialization, fixture seeding,
+        # guard installation, and guarded api.App startup.  On Windows the
+        # cold path can legitimately exceed the short steady-state protocol
+        # budget used by metadata/reset commands.
+        return (await self.command("bind", {"fixture": "first_audio_v1"}, 60.0))["data"]
 
     async def metadata(self) -> dict[str, Any]:
         return (await self.command("metadata", {}, 5.0))["data"]
