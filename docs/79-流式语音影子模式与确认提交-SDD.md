@@ -80,3 +80,9 @@ start 请求包含 `protocol_version:1`、客户端 `event_id`、`context{epoch,
 ## 7. 发布门
 
 先完成文档 review，再实现协议和影子模式；影子模式 Go/Playwright 全绿后才接确认提交。自动教学、真实 VAD 声学门、回声/噪声和真人课堂试点另行验收，不与本阶段合并放行。
+
+## 8. 当前实现增量（2026-11-13）
+
+已实现第一阶段的安全子集：服务端通过 `ENWORDS_DUPLEX_PILOT=1` 开启设备预检，再通过独立的 `ENWORDS_DUPLEX_SHADOW=1` 开启影子转写；两者均未开启时不会请求麦克风。浏览器端以 20ms PCM16 帧聚合为有界 WAV，调用既有 `/transcribe`，只展示结果，不进入判分、机会消耗、课堂推进或持久化成绩。采集超限、停止、权限变化和转写失败均回到文字路径。
+
+本增量不实现 WebSocket 流式协议、`voice_confirm`、SQLite 提交收据或正式课堂接入；这些仍是下一阶段的独立开发门，必须在 Go 与 Playwright 全量验证后才能启用。
