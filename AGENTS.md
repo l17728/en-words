@@ -40,7 +40,7 @@ React18+AntD5+Vite+TS+Zustand / Go(Gin)+GORM+SQLite / Gorilla WS / 阿里 DashSc
 - 后端覆盖率门：核心模块≥80%，状态机/调度/判分/反馈≥90%。
 - **当前台账（2026-08-23 总验收门后，15 包全绿+vet 净）**：agent 97.4 / voiceclone 94.6 / obs 92.6 / classroom 92.3 / scheduler 92.1 / voicecmd 92.1 / scripts 91.3 / judge 91.9 / memory 90.6 / tools 90.4 / feedback 96.1 / auth 87.1 / config 84.3 / wordbook 84.2 / api 81.0。IT-01..12 集成测试全绿（REST+真WS往返+断线恢复+重启恢复+语音反馈闭环）。
 - 前端骨架：web/（Vite+React18+AntD5+Zustand，07-UX 主题落地）5 核心页构建通过（登录/广场/摸底/课程表/课堂），e2e/smoke.spec.ts 冒烟位就绪。
-- -race 需 cgo（本机无 gcc）：CI 待办。
+- `-race` 需要 cgo；本机已具备便携式 WinLibs GCC，不依赖系统 PATH。历史上曾记录为“本机无 gcc”，该记录已过时。
 
 ## 部署与首启（SDD §17 双击即用，2026-08-23）
 - 首次启动：无 admin 时 `GET/POST /api/v1/bootstrap` 引导创建首个管理员（随后封死）；main 检测无 admin 自动 AutoSeed 播种 7 库 5568 词（幂等）。
@@ -98,3 +98,4 @@ React18+AntD5+Vite+TS+Zustand / Go(Gin)+GORM+SQLite / Gorilla WS / 阿里 DashSc
 ## 本机工具链记录
 - Go 工具链已安装：C:\Program Files\Go\bin\go.exe；格式化工具为同目录 gofmt.exe。若当前会话 PATH 未刷新，使用绝对路径执行。
 - Git 可执行文件：C:\Program Files\Git\cmd\git.exe。
+- GCC/CGO 工具链已安装（WinLibs GCC 16.2.0）：`D:\en-words-toolchain\winlibs-gcc-16.2.0\toolchain\mingw64\bin\gcc.exe`，C++ 编译器为同目录 `g++.exe`。运行 Go race 测试前，将该目录临时放到当前进程 PATH，或设置 `CC` 为上述绝对路径；不要假设新会话已经继承 PATH。
