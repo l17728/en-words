@@ -3,7 +3,9 @@
 package api
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"enwords/internal/auth"
 	"enwords/internal/obs"
@@ -15,6 +17,7 @@ import (
 	"unicode/utf8"
 
 	"enwords/internal/classroom"
+	"enwords/internal/duplex"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -27,6 +30,47 @@ var (
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true }, // 同源部署
+}
+
+func duplexReason(err error) string {
+	switch {
+	case errors.Is(err, duplex.ErrStale):
+		return "stale_stream"
+	case errors.Is(err, duplex.ErrTextHash):
+		return "text_hash_mismatch"
+	case errors.Is(err, duplex.ErrTimeout):
+		return "stream_expired"
+	case errors.Is(err, duplex.ErrProtocol):
+		return "invalid_audio_format"
+	default:
+		return "invalid_schema"
+	}
+}
+
+func pcm16WAV(pcm []byte, sampleRate int) []byte {
+	data := make([]byte, 44+len(pcm))
+	copy(data[0:], []byte("RIFF"))
+	putLE32(data[4:], uint32(36+len(pcm)))
+	copy(data[8:], []byte("WAVEfmt "))
+	putLE32(data[16:], 16)
+	putLE16(data[20:], 1)
+	putLE16(data[22:], 1)
+	putLE32(data[24:], uint32(sampleRate))
+	putLE32(data[28:], uint32(sampleRate*2))
+	putLE16(data[32:], 2)
+	putLE16(data[34:], 16)
+	copy(data[36:], []byte("data"))
+	putLE32(data[40:], uint32(len(pcm)))
+	copy(data[44:], pcm)
+	return data
+}
+
+func putLE16(dst []byte, value uint16) { dst[0] = byte(value); dst[1] = byte(value >> 8) }
+func putLE32(dst []byte, value uint32) {
+	dst[0] = byte(value)
+	dst[1] = byte(value >> 8)
+	dst[2] = byte(value >> 16)
+	dst[3] = byte(value >> 24)
 }
 
 // wsClient 适配 Client 接口；写串行化（gorilla 单写者约束）。
@@ -307,6 +351,10 @@ func (a *App) handleWS(c *gin.Context) {
 		envelope ClientEnvelope
 	}
 	inputs := make(chan queuedWSInput, 16)
+	var shadowSession *duplex.Session
+	var shadowIdentity duplex.Identity
+	var shadowPCM bytes.Buffer
+	var shadowNextSeq uint64
 	workerDone := make(chan struct{})
 	go func() {
 		defer close(workerDone)
@@ -377,6 +425,101 @@ func (a *App) handleWS(c *gin.Context) {
 						_ = client.Send(Msg{"type": "feedback_reply", "submission_id": rec.SubmissionID, "status": rec.Status, "reply": rec.Reply, "feedback": rec})
 					}
 				}
+			case "voice_stream_start":
+				if !a.DuplexShadow || a.Local == nil {
+					_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "feature_disabled"})
+					continue
+				}
+				if shadowSession != nil {
+					_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "already_active"})
+					continue
+				}
+				room.mu.Lock()
+				turn := room.contextLocked()
+				inputRevision := room.turnVersion
+				room.mu.Unlock()
+				shadowIdentity = duplex.Identity{Session: newToken(), Epoch: turn.Epoch, InputRevision: inputRevision, Utterance: newToken()}
+				var err error
+				shadowSession, err = duplex.New(shadowIdentity)
+				if err != nil || shadowSession.Start(time.Now()) != nil {
+					shadowSession = nil
+					_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "invalid_schema"})
+					continue
+				}
+				shadowPCM.Reset()
+				shadowNextSeq = 0
+				_ = client.Send(Msg{"type": "voice_stream_start_ack", "event_id": envelope.EventID, "session_id": shadowIdentity.Session, "epoch": shadowIdentity.Epoch, "input_revision": shadowIdentity.InputRevision, "utterance_id": shadowIdentity.Utterance})
+			case "voice_stream_chunk":
+				if shadowSession == nil {
+					_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "stale_stream"})
+					continue
+				}
+				seq, seqOK := m["chunk_seq"].(float64)
+				encoded, audioOK := m["audio"].(string)
+				pcm, err := base64.StdEncoding.DecodeString(encoded)
+				if !seqOK || !audioOK || uint64(seq) != shadowNextSeq {
+					_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "chunk_out_of_order"})
+					shadowSession = nil
+					continue
+				}
+				if err = shadowSession.Chunk(shadowIdentity, uint64(seq), pcm, time.Now()); err != nil {
+					_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": duplexReason(err)})
+					shadowSession = nil
+					continue
+				}
+				_, _ = shadowPCM.Write(pcm)
+				shadowNextSeq++
+				_ = client.Send(Msg{"type": "voice_stream_ack", "event_id": envelope.EventID, "chunk_seq": uint64(seq)})
+			case "voice_stream_cancel":
+				if shadowSession != nil {
+					shadowSession.Cancel()
+					shadowSession = nil
+					shadowPCM.Reset()
+				}
+				_ = client.Send(Msg{"type": "voice_stream_canceled", "event_id": envelope.EventID})
+			case "voice_stream_end":
+				if shadowSession == nil {
+					_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "stale_stream"})
+					continue
+				}
+				if err := shadowSession.End(time.Now()); err != nil {
+					_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": duplexReason(err)})
+					shadowSession = nil
+					continue
+				}
+				text, err := a.Local.Transcribe(ctx, pcm16WAV(shadowPCM.Bytes(), 16000), "recording.wav", "zh")
+				if err != nil || !validVoiceText(text) {
+					_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "asr_failed"})
+					shadowSession = nil
+					continue
+				}
+				finalRevision := shadowIdentity.InputRevision + 1
+				if err := shadowSession.Preview(shadowIdentity, finalRevision, text); err != nil {
+					_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "asr_failed"})
+					shadowSession = nil
+					continue
+				}
+				shadowIdentity.InputRevision = finalRevision
+				_ = client.Send(Msg{"type": "voice_final", "event_id": envelope.EventID, "session_id": shadowIdentity.Session, "epoch": shadowIdentity.Epoch, "input_revision": finalRevision, "utterance_id": shadowIdentity.Utterance, "text": text})
+				_ = client.Send(Msg{"type": "voice_confirmation_required", "event_id": envelope.EventID, "utterance_id": shadowIdentity.Utterance, "text": text, "expires_ms": 8000})
+			case "voice_confirm":
+				if shadowSession == nil {
+					_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "stale_stream"})
+					continue
+				}
+				final, _ := m["text"].(string)
+				revision, _ := m["input_revision"].(float64)
+				textHash, _ := m["text_hash"].(string)
+				if err := shadowSession.ConfirmWithHash(shadowIdentity, uint64(revision), final, textHash, time.Now()); err != nil {
+					_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": duplexReason(err)})
+					continue
+				}
+				cmd, _, frames := room.HandleClientVoiceSubmissionContext(ctx, envelope, final, client)
+				for _, frame := range frames {
+					_ = client.Send(frame)
+				}
+				_ = client.Send(Msg{"type": "voice_confirmed", "event_id": envelope.EventID, "utterance_id": shadowIdentity.Utterance, "command": cmd})
+				shadowSession = nil
 			case "resume":
 				room.resumeClient(ctx, client)
 			}

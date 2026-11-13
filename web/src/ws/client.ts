@@ -2,6 +2,7 @@
 export type Frame = Record<string, any>
 export type TurnContext = { epoch: string; turn: string }
 export type Envelope = { context: TurnContext; event_id: string }
+export type DuplexIdentity = { session_id: string; epoch: string; input_revision: number; utterance_id: string }
 
 type Handlers = {
   onFrame: (f: Frame) => void
@@ -137,6 +138,29 @@ export class ClassroomWS {
 
   sendVoiceText(text: string, envelope: Envelope, submissionId?: string): boolean {
     return this.send({ type: 'voice_text', text, submission_id: submissionId, ...envelope })
+  }
+
+  sendVoiceStreamStart(envelope: Envelope, language = 'zh'): boolean {
+    return this.send({ type: 'voice_stream_start', language, sample_rate: 16000, channels: 1, mode: 'shadow', ...envelope })
+  }
+
+  sendVoiceStreamChunk(identity: DuplexIdentity, seq: number, pcm: Int16Array, envelope: Envelope): boolean {
+    const bytes = new Uint8Array(pcm.buffer, pcm.byteOffset, pcm.byteLength)
+    let binary = ''
+    for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+    return this.send({ type: 'voice_stream_chunk', audio: btoa(binary), chunk_seq: seq, ...identity, ...envelope })
+  }
+
+  sendVoiceStreamEnd(identity: DuplexIdentity, envelope: Envelope): boolean {
+    return this.send({ type: 'voice_stream_end', ...identity, ...envelope })
+  }
+
+  sendVoiceStreamCancel(identity: DuplexIdentity, envelope: Envelope): boolean {
+    return this.send({ type: 'voice_stream_cancel', ...identity, ...envelope })
+  }
+
+  sendVoiceConfirm(identity: DuplexIdentity, text: string, textHash: string, envelope: Envelope): boolean {
+    return this.send({ type: 'voice_confirm', text, text_hash: textHash, ...identity, ...envelope })
   }
 
   close(): void {
