@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { api, fixture, scheduled, login } from './isolated-fixtures'
+import { fixture, scheduled, login } from './isolated-fixtures'
 
 const words = {
   apple: { meaning: '苹果', wav: 'en/01.wav', sha: '4c7d98e368f9d06f1b0d9b64979ec032254a341025b3cec7f489cf03bdc1585f' },
