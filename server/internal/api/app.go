@@ -76,11 +76,24 @@ type App struct {
 	nextFeedbackID int64
 	TestMode       bool     // -testmode：跳过课程开放时间校验（E2E 用）
 	DB             *gorm.DB // SQLite 持久化句柄（nil=纯内存模式）
+	DuplexStore    *store.DuplexRepo
 	mu             sync.Mutex
 }
 
 // SetTestMode 开启测试模式。
 func (a *App) SetTestMode() { a.TestMode = true }
+
+// EnableDuplexShadowStore opts in the persisted shadow receipt tables only
+// when the explicit pilot flag is enabled.
+func (a *App) EnableDuplexShadowStore() error {
+	if a.DB == nil {
+		return nil
+	}
+	if a.DuplexStore == nil {
+		a.DuplexStore = store.NewDuplexRepo(a.DB)
+	}
+	return a.DuplexStore.Migrate()
+}
 
 // persistUser 持久化模式落库（router/extra 共用；nil DB 时 no-op）。
 func (a *App) persistUser(username string) {

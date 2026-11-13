@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
 
 func duplexRepo(t *testing.T) (*DuplexRepo, *gorm.DB) {
@@ -36,6 +37,10 @@ func TestDuplexCommitReplayPrecedesCASAndIsolation(t *testing.T) {
 	require.EqualValues(t, 1, receipt.Version)
 	again, e := r.Commit(ctx, 1, 2, 0, candidate(), apply)
 	require.NoError(t, e)
+	receipt.CreatedAt = time.Time{}
+	receipt.UpdatedAt = time.Time{}
+	again.CreatedAt = time.Time{}
+	again.UpdatedAt = time.Time{}
 	require.Equal(t, receipt, again)
 	require.Equal(t, 1, calls)
 	cp, e := r.LoadCheckpoint(ctx, 1, 2)
@@ -57,6 +62,8 @@ func TestDuplexCommitReplayPrecedesCASAndIsolation(t *testing.T) {
 	require.Error(t, e)
 	found, e := r.LookupReceipt(ctx, 1, 2, "d1")
 	require.NoError(t, e)
+	found.CreatedAt = time.Time{}
+	found.UpdatedAt = time.Time{}
 	require.Equal(t, receipt, found)
 	_, e = r.LookupReceipt(ctx, 9, 2, "d1")
 	require.Error(t, e)
@@ -180,4 +187,22 @@ func TestDuplexLogicalRevisionCannotCommitTwoUtterances(t *testing.T) {
 	next.UtteranceID = "u2"
 	_, err = r.Commit(ctx, 1, 2, 1, next, nil)
 	require.ErrorIs(t, err, ErrDuplexConflict)
+}
+
+func TestDuplexReceiptPrepareFinalizeIsIdempotent(t *testing.T) {
+	r, _ := duplexRepo(t)
+	ctx := context.Background()
+	in := DuplexReceipt{DecisionID: "decision-1", LessonID: 2, StudentID: 1, Epoch: "epoch-1", InputRevision: 7, UtteranceID: "utterance-1", TextHash: strings.Repeat("a", 64), Status: "committing"}
+	first, err := r.PrepareReceipt(ctx, in)
+	require.NoError(t, err)
+	require.Equal(t, "committing", first.Status)
+	replay, err := r.PrepareReceipt(ctx, in)
+	require.NoError(t, err)
+	require.Equal(t, first.DecisionID, replay.DecisionID)
+	committed, err := r.FinalizeReceipt(ctx, 1, 2, in.DecisionID)
+	require.NoError(t, err)
+	require.Equal(t, "committed", committed.Status)
+	committedAgain, err := r.FinalizeReceipt(ctx, 1, 2, in.DecisionID)
+	require.NoError(t, err)
+	require.Equal(t, "committed", committedAgain.Status)
 }
