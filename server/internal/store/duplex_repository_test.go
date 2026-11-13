@@ -206,3 +206,19 @@ func TestDuplexReceiptPrepareFinalizeIsIdempotent(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "committed", committedAgain.Status)
 }
+
+func TestDuplexCommitSnapshotAtomicallyPublishesStateAndReceipt(t *testing.T) {
+	r, db := duplexRepo(t)
+	ctx := context.Background()
+	in := DuplexReceipt{DecisionID: "decision-snapshot", LessonID: 2, StudentID: 1, Epoch: "epoch-snapshot", InputRevision: 8, UtteranceID: "utterance-snapshot", TextHash: strings.Repeat("b", 64), Status: "committing"}
+	_, err := r.PrepareReceipt(ctx, in)
+	require.NoError(t, err)
+	require.NoError(t, r.CommitSnapshot(ctx, 1, 2, in.DecisionID, map[string]any{"phase": "wait_answer"}))
+	var row RuntimeRecord
+	require.NoError(t, db.First(&row, "key=?", "snapshot/2").Error)
+	require.JSONEq(t, `{"phase":"wait_answer"}`, row.Value)
+	got, err := r.LookupReceipt(ctx, 1, 2, in.DecisionID)
+	require.NoError(t, err)
+	require.Equal(t, "committed", got.Status)
+	require.NoError(t, r.CommitSnapshot(ctx, 1, 2, in.DecisionID, map[string]any{"phase": "wait_answer"}))
+}

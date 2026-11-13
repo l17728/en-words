@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var ErrDuplexConflict = errors.New("duplex store: conflict")
@@ -110,6 +111,37 @@ func (r *DuplexRepo) FinalizeReceipt(ctx context.Context, student, lesson int64,
 	}
 	receipt.Status = "committed"
 	return receipt, nil
+}
+
+// CommitSnapshot atomically publishes the durable classroom snapshot and marks
+// the matching confirmation receipt committed. The caller must have already
+// applied the in-memory transition; recovery reconstructs from this row.
+func (r *DuplexRepo) CommitSnapshot(ctx context.Context, student, lesson int64, decisionID string, state any) error {
+	if student <= 0 || lesson <= 0 || !validDuplexString(decisionID) || state == nil {
+		return ErrDuplexConflict
+	}
+	raw, err := json.Marshal(state)
+	if err != nil || len(raw) > 1<<20 || !json.Valid(raw) {
+		return ErrDuplexConflict
+	}
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var receipt DuplexReceipt
+		if err := tx.Where("decision_id=? AND student_id=? AND lesson_id=?", decisionID, student, lesson).First(&receipt).Error; err != nil {
+			return err
+		}
+		if receipt.Status != "committing" && receipt.Status != "committed" {
+			return ErrDuplexConflict
+		}
+		if err := tx.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "key"}}, DoUpdates: clause.AssignmentColumns([]string{"value"})}).Create(&RuntimeRecord{Key: fmt.Sprintf("snapshot/%d", lesson), Value: string(raw)}).Error; err != nil {
+			return err
+		}
+		if receipt.Status == "committing" {
+			if err := tx.Model(&DuplexReceipt{}).Where("decision_id=? AND student_id=? AND lesson_id=? AND status=?", decisionID, student, lesson, "committing").Updates(map[string]any{"status": "committed", "updated_at": time.Now().UTC()}).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 func (r *DuplexRepo) CreateCheckpoint(ctx context.Context, student, lesson int64, state json.RawMessage) error {
 	if student <= 0 || lesson <= 0 || !json.Valid(state) || len(state) > 1<<20 {

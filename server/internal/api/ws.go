@@ -551,7 +551,7 @@ func (a *App) handleWS(c *gin.Context) {
 					_ = client.Send(frame)
 				}
 				if a.DuplexStore != nil && !(len(frames) > 0 && frames[0]["type"] == "event_rejected") {
-					if _, err := a.DuplexStore.FinalizeReceipt(ctx, tk.StudentID, lessonID, receipt.DecisionID); err != nil {
+					if err := a.DuplexStore.CommitSnapshot(ctx, tk.StudentID, lessonID, receipt.DecisionID, room.durableSnapshot()); err != nil {
 						_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "commit_pending_recovery", "utterance_id": shadowIdentity.Utterance})
 						continue
 					}

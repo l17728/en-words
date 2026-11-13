@@ -374,6 +374,13 @@ func itemPayload(it classroom.QuizItemView) Msg {
 	return Msg{"word_id": it.WordID, "kind": it.Kind, "round": it.Round, "seq": it.Seq}
 }
 
+// durableSnapshot returns a detached state for the confirmation commit.
+func (r *Room) durableSnapshot() classroom.State {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.machine.Snapshot()
+}
+
 func (r *Room) currentItemView() (classroom.QuizItemView, bool) {
 	switch r.machine.Phase() {
 	case classroom.PhaseWaitAnswer, classroom.PhaseJudging, classroom.PhaseReteachShow:
