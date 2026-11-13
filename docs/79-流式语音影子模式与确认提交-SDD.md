@@ -86,3 +86,7 @@ start 请求包含 `protocol_version:1`、客户端 `event_id`、`context{epoch,
 已实现第一阶段的安全子集：服务端通过 `ENWORDS_DUPLEX_PILOT=1` 开启设备预检，再通过独立的 `ENWORDS_DUPLEX_SHADOW=1` 开启影子转写；两者均未开启时不会请求麦克风。浏览器端以 20ms PCM16 帧聚合为有界 WAV，调用既有 `/transcribe`，只展示结果，不进入判分、机会消耗、课堂推进或持久化成绩。采集超限、停止、权限变化和转写失败均回到文字路径。
 
 本增量不实现 WebSocket 流式协议、`voice_confirm`、SQLite 提交收据或正式课堂接入；这些仍是下一阶段的独立开发门，必须在 Go 与 Playwright 全量验证后才能启用。
+
+## 9. WS 影子链路增量（2026-11-13）
+
+已接入课堂 WS 的 `voice_stream_start/chunk/end/cancel` 与 `voice_confirm` 控制帧。服务端生成 session、epoch、input_revision、utterance_id；音频块严格按序、限长、限时校验，end 后调用本地 ASR，返回 `voice_final` 与 `voice_confirmation_required`。只有带正确 `text_hash` 的 `voice_confirm` 才会调用既有 `voice_text` 教学入口。生产开关仍默认关闭，当前确认提交尚未接入 SQLite 收据恢复。
