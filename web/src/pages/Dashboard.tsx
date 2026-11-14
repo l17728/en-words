@@ -265,6 +265,9 @@ export default function DashboardPage() {
                 </Typography.Text>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                <Button size="large" onClick={() => nav(`/classroom/${nextLesson.ID}/mic-check`)}>
+                  测试麦克风
+                </Button>
                 {!openNow(nextLesson) && (
                   <Button type="primary" size="large" loading={startNowBusy} onClick={() => void startNow(nextLesson)}>
                     {'立即开始'}

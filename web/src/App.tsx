@@ -23,6 +23,7 @@ const StatsPage = lazyRoute(() => import('./pages/Stats'))
 const AdminPage = lazyRoute(() => import('./pages/Admin'))
 const SettingsPage = lazyRoute(() => import('./pages/Settings'))
 const VoicePreflight = lazyRoute(() => import('./pages/VoicePreflight'))
+const MicCheckPage = lazyRoute(() => import('./pages/MicCheck'))
 
 class RouteErrorBoundary extends Component<{ children: ReactNode }> {
   state = { failed: false }
@@ -74,6 +75,7 @@ function RouteContent({ token, role, userId }: { token: string | null; role: str
               <Route path="/dashboard" element={role === 'admin' ? <Navigate to="/admin" replace /> : <DashboardPage />} />
               <Route path="/placement/:bookId" element={<PlacementPage />} />
               <Route path="/classroom/:lessonId/voice-preflight" element={<VoicePreflight />} />
+              <Route path="/classroom/:lessonId/mic-check" element={<MicCheckPage />} />
               <Route path="/classroom/:lessonId" element={<ClassroomPage />} />
               <Route path="/stats" element={<StatsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
