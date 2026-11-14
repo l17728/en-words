@@ -199,7 +199,7 @@ func TestLadderCrossAppPlacementFinishUsesCurrentGlobalConfiguration(t *testing.
 	for _, lesson := range lessons {
 		if lesson.Status == "scheduled" {
 			scheduled++
-			require.Equal(t, b.Clock.Now().Add(72*time.Hour), lesson.OpenAt)
+			require.Equal(t, b.Clock.Now(), lesson.OpenAt)
 		}
 	}
 	require.Equal(t, 1, scheduled)

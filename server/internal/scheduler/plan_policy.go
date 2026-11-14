@@ -15,6 +15,9 @@ var (
 // finite values in (0, 1] cap all new cards, including boosted new cards.
 type PlanPolicy struct {
 	MaxNewRatio float64
+	// ImmediateFirstLesson opens the first lesson at the current clock time.
+	// Later lessons continue to follow the ladder schedule.
+	ImmediateFirstLesson bool
 }
 
 func (p PlanPolicy) validate() error {

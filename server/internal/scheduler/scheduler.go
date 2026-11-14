@@ -41,6 +41,7 @@ var (
 	ErrLessonNotFound = errors.New("scheduler: lesson not found")
 	ErrNoWords        = errors.New("scheduler: no words to schedule")
 	ErrAlreadyPlanned = errors.New("scheduler: next lesson already scheduled")
+	ErrLessonNotOwned = errors.New("scheduler: lesson not owned by student")
 )
 
 // ---- 领域模型 ----
@@ -303,6 +304,30 @@ func (s *Service) Lessons(studentID, bookID int64) ([]*Lesson, error) {
 // SaveLesson 更新课程行（api 层改状态用）。
 func (s *Service) SaveLesson(l *Lesson) error { return s.repo.SaveLesson(l) }
 
+// StartLessonNow makes a scheduled lesson available immediately. The lesson's
+// cards are reserved at the same timestamp so the next plan is based on the
+// latest persisted progress after settlement.
+func (s *Service) StartLessonNow(studentID, lessonID int64) (*Lesson, error) {
+	l, err := s.repo.GetLesson(lessonID)
+	if err != nil {
+		return nil, err
+	}
+	if l.StudentID != studentID {
+		return nil, ErrLessonNotOwned
+	}
+	if l.Status != LessonScheduledStr {
+		return nil, fmt.Errorf("scheduler: lesson is not scheduled")
+	}
+	l.OpenAt = s.clock.Now()
+	if err := s.repo.SaveLesson(l); err != nil {
+		return nil, err
+	}
+	if err := s.reserveCards(studentID, l.BookID, l.BatchWordIDs, l.OpenAt); err != nil {
+		return nil, err
+	}
+	return l, nil
+}
+
 // StudentBooks 某生已启用词库 ID（Dashboard"我的词库"）。
 func (s *Service) StudentBooks(studentID int64) ([]int64, error) {
 	return s.repo.StudentBooks(studentID)
@@ -533,6 +558,9 @@ func (s *Service) planNext(studentID, bookID int64, policy PlanPolicy) (*Lesson,
 		base = now
 		stepDays := time.Duration(interval(ladder, 0)) * 24 * time.Hour
 		openAt := base.Add(stepDays)
+		if policy.ImmediateFirstLesson {
+			openAt = base
+		}
 		l := &Lesson{StudentID: studentID, BookID: bookID, Status: LessonScheduledStr,
 			OpenAt: openAt, BatchWordIDs: batch}
 		if err := s.repo.CreateLesson(l); err != nil {

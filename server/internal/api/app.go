@@ -382,7 +382,7 @@ func (a *App) PlacementSubmitContext(ctx context.Context, studentID, bookID int6
 				return err
 			}
 			var err error
-			l, err = s.PlanNext(studentID, bookID)
+			l, err = s.PlanNextWithPolicy(studentID, bookID, scheduler.PlanPolicy{ImmediateFirstLesson: true})
 			return err
 		})
 		if err != nil {

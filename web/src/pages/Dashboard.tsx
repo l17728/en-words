@@ -110,9 +110,23 @@ export default function DashboardPage() {
 
   const nextLesson = lessons.find((l) => l.Status === 'scheduled')
   const [now, setNow] = useState(Date.now)
+  const [startNowBusy, setStartNowBusy] = useState(false)
   useEffect(() => watchScheduleClock(setNow), [])
   const openNow = (l: Lesson) => isLessonOpen(l.OpenAt, now)
   const fmt = (s: string) => new Date(s).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const startNow = async (lesson: Lesson) => {
+    if (startNowBusy) return
+    setStartNowBusy(true)
+    try {
+      await api.post(`/student/lessons/${lesson.ID}/start-now`)
+      nav(`/classroom/${lesson.ID}`)
+    } catch (e) {
+      message.error((e as Error).message)
+      setLessonAttempt(n => n + 1)
+    } finally {
+      setStartNowBusy(false)
+    }
+  }
 
   const sendFeedback = () => {
     const text = fbText.replace(/\r\n/g, '\n').trim()
@@ -225,14 +239,18 @@ export default function DashboardPage() {
                   {nextLesson.BatchWordIDs?.length || 0} 个词（复习+新词）
                 </Typography.Text>
               </div>
-              <Button
-                type="primary"
-                size="large"
-                disabled={!openNow(nextLesson)}
-                onClick={() => nav(`/classroom/${nextLesson.ID}`)}
-              >
-                {openNow(nextLesson) ? '进入课堂' : '还没到时间哦'}
-              </Button>
+              {openNow(nextLesson) ? (
+                <Button type="primary" size="large" onClick={() => nav(`/classroom/${nextLesson.ID}`)}>
+                  {'进入课堂'}
+                </Button>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                  <Button type="primary" size="large" loading={startNowBusy} onClick={() => void startNow(nextLesson)}>
+                    {'立即开始'}
+                  </Button>
+                  <Typography.Text type="secondary">{'原定'} {fmt(nextLesson.OpenAt)}?{'也可以现在开始'}</Typography.Text>
+                </div>
+              )}
             </div>
           ) : (
             <Typography.Text type="secondary">本词库课程已全部完成 🎉</Typography.Text>

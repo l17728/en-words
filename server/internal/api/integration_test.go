@@ -226,7 +226,7 @@ func TestIT03_PlacementFirstLesson(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, lessons, 1)
 	assert.Len(t, lessons[0].BatchWordIDs, 4)
-	assert.True(t, clk.Now().Before(lessons[0].OpenAt), "开放时间在未来")
+	assert.False(t, clk.Now().Before(lessons[0].OpenAt), "first lesson opens immediately")
 
 	// 未到开放时间 enter 拒绝（D1）
 	req = httptest.NewRequest("POST", "/api/v1/classroom/lessons/"+itoa64(lessons[0].ID)+"/enter", nil)
@@ -234,7 +234,7 @@ func TestIT03_PlacementFirstLesson(t *testing.T) {
 	w = httptest.NewRecorder()
 	app.Router().ServeHTTP(w, req)
 	resp := doJSON(t, w)
-	assert.Equal(t, errForbidden, resp.Code, "未开放不可进入")
+	assert.Equal(t, 0, resp.Code, "first lesson is immediately enterable")
 }
 
 // ---- IT-04 课堂全流程（enter→教学→final 完整测试→下课→自动排课）----
@@ -621,6 +621,9 @@ func TestIT09_OverdueReplan(t *testing.T) {
 	require.NoError(t, app.PlacementSubmit(uid, bid, nil, true))
 	lessons, _ := app.Sched.Lessons(uid, bid)
 	require.Len(t, lessons, 1)
+	// Move this fixture into the future to exercise overdue handling; product first lessons open immediately.
+	lessons[0].OpenAt = clk.Now().Add(24 * time.Hour)
+	require.NoError(t, app.Sched.SaveLesson(lessons[0]))
 
 	// 未逾期：不动（openAt=8/24 10:00，now 推进到 8/25 09:00 仍 < openAt+24h）
 	clk.Advance(47 * time.Hour)
@@ -657,7 +660,7 @@ func TestIT10_AgentScopeDenied(t *testing.T) {
 	w := httptest.NewRecorder()
 	app.Router().ServeHTTP(w, req)
 	resp := doJSON(t, w)
-	assert.Equal(t, errForbidden, resp.Code, "teacher 调 config.set 被拒")
+	assert.Equal(t, errForbidden, resp.Code, "teacher scope denied")
 	assert.Contains(t, resp.Msg, "scope")
 
 	// 审计含 denied 记录

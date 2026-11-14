@@ -282,6 +282,18 @@ func (a *App) Router() *gin.Engine {
 		}
 		c.JSON(http.StatusOK, ok(LessonReportView{LessonID: id, Report: res.Report, Correct: res.Correct}))
 	})
+	student.POST("/lessons/:id/start-now", func(c *gin.Context) {
+		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		lesson, err := a.Sched.StartLessonNow(claimsOf(c).UID, id)
+		if err != nil {
+			c.JSON(http.StatusOK, fail(errBadRequest, "当前课程无法立即开始，请刷新课程表后重试"))
+			return
+		}
+		a.Log.InfoCtx(c.Request.Context(), "scheduler", "lesson_started_immediately", map[string]any{
+			"lesson_id": lesson.ID, "student_id": lesson.StudentID, "book_id": lesson.BookID,
+		})
+		c.JSON(http.StatusOK, ok(lesson))
+	})
 
 	a.registerNotificationRoutes(student)
 	a.registerFeedbackRoutes(authed.Group("/feedbacks", a.roleMW(auth.RoleStudent)))

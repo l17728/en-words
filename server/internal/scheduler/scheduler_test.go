@@ -14,7 +14,7 @@ import (
 
 type fakeClock struct{ t time.Time }
 
-func (c *fakeClock) Now() time.Time { return c.t }
+func (c *fakeClock) Now() time.Time          { return c.t }
 func (c *fakeClock) Advance(d time.Duration) { c.t = c.t.Add(d) }
 
 func newSched(t *testing.T) (*Service, *fakeClock, *config.Store) {
@@ -134,6 +134,26 @@ func TestPlacementFirstLesson(t *testing.T) {
 			assert.Equal(t, l.OpenAt, *c.NextDueAt, "批次词约课到课: NextDueAt=lessonTime")
 		}
 	}
+}
+
+func TestStartLessonNowReopensScheduledLessonAndReservesCards(t *testing.T) {
+	s, clk, _ := newSched(t)
+	s.seedWords(t, 7, 1, 1, 2)
+	require.NoError(t, s.MarkPlacement(7, 1, nil))
+	l, err := s.PlanNext(7, 1)
+	require.NoError(t, err)
+	future := clk.t.Add(48 * time.Hour)
+	l.OpenAt = future
+	require.NoError(t, s.SaveLesson(l))
+
+	clk.Advance(3 * time.Hour)
+	started, err := s.StartLessonNow(7, l.ID)
+	require.NoError(t, err)
+	assert.Equal(t, clk.t, started.OpenAt)
+	card, err := s.GetCard(7, 1, started.BatchWordIDs[0])
+	require.NoError(t, err)
+	require.NotNil(t, card.NextDueAt)
+	assert.Equal(t, clk.t, *card.NextDueAt)
 }
 
 // ---- SC-02/R2-01: 等间隔阶梯与 step 推进 ----
