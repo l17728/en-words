@@ -70,7 +70,8 @@ function RouteContent({ token, role, userId }: { token: string | null; role: str
             <>
               <Route path="/admin" element={role === 'admin' ? <AdminPage /> : <Navigate to="/dashboard" replace />} />
               <Route path="/books" element={<BooksPage />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
+              {/* The dashboard calls student-only APIs. Keep administrator sessions on the admin surface. */}
+              <Route path="/dashboard" element={role === 'admin' ? <Navigate to="/admin" replace /> : <DashboardPage />} />
               <Route path="/placement/:bookId" element={<PlacementPage />} />
               <Route path="/classroom/:lessonId/voice-preflight" element={<VoicePreflight />} />
               <Route path="/classroom/:lessonId" element={<ClassroomPage />} />

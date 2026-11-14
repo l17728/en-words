@@ -135,7 +135,7 @@ export default function BooksPage() {
   return (
     <div style={{ padding: 24, maxWidth: 1100, margin: '0 auto' }}>
       <Typography.Title level={3}>
-        词库广场 <Button type="link" onClick={() => nav('/dashboard')}>我的课程表 →</Button>
+        <Button type="link" onClick={() => nav(isAdmin ? '/admin' : '/dashboard')}>{isAdmin ? '返回管理页面' : '我的课程表 →'}</Button>
       </Typography.Title>
       {loading && <div role="status"><Spin size="small" /> 正在加载词库…</div>}
       {error && <Alert type="error" title={error} action={<Button onClick={refresh}>重试加载词库</Button>} />}
@@ -150,9 +150,11 @@ export default function BooksPage() {
             <Card
               hoverable
               actions={[
-                <Button key="select" type="primary" loading={enabling === b.ID} disabled={loading || !!error || enabling !== null || !!uncertain || !!deleteUncertain} onClick={() => enable(b)}>
-                  选择这个词库
-                </Button>,
+                ...(!isAdmin ? [
+                  <Button key="select" type="primary" loading={enabling === b.ID} disabled={loading || !!error || enabling !== null || !!uncertain || !!deleteUncertain} onClick={() => enable(b)}>
+                    选择这个词库
+                  </Button>,
+                ] : []),
                 ...(isAdmin ? [
                   <Button key="delete" danger type="link" disabled={loading || !!error || enabling !== null || !!uncertain || !!deleteUncertain} onClick={() => deleteBook(b)}>删除</Button>,
                 ] : []),
