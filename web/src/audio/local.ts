@@ -77,6 +77,9 @@ export async function playLocalSpeech(text: string, lang: 'zh' | 'en', signal: A
       try {
         const player = new Audio(url)
         audio = player
+        // The local Chinese voice is mastered quieter than the English voice.
+        // Balance the two languages at playback time without changing cached media.
+        player.volume = lang === 'zh' ? 1 : 0.78
         await playAudio(player, signal, identity.check, onPlaying)
       } finally { audio?.pause(); URL.revokeObjectURL(url) }
     }, identity.check)

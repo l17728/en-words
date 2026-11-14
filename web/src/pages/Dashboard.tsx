@@ -59,6 +59,21 @@ export default function DashboardPage() {
     refresh()
     return () => { books.dispose(); notices.dispose(); reports.dispose() }
   }, [])
+  // Returning from a classroom remounts this page. Keep the selected book as
+  // user-scoped navigation state so its schedule card (and countdown action)
+  // is restored instead of disappearing until the user clicks the book again.
+  useEffect(() => {
+    if (!userId || selectedBook || books.length === 0) return
+    const raw = localStorage.getItem(`enwords.dashboard.book.${userId}`)
+    const id = raw ? Number(raw) : NaN
+    if (!Number.isFinite(id)) return
+    const restored = books.find(book => book.ID === id)
+    if (restored) {
+      setLessonRead({ status: 'loading' })
+      setSelectedBook({ ...restored })
+      setLessons([])
+    }
+  }, [books, selectedBook, userId])
   const [lessonAttempt, setLessonAttempt] = useState(0)
   const feedbackRevision = feedback.records.map(record => `${record.submission_id || record.id}:${record.version || 0}:${record.status}`).join('|')
   useEffect(() => {
@@ -68,6 +83,7 @@ export default function DashboardPage() {
     return () => loader.dispose()
   }, [selectedBook, feedbackRevision, userId, lessonAttempt])
   const pick = (b: Book) => {
+    if (userId) localStorage.setItem(`enwords.dashboard.book.${userId}`, String(b.ID))
     setLessonRead({ status: 'loading' })
     setSelectedBook({ ...b })
     setLessons([]) // 清空旧数据（防上一词库残留与新课混合）
@@ -88,6 +104,7 @@ export default function DashboardPage() {
           if (generation !== pageGeneration.current || token !== localStorage.getItem('token')) return
           message.success('已移除')
           if (selectedBook?.ID === b.ID) setSelectedBook(null)
+          if (userId && selectedBook?.ID === b.ID) localStorage.removeItem(`enwords.dashboard.book.${userId}`)
           refresh()
         }).catch((e) => { if (generation === pageGeneration.current) message.error((e as Error).message) })
       },

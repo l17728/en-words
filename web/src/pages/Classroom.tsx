@@ -146,6 +146,7 @@ export default function ClassroomPage() {
   const inputGate = useRef(new InputReadiness())
   const answerFlight = useRef(new AnswerFlight())
   const [answerPending, setAnswerPending] = useState(false)
+  const [repeatHeard, setRepeatHeard] = useState(false)
   const [repeatFallbackPending, setRepeatFallbackPending] = useState(false)
   const repeatFallbackFlight = useRef(false)
   const [inputTurn, setInputTurn] = useState<InputTurn | null>(null)
@@ -465,10 +466,12 @@ export default function ClassroomPage() {
             word_idx: f.word_idx, in_reteach: f.in_reteach,
             zhMeaning: f.zhMeaning, paused: f.paused, input_failed: f.input_failed })
           phaseRef.current = f.phase
+          if (f.phase !== 'repeating') setRepeatHeard(false)
           // 朗读唯一驱动源=play_tts 帧（此快照朗读曾是"英文读两遍"根因——删除）
           break
         case 'phase_changed':
           phaseRef.current = f.phase
+          if (f.phase !== 'repeating') setRepeatHeard(false)
           setSnapshot((s) => (s ? { ...s, phase: f.phase } : s))
           break
         case 'ui_action': {
@@ -509,6 +512,7 @@ export default function ClassroomPage() {
               setSnapshot((s) => ({ ...(s ?? { phase: 'repeating' }), phase: 'repeating', word: a.word ?? s?.word, paused: false }))
               if (f.context) grantInput(f.context, 'repeating')
               phaseRef.current = 'repeating' // 禁后续 TTS（回声抑制）
+              setRepeatHeard(false)
               break
             case 'show_quiz_item':
               setSnapshot((s) => ({ ...(s ?? { phase: 'wait_answer' }), phase: 'wait_answer', quiz_word: a.word, quiz_item: f.quiz_item, paused: false }))
@@ -713,6 +717,7 @@ export default function ClassroomPage() {
     if (!text.trim() || localStorage.getItem('token') !== sessionToken) return
     if ((capturedContext || ['wait_answer', 'repeating'].includes(phaseRef.current)) &&
       !inputGate.current.accepts(context, phaseRef.current, onlineRef.current)) return
+    if (phaseRef.current === 'repeating') setRepeatHeard(true)
     const lifetime = feedbackLifetime.current
     const envelope = { context, event_id: `${eventPrefixRef.current}-${++eventCounterRef.current}` }
     const submissionId = clientId()
@@ -748,6 +753,7 @@ export default function ClassroomPage() {
     const context = contextRef.current
     if (!text || repeatFallbackFlight.current || phaseRef.current !== 'repeating' ||
       !inputGate.current.accepts(context, phaseRef.current, onlineRef.current, inputTurn)) return
+    setRepeatHeard(true)
     repeatFallbackFlight.current = true
     const lifetime = feedbackLifetime.current
     const envelope = { context: { ...context }, event_id: `${eventPrefixRef.current}-${++eventCounterRef.current}` }
@@ -926,7 +932,7 @@ export default function ClassroomPage() {
             onOk: () => nav('/dashboard'),
           })
         }}>退出</Button>
-        <span style={{ color: '#5C6B73' }}>{PHASE_TIP[phase] || phase}</span>
+        <span style={{ color: '#5C6B73' }}>{phase === 'repeating' && repeatHeard ? '' : (PHASE_TIP[phase] || phase)}</span>
         <Tag color={wsOk ? 'success' : 'warning'}>{wsOk ? '已连接' : connectionError && !connectionError.retryable ? '连接已停止' : '重连中…'}</Tag>
       </div>
 
@@ -983,6 +989,8 @@ export default function ClassroomPage() {
                 fontFamily: 'Georgia, serif',
                 cursor: phase === 'show_word' ? 'pointer' : 'default',
                 padding: '30px 60px',
+                height: 170,
+                boxSizing: 'border-box',
                 background: '#fff',
                 borderRadius: 16,
                 boxShadow: '0 2px 12px rgba(28,43,51,.06)',
@@ -1000,6 +1008,7 @@ export default function ClassroomPage() {
             </div>
             {/* 第几遍显示已移除：无实际用途且首次不显示/后续显示不统一 */}
             {/* 教学阶段中英对照（原始需求：学习时显示中英文对照） */}
+            <div style={{ height: 72, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
             {teachingZh && snapshot?.zhMeaning && (
               <Typography.Text strong style={{ fontSize: 40, color: '#0D9488' }}>
                 {snapshot.zhMeaning}
@@ -1011,14 +1020,16 @@ export default function ClassroomPage() {
               </Typography.Text>
             )}
 
+            </div>
             <div role="status" aria-label="当前朗读字幕" aria-live="polite" aria-atomic="true"
-              style={{ minHeight: 56, width: '100%', maxWidth: 640, boxSizing: 'border-box',
+              style={{ height: 56, width: '100%', maxWidth: 640, boxSizing: 'border-box',
                 padding: '8px 16px', textAlign: 'center', overflowWrap: 'anywhere', whiteSpace: 'pre-wrap',
                 color: '#334155', fontSize: 22, lineHeight: 1.5 }}>
               {captionText && <><span style={{ display: 'block', fontSize: 13, color: '#64748B' }}>正在朗读</span><span>{captionText}</span></>}
             </div>
 
             {/* 老师气泡（内容来自 ui_action.say，无硬编码前缀；R4-fe#4） */}
+            <div style={{ height: 72, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
             {bubble && (
               <div
                 style={{
@@ -1034,6 +1045,7 @@ export default function ClassroomPage() {
                 {bubble}
               </div>
             )}
+            </div>
           </>
         )}
       </div>
