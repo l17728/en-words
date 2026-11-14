@@ -74,3 +74,6 @@ The repeated-reset path, browser-local endpoint evidence, storage profile, and p
 ## 2026-10-26 isolated matrix design checkpoint (historical, superseded)
 
 This paragraph is a historical status snapshot and is superseded by the 2026-10-31 acceptance delta in `docs/74-first-audio-matrix-isolated-backend-sdd.md`. At that time, the complete guarded backend and dedicated two-journey Playwright run were still outstanding. The 30-cold/100-warm workload and human-run classroom pilot remain separate acceptance stages.
+## 2026-11-14 当前验收结果
+
+首音隔离矩阵已使用本机 WinLibs GCC/CGO 完成两旅程含 warmup 的 Playwright 验收：首帧 1492ms/895ms，音频开始 1495ms/898ms，收到播放指令到播放 2.8ms/2.9ms；两次 WebSocket 正常关闭，reset=1，unexpected=0，flaky=0。首次失败根因为控制器将 CGO 冷启动 bind 固定为 5 秒，已改为 60 秒并增加回归测试，提交 `86143aa`。该矩阵是隔离合成环境证据，仍不替代真人课堂声学试点。

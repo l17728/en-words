@@ -1,4 +1,4 @@
-# en-words 单词学习系统 — 设计文档集
+﻿ en-words 单词学习系统 — 设计文档集
 
 > 一个"AI 老师真人授课"式的英文单词学习 Web 软件：学生选词库学习，服务端 Agent 老师通过 API + 协同 UI 授课，按**等间隔复习**科学排课，并根据学生反馈动态调整学习计划。
 
@@ -36,6 +36,32 @@
 | [28-语义判分边界与生产同轨验收.md](28-语义判分边界与生产同轨验收.md) | 整体短答安全边界、冻结留出与同响应生产回放 | 开发、测试 |
 | [29-Fun-ASR独立CPU验证规格.md](29-Fun-ASR独立CPU验证规格.md) | 隔离依赖、资源预算与固定语音样本评测 | 开发、测试 |
 | [30-TTS实际播放字幕规格与SDD.md](30-TTS实际播放字幕规格与SDD.md) | 发声同步字幕、取消恢复及真实播放验收 | 开发、测试 |
+| [31-交互性能与可靠性评估.md](31-交互性能与可靠性评估.md) | 交互延迟预算、负载场景与可靠性评估 | 开发、测试 |
+| [32-全双工课堂特性规格.md](32-全双工课堂特性规格.md) | 全双工课堂用户场景、边界与验收条件 | 产品、开发、测试 |
+| [33-全双工课堂SDD.md](33-全双工课堂SDD.md) | 全双工音频与课堂状态架构设计 | 开发、测试 |
+| [34-全双工课堂试点与验收设计.md](34-全双工课堂试点与验收设计.md) | 隔离课堂试点方案、指标与停止门 | 产品、开发、测试 |
+| [35-全双工设计评审与实施台账.md](35-全双工设计评审与实施台账.md) | 设计评审结论、实施证据及未完成门 | 全员 |
+| [36-全双工课堂统一提交接线设计.md](36-全双工课堂统一提交接线设计.md) | 课堂命令统一提交与前后端接线 | 开发、测试 |
+| [37-新库启动性能规格与SDD.md](37-新库启动性能规格与SDD.md) | 新词库启动延迟预算、恢复与压测规格 | 开发、测试 |
+| [38-简单语音确认与非思考适配设计增补.md](38-简单语音确认与非思考适配设计增补.md) | 简单语音意图的低延迟模型与降级策略 | 开发、测试 |
+| [39-课堂朗读后等待提示最小设计.md](39-课堂朗读后等待提示最小设计.md) | 课堂朗读后的响应提示和时序门 | 开发、测试 |
+| [40-有效复习梯度原子协调器.md](40-有效复习梯度原子协调器.md) | 复习梯度快照、并发写入与原子提交 | 开发、测试 |
+| [41-试点课堂Start持久迁移内核SDD.md](41-试点课堂Start持久迁移内核SDD.md) | 试点Start状态迁移、catalog与文件安全 | 开发、测试 |
+| [42-Pilot隔离运行监督器SDD.md](42-Pilot隔离运行监督器SDD.md) | 隔离run、case生命周期、OS-authenticated worker IPC | 开发、测试、安全 |
+| [43-Pilot授权幂等与父进程身份绑定SDD.md](43-Pilot授权幂等与父进程身份绑定SDD.md) | 跨连接幂等、持久账本、进程containment及Linux pidfd绑定 | 开发、测试、安全 |
+| [44-Pilot验证根与成员句柄切片SDD.md](44-Pilot验证根与成员句柄切片SDD.md) | 只读 verified-root opener；四域设计评审通过，代码与原生验收待完成 | 开发、测试、安全 |
+| [45-pilot-run-root-bootstrap-sdd.md](45-pilot-run-root-bootstrap-sdd.md) | Pilot run-root creation, identity checks, and recovery boundaries | Development, testing, security |
+| [46-pilot-host-logger-queue-sdd.md](46-pilot-host-logger-queue-sdd.md) | Pilot host log queue and persistence constraints | Development, testing, security |
+| [47-pilot-linux-launcher-identity-handoff-sdd.md](47-pilot-linux-launcher-identity-handoff-sdd.md) | Linux launcher/Reaper/Gateway identity handoff, isolation, and crash recovery | Development, testing, security |
+| [48-pilot-host-logger-service-lifecycle-sdd.md](48-pilot-host-logger-service-lifecycle-sdd.md) | Host Logger registration, channel lifecycle, and drain protocol | Development, testing, security |
+| [49-pilot-bootstrap-control-ledger-sdd.md](49-pilot-bootstrap-control-ledger-sdd.md) | Bootstrap/recovery control-generation ledger contract | Development, testing, security |
+| [50-pilot-runroot-product-orchestration-sdd.md](50-pilot-runroot-product-orchestration-sdd.md) | Opt-in RunRoot product routes, trusted launcher flow, close and recovery gates | Development, testing, security |
+| [51-pilot-control-ledger-v3-sdd.md](51-pilot-control-ledger-v3-sdd.md) | SQLite v3 control ledger, lifecycle CAS, finish outbox, and containment finalization | Development, testing, security |
+| [52-pilot-control-ledger-v3-physical-model-decisions.md](52-pilot-control-ledger-v3-physical-model-decisions.md) | Reviewed physical storage decisions and schema-test oracles before literal DDL | Development, testing, security |
+| [53-pilot-control-ledger-v3-physical-schema-matrix.md](53-pilot-control-ledger-v3-physical-schema-matrix.md) | Literal v3 physical schema and per-table mutation/admission matrix | Development, testing, security |
+| [54-pilot-runroot-stage-a-implementation-delta.md](54-pilot-runroot-stage-a-implementation-delta.md) | Stage A ordering, identity boundaries, failure fencing, and VFS prerequisites | Development, testing, security |
+| [55-pilot-control-pinned-sqlite-vfs-sdd.md](55-pilot-control-pinned-sqlite-vfs-sdd.md) | Pinned SQLite private VFS design and native acceptance gates | Development, testing, security |
+| [56-pinned-sqlite-golden-harness-delta.md](56-pinned-sqlite-golden-harness-delta.md) | Test-only callback tracer, runtime scenario oracles, and candidate golden protocol | Development, testing, security |
 
 2026-10-13增量约定：用户要求朗读遍数及间隔均可设置，docs14覆盖历史固定“3英文＋1中文”规则；3＋1保留为默认。当前实现与验收以docs10及各增量文档为准，历史设计中的供应商及质量门状态不代表本轮实测结果。
 
@@ -125,12 +151,22 @@
 - [x] 05 Mock 与真实 API 方案
 - [x] 专家评审三轮闭环 + 全生命周期推演（34+28+19=81 项审视，55 修复/26 豁免，收敛达成一致，详见 [06-评审记录.md](06-评审记录.md) §5~§7）
 - [x] 首启、教学至课报、学习统计、朗读次数/间隔设置已实施并有专项回归证据
-- [ ] 项目总验收（反馈最新修订与剩余GAP按10台账逐项关闭；不沿用历史质量门结论）
+- [ ] 项目总验收（冻结浏览器145已通过；梯度原子协调器已合入并正在做正式树全量回归；真实课堂/语音安全与质量及历史 COMMIT 长尾仍未闭环）
+
+### 2026-11-14 自动化补充现态
+
+- 首音隔离 SQLite/CGO/Playwright 两旅程已通过；Windows WinLibs GCC 路径已记录在 AGENTS.md。
+- 双学生真实媒体课堂已通过：两名学生均完成双语课堂，字幕、音频结束、ACK、ASR/TTS 及首答率断言全部通过。
+- 本地 8090 ASR 固定音频并发长尾已完成 200 请求验证：成功率 100%，p50 196ms、p95 326ms、p99 431ms、最大 490ms。
+- 自动化补充记录见 `review/automated-supplement-20261114.md`；真人试听和真实课堂试点仍保持为人工验收门，不以自动化结果替代。
 
 - [31-交互性能与可靠性评估.md](31-交互性能与可靠性评估.md)：交互等待、防重复操作、媒体缓存、WS心跳、数据库按需查询与隔离压力评估；本轮最终验收以该文档执行台账为准。
 - [交互性能验收汇总](../review/interaction-final-acceptance-20261015.md)：本轮性能对照、最终回归、分域评审及保留限制的集中入口。
 
 ## 全双工隔离试点（设计与实施中）
+
+- [75 首音延迟设置 SDD](75-first-audio-lead-setting-sdd.md)：可配置的单词展示提前量、旧课堂快照迁移和旧客户端兼容规则。
+- [70 首音延迟验收](70-classroom-first-audio-latency-sdd.md)：隔离 SQLite + Playwright 冷/热矩阵及其性能门状态。
 
 - [32-全双工课堂特性规格.md](32-全双工课堂特性规格.md)：快路预览、确认后教学及分歧处理规则。
 - [33-全双工课堂SDD.md](33-全双工课堂SDD.md)：身份协议、持久回执、取消与远程模型安全边界。
@@ -139,5 +175,10 @@
 - [36-全双工课堂统一提交接线设计.md](36-全双工课堂统一提交接线设计.md)：下一阶段完整课堂、文字回退、持久授权与故障恢复设计；实现与验收另行记录。
 - [37-新库启动性能规格与SDD.md](37-新库启动性能规格与SDD.md)：新库原子建表、启动日志与失败清理；性能对照及当前候选的回归证据分别记录。
 - [38-简单语音确认与非思考适配设计增补.md](38-简单语音确认与非思考适配设计增补.md)：借鉴 Picer 的语音分工，先在现有课堂分离跟读匹配与词义判分、收紧控制口令；模型与声学验收独立记录。
+
+- [39-课堂朗读后等待提示最小设计.md](39-课堂朗读后等待提示最小设计.md)：本地播放结束后的等待状态与清理边界；不代表服务端已提交，不替代事务长尾修复。
+- [40-有效复习梯度原子协调器.md](40-有效复习梯度原子协调器.md)：梯度与 goalMode 的有效作用域、事务合同、API、日志及验收。
+- [41-试点课堂Start持久迁移内核SDD.md](41-试点课堂Start持久迁移内核SDD.md)：仅测试产物可用的首课Start持久迁移设计；评审通过前不实施，不代表真实课堂可用。
+- [最新冻结浏览器145验收报告](../review/frozen-browser145-final-20261016.json)：后端r17、前端构建、13族145个隔离用例与独立证据复核；不替代真人声学/真实课堂验收。
 
 设备预检不上传音频、不判分；基础组件通过不代表真实课堂试点已验收。真人录音、外放回声和端到端延迟必须单独取证。
