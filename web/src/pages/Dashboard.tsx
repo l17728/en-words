@@ -172,6 +172,7 @@ export default function DashboardPage() {
                 onKeyDown={(e) => e.key === 'Enter' && pick(b)}
                 style={{
                   padding: 16,
+                  paddingRight: 56,
                   background: '#fff',
                   border: '1px solid #E5EAEC',
                   borderRadius: 10,
@@ -183,7 +184,7 @@ export default function DashboardPage() {
                 onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#14B8A6')}
                 onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#E5EAEC')}
               >
-                <b>{b.Name}</b>
+                <b style={{ display: 'block', overflowWrap: 'anywhere' }}>{b.Name}</b>
                 <div style={{ color: '#5C6B73', marginTop: 4 }}>{b.WordCount} 个词</div>
                 <Button
                   type="text"
