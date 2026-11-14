@@ -114,6 +114,14 @@ export default function DashboardPage() {
   useEffect(() => watchScheduleClock(setNow), [])
   const openNow = (l: Lesson) => isLessonOpen(l.OpenAt, now)
   const fmt = (s: string) => new Date(s).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const countdown = (openAt: string) => {
+    const remaining = Math.max(0, Date.parse(openAt) - now)
+    const totalSeconds = Math.floor(remaining / 1000)
+    const hours = Math.floor(totalSeconds / 3600)
+    const minutes = Math.floor((totalSeconds % 3600) / 60)
+    const seconds = totalSeconds % 60
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+  }
   const startNow = async (lesson: Lesson) => {
     if (startNowBusy) return
     setStartNowBusy(true)
@@ -239,18 +247,24 @@ export default function DashboardPage() {
                   {nextLesson.BatchWordIDs?.length || 0} 个词（复习+新词）
                 </Typography.Text>
               </div>
-              {openNow(nextLesson) ? (
-                <Button type="primary" size="large" onClick={() => nav(`/classroom/${nextLesson.ID}`)}>
-                  {'进入课堂'}
-                </Button>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                {!openNow(nextLesson) && (
                   <Button type="primary" size="large" loading={startNowBusy} onClick={() => void startNow(nextLesson)}>
                     {'立即开始'}
                   </Button>
-                  <Typography.Text type="secondary">{'原定'} {fmt(nextLesson.OpenAt)}?{'也可以现在开始'}</Typography.Text>
-                </div>
-              )}
+                )}
+                <Button
+                  type={openNow(nextLesson) ? 'primary' : 'default'}
+                  size="large"
+                  disabled={!openNow(nextLesson)}
+                  style={{ minWidth: 210 }}
+                  aria-label={`计划 ${fmt(nextLesson.OpenAt)} 开始，剩余 ${countdown(nextLesson.OpenAt)}`}
+                  onClick={() => nav(`/classroom/${nextLesson.ID}`)}
+                >
+                  {openNow(nextLesson) ? `00:00:00 开始` : `剩余${countdown(nextLesson.OpenAt)}开始`}
+                </Button>
+                <Typography.Text type="secondary">{`计划 ${fmt(nextLesson.OpenAt)} 开始`}</Typography.Text>
+              </div>
             </div>
           ) : (
             <Typography.Text type="secondary">本词库课程已全部完成 🎉</Typography.Text>
