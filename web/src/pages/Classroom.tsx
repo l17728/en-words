@@ -1,4 +1,4 @@
-import { PlaybackContinuationWait, type WaitReason } from '../audio/continuation-wait'
+﻿import { PlaybackContinuationWait, type WaitReason } from '../audio/continuation-wait'
 import { clientId } from '../interaction/client-id'
 import { AnswerFlight } from '../interaction/answer-flight'
 import { speechCache } from '../audio/speech-cache'
@@ -932,7 +932,7 @@ export default function ClassroomPage() {
             onOk: () => nav('/dashboard'),
           })
         }}>退出</Button>
-        <span style={{ color: '#5C6B73' }}>{phase === 'repeating' && repeatHeard ? '' : (PHASE_TIP[phase] || phase)}</span>
+        <span style={{ color: '#5C6B73' }}>{phase === 'repeating' ? '' : (PHASE_TIP[phase] || phase)}</span>
         <Tag color={wsOk ? 'success' : 'warning'}>{wsOk ? '已连接' : connectionError && !connectionError.retryable ? '连接已停止' : '重连中…'}</Tag>
       </div>
 
@@ -970,7 +970,7 @@ export default function ClassroomPage() {
       </>} />}
       {localStage !== 'idle' && <div role="status">{localStage === 'preparing' ? '正在准备麦克风' : localStage === 'recording' ? '正在录音' : '正在识别，请稍候'}</div>}
       {speechError && <Alert type="warning" title={speechError} closable onClose={() => setSpeechError('')} />}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: 24 }}>
+      <div style={{ flex: 1, display: 'grid', gridTemplateRows: '170px 72px 56px 72px 48px', alignContent: 'center', justifyItems: 'center', rowGap: 18, padding: 24 }}>
         {!snapshot ? (
           <Spin size="large" />
         ) : (
@@ -1046,6 +1046,9 @@ export default function ClassroomPage() {
               </div>
             )}
             </div>
+            <div aria-live="polite" aria-label="跟读提示" style={{ height: 48, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', color: '#5C6B73' }}>
+              {phase === 'repeating' && !repeatHeard && <Typography.Text>轮到你读了！大声一点没关系</Typography.Text>}
+            </div>
           </>
         )}
       </div>
@@ -1067,7 +1070,7 @@ export default function ClassroomPage() {
           <>
             {/* Speech is primary; typed fallback goes through the same server RepeatMatch gate. */}
             <Tag color={listening ? 'processing' : 'default'} aria-live="polite">
-              {textOnlyMode ? '已切换文字跟读' : listening ? '🎙 跟读：大声读出这个词～' : providers?.local && !providers.asr ? '语音暂不可用，请使用文字跟读' : '准备跟读…'}
+              {textOnlyMode ? '已切换文字跟读' : listening ? '🎙 正在听你的跟读' : providers?.local && !providers.asr ? '语音暂不可用，请使用文字跟读' : '等待跟读'}
             </Tag>
             <Input
               size="large"
@@ -1150,3 +1153,4 @@ export default function ClassroomPage() {
     </div>
   )
 }
+
