@@ -41,3 +41,10 @@ func TestRepeatUnsupportedTargetIsDistinct(t *testing.T) {
 	assert.Equal(t, "no_match", EvaluateRepeat("cat", string([]byte{255})))
 	assert.Equal(t, "no_match", EvaluateRepeat("cat", strings.Repeat(" ", 2049)+"cat"))
 }
+
+func TestRepeatMatchAllowsSmallASRErrorsWithoutPassingUnrelatedWords(t *testing.T) {
+	assert.True(t, RepeatMatch("range from…to…", "range from two"))
+	assert.True(t, RepeatMatch("important", "importent"))
+	assert.False(t, RepeatMatch("cat", "bat"), "short unrelated words must not pass fuzzy matching")
+	assert.False(t, RepeatMatch("important", "banana"))
+}

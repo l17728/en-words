@@ -48,21 +48,94 @@ func EvaluateRepeat(word, text string) string {
 	if len(want) > 1 && article(want[0]) {
 		want = want[1:]
 	}
-	for len(got) > 0 {
-		if got[0] != want[0] && article(got[0]) {
-			got = got[1:]
-		}
-		if len(got) < len(want) {
-			return "no_match"
-		}
-		for i, w := range want {
-			if got[i] != w {
-				return "no_match"
+	if len(got) > 1 && article(got[0]) {
+		got = got[1:]
+	}
+	if exactRepeatTokens(want, got) || tolerantRepeatTokens(want, got) {
+		return "matched"
+	}
+	return "no_match"
+}
+
+func exactRepeatTokens(want, got []string) bool {
+	if len(want) == 0 || len(got) == 0 || len(got)%len(want) != 0 {
+		return false
+	}
+	for offset := 0; offset < len(got); offset += len(want) {
+		for i, token := range want {
+			if got[offset+i] != token {
+				return false
 			}
 		}
-		got = got[len(want):]
 	}
-	return "matched"
+	return true
+}
+
+// tolerantRepeatTokens covers small ASR spelling errors without turning a
+// short unrelated word into a pass. A phrase may contain one close token
+// (e.g. "to" -> "two"); single words need at least four letters.
+func tolerantRepeatTokens(want, got []string) bool {
+	if len(want) == 0 || len(got) < len(want) || len(got)%len(want) != 0 {
+		return false
+	}
+	for offset := 0; offset < len(got); offset += len(want) {
+		fuzzy := 0
+		for i, token := range want {
+			if token == got[offset+i] {
+				continue
+			}
+			if !closeASRToken(token, got[offset+i]) {
+				return false
+			}
+			fuzzy++
+		}
+		if fuzzy > 1 {
+			return false
+		}
+	}
+	return true
+}
+
+func closeASRToken(want, got string) bool {
+	if (want == "to" && got == "two") || (want == "two" && got == "to") ||
+		(want == "for" && got == "four") || (want == "four" && got == "for") ||
+		(want == "ate" && got == "eight") || (want == "eight" && got == "ate") {
+		return true
+	}
+	if len([]rune(want)) < 4 || len([]rune(got)) < 3 {
+		return false
+	}
+	return levenshteinRunes([]rune(want), []rune(got)) <= 1
+}
+
+func levenshteinRunes(a, b []rune) int {
+	prev := make([]int, len(b)+1)
+	for j := range prev {
+		prev[j] = j
+	}
+	for i, ar := range a {
+		cur := make([]int, len(b)+1)
+		cur[0] = i + 1
+		for j, br := range b {
+			cost := 0
+			if ar != br {
+				cost = 1
+			}
+			cur[j+1] = minInt(prev[j+1]+1, cur[j]+1, prev[j]+cost)
+		}
+		prev = cur
+	}
+	return prev[len(b)]
+}
+
+func minInt(values ...int) int {
+	result := values[0]
+	for _, value := range values[1:] {
+		if value < result {
+			result = value
+		}
+	}
+	return result
 }
 
 func repeatTokens(s string) []string {
