@@ -25,9 +25,15 @@ async function fetchSpeechBlob(text: string, lang: 'zh' | 'en', signal: AbortSig
 export function prefetchLocalSpeech(text: string, lang: 'zh' | 'en', lessonId?: string) {
   const key = speechKey(text, lang, lessonId)
   if (pendingSpeech.has(key)) return
-  const promise = fetchSpeechBlob(text, lang, new AbortController().signal, lessonId)
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 25_000)
+  const promise = fetchSpeechBlob(text, lang, controller.signal, lessonId).finally(() => clearTimeout(timeout))
   pendingSpeech.set(key, promise)
-  void promise.catch(() => undefined).finally(() => {
+  void promise.catch(() => {
+    // A failed prefetch must never poison the next playback attempt.
+    if (pendingSpeech.get(key) === promise) pendingSpeech.delete(key)
+  }).then(() => {
+    // Keep successful media available for the immediately following segment.
     setTimeout(() => { if (pendingSpeech.get(key) === promise) pendingSpeech.delete(key) }, 30_000)
   })
 }
