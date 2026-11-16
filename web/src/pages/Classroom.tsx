@@ -879,7 +879,7 @@ export default function ClassroomPage() {
             if (controller.signal.aborted || localRecordingRef.current !== controller || localStorage.getItem('token') !== sessionToken ||
               !inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) return
             setLocalStage(stage); setListening(stage === 'recording')
-          })
+          }, 2200)
           if (controller.signal.aborted || localStorage.getItem('token') !== sessionToken ||
             !inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) return
           console.debug('[classroom_asr_gate]', { event: 'transcript_ready', phase, turn: inputTurn.turn, text_length: text.length })
