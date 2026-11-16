@@ -129,6 +129,19 @@ func (r *Room) HandleClientEventContext(ctx context.Context, e ClientEnvelope, e
 		r.emitLocked(done)
 		return append(out, done)
 	}
+	if ev.Type == "repeat_replay" {
+		if r.machine.Phase() != classroom.PhaseRepeating || r.machine.Paused() {
+			return r.rejectedLocked(e)
+		}
+		if err := r.machine.ReplayRepeat(); err != nil {
+			return r.rejectedLocked(e)
+		}
+		r.app.Log.InfoCtx(r.traceContext(), "classroom", "repeat_replayed", map[string]any{"lesson_id": r.lessonID, "event_id": e.EventID})
+		out := r.broadcastLocked()
+		done := Msg{"type": "event_processed", "event_id": e.EventID}
+		r.emitLocked(done)
+		return append(out, done)
+	}
 	if ev.Type == classroom.EvAnswerSubmitted && r.machine.Phase() == classroom.PhaseWaitAnswer && !r.machine.Paused() &&
 		r.voiceParser.MatchesPhrase(ev.Text, "跳过", "跳过这个词", "我想跳过", "过") {
 		item := r.machine.CurrentItem().QuizItemID

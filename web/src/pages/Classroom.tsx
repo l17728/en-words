@@ -1103,6 +1103,12 @@ export default function ClassroomPage() {
               onClick={() => void submitRepeatFallback()}>
               提交跟读文字
             </Button>
+            <Button size="large" disabled={!wsOk || !inputTurn || inputTurn.phase !== 'repeating'} onClick={() => sendEvent('repeat_replay')}>
+              再听一次
+            </Button>
+            <Button size="large" danger disabled={!wsOk || !inputTurn || inputTurn.phase !== 'repeating'} onClick={() => sendEvent('repeat_skipped')}>
+              下一个
+            </Button>
           </>
         )}
         {phase === 'wait_answer' && (

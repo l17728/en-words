@@ -171,8 +171,9 @@ type State struct {
 	Config                      *config.EffectiveSnapshot
 	LessonID, BookID, StudentID int64
 	Phase                       string
-	GroupIdx, WordIdx           int // GroupIdx 废弃（D-21），保留持久化兼容
-	TtsSegIdx                   int // Active teaching segment, 1..N(en)+M(zh).
+	GroupIdx, WordIdx           int  // GroupIdx 废弃（D-21），保留持久化兼容
+	TtsSegIdx                   int  // Active teaching segment, 1..N(en)+M(zh).
+	ReplayOnce                  bool // A manual repeat replay plays one English segment, then returns to repeating.
 	RepeatCount                 int
 	RepeatNudged                bool
 	// quiz
@@ -607,6 +608,21 @@ func (m *Machine) enterTTS() error {
 	return nil
 }
 
+// ReplayRepeat returns the current word to its teaching playback once. The
+// classroom timer is reset by the phase transition, so a replay never consumes
+// the student's repeat opportunity or advances the word.
+func (m *Machine) ReplayRepeat() error {
+	if m.state.Paused || m.state.Phase != PhaseRepeating {
+		return nil
+	}
+	m.state.Phase = PhaseTTSSeg
+	m.state.TtsSegIdx = 1
+	m.state.ReplayOnce = true
+	m.state.RepeatNudged = false
+	m.acts = append(m.acts, m.playbackAction(m.CurrentWord(), 1, false, false))
+	return nil
+}
+
 // firstMeaning 首条释义（zh 段朗读文本）。
 func firstMeaning(w Word) string {
 	if len(w.Meanings) > 0 {
@@ -629,6 +645,13 @@ func stripPOS(s string) string {
 func (m *Machine) ttsAdvance() error {
 	st := m.state
 	w := m.CurrentWord()
+	if st.ReplayOnce {
+		st.ReplayOnce = false
+		st.Phase = PhaseRepeating
+		st.RepeatNudged = false
+		m.acts = append(m.acts, Action{Type: ActStartRepeat, WordID: w.ID})
+		return nil
+	}
 	en, zh := m.playbackCounts(false, false)
 	if st.TtsSegIdx < en+zh {
 		st.TtsSegIdx++

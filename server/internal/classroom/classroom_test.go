@@ -372,6 +372,25 @@ func TestRepeatSkipped(t *testing.T) {
 	assert.Equal(t, PhaseShowWord, m.Phase())
 }
 
+func TestRepeatReplayPlaysOneSegmentAndReturnsWithoutConsumingAttempt(t *testing.T) {
+	m, cfg := newMachine(t, batchN(5))
+	teachToRepeating(m, cfg)
+	before := m.Snapshot()
+	require.NoError(t, m.ReplayRepeat())
+	assert.Equal(t, PhaseTTSSeg, m.Phase())
+	assert.True(t, m.Snapshot().ReplayOnce)
+	actions := m.DrainActions()
+	replay := findAction(actions, ActPlayTTS)
+	require.NotNil(t, replay)
+	assert.Equal(t, "en", replay.Lang)
+	assert.Equal(t, 1, replay.SegIdx)
+	require.NoError(t, m.OnEvent(Event{Type: EvTTSFinished}))
+	assert.Equal(t, PhaseRepeating, m.Phase())
+	assert.False(t, m.Snapshot().ReplayOnce)
+	assert.Equal(t, before.RepeatCount, m.Snapshot().RepeatCount)
+	assert.NotNil(t, findAction(m.DrainActions(), ActStartRepeat))
+}
+
 // ---- 用户定案（2026-08-25）：教学测试分离——全部词教完才测试，教学中零 quiz ----
 
 func TestTeachAllWordsThenFinalQuiz(t *testing.T) {
