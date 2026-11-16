@@ -49,14 +49,30 @@ export async function recordLocal(lessonId: string, language: string, signal: Ab
     identity.check()
     const form = new FormData()
     form.append('file', wav, 'recording.wav'); form.append('language', language)
-    return await withMediaDeadline(signal, async requestSignal => {
-      const res = await fetch(`/api/v1/classroom/lessons/${lessonId}/transcribe`, { method: 'POST', headers: identity.headers, body: form, signal: requestSignal })
-      const out = await res.json()
-      identity.check()
-      if (!res.ok || !out || out.code !== 0) throw new Error('语音识别失败，请使用文字输入')
-      if (typeof out.data?.text !== 'string' || !out.data.text.trim()) throw new Error('未识别到内容，请重试或使用文字输入')
-      return out.data.text as string
-    }, 30000, { lessonId, operation: 'transcribe' })
+    let lastError: unknown
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        return await withMediaDeadline(signal, async requestSignal => {
+          const res = await fetch(`/api/v1/classroom/lessons/${lessonId}/transcribe`, { method: 'POST', headers: identity.headers, body: form, signal: requestSignal })
+          const out = await res.json().catch(() => ({}))
+          identity.check()
+          if (!res.ok || !out || out.code !== 0) {
+            const reason = typeof out?.msg === 'string' && out.msg.trim() ? out.msg.trim() : `HTTP ${res.status}`
+            throw new Error(`语音识别失败（${reason}），请重试或使用文字输入`)
+          }
+          if (typeof out.data?.text !== 'string' || !out.data.text.trim()) throw new Error('未识别到内容，请重试或使用文字输入')
+          return out.data.text as string
+        }, 30000, { lessonId, operation: 'transcribe' })
+      } catch (error) {
+        lastError = error
+        if (signal.aborted || (error instanceof DOMException && error.name === 'AbortError') || attempt === 1) throw error
+        await new Promise<void>((resolve, reject) => {
+          const timer = setTimeout(resolve, 400)
+          signal.addEventListener('abort', () => { clearTimeout(timer); reject(new DOMException('Aborted', 'AbortError')) }, { once: true })
+        })
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error('语音识别失败，请重试或使用文字输入')
   } finally { stream.getTracks().forEach(t => t.stop()) }
 }
 

@@ -960,16 +960,16 @@ export default function ClassroomPage() {
         <Input.TextArea aria-label="待确认反馈正文" value={undeliveredFeedback?.text || ''}
           onChange={e => setUndeliveredFeedback(value => value ? { ...value, text: e.target.value } : value)} />
       </Modal>
-      {snapshot?.paused && <Alert type="info" title="课堂已暂停" description={resumeError || (asrFailure ? '语音识别失败，当前题目已保留。请选择重试语音或使用文字。' : '休息好了就重试当前学习进度。')}
+      {snapshot?.paused && <Alert type="info" style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 1100, width: 'min(680px, calc(100vw - 32px))' }} title="课堂已暂停" description={resumeError || (asrFailure ? '语音识别失败，当前题目已保留。请选择重试语音或使用文字。' : '休息好了就重试当前学习进度。')}
         action={<><Button loading={resuming} disabled={resuming} onClick={() => void resumeClassroom(false)}>{asrFailure ? '重试语音' : '重试当前段'}</Button>
           {asrFailure && <Button loading={resuming} disabled={resuming} onClick={() => void resumeClassroom(true)}>继续并使用文字</Button>}
           {(phase === 'tts_seg' || phase === 'reteach_show') && <Button onClick={() => sendEvent('tts_skip', String(lastTtsSegmentRef.current))}>改用文字，跳过本段</Button>}</>} />}
-      {connectionError && <Alert type="error" title={connectionError.message} action={<>
+      {connectionError && <Alert type="error" style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 1100, width: 'min(680px, calc(100vw - 32px))' }} title={connectionError.message} action={<>
         <Button onClick={() => window.location.reload()}>重新连接课堂</Button>
         <Button onClick={() => nav('/dashboard')}>返回课程表</Button>
       </>} />}
       {localStage !== 'idle' && <div role="status">{localStage === 'preparing' ? '正在准备麦克风' : localStage === 'recording' ? '正在录音' : '正在识别，请稍候'}</div>}
-      {speechError && <Alert type="warning" title={speechError} closable onClose={() => setSpeechError('')} />}
+      {speechError && <Alert type="warning" style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 1100, width: 'min(680px, calc(100vw - 32px))' }} title={speechError} closable onClose={() => setSpeechError('')} />}
       <div style={{ flex: 1, display: 'grid', gridTemplateRows: '170px 72px 56px 72px 48px', alignContent: 'center', justifyItems: 'center', rowGap: 18, padding: 24 }}>
         {!snapshot ? (
           <Spin size="large" />
