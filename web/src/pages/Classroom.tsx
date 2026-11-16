@@ -727,7 +727,6 @@ export default function ClassroomPage() {
     if (!text.trim() || localStorage.getItem('token') !== sessionToken) return
     if ((capturedContext || ['wait_answer', 'repeating'].includes(phaseRef.current)) &&
       !inputGate.current.accepts(context, phaseRef.current, onlineRef.current)) return
-    if (phaseRef.current === 'repeating') setRepeatHeard(true)
     const lifetime = feedbackLifetime.current
     const envelope = { context, event_id: `${eventPrefixRef.current}-${++eventCounterRef.current}` }
     const submissionId = clientId()
@@ -885,8 +884,12 @@ export default function ClassroomPage() {
             !inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) return
           console.debug('[classroom_asr_gate]', { event: 'transcript_ready', phase, turn: inputTurn.turn, text_length: text.length })
           sendVoiceRef.current?.(text, captureContext)
-          // One transcript per turn; a changed question/phase starts a fresh capture.
-          break
+          // A failed repeat match returns no business frame and keeps the same
+          // input turn. Re-open a short capture window so the student can try
+          // the same word again; a successful match changes context/phase and
+          // the gate closes before the next iteration.
+          if (phase === 'repeating') await new Promise<void>(resolve => setTimeout(resolve, 250))
+          else break
         }
       } catch (e) {
         console.debug('[classroom_asr_gate]', { event: 'capture_error', phase, turn: inputTurn.turn,
@@ -910,7 +913,7 @@ export default function ClassroomPage() {
       }
       setListening(false); setLocalStage('idle')
     }
-  }, [readyContextKey, wsOk, providers?.asr, lessonId, phase, snapshot?.paused, ended, sessionToken, activeTextOnly])
+      }, [readyContextKey, wsOk, providers?.asr, lessonId, phase, snapshot?.paused, ended, sessionToken, activeTextOnly])
 
   // 相位驱动：进跟读/答题自动开麦；离场停麦（phase 声明之后）
   useEffect(() => {
@@ -978,7 +981,7 @@ export default function ClassroomPage() {
         <Button onClick={() => window.location.reload()}>重新连接课堂</Button>
         <Button onClick={() => nav('/dashboard')}>返回课程表</Button>
       </>} />}
-      {localStage !== 'idle' && <div role="status">{localStage === 'preparing' ? '正在准备麦克风' : localStage === 'recording' ? '正在录音' : '正在识别，请稍候'}</div>}
+      {localStage !== 'idle' && <div role="status" style={{ position: 'fixed', bottom: 92, left: '50%', transform: 'translateX(-50%)', zIndex: 1050, minWidth: 180, padding: '8px 14px', borderRadius: 8, background: 'rgba(15, 23, 42, .88)', color: '#fff', textAlign: 'center', pointerEvents: 'none' }}>{localStage === 'preparing' ? '正在准备麦克风' : localStage === 'recording' ? '正在录音' : '正在识别，请稍候'}</div>}
       {speechError && <Alert type="warning" style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 1100, width: 'min(680px, calc(100vw - 32px))' }} title={speechError} closable onClose={() => setSpeechError('')} />}
       <div style={{ flex: 1, display: 'grid', gridTemplateRows: '170px 72px 56px 72px 48px', alignContent: 'center', justifyItems: 'center', rowGap: 18, padding: 24 }}>
         {!snapshot ? (
@@ -994,9 +997,12 @@ export default function ClassroomPage() {
                 if (phase === 'show_word' && (e.key === 'Enter' || e.key === ' ')) sendEvent('word_clicked')
               }}
               style={{
-                fontSize: 84,
+                fontSize: 'clamp(42px, 8vw, 84px)',
                 fontWeight: 700,
                 fontFamily: 'Georgia, serif',
+                lineHeight: 1.05,
+                textAlign: 'center',
+                width: 'min(100%, 760px)',
                 cursor: phase === 'show_word' ? 'pointer' : 'default',
                 padding: '30px 60px',
                 height: 170,
@@ -1014,7 +1020,7 @@ export default function ClassroomPage() {
               {/* R4-fe#3：色盲安全——✓✗ 图标形状差异 + aria */}
               {judge === 'ok' && <CheckCircleFilled style={{ fontSize: 48, color: '#22C55E' }} aria-label="回答正确" />}
               {judge === 'bad' && <CloseCircleFilled style={{ fontSize: 48, color: '#F87171' }} aria-label="回答错误" />}
-              {bigWord || '…'}
+              <span style={{ minWidth: 0, maxWidth: '100%', overflowWrap: 'anywhere', wordBreak: 'break-word' }}>{bigWord || '…'}</span>
             </div>
             {/* 第几遍显示已移除：无实际用途且首次不显示/后续显示不统一 */}
             {/* 教学阶段中英对照（原始需求：学习时显示中英文对照） */}
@@ -1163,4 +1169,5 @@ export default function ClassroomPage() {
     </div>
   )
 }
+
 

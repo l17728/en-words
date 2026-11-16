@@ -50,7 +50,7 @@ function session(signal: AbortSignal) {
 }
 
 // A finite capture, with cancellation releasing both recording and microphone tracks.
-export async function recordLocal(lessonId: string, language: string, signal: AbortSignal, onStage?: (stage: 'recording' | 'transcribing') => void): Promise<string> {
+export async function recordLocal(lessonId: string, language: string, signal: AbortSignal, onStage?: (stage: 'recording' | 'transcribing') => void, maxDurationMs = 4000): Promise<string> {
   const identity = session(signal)
   const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
   try {
@@ -60,7 +60,7 @@ export async function recordLocal(lessonId: string, language: string, signal: Ab
     const audio = await new Promise<Blob>((resolve, reject) => {
       const cleanup = () => { clearTimeout(timer); signal.removeEventListener('abort', abort) }
       const abort = () => { cleanup(); if (recorder.state !== 'inactive') recorder.stop(); reject(new DOMException('Aborted', 'AbortError')) }
-      const timer = setTimeout(() => { if (recorder.state !== 'inactive') recorder.stop() }, 4000)
+      const timer = setTimeout(() => { if (recorder.state !== 'inactive') recorder.stop() }, maxDurationMs)
       recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data) }
       recorder.onstart = () => {
         if (recorder.state !== 'recording') return
