@@ -53,18 +53,51 @@ function session(signal: AbortSignal) {
 export async function recordLocal(lessonId: string, language: string, signal: AbortSignal, onStage?: (stage: 'recording' | 'transcribing') => void, maxDurationMs = 4000): Promise<string> {
   const identity = session(signal)
   const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
+  let audioContext: AudioContext | undefined
+  let vadTimer: ReturnType<typeof setInterval> | undefined
   try {
     identity.check()
     const recorder = new MediaRecorder(stream)
     const chunks: Blob[] = []
     const audio = await new Promise<Blob>((resolve, reject) => {
-      const cleanup = () => { clearTimeout(timer); signal.removeEventListener('abort', abort) }
+      const cleanup = () => { clearTimeout(timer); if (vadTimer) clearInterval(vadTimer); signal.removeEventListener('abort', abort); void audioContext?.close().catch(() => undefined) }
       const abort = () => { cleanup(); if (recorder.state !== 'inactive') recorder.stop(); reject(new DOMException('Aborted', 'AbortError')) }
       const timer = setTimeout(() => { if (recorder.state !== 'inactive') recorder.stop() }, maxDurationMs)
       recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data) }
       recorder.onstart = () => {
         if (recorder.state !== 'recording') return
-        try { identity.check(); onStage?.('recording') } catch { abort() }
+        try {
+          identity.check(); onStage?.('recording')
+          // Keep one capture window until speech ends. RMS based VAD avoids
+          // submitting a fixed short slice while the student is still speaking.
+          const Ctx = window.AudioContext || (window as any).webkitAudioContext
+          if (!Ctx) return
+          audioContext = new Ctx()
+          const source = audioContext.createMediaStreamSource(stream)
+          const analyser = audioContext.createAnalyser()
+          analyser.fftSize = 2048
+          source.connect(analyser)
+          const samples = new Uint8Array(analyser.fftSize)
+          const startedAt = performance.now()
+          let speechStarted = false
+          let silenceSince = 0
+          vadTimer = setInterval(() => {
+            if (recorder.state !== 'recording') return
+            analyser.getByteTimeDomainData(samples)
+            let sum = 0
+            for (const value of samples) { const centered = (value - 128) / 128; sum += centered * centered }
+            const rms = Math.sqrt(sum / samples.length)
+            const now = performance.now()
+            if (rms >= 0.018) {
+              speechStarted = true
+              silenceSince = 0
+            } else if (speechStarted) {
+              if (!silenceSince) silenceSince = now
+              if (now - silenceSince >= 650) recorder.stop()
+            }
+            if (now - startedAt >= maxDurationMs) recorder.stop()
+          }, 50)
+        } catch { abort() }
       }
       recorder.onerror = () => { cleanup(); reject(new Error('麦克风录音失败，请使用文字输入')) }
       recorder.onstop = () => { cleanup(); resolve(new Blob(chunks, { type: recorder.mimeType })) }
@@ -104,7 +137,7 @@ export async function recordLocal(lessonId: string, language: string, signal: Ab
       }
     }
     throw lastError instanceof Error ? lastError : new Error('语音识别失败，请重试或使用文字输入')
-  } finally { stream.getTracks().forEach(t => t.stop()) }
+  } finally { if (vadTimer) clearInterval(vadTimer); await audioContext?.close().catch(() => undefined); stream.getTracks().forEach(t => t.stop()) }
 }
 
 export async function playLocalSpeech(text: string, lang: 'zh' | 'en', signal: AbortSignal, lessonId?: string, onPlaying?: () => void): Promise<void> {

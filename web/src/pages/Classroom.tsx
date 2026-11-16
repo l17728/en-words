@@ -867,7 +867,6 @@ export default function ClassroomPage() {
     const listen = async () => {
       try {
         while (!controller.signal.aborted) {
-          setLocalStage('preparing')
           if (!inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) {
             console.debug('[classroom_asr_gate]', { event: 'before_record_rejected', phase, turn: inputTurn.turn,
               online: onlineRef.current, ready: inputGate.current.ready?.turn, current: contextRef.current.turn })
@@ -879,7 +878,7 @@ export default function ClassroomPage() {
             if (controller.signal.aborted || localRecordingRef.current !== controller || localStorage.getItem('token') !== sessionToken ||
               !inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) return
             setLocalStage(stage); setListening(stage === 'recording')
-          }, 2200)
+          }, 8000)
           if (controller.signal.aborted || localStorage.getItem('token') !== sessionToken ||
             !inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) return
           console.debug('[classroom_asr_gate]', { event: 'transcript_ready', phase, turn: inputTurn.turn, text_length: text.length })
@@ -904,6 +903,7 @@ export default function ClassroomPage() {
         }
       } finally { if (!controller.signal.aborted && localRecordingRef.current === controller) { setListening(false); setLocalStage('idle') } }
     }
+    setLocalStage('preparing')
     void listen()
     return () => {
       controller.abort()
