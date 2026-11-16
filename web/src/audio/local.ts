@@ -6,6 +6,31 @@ import { withMediaDeadline } from './media-request'
 
 export interface Capabilities { local: boolean; asr: boolean; tts_zh: boolean; tts_en: boolean }
 export const capabilities = () => api.get<Capabilities>('/providers')
+const pendingSpeech = new Map<string, Promise<Blob>>()
+
+function speechKey(text: string, lang: 'zh' | 'en', lessonId?: string) {
+  return `${localStorage.getItem('token') || ''}:${lessonId || 'preview'}:${lang}:${text}`
+}
+
+async function fetchSpeechBlob(text: string, lang: 'zh' | 'en', signal: AbortSignal, lessonId?: string): Promise<Blob> {
+  const identity = session(signal)
+  const res = await fetch('/api/v1/speech/synthesize', { method: 'POST', headers: { ...identity.headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ text, lang, ...(lessonId ? { lesson_id: Number(lessonId) } : {}) }), signal })
+  identity.check()
+  if (!res.ok) throw new Error('本机语音合成不可用')
+  return res.blob()
+}
+
+// Start synthesis during the configured inter-segment gap. This keeps the
+// perceived gap stable when Chinese TTS has a longer server response time.
+export function prefetchLocalSpeech(text: string, lang: 'zh' | 'en', lessonId?: string) {
+  const key = speechKey(text, lang, lessonId)
+  if (pendingSpeech.has(key)) return
+  const promise = fetchSpeechBlob(text, lang, new AbortController().signal, lessonId)
+  pendingSpeech.set(key, promise)
+  void promise.catch(() => undefined).finally(() => {
+    setTimeout(() => { if (pendingSpeech.get(key) === promise) pendingSpeech.delete(key) }, 30_000)
+  })
+}
 
 function session(signal: AbortSignal) {
   const token = localStorage.getItem('token') || ''
@@ -81,23 +106,40 @@ export async function playLocalSpeech(text: string, lang: 'zh' | 'en', signal: A
   const started = performance.now()
   const hit = await speechCache.play(JSON.stringify([identity.headers.Authorization, lessonId ?? 'preview', lang]), text, signal,
     () => withMediaDeadline(signal, async requestSignal => {
-      const res = await fetch('/api/v1/speech/synthesize', { method: 'POST', headers: { ...identity.headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ text, lang, ...(lessonId ? { lesson_id: Number(lessonId) } : {}) }), signal: requestSignal })
-      identity.check()
-      if (!res.ok) throw new Error('本机语音合成不可用')
-      const blob = await res.blob()
+      const key = speechKey(text, lang, lessonId)
+      const prefetched = pendingSpeech.get(key)
+      const blob = prefetched ? await prefetched : await fetchSpeechBlob(text, lang, requestSignal, lessonId)
       identity.check()
       return blob
     }, 30000, { lessonId, operation: 'synthesize' }), async blob => {
       const url = URL.createObjectURL(blob)
       let audio: HTMLAudioElement | undefined
+      let audioContext: AudioContext | undefined
+      let source: MediaElementAudioSourceNode | undefined
+      let gain: GainNode | undefined
       try {
         const player = new Audio(url)
         audio = player
         // The local Chinese voice is mastered quieter than the English voice.
-        // Balance the two languages at playback time without changing cached media.
-        player.volume = lang === 'zh' ? 1 : 0.78
+        // Use a small playback gain so cached media does not need rewriting.
+        player.volume = 1
+        try {
+          const AudioContextCtor = (window as typeof window & { webkitAudioContext?: typeof AudioContext }).AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+          if (AudioContextCtor) {
+            audioContext = new AudioContextCtor()
+            source = audioContext.createMediaElementSource(player)
+            gain = audioContext.createGain()
+            gain.gain.value = lang === 'zh' ? 1.55 : 1
+            source.connect(gain).connect(audioContext.destination)
+            await audioContext.resume()
+          }
+        } catch {
+          // Fall back to the element volume when Web Audio is unavailable.
+        }
         await playAudio(player, signal, identity.check, onPlaying)
-      } finally { audio?.pause(); URL.revokeObjectURL(url) }
+      } finally {
+        audio?.pause(); source?.disconnect(); gain?.disconnect(); await audioContext?.close().catch(() => undefined); URL.revokeObjectURL(url)
+      }
     }, identity.check)
   console.info('[speech_cache]', { module: 'speech', event: 'playback_completed', trace_id: `lesson-${lessonId ?? 'preview'}`,
     lesson_id: lessonId, cache: hit ? 'hit' : 'miss', duration_ms: Math.round(performance.now() - started) })

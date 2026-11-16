@@ -10,7 +10,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { api, ApiError, type FeedbackRecord } from '../api/client'
 import { ClassroomWS, type Frame, type TurnContext } from '../ws/client'
 import { PlaybackCaption, shouldCancelPlaybackPhase } from '../audio/caption'
-import { capabilities, recordLocal, playLocalSpeech, type Capabilities } from '../audio/local'
+import { capabilities, prefetchLocalSpeech, recordLocal, playLocalSpeech, type Capabilities } from '../audio/local'
 import { useAuthStore } from '../stores/auth'
 import { useFeedback } from '../feedback/useFeedback'
 import { FeedbackResults } from '../feedback/FeedbackResults'
@@ -375,6 +375,14 @@ export default function ClassroomPage() {
         ? Math.min(10_000, Math.max(0, Math.floor(delayBeforeMs))) : 0
       lastTtsSegmentRef.current = segment
       ttsQueueRef.current.push({ text, lang, context: { ...contextRef.current }, delayMs, segment })
+      if (delayMs > 0) {
+        const warm = (p: Capabilities) => {
+          const available = lang === 'zh-CN' ? p.tts_zh : p.tts_en
+          if (available) prefetchLocalSpeech(text, lang === 'zh-CN' ? 'zh' : 'en', lessonId)
+        }
+        if (providersRef.current) warm(providersRef.current)
+        else void capabilities().then(warm).catch(() => undefined)
+      }
       pumpTts()
     },
     [pumpTts, lessonId],
