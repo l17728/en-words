@@ -135,7 +135,7 @@ export async function playLocalSpeech(text: string, lang: 'zh' | 'en', signal: A
             audioContext = new AudioContextCtor()
             source = audioContext.createMediaElementSource(player)
             gain = audioContext.createGain()
-            gain.gain.value = lang === 'zh' ? 1.55 : 1
+            gain.gain.value = lang === 'zh' ? 3.1 : 1
             source.connect(gain).connect(audioContext.destination)
             await audioContext.resume()
           }

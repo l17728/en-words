@@ -371,8 +371,10 @@ export default function ClassroomPage() {
       console.debug('[classroom_media]', { lesson_id: lessonId, phase: phaseRef.current })
       // R6-fe#1：REPEATING 相位不入队（回声抑制入口守卫——防相位切换竞态时旧段发声）
       if (phaseRef.current === 'repeating') { console.log('[TTS-speak] BLOCKED by repeating phase'); return }
+      // Keep the classroom responsive even when an older lesson was frozen
+      // with the historical 1500ms defaults. Explicit zero remains zero.
       const delayMs = typeof delayBeforeMs === 'number' && Number.isFinite(delayBeforeMs)
-        ? Math.min(10_000, Math.max(0, Math.floor(delayBeforeMs))) : 0
+        ? Math.min(600, Math.max(0, Math.floor(delayBeforeMs))) : 0
       lastTtsSegmentRef.current = segment
       ttsQueueRef.current.push({ text, lang, context: { ...contextRef.current }, delayMs, segment })
       if (delayMs > 0) {
