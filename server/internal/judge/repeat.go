@@ -21,6 +21,7 @@ func EvaluateRepeat(word, text string) string {
 	if !utf8.ValidString(word) || utf8.RuneCountInString(word) > 2048 {
 		return "unsupported_target"
 	}
+	hasSlots := repeatSlots.MatchString(word)
 	want := repeatTokens(repeatSlots.ReplaceAllString(word, " "))
 	if len(want) == 0 {
 		return "unsupported_target"
@@ -29,6 +30,12 @@ func EvaluateRepeat(word, text string) string {
 		return "no_match"
 	}
 	text = strings.TrimSpace(text)
+	// ASR commonly renders a spoken placeholder pause as ASCII/Unicode
+	// ellipsis. Accept that only when the target itself declares slots;
+	// ordinary punctuation remains invalid (for example, "cat...").
+	if hasSlots {
+		text = repeatSlots.ReplaceAllString(text, " ")
+	}
 	if strings.HasSuffix(text, ".") {
 		text = strings.TrimSpace(strings.TrimSuffix(text, "."))
 	} else if strings.HasSuffix(text, "。") {

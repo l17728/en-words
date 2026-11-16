@@ -23,7 +23,7 @@ func TestRepeatMatchOnlyWholeTarget(t *testing.T) {
 		{"the cat", "cat", true}, {"cat", "a", false},
 		{"café", "cafe\u0301", true}, {"café", "CAFÉ", true},
 		{"donate...to...", "donate to", true}, {"prevent...from..", "prevent from", true},
-		{"range from…to…", "range from to", true}, {"bring .. to life", "bring to life", true},
+		{"range from…to…", "range from to", true}, {"range from…to…", "range from...to", true}, {"range from…to…", "range from…to", true}, {"bring .. to life", "bring to life", true},
 		{"donate...to...", "donate money to charity", false}, {"猫", "猫", false},
 		{"nowhere", "no where", false}, {"cat", "cat1", false}, {"cat", "我会了", false},
 		{"cat", "", false}, {"cat", string([]byte{255}), false}, {string([]byte{255}), "cat", false},
