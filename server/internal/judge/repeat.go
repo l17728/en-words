@@ -97,6 +97,9 @@ func tolerantRepeatTokens(want, got []string) bool {
 }
 
 func closeASRToken(want, got string) bool {
+	if strings.ContainsAny(want, "'") != strings.ContainsAny(got, "'") {
+		return false
+	}
 	if (want == "to" && got == "two") || (want == "two" && got == "to") ||
 		(want == "for" && got == "four") || (want == "four" && got == "for") ||
 		(want == "ate" && got == "eight") || (want == "eight" && got == "ate") {
