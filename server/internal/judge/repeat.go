@@ -153,5 +153,16 @@ func repeatTokens(s string) []string {
 		}
 		return nil
 	}
-	return strings.Fields(string(runes))
+	fields := strings.Fields(string(runes))
+	for i, token := range fields {
+		// Textbooks commonly abbreviate spoken phrases as "sth"/"sb";
+		// ASR naturally expands them to the spoken form.
+		switch token {
+		case "sth":
+			fields[i] = "something"
+		case "sb":
+			fields[i] = "somebody"
+		}
+	}
+	return fields
 }
