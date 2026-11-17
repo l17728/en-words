@@ -278,6 +278,11 @@ func NewApp(clock Clock, db *gorm.DB) *App {
 	app.registerStudentTools()
 	app.registerTeacherTools()
 	app.DB = db
+	if db != nil {
+		if _, err := app.ensureDefaultModelProfile(); err != nil {
+			app.Log.Warn("provider", "model_profile_seed_failed", map[string]any{"reason": err.Error()})
+		}
+	}
 	app.restoreRuntime()
 	if err := app.migrateLegacyFeedback(); err != nil {
 		panic(fmt.Sprintf("migrate feedback: %v", err))

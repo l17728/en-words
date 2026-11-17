@@ -181,3 +181,34 @@ func TestEnglishSpeechUsesDedicatedLocalRoute(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, wav, got)
 }
+
+func TestProfileRoutesRequestsToAssignedServices(t *testing.T) {
+	wav := pcmWAVFixture()
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/tts-en/speech":
+			var body map[string]any
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+			require.Equal(t, "custom-en", body["model"])
+			_, _ = w.Write(wav)
+		case "/api/asr/transcriptions":
+			_ = r.ParseMultipartForm(1024)
+			require.Equal(t, "custom-asr", r.FormValue("model"))
+			_, _ = w.Write([]byte(`{"text":"cat"}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer s.Close()
+	c, err := New(s.URL, nil)
+	require.NoError(t, err)
+	c.Services["custom-en"] = Service{ID: "custom-en", Model: "custom-en", Capabilities: []string{"tts"}}
+	c.Services["custom-asr"] = Service{ID: "custom-asr", Model: "custom-asr", Capabilities: []string{"asr"}}
+	c.Services["custom-text"] = Service{ID: "custom-text", Model: "custom-text", Capabilities: []string{"text"}}
+	require.NoError(t, c.SetProfile(Profile{Name: "pilot", ASR: "custom-asr", TTSEn: "custom-en", TTSZh: "custom-en", Text: "custom-text"}))
+	_, err = c.Synthesize(context.Background(), "cat", "en")
+	require.NoError(t, err)
+	got, err := c.Transcribe(context.Background(), []byte("audio"), "recording.wav", "en")
+	require.NoError(t, err)
+	require.Equal(t, "cat", got)
+}

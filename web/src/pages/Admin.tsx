@@ -33,6 +33,17 @@ export default function AdminPage() {
   const [analyses, setAnalyses] = useState<TeacherAnalysis[]>([])
   const [analysisBusy, setAnalysisBusy] = useState<number | null>(null)
   const [analysisError, setAnalysisError] = useState('')
+  const [wordQuery, setWordQuery] = useState('')
+  const [wordMatches, setWordMatches] = useState<Array<{ entry: { ID: number; Word: string; Meanings: string[] }; variants: Array<{ variant: string; language?: string }>; speech_text?: string; cache_ready?: Record<string, boolean> }>>([])
+  const [wordSearchBusy, setWordSearchBusy] = useState(false)
+  const [speechRefreshBusy, setSpeechRefreshBusy] = useState<string | null>(null)
+  type ModelService = { id: string; model: string; capabilities: string[] }
+  type ModelProfile = { id: number; name: string; text_service: string; asr_service: string; tts_zh_service: string; tts_en_service: string; active: boolean }
+  const [modelServices, setModelServices] = useState<ModelService[]>([])
+  const [modelProfiles, setModelProfiles] = useState<ModelProfile[]>([])
+  const [profileBusy, setProfileBusy] = useState(false)
+  const [profileName, setProfileName] = useState('')
+  const [profileDraft, setProfileDraft] = useState({ text_service: 'vl', asr_service: 'asr', tts_zh_service: 'tts', tts_en_service: 'tts-en' })
   const [todoAttempt, setTodoAttempt] = useState(0)
   useEffect(() => {
     let disposed = false
@@ -45,6 +56,17 @@ export default function AdminPage() {
   }, [todoAttempt])
   const refresh = () => bookLoader.current.run(signal => api.get<Book[]>('/wordbooks', { signal }))
   useEffect(() => { void refresh() }, [])
+  useEffect(() => {
+    Promise.all([api.get<ModelService[]>('/admin/model-services'), api.get<ModelProfile[]>('/admin/model-profiles')])
+      .then(([services, profiles]) => { setModelServices(services || []); setModelProfiles(profiles || []) })
+      .catch(e => message.error((e as Error).message))
+  }, [])
+  const searchWords = async () => {
+    if (!bookId || !wordQuery.trim()) return
+    setWordSearchBusy(true)
+    try { setWordMatches((await api.get<typeof wordMatches>(`/admin/wordbooks/${bookId}/words/search?q=${encodeURIComponent(wordQuery.trim())}`)) || []) }
+    catch (e) { message.error((e as Error).message) } finally { setWordSearchBusy(false) }
+  }
   const run = (action: NonNullable<typeof busy>, f: (current: () => boolean) => Promise<void>) => {
     const controller = lifetime.current
     const token = localStorage.getItem('token')
@@ -93,6 +115,38 @@ export default function AdminPage() {
         ] : []}>
         <List.Item.Meta title={`${analysis.target_text}（${analysis.failure_type}）`} description={<Space direction="vertical"><span>ASR：{analysis.transcript || '未记录'}</span><span>{analysis.diagnosis || '暂无诊断'}{analysis.suggestion ? `；建议：${analysis.suggestion}` : ''}</span></Space>} />
       </List.Item>} />
+    </Card>
+    <Card title="?????????" style={{ marginBottom: 16 }}>
+      <Space wrap>
+        <Select aria-label="????" placeholder="????" value={bookId} onChange={setBookId} style={{ width: 220 }} options={books.map(b => ({ value: b.ID, label: b.Name }))} />
+        <Input aria-label="????" placeholder="??????? sth" value={wordQuery} onChange={e => setWordQuery(e.target.value)} onPressEnter={() => void searchWords()} />
+        <Button loading={wordSearchBusy} disabled={!bookId || !wordQuery.trim()} onClick={() => void searchWords()}>??</Button>
+      </Space>
+      <List style={{ marginTop: 12 }} dataSource={wordMatches} locale={{ emptyText: '??????' }} renderItem={match => <List.Item actions={['en', 'zh'].map(lang => <Button key={lang} loading={speechRefreshBusy === `${match.entry.ID}:${lang}`} onClick={async () => {
+        setSpeechRefreshBusy(`${match.entry.ID}:${lang}`)
+        try { await api.post('/admin/speech/refresh', { text: match.entry.Word, lang }); message.success(`${lang === 'en' ? '??' : '??'}???????`) }
+        catch (e) { message.error((e as Error).message) } finally { setSpeechRefreshBusy(null) }
+      }}>????{lang === 'en' ? '??' : '??'}??</Button>)}><List.Item.Meta title={match.entry.Word} description={<Space direction="vertical"><span>?????{match.speech_text || match.entry.Word}</span><span>?????{match.variants.map(v => v.variant).join('?') || '??'}</span><span>????? {match.cache_ready?.en ? '???' : '???'}??? {match.cache_ready?.zh ? '???' : '???'}</span></Space>} /></List.Item>} />
+    </Card>
+    <Card title="??????" style={{ marginBottom: 16 }}>
+      <Typography.Paragraph type="secondary">??????????????????????????????</Typography.Paragraph>
+      <Space wrap style={{ marginBottom: 12 }}>
+        <Input aria-label="??????" placeholder="????" value={profileName} onChange={e => setProfileName(e.target.value)} style={{ width: 150 }} />
+        {(['text_service', 'asr_service', 'tts_zh_service', 'tts_en_service'] as const).map(role => <Select key={role} aria-label={role} value={profileDraft[role]} onChange={value => setProfileDraft(draft => ({ ...draft, [role]: value }))} style={{ width: 150 }} options={modelServices.map(service => ({ value: service.id, label: `${service.id} (${service.model})` }))} />)}
+        <Button type="primary" disabled={!profileName.trim()} loading={profileBusy} onClick={async () => {
+          setProfileBusy(true)
+          try {
+            const saved = await api.post<ModelProfile>('/admin/model-profiles', { name: profileName.trim(), ...profileDraft })
+            setModelProfiles(rows => [...rows.filter(row => row.id !== saved.id), saved]); setProfileName(''); message.success('???????')
+          } catch (e) { message.error((e as Error).message) } finally { setProfileBusy(false) }
+        }}>????</Button>
+      </Space>
+      <List dataSource={modelProfiles} locale={{ emptyText: '??????' }} renderItem={profile => <List.Item key={profile.id} actions={[<Button key="apply" type={profile.active ? 'primary' : 'default'} loading={profileBusy} onClick={async () => {
+        setProfileBusy(true)
+        try { await api.post(`/admin/model-profiles/${profile.id}/apply`); setModelProfiles(rows => rows.map(row => ({ ...row, active: row.id === profile.id }))); message.success('???????') }
+        catch (e) { message.error((e as Error).message) } finally { setProfileBusy(false) }
+      }}>{profile.active ? '???' : '??'}</Button>] }><List.Item.Meta title={`${profile.name}${profile.active ? '????' : ''}`} description={`?? ${profile.text_service} ? ASR ${profile.asr_service} ? ?? ${profile.tts_zh_service} ? ?? ${profile.tts_en_service}`} /></List.Item>} />
+      {modelServices.length > 0 && <Typography.Paragraph type="secondary">?????{modelServices.map(service => `${service.id}(${service.model})`).join('?')}</Typography.Paragraph>}
     </Card>
     <Modal title="反馈待办详情" open={!!selectedTodo} footer={null} onCancel={() => setSelectedTodo(null)}>
       {selectedTodo && <><p>学生：{selectedTodo.student_id}</p><p>{selectedTodo.text}</p>

@@ -36,3 +36,5 @@ server/.test-artifacts/
 /review/local-tts-zh.wav
 /review/regression-last.txt
 /review/regression-*.log
+server/data/cache/tts/
+**/data/cache/tts/

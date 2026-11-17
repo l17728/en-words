@@ -30,6 +30,13 @@ func (a *App) EnableLocalProviders(ctx context.Context) error {
 	// Audio and text are independent. A failed text probe leaves deterministic
 	// classroom judgment and feedback available alongside any speech service.
 	a.Local = c
+	if profile, profileErr := a.ensureDefaultModelProfile(); profileErr == nil {
+		if applyErr := a.applyModelProfile(profile); applyErr != nil {
+			a.Log.WarnCtx(ctx, "provider", "model_profile_degraded", map[string]any{"reason": applyErr.Error(), "profile": profile.Name})
+		} else {
+			a.Log.InfoCtx(ctx, "provider", "model_profile_applied", map[string]any{"profile": profile.Name})
+		}
+	}
 	a.Judge.LLM = nil
 	a.FB.SetLLM(nil)
 	if !c.Has("vl", "text") {
@@ -175,7 +182,7 @@ func (a *App) registerProviderRoutes(g *gin.RouterGroup) {
 			speechText = speechnormalize.NormalizeForSpeech(in.Text)
 			a.Log.InfoCtx(ctx, "speech", "speech_normalization_completed", map[string]any{"lesson_id": in.LessonID, "original_length": len([]rune(in.Text)), "speech_length": len([]rune(speechText)), "changed": speechText != in.Text})
 		}
-		raw, err := a.Local.Synthesize(ctx, speechText, in.Lang)
+		raw, _, err := a.synthesizeCached(ctx, speechText, in.Lang)
 		if err != nil {
 			c.JSON(503, fail(503, "语音合成失败"))
 			return

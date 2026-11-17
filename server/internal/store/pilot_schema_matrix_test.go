@@ -55,7 +55,7 @@ func TestPilotSchemaDefaultOpenUnchangedAndCompleteMigrationDraft(t *testing.T) 
 	db, _ := pilotMatrixDB(t)
 	var tables int64
 	require.NoError(t, db.Raw("SELECT count(*) FROM sqlite_master WHERE type='table' AND substr(name,1,7)<>'sqlite_'").Scan(&tables).Error)
-	require.EqualValues(t, 26, tables)
+	require.EqualValues(t, 28, tables)
 	require.Empty(t, pilotMatrixOwned(t, db))
 	mode, err := inspectPilotSchema(context.Background(), db)
 	require.NoError(t, err)

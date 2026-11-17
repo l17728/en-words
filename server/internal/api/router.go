@@ -51,6 +51,7 @@ func (a *App) Router() *gin.Engine {
 	authed := v.Group("", a.authMW())
 	a.registerProviderRoutes(authed)
 	a.registerTeacherAnalysisRoutes(authed)
+	a.registerModelProfileRoutes(authed)
 	a.registerDuplexPreflight(authed)
 	authed.POST("/auth/change_password", func(c *gin.Context) {
 		var in struct{ OldPassword, NewPassword string }

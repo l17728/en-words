@@ -26,13 +26,26 @@ type Service struct {
 }
 
 type Client struct {
-	base     string
-	HTTP     *http.Client
-	Log      *obs.Logger
-	Services map[string]Service
-	statusMu sync.Mutex
-	statusAt time.Time
-	status   map[string]bool
+	base      string
+	HTTP      *http.Client
+	Log       *obs.Logger
+	Services  map[string]Service
+	statusMu  sync.Mutex
+	statusAt  time.Time
+	status    map[string]bool
+	profileMu sync.RWMutex
+	profile   Profile
+}
+
+// Profile assigns a model-console service to each product capability. The
+// service IDs are deliberately data, so an administrator can switch models
+// without rebuilding the server.
+type Profile struct {
+	Name  string `json:"name"`
+	Text  string `json:"text_service"`
+	ASR   string `json:"asr_service"`
+	TTSZh string `json:"tts_zh_service"`
+	TTSEn string `json:"tts_en_service"`
 }
 
 func New(base string, log *obs.Logger) (*Client, error) {
@@ -46,7 +59,7 @@ func New(base string, log *obs.Logger) (*Client, error) {
 	if log == nil {
 		log = obs.Nop()
 	}
-	return &Client{base: strings.TrimRight(base, "/"), Log: log, Services: map[string]Service{}, HTTP: &http.Client{
+	return &Client{base: strings.TrimRight(base, "/"), Log: log, Services: map[string]Service{}, profile: Profile{Name: "default", Text: "vl", ASR: "asr", TTSZh: "tts", TTSEn: "tts-en"}, HTTP: &http.Client{
 		Timeout:       20 * time.Second,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}}, nil
@@ -97,7 +110,7 @@ func (c *Client) Discover(ctx context.Context) error {
 		return fmt.Errorf("model console: invalid discovery JSON")
 	}
 	for _, s := range data.Services {
-		if s.ID == "vl" || s.ID == "asr" || s.ID == "tts" || s.ID == "tts-en" {
+		if strings.TrimSpace(s.ID) != "" {
 			c.Services[s.ID] = s
 		}
 	}
@@ -106,6 +119,53 @@ func (c *Client) Discover(ctx context.Context) error {
 	}
 	c.Log.InfoCtx(ctx, "provider", "provider_discovered", map[string]any{"text": c.Has("vl", "text"), "asr": c.Has("asr", "asr"), "tts": c.Has("tts", "tts"), "tts_en": c.Has("tts-en", "tts")})
 	return nil
+}
+
+func (c *Client) SetProfile(p Profile) error {
+	if p.Text == "" {
+		p.Text = "vl"
+	}
+	if p.ASR == "" {
+		p.ASR = "asr"
+	}
+	if p.TTSZh == "" {
+		p.TTSZh = "tts"
+	}
+	if p.TTSEn == "" {
+		p.TTSEn = "tts-en"
+	}
+	for id, cap := range map[string]string{p.Text: "text", p.ASR: "asr", p.TTSZh: "tts", p.TTSEn: "tts"} {
+		if !c.Has(id, cap) {
+			return fmt.Errorf("model console: service %q lacks %s capability", id, cap)
+		}
+	}
+	c.profileMu.Lock()
+	c.profile = p
+	c.profileMu.Unlock()
+	return nil
+}
+
+func (c *Client) Profile() Profile {
+	c.profileMu.RLock()
+	defer c.profileMu.RUnlock()
+	return c.profile
+}
+func (c *Client) serviceID(role string) string {
+	p := c.Profile()
+	if p.Text == "" {
+		p = Profile{Name: "default", Text: "vl", ASR: "asr", TTSZh: "tts", TTSEn: "tts-en"}
+	}
+	switch role {
+	case "text":
+		return p.Text
+	case "asr":
+		return p.ASR
+	case "tts_zh":
+		return p.TTSZh
+	case "tts_en":
+		return p.TTSEn
+	}
+	return ""
 }
 
 // Ready returns a short-lived, fail-closed snapshot of the manager's live
@@ -166,14 +226,15 @@ func (c *Client) ChatJSON(ctx context.Context, system, user string, out any) (er
 	start := time.Now()
 	defer func() {
 		if err != nil {
-			c.Log.ErrorCtx(ctx, "provider", "model_request_failed", map[string]any{"task": "text", "model": c.Services["vl"].Model, "reason": err.Error(), "duration_ms": time.Since(start).Milliseconds()})
+			c.Log.ErrorCtx(ctx, "provider", "model_request_failed", map[string]any{"task": "text", "model": c.Services[c.serviceID("text")].Model, "reason": err.Error(), "duration_ms": time.Since(start).Milliseconds()})
 		} else {
-			c.Log.InfoCtx(ctx, "provider", "model_request_completed", map[string]any{"task": "text", "model": c.Services["vl"].Model, "duration_ms": time.Since(start).Milliseconds()})
+			c.Log.InfoCtx(ctx, "provider", "model_request_completed", map[string]any{"task": "text", "model": c.Services[c.serviceID("text")].Model, "duration_ms": time.Since(start).Milliseconds()})
 		}
 	}()
 	ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
 	defer cancel()
-	body, _ := json.Marshal(map[string]any{"model": c.Services["vl"].Model, "messages": []map[string]string{{"role": "system", "content": system}, {"role": "user", "content": user}}, "temperature": 0, "max_tokens": 512, "stream": false, "response_format": map[string]string{"type": "json_object"}})
+	id := c.serviceID("text")
+	body, _ := json.Marshal(map[string]any{"model": c.Services[id].Model, "messages": []map[string]string{{"role": "system", "content": system}, {"role": "user", "content": user}}, "temperature": 0, "max_tokens": 512, "stream": false, "response_format": map[string]string{"type": "json_object"}})
 	raw, err := c.request(ctx, "/api/vl/chat", "application/json", bytes.NewReader(body), 1<<20)
 	if err != nil {
 		c.Log.InfoCtx(ctx, "provider", "provider_fallback", map[string]any{"task": "text", "reason": "request_failed"})
@@ -202,7 +263,8 @@ func (c *Client) Transcribe(ctx context.Context, audio []byte, filename, languag
 	defer cancel()
 	start := time.Now()
 	defer func() { c.mediaResult(ctx, "asr", language, len(audio), start, err) }()
-	if !c.Has("asr", "asr") || len(audio) == 0 || len(audio) > MaxAudio {
+	id := c.serviceID("asr")
+	if !c.Has(id, "asr") || len(audio) == 0 || len(audio) > MaxAudio {
 		return "", fmt.Errorf("model console: audio unavailable or invalid")
 	}
 	var body bytes.Buffer
@@ -214,7 +276,7 @@ func (c *Client) Transcribe(ctx context.Context, audio []byte, filename, languag
 	if _, err = f.Write(audio); err != nil {
 		return "", err
 	}
-	_ = w.WriteField("model", c.Services["asr"].Model)
+	_ = w.WriteField("model", c.Services[id].Model)
 	_ = w.WriteField("language", language)
 	_ = w.Close()
 	raw, err := c.request(ctx, "/api/asr/transcriptions", w.FormDataContentType(), &body, 1<<20)
@@ -243,9 +305,9 @@ func (c *Client) Synthesize(ctx context.Context, text, lang string) (audio []byt
 	defer cancel()
 	start := time.Now()
 	defer func() { c.mediaResult(ctx, "tts", lang, len(audio), start, err) }()
-	id, path := "tts", "/api/tts/speech"
+	id, path := c.serviceID("tts_zh"), "/api/tts/speech"
 	if lang == "en" {
-		id, path = "tts-en", "/api/tts-en/speech"
+		id, path = c.serviceID("tts_en"), "/api/tts-en/speech"
 	}
 	if (lang != "en" && lang != "zh") || !c.Has(id, "tts") || len([]rune(text)) > 300 || strings.TrimSpace(text) == "" {
 		return nil, fmt.Errorf("model console: unsupported speech request")
@@ -263,8 +325,12 @@ func (c *Client) Synthesize(ctx context.Context, text, lang string) (audio []byt
 
 func (c *Client) mediaResult(ctx context.Context, task, lang string, bytes int, start time.Time, err error) {
 	modelID := task
-	if task == "tts" && lang == "en" {
-		modelID = "tts-en"
+	if task == "tts" {
+		if lang == "en" {
+			modelID = c.serviceID("tts_en")
+		} else {
+			modelID = c.serviceID("tts_zh")
+		}
 	}
 	fields := map[string]any{"task": task, "model": c.Services[modelID].Model, "language": lang, "bytes": bytes, "duration_ms": time.Since(start).Milliseconds()}
 	if err != nil {

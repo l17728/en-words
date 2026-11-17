@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"enwords/internal/auth"
+	"enwords/internal/speechnormalize"
 	"enwords/internal/store"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -35,6 +36,59 @@ func (a *App) registerTeacherAnalysisRoutes(g *gin.RouterGroup) {
 	})
 
 	admin := g.Group("/admin", a.roleMW(auth.RoleAdmin))
+	admin.GET("/wordbooks/:id/words/search", func(c *gin.Context) {
+		bookID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		query := strings.ToLower(strings.TrimSpace(c.Query("q")))
+		if query == "" {
+			c.JSON(http.StatusOK, ok([]any{}))
+			return
+		}
+		entries, _, err := a.Books.ListEntries(bookID, 1, 5000)
+		if err != nil {
+			c.JSON(http.StatusOK, fail(errBadRequest, "word search failed"))
+			return
+		}
+		matches := make([]any, 0)
+		for _, entry := range entries {
+			if strings.Contains(strings.ToLower(entry.Word), query) {
+				variants := []store.WordPronunciationVariant{}
+				speechText := speechnormalize.NormalizeForSpeech(entry.Word)
+				cache := map[string]bool{"en": false, "zh": false}
+				if a.DB != nil {
+					_ = a.DB.Where("entry_id = ?", entry.ID).Order("version DESC").Find(&variants).Error
+					var assets []store.SpeechAsset
+					_ = a.DB.Where("speech_text = ?", speechText).Find(&assets).Error
+					for _, asset := range assets {
+						if asset.Status == "ready" {
+							cache[asset.Language] = true
+						}
+					}
+				}
+				matches = append(matches, gin.H{"entry": entry, "variants": variants, "speech_text": speechText, "cache_ready": cache})
+			}
+		}
+		c.JSON(http.StatusOK, ok(matches))
+	})
+	admin.POST("/speech/refresh", func(c *gin.Context) {
+		var in struct {
+			Text string `json:"text"`
+			Lang string `json:"lang"`
+		}
+		if c.ShouldBindJSON(&in) != nil || strings.TrimSpace(in.Text) == "" || (in.Lang != "en" && in.Lang != "zh") {
+			c.JSON(http.StatusOK, fail(errBadRequest, "invalid speech refresh request"))
+			return
+		}
+		if a.Local == nil {
+			c.JSON(http.StatusOK, fail(http.StatusServiceUnavailable, "local speech unavailable"))
+			return
+		}
+		if _, err := a.refreshSpeechCache(c.Request.Context(), strings.TrimSpace(in.Text), in.Lang); err != nil {
+			c.JSON(http.StatusOK, fail(http.StatusBadGateway, "speech refresh failed"))
+			return
+		}
+		a.Log.InfoCtx(c.Request.Context(), "speech", "speech_cache_refreshed", map[string]any{"operator": claimsOf(c).UID, "language": in.Lang, "text_length": len([]rune(in.Text))})
+		c.JSON(http.StatusOK, ok(gin.H{"status": "ready"}))
+	})
 	admin.GET("/teacher-analysis", func(c *gin.Context) {
 		if a.DB == nil {
 			c.JSON(http.StatusOK, ok([]any{}))
