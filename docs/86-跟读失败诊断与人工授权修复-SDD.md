@@ -4,11 +4,15 @@
 
 新增 `teacher_failure_analyses`：`id`、`lesson_id`、`entry_id`、`student_id`、`failure_type`、`target_text`、`transcript`、`diagnosis`、`suggestion`、`confidence`、`status`、`analysis_key`、`created_at`、`resolved_at`。新增 `word_pronunciation_variants`：`entry_id`、`variant`、`kind`、`source`、`confidence`、`enabled`，并以 `(entry_id, variant)` 唯一约束。
 
+新增 `teacher_analysis_jobs`（迁移编号 `20261117_teacher_analysis_v1`）：`id TEXT PRIMARY KEY`、`analysis_id INTEGER NOT NULL`、`analysis_key TEXT NOT NULL UNIQUE`、`status TEXT NOT NULL`、`lease_owner TEXT`、`lease_until DATETIME`、`attempts INTEGER NOT NULL DEFAULT 0`、`next_run_at DATETIME NOT NULL`、`last_error TEXT`、`created_at DATETIME NOT NULL`、`updated_at DATETIME NOT NULL`。索引为 `(status,next_run_at)`、`(lease_until)` 和 `(analysis_id)`；状态只允许 `queued→running→succeeded|failed|cancelled|expired`，过期租约只能回到 `queued`。
+
+新增 `teacher_authorization_receipts`（同一迁移）：`id TEXT PRIMARY KEY`、`analysis_id INTEGER NOT NULL`、`operator_id INTEGER NOT NULL`、`tool_name TEXT NOT NULL`、`args_sha256 TEXT NOT NULL`、`nonce TEXT NOT NULL UNIQUE`、`expires_at DATETIME NOT NULL`、`consumed_at DATETIME`、`created_at DATETIME NOT NULL`。`(analysis_id,tool_name,args_sha256)` 建唯一索引；消费必须在事务中锁定未消费记录、校验 nonce/过期时间和参数摘要，再写入变体并设置 `consumed_at`，任何重复消费返回原结果且不重复写入。
+
 ## 流程
 
 判分失败后写入幂等事件，快路径立即返回。后台任务按 `lesson_id+entry_id+transcript` 去重，先执行确定性分类，再异步调用老师 Agent。Agent 输出严格 JSON；解析失败使用系统诊断。成功重试将相关分析标记为 `superseded`。
 
-任务状态为 `queued`、`running`、`succeeded`、`failed`、`cancelled`、`expired`。SQLite 中持久化任务、租约持有者、租约过期时间和下次重试时间；worker 启动时回收过期 `running` 任务。指数退避最多 3 次，超过后保留确定性报告。单进程 worker 并发上限为 2，事务内使用 CAS 抢占任务。
+任务状态为 `queued`、`running`、`succeeded`、`failed`、`cancelled`、`expired`。SQLite 中持久化任务、租约持有者、租约过期时间和下次重试时间；worker 启动时回收过期 `running` 任务。指数退避最多 3 次，超过后保留确定性报告。单进程 worker 并发上限为 2，事务内使用 CAS 抢占任务。分析状态与实施状态分开维护；`analysis_key` 固定为 `lesson_id/entry_id/failure_type/normalized_transcript/epoch`，不包含 attempt，attempt 作为聚合计数保存。
 
 ## API
 
