@@ -30,6 +30,10 @@
 
 课堂只显示“正在分析”，不改变布局和课堂状态；课程报告显示诊断、ASR 文本、建议和评价按钮。管理员页面显示原词、转写、变体预览、置信度和审计结果。
 
+## TTS/ASR 统一还原
+
+词库创建或导入时扫描词条并生成朗读配置；运行时禁止 TTS 和 ASR 各自解释缩写。TTS 前置还原层使用确定性规则并缓存结果，未知缩写才进入老师 Agent 分析；模型超时回退原文。当前实现的规则入口为 `internal/speechnormalize`，已接入英文合成路径。
+
 ## 可观测性与测试
 
 记录 `failure_analysis_queued`、`teacher_analysis_completed`、`teacher_analysis_evaluated`、`variant_applied`、`scan_completed`，均带 `trace_id`。单测覆盖幂等和权限，集成测试覆盖工具调用，Playwright 覆盖管理员评价到变体生效、多用户和迟到结果。
