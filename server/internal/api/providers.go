@@ -132,7 +132,13 @@ func (a *App) registerProviderRoutes(g *gin.RouterGroup) {
 			c.JSON(503, fail(503, "语音识别失败，请使用文字输入"))
 			return
 		}
-		a.Log.InfoCtx(ctx, "speech", "audio_transcribed", map[string]any{"lesson_id": id, "student_id": claimsOf(c).UID, "text_length": len([]rune(text))})
+		transcribedPayload := map[string]any{"lesson_id": id, "student_id": claimsOf(c).UID, "text_length": len([]rune(text))}
+		// Transcript logging is intentionally opt-in because it contains user speech.
+		// Enable it only for a local diagnostic session with ENWORDS_LOG_ASR_TEXT=1.
+		if os.Getenv("ENWORDS_LOG_ASR_TEXT") == "1" {
+			transcribedPayload["transcript"] = text
+		}
+		a.Log.InfoCtx(ctx, "speech", "audio_transcribed", transcribedPayload)
 		if !validVoiceText(text) {
 			reject(400, "invalid_transcript", "invalid voice text")
 			return
