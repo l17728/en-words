@@ -1,10 +1,13 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"enwords/internal/auth"
 	"enwords/internal/store"
@@ -21,6 +24,9 @@ func TestAdminCanExplicitlyEnablePilotPersistence(t *testing.T) {
 	_, err = app.Auth.CreateUser("admin", "adminpw", "管理员", auth.RoleAdmin)
 	require.NoError(t, err)
 	app.persistUser("admin")
+	require.NoError(t, db.Create(&store.User{ID: 7, Username: "student-7", Role: "student", Status: "active"}).Error)
+	require.NoError(t, db.Create(&store.WordBook{ID: 9, Name: "pilot-book", Status: "published"}).Error)
+	require.NoError(t, db.Create(&store.WordEntry{ID: 91, BookID: 9, Word: "cat", NormKey: "cat", Meanings: `["cat"]`}).Error)
 	token, _ := loginGet(t, app, "admin", "adminpw")
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/pilot/enable", nil)
@@ -36,4 +42,14 @@ func TestAdminCanExplicitlyEnablePilotPersistence(t *testing.T) {
 	w = httptest.NewRecorder()
 	app.Router().ServeHTTP(w, req)
 	require.Equal(t, 0, doJSON(t, w).Code)
+
+	body, err := json.Marshal(map[string]any{"task_id": "admin-pilot-task", "student_id": 7, "book_id": 9, "open_at": time.Date(2030, 1, 1, 9, 0, 0, 0, time.UTC).Format(time.RFC3339), "word_ids": []int64{91}})
+	require.NoError(t, err)
+	create := httptest.NewRequest(http.MethodPost, "/api/v1/admin/pilot/lessons", strings.NewReader(string(body)))
+	create.Header.Set("Authorization", "Bearer "+token)
+	create.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	app.Router().ServeHTTP(w, create)
+	created := doJSON(t, w)
+	require.Equal(t, 0, created.Code, created.Msg)
 }
