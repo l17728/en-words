@@ -8,6 +8,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestPlaybackActionCarriesNormalizedEnglishSpeechText(t *testing.T) {
+	m, _ := newMachine(t, batchN(1))
+	w := m.words[0]
+	w.Word = "have sth. in common"
+	a := m.playbackAction(w, 1, false, false)
+	require.Equal(t, "have sth. in common", a.Word)
+	require.Equal(t, "have something in common", a.SpeechText)
+}
+
 func TestPlaybackRestoreRejectsCorruptActivePosition(t *testing.T) {
 	for _, mode := range []string{"teach", "reteach", "review"} {
 		for _, seg := range []int{-1, 0, 1, 4, 5} {

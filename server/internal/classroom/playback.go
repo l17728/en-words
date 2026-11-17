@@ -1,5 +1,7 @@
 package classroom
 
+import "enwords/internal/speechnormalize"
+
 import (
 	"enwords/internal/config"
 	"fmt"
@@ -115,7 +117,11 @@ func (m *Machine) playbackAction(w Word, seg int, reverse, review bool) Action {
 	if lang == "zh" {
 		text = firstMeaning(w)
 	}
-	return Action{Type: ActPlayTTS, Lang: lang, SegIdx: seg, WordID: w.ID, Word: text, Meanings: w.Meanings, DelayBeforeMs: delay}
+	speechText := text
+	if lang == "en" {
+		speechText = speechnormalize.NormalizeForSpeech(text)
+	}
+	return Action{Type: ActPlayTTS, Lang: lang, SegIdx: seg, WordID: w.ID, Word: text, SpeechText: speechText, Meanings: w.Meanings, DelayBeforeMs: delay}
 }
 
 func (m *Machine) currentPlaybackAction() Action {

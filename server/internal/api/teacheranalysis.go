@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"enwords/internal/judge"
+	"enwords/internal/speechnormalize"
 	"enwords/internal/store"
 )
 
@@ -35,14 +36,14 @@ func (a *App) enqueueTeacherFailure(lessonID, entryID, studentID int64, target, 
 }
 
 func (a *App) evaluateRepeatWithVariants(entryID int64, target, transcript string) string {
-	result := judge.EvaluateRepeat(target, transcript)
+	result := judge.EvaluateRepeat(speechnormalize.NormalizeForSpeech(target), transcript)
 	if result == "matched" || a.DB == nil {
 		return result
 	}
 	var variants []store.WordPronunciationVariant
 	if err := a.DB.Where("entry_id = ? AND enabled = ?", entryID, true).Find(&variants).Error; err == nil {
 		for _, variant := range variants {
-			if judge.EvaluateRepeat(variant.Variant, transcript) == "matched" {
+			if judge.EvaluateRepeat(speechnormalize.NormalizeForSpeech(variant.Variant), transcript) == "matched" {
 				return "matched"
 			}
 		}

@@ -515,7 +515,7 @@ export default function ClassroomPage() {
               }
               if (a.word) {
                 console.debug('[classroom_media]', { lesson_id: lessonId, phase: phaseRef.current })
-                speak(a.word, a.lang === 'zh' ? 'zh-CN' : 'en-US', a.delay_before_ms, a.seg_idx)
+                speak(a.speech_text ?? a.word, a.lang === 'zh' ? 'zh-CN' : 'en-US', a.delay_before_ms, a.seg_idx)
               }
               break
             case 'start_repeat':

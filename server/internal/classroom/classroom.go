@@ -151,18 +151,21 @@ type Result struct {
 }
 
 type Action struct {
-	DelayBeforeMs int      `json:"delay_before_ms"`
-	Type          string   `json:"type"`
-	Lang          string   `json:"lang,omitempty"`
-	SegIdx        int      `json:"seg_idx,omitempty"`
-	WordID        int64    `json:"word_id,omitempty"`
-	Word          string   `json:"word,omitempty"`
-	WithZh        bool     `json:"with_zh,omitempty"`
-	Kind          string   `json:"kind,omitempty"`
-	Total         int      `json:"total,omitempty"`
-	Round         int      `json:"round,omitempty"`
-	Meanings      []string `json:"meanings,omitempty"`
-	Reason        string   `json:"reason,omitempty"`
+	DelayBeforeMs int    `json:"delay_before_ms"`
+	Type          string `json:"type"`
+	Lang          string `json:"lang,omitempty"`
+	SegIdx        int    `json:"seg_idx,omitempty"`
+	WordID        int64  `json:"word_id,omitempty"`
+	Word          string `json:"word,omitempty"`
+	// SpeechText is the deterministic pronunciation form used by TTS. Word is
+	// retained for the learner-facing subtitle and matching target.
+	SpeechText string   `json:"speech_text,omitempty"`
+	WithZh     bool     `json:"with_zh,omitempty"`
+	Kind       string   `json:"kind,omitempty"`
+	Total      int      `json:"total,omitempty"`
+	Round      int      `json:"round,omitempty"`
+	Meanings   []string `json:"meanings,omitempty"`
+	Reason     string   `json:"reason,omitempty"`
 }
 
 // ---- 状态 ----
