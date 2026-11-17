@@ -471,7 +471,7 @@ var firstAudioBackendSequence atomic.Uint64
 
 // Updated only after reviewing the schema-object diff in the isolated backend
 // SDD. This pins the complete ordered sqlite_master inventory, including SQL.
-const firstAudioExpectedSchemaDigest = "75f798665a3d99e1e8e896425aefba3e8c3f0eb50b0de2348d1877072bbaa804"
+const firstAudioExpectedSchemaDigest = "998ee2dc24978d363ed56b31087703ce4b5518c208c4acbaf50508bd87d054ee"
 
 type firstAudioGuardedBackend struct {
 	mu                 sync.Mutex
@@ -608,7 +608,10 @@ func (b *firstAudioGuardedBackend) Bind(ctx context.Context, fixture string) (re
 	stage = "startup_snapshot_invariant"
 	afterStartup, err := captureFirstAudioSnapshot(ctx, pool)
 	if err != nil || !equalFirstAudioSnapshots(baseline, afterStartup) {
-		return firstAudioBound{}, errors.New("guarded app startup changed the fixture snapshot")
+		if err == nil {
+			return firstAudioBound{}, fmt.Errorf("guarded app startup changed fixture snapshot: before_objects=%d after_objects=%d before_tables=%d after_tables=%d", len(baseline.objects), len(afterStartup.objects), len(baseline.rows), len(afterStartup.rows))
+		}
+		return firstAudioBound{}, fmt.Errorf("guarded app startup snapshot failed: %w", err)
 	}
 	b.policy.publish(firstAudioGuardContext{phase: firstAudioRunJourney, lessonID: identity.LessonID, studentID: identity.StudentID, bookID: identity.BookID, wordCount: len(identity.WordIDs), wordIDs: identity.WordIDs, probeToken: b.probeToken})
 	b.policy.runtimeStarted.Store(true)

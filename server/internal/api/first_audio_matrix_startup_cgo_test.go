@@ -52,7 +52,9 @@ func firstAudioStartupReadManifest() map[string]map[string]struct{} {
 		&store.User{}, &store.WordBook{}, &store.WordEntry{}, &store.MemoryCard{}, &store.Lesson{},
 		&store.ClassroomEvent{}, &store.WsTicket{}, &store.ConfigGlobal{}, &store.ConfigOverride{},
 		&store.Feedback{}, &store.Notification{}, &store.AgentMemory{}, &store.AuditLog{}, &store.PlacementDraft{},
+		&store.SpeechAsset{}, &store.ModelProfile{},
 	}
+	models = append(models, store.TeacherAnalysisModels()...)
 	cache := &sync.Map{}
 	manifest := make(map[string]map[string]struct{}, len(models)+2)
 	for _, model := range models {
