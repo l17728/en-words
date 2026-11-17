@@ -14,7 +14,6 @@ import (
 
 	"enwords/internal/classroom"
 	"enwords/internal/config"
-	"enwords/internal/judge"
 	"enwords/internal/scripts"
 	"enwords/internal/voicecmd"
 	"gorm.io/gorm"
@@ -861,7 +860,7 @@ func (r *Room) handleVoiceInputLocked(text, answerText string) (string, []Msg) {
 		if canceled {
 			result = "canceled"
 		} else {
-			result = judge.EvaluateRepeat(w.Word, text)
+			result = r.app.evaluateRepeatWithVariants(w.ID, w.Word, text)
 		}
 		r.app.Log.InfoCtx(r.traceContext(), "classroom", "repeat_evaluated", map[string]any{
 			"lesson_id": r.lessonID, "word_id": w.ID, "purpose": "repeat", "source": "target_match",
@@ -871,6 +870,9 @@ func (r *Room) handleVoiceInputLocked(text, answerText string) (string, []Msg) {
 			r.app.Log.InfoCtx(r.traceContext(), "classroom", "repeat_verified", map[string]any{
 				"lesson_id": r.lessonID, "word_id": w.ID, "answer_length": len([]rune(text))})
 			return "repeat_read", r.handleEventLocked(classroom.Event{Type: classroom.EvRepeatDone})
+		}
+		if result == "no_match" {
+			r.app.enqueueTeacherFailure(r.lessonID, w.ID, r.studentID, w.Word, text, "target_mismatch", r.epoch)
 		}
 		return "", nil // 未确认目标词：继续听（原超时策略不变）
 	}

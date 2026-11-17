@@ -289,7 +289,7 @@ func TestFreshStartupSchemaEqualsPriorMigration(t *testing.T) {
 			triggers++
 		}
 	}
-	require.Equal(t, 22, tables)
+	require.Equal(t, 26, tables)
 	require.Equal(t, 6, triggers)
 	for _, q := range []struct {
 		sql  string

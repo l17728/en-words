@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Alert, Button, Card, Form, Input, List, Modal, Select, Space, Typography, message } from 'antd'
 import { useNavigate } from 'react-router-dom'
-import { api, type Book, type FeedbackTodo, type Notification } from '../api/client'
+import { api, type Book, type FeedbackTodo, type Notification, type TeacherAnalysis } from '../api/client'
 import { useAuthStore } from '../stores/auth'
 import { ExclusiveAction } from '../interaction/exclusive-action'
 import { LatestRead } from '../interaction/latest-read'
@@ -30,13 +30,16 @@ export default function AdminPage() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [todoError, setTodoError] = useState('')
   const [selectedTodo, setSelectedTodo] = useState<FeedbackTodo | null>(null)
+  const [analyses, setAnalyses] = useState<TeacherAnalysis[]>([])
+  const [analysisBusy, setAnalysisBusy] = useState<number | null>(null)
+  const [analysisError, setAnalysisError] = useState('')
   const [todoAttempt, setTodoAttempt] = useState(0)
   useEffect(() => {
     let disposed = false
     // oxlint-disable-next-line react/set-state-in-effect -- Refreshing external todos/notifications synchronously clears the previous request error.
     setTodoError('')
-    Promise.all([api.get<FeedbackTodo[]>('/admin/todos'), api.get<Notification[]>('/admin/notifications')])
-      .then(([items, notices]) => { if (!disposed) { setTodos(items || []); setNotifications(notices || []) } })
+    Promise.all([api.get<FeedbackTodo[]>('/admin/todos'), api.get<Notification[]>('/admin/notifications'), api.get<TeacherAnalysis[]>('/admin/teacher-analysis')])
+      .then(([items, notices, reports]) => { if (!disposed) { setTodos(items || []); setNotifications(notices || []); setAnalyses(reports || []) } })
       .catch(e => { if (!disposed) setTodoError(e.message) })
     return () => { disposed = true }
   }, [todoAttempt])
@@ -69,6 +72,26 @@ export default function AdminPage() {
     <Card title="管理员通知" style={{ marginBottom: 16 }}>
       <List dataSource={notifications} locale={{ emptyText: '暂无通知' }} renderItem={notice => <List.Item key={notice.id}>
         <List.Item.Meta title={notice.title} description={notice.body} />
+      </List.Item>} />
+    </Card>
+    <Card title="老师 Agent 跟读诊断" style={{ marginBottom: 16 }}>
+      {analysisError && <Alert type="error" title={analysisError} />}
+      <List dataSource={analyses} locale={{ emptyText: '暂无待处理诊断' }} renderItem={analysis => <List.Item key={analysis.id}
+        actions={analysis.status === 'pending' ? [
+          <Button key="apply" type="primary" loading={analysisBusy === analysis.id} onClick={async () => {
+            setAnalysisBusy(analysis.id); setAnalysisError('')
+            try { await api.post(`/admin/teacher-analysis/${analysis.id}/evaluate`, { action: 'accept_suggestion' }); setAnalyses(rows => rows.map(row => row.id === analysis.id ? { ...row, status: 'approved', implementation_status: 'approved' } : row)); message.success('已提交给老师 Agent 执行') }
+            catch (e) { setAnalysisError((e as Error).message) }
+            finally { setAnalysisBusy(null) }
+          }}>认可并实施</Button>,
+          <Button key="reject" disabled={analysisBusy === analysis.id} onClick={async () => {
+            setAnalysisBusy(analysis.id); setAnalysisError('')
+            try { await api.post(`/admin/teacher-analysis/${analysis.id}/evaluate`, { action: 'reject_suggestion' }); setAnalyses(rows => rows.map(row => row.id === analysis.id ? { ...row, status: 'rejected' } : row)); message.success('已记录为忽略') }
+            catch (e) { setAnalysisError((e as Error).message) }
+            finally { setAnalysisBusy(null) }
+          }}>忽略</Button>,
+        ] : []}>
+        <List.Item.Meta title={`${analysis.target_text}（${analysis.failure_type}）`} description={<Space direction="vertical"><span>ASR：{analysis.transcript || '未记录'}</span><span>{analysis.diagnosis || '暂无诊断'}{analysis.suggestion ? `；建议：${analysis.suggestion}` : ''}</span></Space>} />
       </List.Item>} />
     </Card>
     <Modal title="反馈待办详情" open={!!selectedTodo} footer={null} onCancel={() => setSelectedTodo(null)}>

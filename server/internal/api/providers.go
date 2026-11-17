@@ -15,6 +15,7 @@ import (
 	"enwords/internal/judge"
 	"enwords/internal/localmodel"
 	"enwords/internal/obs"
+	"enwords/internal/speechnormalize"
 	"github.com/gin-gonic/gin"
 )
 
@@ -169,7 +170,12 @@ func (a *App) registerProviderRoutes(g *gin.RouterGroup) {
 			ctx = obs.WithTrace(ctx, fmt.Sprintf("lesson-%d", in.LessonID))
 		}
 		a.Log.InfoCtx(ctx, "speech", "synthesis_requested", map[string]any{"lesson_id": in.LessonID, "student_id": claimsOf(c).UID, "request_trace_id": obs.TraceID(c.Request.Context()), "text_length": len([]rune(in.Text)), "language": in.Lang})
-		raw, err := a.Local.Synthesize(ctx, in.Text, in.Lang)
+		speechText := in.Text
+		if in.Lang == "en" {
+			speechText = speechnormalize.NormalizeForSpeech(in.Text)
+			a.Log.InfoCtx(ctx, "speech", "speech_normalization_completed", map[string]any{"lesson_id": in.LessonID, "original_length": len([]rune(in.Text)), "speech_length": len([]rune(speechText)), "changed": speechText != in.Text})
+		}
+		raw, err := a.Local.Synthesize(ctx, speechText, in.Lang)
 		if err != nil {
 			c.JSON(503, fail(503, "语音合成失败"))
 			return

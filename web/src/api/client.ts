@@ -217,3 +217,19 @@ export interface FeedbackTodo {
   legacy?: boolean
   reply?: string
 }
+
+export interface TeacherAnalysis {
+  id: number
+  lesson_id: number
+  entry_id: number
+  student_id: number
+  failure_type: string
+  target_text: string
+  transcript?: string
+  diagnosis?: string
+  suggestion?: string
+  confidence?: number
+  status: string
+  implementation_status?: string
+  created_at: string
+}
