@@ -77,7 +77,10 @@ type App struct {
 	TestMode       bool     // -testmode：跳过课程开放时间校验（E2E 用）
 	DB             *gorm.DB // SQLite 持久化句柄（nil=纯内存模式）
 	DuplexStore    *store.DuplexRepo
-	mu             sync.Mutex
+	// Pilot is nil unless an operator explicitly enables isolated pilot
+	// persistence. Legacy classroom traffic never uses it implicitly.
+	Pilot *store.PilotStore
+	mu    sync.Mutex
 }
 
 // SetTestMode 开启测试模式。
