@@ -156,6 +156,7 @@ export async function playLocalSpeech(text: string, lang: 'zh' | 'en', signal: A
       let audioContext: AudioContext | undefined
       let source: MediaElementAudioSourceNode | undefined
       let gain: GainNode | undefined
+      let compressor: DynamicsCompressorNode | undefined
       try {
         const player = new Audio(url)
         audio = player
@@ -168,8 +169,14 @@ export async function playLocalSpeech(text: string, lang: 'zh' | 'en', signal: A
             audioContext = new AudioContextCtor()
             source = audioContext.createMediaElementSource(player)
             gain = audioContext.createGain()
-            gain.gain.value = lang === 'zh' ? 3.1 : 1
-            source.connect(gain).connect(audioContext.destination)
+            gain.gain.value = lang === 'zh' ? 6.2 : 1
+            compressor = audioContext.createDynamicsCompressor()
+            compressor.threshold.value = -3
+            compressor.knee.value = 6
+            compressor.ratio.value = 8
+            compressor.attack.value = 0.003
+            compressor.release.value = 0.12
+            source.connect(gain).connect(compressor).connect(audioContext.destination)
             await audioContext.resume()
           }
         } catch {
@@ -177,7 +184,7 @@ export async function playLocalSpeech(text: string, lang: 'zh' | 'en', signal: A
         }
         await playAudio(player, signal, identity.check, onPlaying)
       } finally {
-        audio?.pause(); source?.disconnect(); gain?.disconnect(); await audioContext?.close().catch(() => undefined); URL.revokeObjectURL(url)
+        audio?.pause(); source?.disconnect(); gain?.disconnect(); compressor?.disconnect(); await audioContext?.close().catch(() => undefined); URL.revokeObjectURL(url)
       }
     }, identity.check)
   console.info('[speech_cache]', { module: 'speech', event: 'playback_completed', trace_id: `lesson-${lessonId ?? 'preview'}`,

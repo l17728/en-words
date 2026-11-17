@@ -377,14 +377,15 @@ export default function ClassroomPage() {
         ? Math.min(600, Math.max(0, Math.floor(delayBeforeMs))) : 0
       lastTtsSegmentRef.current = segment
       ttsQueueRef.current.push({ text, lang, context: { ...contextRef.current }, delayMs, segment })
-      if (delayMs > 0) {
-        const warm = (p: Capabilities) => {
-          const available = lang === 'zh-CN' ? p.tts_zh : p.tts_en
-          if (available) prefetchLocalSpeech(text, lang === 'zh-CN' ? 'zh' : 'en', lessonId)
-        }
-        if (providersRef.current) warm(providersRef.current)
-        else void capabilities().then(warm).catch(() => undefined)
+      // Warm every segment, including zero-gap segments. Chinese synthesis is
+      // slower than English; waiting until playback starts creates a visible
+      // gap even though the model service itself is already resident.
+      const warm = (p: Capabilities) => {
+        const available = lang === 'zh-CN' ? p.tts_zh : p.tts_en
+        if (available) prefetchLocalSpeech(text, lang === 'zh-CN' ? 'zh' : 'en', lessonId)
       }
+      if (providersRef.current) warm(providersRef.current)
+      else void capabilities().then(warm).catch(() => undefined)
       pumpTts()
     },
     [pumpTts, lessonId],
