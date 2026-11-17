@@ -1,4 +1,5 @@
-// Experimental isolated persistence component; no application, HTTP or tool entry point.
+// PilotStore is an explicitly enabled isolated persistence component. It is
+// not enabled by the normal legacy startup path.
 package store
 
 import (
@@ -75,6 +76,24 @@ func newPilotStore(ctx context.Context, db *gorm.DB) (*PilotStore, error) {
 		return nil, err
 	}
 	return &PilotStore{db: db, verifier: v}, nil
+}
+
+// OpenPilotStore performs the pilot schema migration and audit against the
+// supplied SQLite pool, then returns a store bound to that exact pool. The
+// caller must opt in explicitly; legacy App startup never calls this method.
+func OpenPilotStore(ctx context.Context, db *gorm.DB, observer func(context.Context, PilotStoreEvent)) (*PilotStore, error) {
+	if db == nil {
+		return nil, gorm.ErrInvalidDB
+	}
+	if err := migratePilotSchema(ctx, db); err != nil {
+		return nil, err
+	}
+	store, err := newPilotStore(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	store.SetObserver(observer)
+	return store, nil
 }
 
 // Deliberately no SchedulerRepo/ConfigPersister factory, ScopeRepo, HTTP/tool
