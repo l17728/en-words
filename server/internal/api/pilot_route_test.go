@@ -69,4 +69,5 @@ func TestAdminCanExplicitlyEnablePilotPersistence(t *testing.T) {
 	app.Router().ServeHTTP(w, command)
 	commandResp := doJSON(t, w)
 	require.Equal(t, 0, commandResp.Code, commandResp.Msg)
+
 }
