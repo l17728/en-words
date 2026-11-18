@@ -889,11 +889,14 @@ export default function ClassroomPage() {
           // the same word again; a successful match changes context/phase and
           // the gate closes before the next iteration.
           if (phase === 'repeating') {
-            await new Promise<void>(resolve => setTimeout(resolve, 250))
-            // The accepted repeat can advance the phase before the delayed
-            // retry wakes up. Re-check the live refs so one answer never
-            // opens a second microphone capture window.
-            if (phaseRef.current !== 'repeating' || !inputGate.current.accepts(contextRef.current, phaseRef.current, onlineRef.current, inputTurn)) return
+            // Wait for the business frame instead of opening a second capture
+            // window on a fixed timer. This matters when two students make
+            // concurrent ASR requests and the state update arrives late.
+            for (let i = 0; i < 20; i++) {
+              await new Promise<void>(resolve => setTimeout(resolve, 50))
+              if (phaseRef.current !== 'repeating' || contextRef.current.turn !== captureContext.turn) return
+            }
+            if (!inputGate.current.accepts(contextRef.current, phaseRef.current, onlineRef.current, inputTurn)) return
           } else break
         }
       } catch (e) {
