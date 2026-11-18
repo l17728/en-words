@@ -38,6 +38,10 @@ type Client struct {
 	status    map[string]bool
 	profileMu sync.RWMutex
 	profile   Profile
+	// The local ASR model is single-GPU and can return empty/partial results
+	// when several multipart requests are decoded at once. Keep a cancellable
+	// one-at-a-time gate; callers still retain their request deadline.
+	asrGate chan struct{}
 }
 
 // Profile assigns a model-console service to each product capability. The
@@ -65,8 +69,19 @@ func New(base string, log *obs.Logger) (*Client, error) {
 	return &Client{base: strings.TrimRight(base, "/"), Log: log, Services: map[string]Service{}, profile: Profile{Name: "default", Text: "vl", ASR: "asr", TTSZh: "tts", TTSEn: "tts-en"}, HTTP: &http.Client{
 		Timeout:       20 * time.Second,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
-	}}, nil
+	}, asrGate: make(chan struct{}, 1)}, nil
 }
+
+func (c *Client) acquireASR(ctx context.Context) error {
+	select {
+	case c.asrGate <- struct{}{}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func (c *Client) releaseASR() { <-c.asrGate }
 
 func (c *Client) request(ctx context.Context, path, contentType string, body io.Reader, limit int64) ([]byte, error) {
 	start := time.Now()
@@ -270,6 +285,10 @@ func (c *Client) Transcribe(ctx context.Context, audio []byte, filename, languag
 	if !c.Has(id, "asr") || len(audio) == 0 || len(audio) > MaxAudio {
 		return "", fmt.Errorf("model console: audio unavailable or invalid")
 	}
+	if err := c.acquireASR(ctx); err != nil {
+		return "", fmt.Errorf("model console: ASR queue canceled")
+	}
+	defer c.releaseASR()
 	var body bytes.Buffer
 	w := multipart.NewWriter(&body)
 	f, err := w.CreateFormFile("file", filename)

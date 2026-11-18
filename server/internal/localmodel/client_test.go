@@ -256,3 +256,38 @@ func TestConcurrentTranscribeKeepsTraceAndPayloadIsolated(t *testing.T) {
 	defer mu.Unlock()
 	require.Len(t, seen, 4)
 }
+
+func TestConcurrentTranscribeIsBoundedAndPreservesCancellation(t *testing.T) {
+	var active atomic.Int32
+	var maxActive atomic.Int32
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		current := active.Add(1)
+		for {
+			old := maxActive.Load()
+			if current <= old || maxActive.CompareAndSwap(old, current) {
+				break
+			}
+		}
+		defer active.Add(-1)
+		time.Sleep(10 * time.Millisecond)
+		_, _ = w.Write([]byte(`{"text":"ok"}`))
+	}))
+	defer s.Close()
+	c, err := New(s.URL, nil)
+	require.NoError(t, err)
+	c.Services["asr"] = Service{Model: "fixture", Capabilities: []string{"asr"}}
+	var wg sync.WaitGroup
+	for i := 0; i < 4; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_, _ = c.Transcribe(context.Background(), []byte("audio"), "recording.wav", "en")
+		}()
+	}
+	wg.Wait()
+	require.EqualValues(t, 1, maxActive.Load())
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err = c.Transcribe(ctx, []byte("audio"), "recording.wav", "en")
+	require.Error(t, err)
+}
