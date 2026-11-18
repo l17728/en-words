@@ -163,6 +163,11 @@ func (a *App) Router() *gin.Engine {
 			c.JSON(http.StatusOK, fail(errBadRequest, "导入失败，本次词条未保存，请稍后重试"))
 			return
 		}
+		if created, scanErr := a.ScanPronunciationVariants(id); scanErr != nil {
+			a.Log.Warn("teacher_analysis", "pronunciation_scan_failed", map[string]any{"book_id": id, "error": scanErr.Error()})
+		} else {
+			a.Log.Info("teacher_analysis", "pronunciation_scan_completed", map[string]any{"book_id": id, "created": created, "trigger": "import"})
+		}
 		a.Log.InfoCtx(c.Request.Context(), "wordbook", "import_completed", map[string]any{"book_id": id, "inserted": res.Inserted, "skipped": len(res.Skipped), "duration_ms": time.Since(started).Milliseconds()})
 		c.JSON(http.StatusOK, ok(res))
 	})
@@ -171,6 +176,11 @@ func (a *App) Router() *gin.Engine {
 		if err := a.Books.Publish(id); err != nil {
 			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
 			return
+		}
+		if created, scanErr := a.ScanPronunciationVariants(id); scanErr != nil {
+			a.Log.Warn("teacher_analysis", "pronunciation_scan_failed", map[string]any{"book_id": id, "error": scanErr.Error()})
+		} else {
+			a.Log.Info("teacher_analysis", "pronunciation_scan_completed", map[string]any{"book_id": id, "created": created, "trigger": "publish"})
 		}
 		c.JSON(http.StatusOK, ok("published"))
 	})
