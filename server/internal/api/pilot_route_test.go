@@ -15,7 +15,8 @@ import (
 )
 
 func TestAdminCanExplicitlyEnablePilotPersistence(t *testing.T) {
-	db, err := store.Open(filepath.Join(t.TempDir(), "pilot-api.db"))
+	dbPath := filepath.Join(t.TempDir(), "pilot-api.db")
+	db, err := store.Open(dbPath)
 	require.NoError(t, err)
 	sqlDB, err := db.DB()
 	require.NoError(t, err)
@@ -69,5 +70,18 @@ func TestAdminCanExplicitlyEnablePilotPersistence(t *testing.T) {
 	app.Router().ServeHTTP(w, command)
 	commandResp := doJSON(t, w)
 	require.Equal(t, 0, commandResp.Code, commandResp.Msg)
+
+	// A second application instance must audit and recover the active Pilot lesson.
+	app2 := NewApp(&fakeClock{}, db)
+	require.NoError(t, app2.EnablePilotPersistence(t.Context()))
+	require.NotNil(t, app2.Pilot)
+	_, _, directErr := app2.EnterPilotRoom(t.Context(), 1, student.ID, "student-room-task-2")
+	require.NoError(t, directErr)
+	enter2 := httptest.NewRequest(http.MethodGet, "/api/v1/student/pilot/lessons/1/enter?task_id=student-room-task-2", nil)
+	enter2.Header.Set("Authorization", "Bearer "+studentToken)
+	w = httptest.NewRecorder()
+	app2.Router().ServeHTTP(w, enter2)
+	entered2 := doJSON(t, w)
+	require.Equal(t, 0, entered2.Code, entered2.Msg)
 
 }

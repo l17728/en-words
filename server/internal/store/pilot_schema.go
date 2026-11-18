@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"gorm.io/gorm"
 	"io"
 	"sort"
@@ -503,10 +504,10 @@ func inspectPilotSchemaTx(tx *gorm.DB) (PilotSchemaState, error) {
 func auditPilotDataTx(tx *gorm.DB, state PilotSchemaState) error {
 	bridges, err := loadPilotLegacyBridgesTx(tx)
 	if err != nil {
-		return err
+		return fmt.Errorf("pilot legacy bridges: %w", err)
 	}
 	if _, err := auditPilotLegacyRuntimeTx(tx); err != nil {
-		return err
+		return fmt.Errorf("pilot legacy audit: %w", err)
 	}
 	if state == PilotLegacyUnmigrated {
 		return nil
@@ -538,7 +539,10 @@ func auditPilotDataTx(tx *gorm.DB, state PilotSchemaState) error {
 			return errPilotV2SchemaInvalid
 		}
 	}
-	return auditPilotCreatedDataTx(tx)
+	if err := auditPilotCreatedDataTx(tx); err != nil {
+		return fmt.Errorf("pilot created audit: %w", err)
+	}
+	return nil
 }
 
 func checkPilotIndexesAndForeignKeysTx(tx *gorm.DB, expected pilotSchemaObject) error {

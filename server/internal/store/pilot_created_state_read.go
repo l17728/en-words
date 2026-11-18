@@ -11,13 +11,15 @@ import (
 // PilotCreatedState contains only the metadata needed to identify a durable
 // created checkpoint. It is not a decision or permission to enter a Room.
 type PilotCreatedState struct {
-	LessonID          int64  `json:"lesson_id"`
-	StudentID         int64  `json:"student_id"`
-	BookID            int64  `json:"book_id"`
-	SchemaVersion     int64  `json:"schema_version"`
-	Lifecycle         string `json:"lifecycle"`
-	Phase             string `json:"phase"`
-	CheckpointVersion int64  `json:"checkpoint_version"`
+	LessonID             int64  `json:"lesson_id"`
+	StudentID            int64  `json:"student_id"`
+	BookID               int64  `json:"book_id"`
+	SchemaVersion        int64  `json:"schema_version"`
+	Lifecycle            string `json:"lifecycle"`
+	Phase                string `json:"phase"`
+	CheckpointVersion    int64  `json:"checkpoint_version"`
+	QuestionKey          string `json:"question_key"`
+	LogicalInputRevision int64  `json:"logical_input_revision"`
 }
 
 // LoadCreatedState is for a trusted, already-authorized system adapter only.
@@ -81,17 +83,30 @@ func (r *PilotStore) LoadCreatedState(ctx context.Context, principal PilotSystem
 			}
 			return err
 		}
-		for _, table := range []string{"classroom_transition_receipts", "classroom_answer_claims", "classroom_active_commands", "classroom_effect_outbox", "classroom_completion_jobs"} {
-			var present bool
-			if err = tx.Raw("SELECT EXISTS(SELECT 1 FROM "+pilotQuote(table)+" WHERE lesson_id=? LIMIT 1)", lessonID).Scan(&present).Error; err != nil {
+		if row.Lifecycle == "created" {
+			for _, table := range []string{"classroom_transition_receipts", "classroom_answer_claims", "classroom_active_commands", "classroom_effect_outbox", "classroom_completion_jobs"} {
+				var present bool
+				if err = tx.Raw("SELECT EXISTS(SELECT 1 FROM "+pilotQuote(table)+" WHERE lesson_id=? LIMIT 1)", lessonID).Scan(&present).Error; err != nil {
+					return err
+				}
+				if present {
+					return errPilotSchemaInvalid
+				}
+			}
+		} else if row.Lifecycle == "active" {
+			if err = auditPilotActiveDataTx(tx, lessonID); err != nil {
 				return err
 			}
-			if present {
-				return errPilotSchemaInvalid
-			}
+		} else {
+			return errPilotSchemaInvalid
+		}
+		questionKey := ""
+		if row.QuestionKey != nil {
+			questionKey = *row.QuestionKey
 		}
 		result = PilotCreatedState{LessonID: row.LessonID, StudentID: row.StudentID, BookID: row.BookID,
-			SchemaVersion: row.SchemaVersion, Lifecycle: row.Lifecycle, Phase: row.Phase, CheckpointVersion: row.CheckpointVersion}
+			SchemaVersion: row.SchemaVersion, Lifecycle: row.Lifecycle, Phase: row.Phase, CheckpointVersion: row.CheckpointVersion,
+			QuestionKey: questionKey, LogicalInputRevision: row.LogicalInputRevision}
 		return nil
 	})
 	if err != nil {

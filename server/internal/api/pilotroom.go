@@ -32,7 +32,15 @@ func (a *App) EnterPilotRoom(ctx context.Context, lessonID, studentID int64, tas
 	if err != nil {
 		return nil, store.PilotCreatedState{}, err
 	}
-	return &PilotRoom{app: a, lessonID: lessonID, studentID: studentID, taskID: taskID, question: "pending", revision: state.CheckpointVersion - 1}, state, nil
+	question := state.QuestionKey
+	if question == "" {
+		question = "pending"
+	}
+	revision := state.LogicalInputRevision
+	if revision == 0 {
+		revision = state.CheckpointVersion - 1
+	}
+	return &PilotRoom{app: a, lessonID: lessonID, studentID: studentID, taskID: taskID, question: question, revision: revision}, state, nil
 }
 
 func (r *PilotRoom) Submit(ctx context.Context, commandID, kind, payload string) (store.PilotTransitionReceipt, error) {

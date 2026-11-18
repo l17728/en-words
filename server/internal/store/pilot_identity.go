@@ -304,9 +304,12 @@ func verifyPilotCreatedReplayTx(tx *gorm.DB, plan *PilotCreationPlan, prior pilo
 	if err := tx.Table("classroom_pilot_states").Where("lesson_id=?", prior.LessonID).Take(&row).Error; err != nil {
 		return err
 	}
+	active := row.Lifecycle == "active"
 	if row.LessonID != prior.LessonID || row.StudentID != prior.StudentID || row.BookID != prior.BookID ||
-		row.SchemaVersion != 2 || row.Mode != "pilot" || row.Lifecycle != "created" || row.Phase != "pending" ||
-		row.CheckpointVersion < 1 || row.LogicalInputRevision != 0 || row.QuestionKey != nil || row.ActiveCommandID != nil ||
+		row.SchemaVersion != 2 || row.Mode != "pilot" || (!active && row.Lifecycle != "created") ||
+		(!active && row.Phase != "pending") || row.CheckpointVersion < 1 ||
+		(!active && row.LogicalInputRevision != 0) || (!active && row.QuestionKey != nil) ||
+		(!active && row.ActiveCommandID != nil) ||
 		row.AuthGeneration < 0 || row.CreatedAt < 0 || row.UpdatedAt < row.CreatedAt || row.CreatedAt != prior.ReservedAt ||
 		row.ConfigSnapshotSchemaVersion != 1 {
 		return errPilotSchemaInvalid
@@ -322,7 +325,11 @@ func verifyPilotCreatedReplayTx(tx *gorm.DB, plan *PilotCreationPlan, prior pilo
 	} else if row.Retired != 1 || row.ConnectionEpoch != nil {
 		return errPilotSchemaInvalid
 	}
-	if _, _, err := decodePilotCreatedBaseline([]byte(row.StateJSON), []byte(row.RoomFactsJSON)); err != nil {
+	if active {
+		if !json.Valid([]byte(row.StateJSON)) || !json.Valid([]byte(row.RoomFactsJSON)) {
+			return errPilotSchemaInvalid
+		}
+	} else if _, _, err := decodePilotCreatedBaseline([]byte(row.StateJSON), []byte(row.RoomFactsJSON)); err != nil {
 		return err
 	}
 	planJSON, err := json.Marshal(plan.data)

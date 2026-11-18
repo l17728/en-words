@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"enwords/internal/config"
+	"fmt"
 	"gorm.io/gorm"
 )
 
@@ -119,40 +120,40 @@ func auditPilotCreatedDataTx(tx *gorm.DB) error {
 	for _, reservation := range reservations {
 		scope := pilotScopeKey{StudentID: reservation.StudentID, BookID: reservation.BookID}
 		if seenScopes[scope] {
-			return errPilotSchemaInvalid
+			return fmt.Errorf("duplicate pilot scope: %w", errPilotSchemaInvalid)
 		}
 		seenScopes[scope] = true
 		var checkpoint struct{ CreationPlanJSON string }
 		if err := tx.Table("classroom_pilot_states").Select("creation_plan_json").Where("lesson_id=?", reservation.LessonID).Take(&checkpoint).Error; err != nil {
-			return err
+			return fmt.Errorf("checkpoint lesson %d: %w", reservation.LessonID, err)
 		}
 		plan, err := decodePilotPersistedPlan([]byte(checkpoint.CreationPlanJSON))
 		if err != nil {
-			return err
+			return fmt.Errorf("plan lesson %d: %w", reservation.LessonID, err)
 		}
 		if reservation.StudentID != plan.data.StudentID || reservation.BookID != plan.data.BookID || reservation.SchemaVersion != 2 || reservation.CreationNonce == nil || *reservation.CreationNonce != plan.data.Nonce || reservation.CreationVersion == nil || *reservation.CreationVersion != 1 || reservation.CreationFingerprint == nil || *reservation.CreationFingerprint != plan.fingerprint {
-			return errPilotSchemaInvalid
+			return fmt.Errorf("reservation/plan mismatch lesson %d: %w", reservation.LessonID, errPilotSchemaInvalid)
 		}
 		var lifecycle string
 		if err = tx.Table("classroom_pilot_states").Select("lifecycle").Where("lesson_id=?", reservation.LessonID).Scan(&lifecycle).Error; err != nil {
-			return err
+			return fmt.Errorf("lifecycle lesson %d: %w", reservation.LessonID, err)
 		}
 		if lifecycle == "created" {
 			for _, table := range []string{"classroom_transition_receipts", "classroom_answer_claims", "classroom_active_commands", "classroom_effect_outbox", "classroom_completion_jobs"} {
 				var present bool
-				if err = tx.Raw("SELECT EXISTS(SELECT 1 FROM "+pilotQuote(table)+" WHERE lesson_id=?", reservation.LessonID).Scan(&present).Error; err != nil || present {
-					return errPilotSchemaInvalid
+				if err = tx.Raw("SELECT EXISTS(SELECT 1 FROM "+pilotQuote(table)+" WHERE lesson_id=? LIMIT 1)", reservation.LessonID).Scan(&present).Error; err != nil || present {
+					return fmt.Errorf("unexpected lifecycle rows lesson %d table %s present=%v err=%v: %w", reservation.LessonID, table, present, err, errPilotSchemaInvalid)
 				}
 			}
 			if err = verifyPilotCreatedReplayTx(tx, plan, reservation); err != nil {
-				return err
+				return fmt.Errorf("created replay lesson %d: %w", reservation.LessonID, err)
 			}
 		} else if lifecycle == "active" {
 			if err = auditPilotActiveDataTx(tx, reservation.LessonID); err != nil {
-				return err
+				return fmt.Errorf("pilot active lesson %d: %w", reservation.LessonID, err)
 			}
 		} else {
-			return errPilotSchemaInvalid
+			return fmt.Errorf("unsupported lifecycle %q lesson %d: %w", lifecycle, reservation.LessonID, errPilotSchemaInvalid)
 		}
 	}
 	// Every state must belong to a pilot reservation, not merely to any FK-valid
@@ -162,13 +163,13 @@ func auditPilotCreatedDataTx(tx *gorm.DB) error {
 		return err
 	}
 	if count != int64(len(reservations)) {
-		return errPilotSchemaInvalid
+		return fmt.Errorf("pilot state count=%d reservations=%d: %w", count, len(reservations), errPilotSchemaInvalid)
 	}
 	if err := tx.Table("classroom_scope_reservations").Where("mode=?", "pilot").Count(&count).Error; err != nil {
 		return err
 	}
 	if count != int64(len(seenScopes)) {
-		return errPilotSchemaInvalid
+		return fmt.Errorf("pilot scope count=%d scopes=%d: %w", count, len(seenScopes), errPilotSchemaInvalid)
 	}
 	return nil
 }
@@ -177,24 +178,25 @@ func auditPilotActiveDataTx(tx *gorm.DB, lessonID int64) error {
 	var state struct {
 		CheckpointVersion    int64
 		LogicalInputRevision int64
-		StateJSON, FactsJSON string
+		StateJSON            string `gorm:"column:state_json"`
+		FactsJSON            string `gorm:"column:room_facts_json"`
 	}
 	if err := tx.Table("classroom_pilot_states").Where("lesson_id=? AND lifecycle='active'", lessonID).Take(&state).Error; err != nil {
-		return errPilotSchemaInvalid
+		return fmt.Errorf("active state row: %w", errPilotSchemaInvalid)
 	}
 	if state.CheckpointVersion < 2 || state.LogicalInputRevision < 1 || !json.Valid([]byte(state.StateJSON)) || !json.Valid([]byte(state.FactsJSON)) {
-		return errPilotSchemaInvalid
+		return fmt.Errorf("active state fields checkpoint=%d revision=%d state_json_valid=%v facts_json_valid=%v: %w", state.CheckpointVersion, state.LogicalInputRevision, json.Valid([]byte(state.StateJSON)), json.Valid([]byte(state.FactsJSON)), errPilotSchemaInvalid)
 	}
 	var maxVersion, count int64
 	if err := tx.Table("classroom_transition_receipts").Where("lesson_id=?", lessonID).Count(&count).Error; err != nil || count == 0 {
-		return errPilotSchemaInvalid
+		return fmt.Errorf("receipts count=%d err=%v: %w", count, err, errPilotSchemaInvalid)
 	}
 	if err := tx.Table("classroom_transition_receipts").Where("lesson_id=?", lessonID).Select("COALESCE(MAX(to_version),0)").Scan(&maxVersion).Error; err != nil || maxVersion != state.CheckpointVersion {
-		return errPilotSchemaInvalid
+		return fmt.Errorf("receipt max=%d checkpoint=%d err=%v: %w", maxVersion, state.CheckpointVersion, err, errPilotSchemaInvalid)
 	}
 	var bad int64
 	if err := tx.Table("classroom_effect_outbox").Where("lesson_id=? AND (json_valid(payload_json)=0 OR delivery_status NOT IN ('pending','claimed','received','completed','canceled'))", lessonID).Count(&bad).Error; err != nil || bad != 0 {
-		return errPilotSchemaInvalid
+		return fmt.Errorf("outbox bad=%d err=%v: %w", bad, err, errPilotSchemaInvalid)
 	}
 	return nil
 }
