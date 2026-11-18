@@ -3,14 +3,12 @@ import { recordingToWav } from './wav'
 import { playAudio } from './playback'
 import { speechCache } from './speech-cache'
 import { withMediaDeadline } from './media-request'
+import { localCaptureConstraints } from './capture-constraints'
+
+export { localCaptureConstraints } from './capture-constraints'
 
 export interface Capabilities { local: boolean; asr: boolean; tts_zh: boolean; tts_en: boolean }
 export const capabilities = () => api.get<Capabilities>('/providers')
-export const localCaptureConstraints = {
-  echoCancellation: true,
-  noiseSuppression: true,
-  autoGainControl: true,
-} as const
 const pendingSpeech = new Map<string, Promise<Blob>>()
 
 function speechKey(text: string, lang: 'zh' | 'en', lessonId?: string) {
