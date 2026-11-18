@@ -291,3 +291,30 @@ func TestConcurrentTranscribeIsBoundedAndPreservesCancellation(t *testing.T) {
 	_, err = c.Transcribe(ctx, []byte("audio"), "recording.wav", "en")
 	require.Error(t, err)
 }
+
+func TestConcurrentSynthesizeIsBounded(t *testing.T) {
+	var active atomic.Int32
+	var maxActive atomic.Int32
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		current := active.Add(1)
+		for {
+			old := maxActive.Load()
+			if current <= old || maxActive.CompareAndSwap(old, current) {
+				break
+			}
+		}
+		defer active.Add(-1)
+		_, _ = w.Write(pcmWAVFixture())
+	}))
+	defer s.Close()
+	c, err := New(s.URL, nil)
+	require.NoError(t, err)
+	c.Services["tts"] = Service{Model: "fixture", Capabilities: []string{"tts"}}
+	var wg sync.WaitGroup
+	for i := 0; i < 4; i++ {
+		wg.Add(1)
+		go func() { defer wg.Done(); _, _ = c.Synthesize(context.Background(), "测试", "zh") }()
+	}
+	wg.Wait()
+	require.EqualValues(t, 1, maxActive.Load())
+}

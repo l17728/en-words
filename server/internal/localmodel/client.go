@@ -42,6 +42,7 @@ type Client struct {
 	// when several multipart requests are decoded at once. Keep a cancellable
 	// one-at-a-time gate; callers still retain their request deadline.
 	asrGate chan struct{}
+	ttsGate chan struct{}
 }
 
 // Profile assigns a model-console service to each product capability. The
@@ -69,7 +70,7 @@ func New(base string, log *obs.Logger) (*Client, error) {
 	return &Client{base: strings.TrimRight(base, "/"), Log: log, Services: map[string]Service{}, profile: Profile{Name: "default", Text: "vl", ASR: "asr", TTSZh: "tts", TTSEn: "tts-en"}, HTTP: &http.Client{
 		Timeout:       20 * time.Second,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
-	}, asrGate: make(chan struct{}, 1)}, nil
+	}, asrGate: make(chan struct{}, 1), ttsGate: make(chan struct{}, 1)}, nil
 }
 
 func (c *Client) acquireASR(ctx context.Context) error {
@@ -82,6 +83,17 @@ func (c *Client) acquireASR(ctx context.Context) error {
 }
 
 func (c *Client) releaseASR() { <-c.asrGate }
+
+func (c *Client) acquireTTS(ctx context.Context) error {
+	select {
+	case c.ttsGate <- struct{}{}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func (c *Client) releaseTTS() { <-c.ttsGate }
 
 func (c *Client) request(ctx context.Context, path, contentType string, body io.Reader, limit int64) ([]byte, error) {
 	start := time.Now()
@@ -334,6 +346,10 @@ func (c *Client) Synthesize(ctx context.Context, text, lang string) (audio []byt
 	if (lang != "en" && lang != "zh") || !c.Has(id, "tts") || len([]rune(text)) > 300 || strings.TrimSpace(text) == "" {
 		return nil, fmt.Errorf("model console: unsupported speech request")
 	}
+	if err := c.acquireTTS(ctx); err != nil {
+		return nil, fmt.Errorf("model console: TTS queue canceled")
+	}
+	defer c.releaseTTS()
 	body, _ := json.Marshal(map[string]any{"model": c.Services[id].Model, "input": text, "voice": "default", "response_format": "wav"})
 	raw, err := c.request(ctx, path, "application/json", bytes.NewReader(body), MaxAudio)
 	if err != nil {
