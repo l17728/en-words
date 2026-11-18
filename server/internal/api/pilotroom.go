@@ -57,6 +57,11 @@ func (r *PilotRoom) Submit(ctx context.Context, commandID, kind, payload string)
 	resultJSON := json.RawMessage(`{"accepted":true}`)
 	receipt, err := r.app.Pilot.CommitPilotTransition(ctx, store.PilotTransition{Command: command, StateJSON: stateJSON, FactsJSON: factsJSON, ResultJSON: resultJSON})
 	if err != nil {
+		if replay, found, lookupErr := r.app.Pilot.LookupPilotReceipt(ctx, command); lookupErr == nil && found {
+			r.revision = replay.ToVersion - 1
+			r.question = kind
+			return replay, nil
+		}
 		return store.PilotTransitionReceipt{}, err
 	}
 	if !receipt.Replayed {
