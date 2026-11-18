@@ -77,7 +77,7 @@ func validatePilotFrozenConfig(snapshot config.EffectiveSnapshot) error {
 		"ttsEnRepeat": snapshot.TtsEnRepeat, "ttsIntervalMs": snapshot.TtsIntervalMs,
 		"ttsZhRepeat": snapshot.TtsZhRepeat, "ttsZhIntervalMs": snapshot.TtsZhIntervalMs,
 		"ttsSwitchIntervalMs": snapshot.TtsSwitchIntervalMs, "showWordLeadMs": snapshot.ShowWordLeadMs,
-		"repeatTimes": snapshot.RepeatTimes,
+		"repeatTimes":  snapshot.RepeatTimes,
 		"quizOldWords": snapshot.QuizOldWords, "timeoutShowWordS": snapshot.TimeoutShowWordS,
 		"timeoutRepeatS": snapshot.TimeoutRepeatS, "timeoutAnswerS": snapshot.TimeoutAnswerS,
 		"sessionTimeoutMin": snapshot.SessionTimeoutMin, "lessonsPerDay": snapshot.LessonsPerDay,
@@ -109,17 +109,8 @@ func validatePilotFrozenConfig(snapshot config.EffectiveSnapshot) error {
 }
 
 func auditPilotCreatedDataTx(tx *gorm.DB) error {
-	// This slice implements no transitions/effects/jobs. Nonempty later-lifecycle
-	// facts require their future codecs; FK-valid alone cannot authorize them.
-	for _, table := range []string{"classroom_transition_receipts", "classroom_answer_claims", "classroom_active_commands", "classroom_effect_outbox", "classroom_completion_jobs"} {
-		var present bool
-		if err := tx.Raw("SELECT EXISTS(SELECT 1 FROM " + pilotQuote(table) + " LIMIT 1)").Scan(&present).Error; err != nil {
-			return err
-		}
-		if present {
-			return errPilotSchemaInvalid
-		}
-	}
+	// Later-lifecycle facts are accepted only through the explicit active-state
+	// audit below; created lessons remain strictly empty beyond their baseline.
 	var reservations []pilotModeReservation
 	if err := tx.Table("classroom_mode_reservations").Where("mode=?", "pilot").Order("lesson_id").Find(&reservations).Error; err != nil {
 		return err
@@ -142,8 +133,26 @@ func auditPilotCreatedDataTx(tx *gorm.DB) error {
 		if reservation.StudentID != plan.data.StudentID || reservation.BookID != plan.data.BookID || reservation.SchemaVersion != 2 || reservation.CreationNonce == nil || *reservation.CreationNonce != plan.data.Nonce || reservation.CreationVersion == nil || *reservation.CreationVersion != 1 || reservation.CreationFingerprint == nil || *reservation.CreationFingerprint != plan.fingerprint {
 			return errPilotSchemaInvalid
 		}
-		if err = verifyPilotCreatedReplayTx(tx, plan, reservation); err != nil {
+		var lifecycle string
+		if err = tx.Table("classroom_pilot_states").Select("lifecycle").Where("lesson_id=?", reservation.LessonID).Scan(&lifecycle).Error; err != nil {
 			return err
+		}
+		if lifecycle == "created" {
+			for _, table := range []string{"classroom_transition_receipts", "classroom_answer_claims", "classroom_active_commands", "classroom_effect_outbox", "classroom_completion_jobs"} {
+				var present bool
+				if err = tx.Raw("SELECT EXISTS(SELECT 1 FROM "+pilotQuote(table)+" WHERE lesson_id=?", reservation.LessonID).Scan(&present).Error; err != nil || present {
+					return errPilotSchemaInvalid
+				}
+			}
+			if err = verifyPilotCreatedReplayTx(tx, plan, reservation); err != nil {
+				return err
+			}
+		} else if lifecycle == "active" {
+			if err = auditPilotActiveDataTx(tx, reservation.LessonID); err != nil {
+				return err
+			}
+		} else {
+			return errPilotSchemaInvalid
 		}
 	}
 	// Every state must belong to a pilot reservation, not merely to any FK-valid
@@ -159,6 +168,32 @@ func auditPilotCreatedDataTx(tx *gorm.DB) error {
 		return err
 	}
 	if count != int64(len(seenScopes)) {
+		return errPilotSchemaInvalid
+	}
+	return nil
+}
+
+func auditPilotActiveDataTx(tx *gorm.DB, lessonID int64) error {
+	var state struct {
+		CheckpointVersion    int64
+		LogicalInputRevision int64
+		StateJSON, FactsJSON string
+	}
+	if err := tx.Table("classroom_pilot_states").Where("lesson_id=? AND lifecycle='active'", lessonID).Take(&state).Error; err != nil {
+		return errPilotSchemaInvalid
+	}
+	if state.CheckpointVersion < 2 || state.LogicalInputRevision < 1 || !json.Valid([]byte(state.StateJSON)) || !json.Valid([]byte(state.FactsJSON)) {
+		return errPilotSchemaInvalid
+	}
+	var maxVersion, count int64
+	if err := tx.Table("classroom_transition_receipts").Where("lesson_id=?", lessonID).Count(&count).Error; err != nil || count == 0 {
+		return errPilotSchemaInvalid
+	}
+	if err := tx.Table("classroom_transition_receipts").Where("lesson_id=?", lessonID).Select("COALESCE(MAX(to_version),0)").Scan(&maxVersion).Error; err != nil || maxVersion != state.CheckpointVersion {
+		return errPilotSchemaInvalid
+	}
+	var bad int64
+	if err := tx.Table("classroom_effect_outbox").Where("lesson_id=? AND (json_valid(payload_json)=0 OR delivery_status NOT IN ('pending','claimed','received','completed','canceled'))", lessonID).Count(&bad).Error; err != nil || bad != 0 {
 		return errPilotSchemaInvalid
 	}
 	return nil
