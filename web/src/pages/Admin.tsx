@@ -37,6 +37,7 @@ export default function AdminPage() {
   const [wordMatches, setWordMatches] = useState<Array<{ entry: { ID: number; Word: string; Meanings: string[] }; variants: Array<{ variant: string; language?: string }>; speech_text?: string; cache_ready?: Record<string, boolean> }>>([])
   const [wordSearchBusy, setWordSearchBusy] = useState(false)
   const [speechRefreshBusy, setSpeechRefreshBusy] = useState<string | null>(null)
+  const [scanBusy, setScanBusy] = useState(false)
   type ModelService = { id: string; model: string; capabilities: string[] }
   type ModelProfile = { id: number; name: string; text_service: string; asr_service: string; tts_zh_service: string; tts_en_service: string; active: boolean }
   const [modelServices, setModelServices] = useState<ModelService[]>([])
@@ -121,6 +122,12 @@ export default function AdminPage() {
         <Select aria-label="????" placeholder="????" value={bookId} onChange={setBookId} style={{ width: 220 }} options={books.map(b => ({ value: b.ID, label: b.Name }))} />
         <Input aria-label="????" placeholder="??????? sth" value={wordQuery} onChange={e => setWordQuery(e.target.value)} onPressEnter={() => void searchWords()} />
         <Button loading={wordSearchBusy} disabled={!bookId || !wordQuery.trim()} onClick={() => void searchWords()}>??</Button>
+        <Button loading={scanBusy} disabled={!bookId} onClick={async () => {
+          if (!bookId) return
+          setScanBusy(true)
+          try { const result = await api.post<{ created: number }>(`/admin/wordbooks/${bookId}/pronunciation-scan`); message.success(`?????? ${result.created || 0} ????`) }
+          catch (e) { message.error((e as Error).message) } finally { setScanBusy(false) }
+        }}>??????</Button>
       </Space>
       <List style={{ marginTop: 12 }} dataSource={wordMatches} locale={{ emptyText: '??????' }} renderItem={match => <List.Item actions={['en', 'zh'].map(lang => <Button key={lang} loading={speechRefreshBusy === `${match.entry.ID}:${lang}`} onClick={async () => {
         setSpeechRefreshBusy(`${match.entry.ID}:${lang}`)
