@@ -19,6 +19,9 @@ import (
 
 const MaxAudio = 8 << 20
 
+// TranscribeTimeout bounds one classroom turn.
+const TranscribeTimeout = 15 * time.Second
+
 type Service struct {
 	ID           string   `json:"id"`
 	Model        string   `json:"model"`

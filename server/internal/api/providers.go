@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -140,9 +141,15 @@ func (a *App) registerProviderRoutes(g *gin.RouterGroup) {
 		}
 		ctx := obs.WithTrace(c.Request.Context(), fmt.Sprintf("lesson-%d", id))
 		a.Log.InfoCtx(ctx, "speech", "audio_received", map[string]any{"lesson_id": id, "student_id": claimsOf(c).UID, "request_trace_id": obs.TraceID(c.Request.Context()), "bytes": len(raw), "language": lang, "format": format})
-		text, err := a.Local.Transcribe(ctx, raw, name, lang)
+		transcribeCtx, cancelTranscribe := context.WithTimeout(ctx, localmodel.TranscribeTimeout)
+		text, err := a.Local.Transcribe(transcribeCtx, raw, name, lang)
+		cancelTranscribe()
 		if err != nil {
-			speechFallback(503, "provider_error", "语音识别失败，请使用文字输入")
+			reason := "provider_error"
+			if errors.Is(transcribeCtx.Err(), context.DeadlineExceeded) {
+				reason = "provider_timeout"
+			}
+			speechFallback(503, reason, "语音识别失败，请使用文字输入")
 			return
 		}
 		transcribedPayload := map[string]any{"lesson_id": id, "student_id": claimsOf(c).UID, "text_length": len([]rune(text))}
