@@ -2,6 +2,7 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -52,6 +53,7 @@ func (a *App) Router() *gin.Engine {
 	a.registerProviderRoutes(authed)
 	a.registerTeacherAnalysisRoutes(authed)
 	a.registerModelProfileRoutes(authed)
+	a.registerPilotRoutes(authed)
 	a.registerDuplexPreflight(authed)
 	authed.POST("/auth/change_password", func(c *gin.Context) {
 		var in struct{ OldPassword, NewPassword string }
@@ -307,6 +309,16 @@ func (a *App) Router() *gin.Engine {
 		if !a.ownLesson(c, id) {
 			return
 		}
+		if c.Query("runtime") == "pilot" && a.Pilot != nil {
+			taskID := strings.TrimSpace(c.Query("task_id"))
+			room, state, err := a.EnterPilotRoom(c.Request.Context(), id, claimsOf(c).UID, taskID)
+			if err != nil || room == nil {
+				c.JSON(http.StatusOK, fail(http.StatusConflict, "pilot room unavailable"))
+				return
+			}
+			c.JSON(http.StatusOK, ok(gin.H{"runtime": "pilot", "lesson_id": id, "student_id": claimsOf(c).UID, "phase": state.Phase, "lifecycle": state.Lifecycle, "checkpoint_version": state.CheckpointVersion, "logical_input_revision": state.LogicalInputRevision, "question_key": state.QuestionKey}))
+			return
+		}
 		// 开放时间校验（D1；-testmode 跳过：E2E 可立即上课）
 		lesson, err := a.Sched.Lesson(id)
 		if err != nil {
@@ -332,6 +344,37 @@ func (a *App) Router() *gin.Engine {
 			return
 		}
 		a.writeClassroomResponse(c, id, ok(gin.H{"ticket": ticket, "snapshot": snap, "status": room.Status()}))
+	})
+	cr.POST("/lessons/:id/pilot-command", func(c *gin.Context) {
+		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		if !a.ownLesson(c, id) {
+			return
+		}
+		if a.Pilot == nil {
+			c.JSON(http.StatusOK, fail(http.StatusConflict, "pilot runtime disabled"))
+			return
+		}
+		var in struct {
+			TaskID    string `json:"task_id"`
+			CommandID string `json:"command_id"`
+			Kind      string `json:"kind"`
+			Payload   string `json:"payload"`
+		}
+		if c.ShouldBindJSON(&in) != nil || strings.TrimSpace(in.TaskID) == "" || strings.TrimSpace(in.CommandID) == "" || strings.TrimSpace(in.Kind) == "" || !json.Valid([]byte(in.Payload)) {
+			c.JSON(http.StatusOK, fail(errBadRequest, "invalid pilot command"))
+			return
+		}
+		room, _, err := a.EnterPilotRoom(c.Request.Context(), id, claimsOf(c).UID, in.TaskID)
+		if err != nil {
+			c.JSON(http.StatusOK, fail(http.StatusConflict, "pilot room unavailable"))
+			return
+		}
+		receipt, err := room.Submit(c.Request.Context(), in.CommandID, in.Kind, in.Payload)
+		if err != nil {
+			c.JSON(http.StatusOK, fail(http.StatusConflict, "pilot command rejected"))
+			return
+		}
+		c.JSON(http.StatusOK, ok(gin.H{"runtime": "pilot", "receipt": receipt}))
 	})
 	// REST 事件通道（WS 不可用/测试/文本兜底；与 WS 同一 Room 管线）
 	// R4-sec#6：event 白名单校验（防任意字符串触发未定义行为）

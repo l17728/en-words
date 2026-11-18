@@ -83,5 +83,18 @@ func TestAdminCanExplicitlyEnablePilotPersistence(t *testing.T) {
 	app2.Router().ServeHTTP(w, enter2)
 	entered2 := doJSON(t, w)
 	require.Equal(t, 0, entered2.Code, entered2.Msg)
+	normalEnter := httptest.NewRequest(http.MethodPost, "/api/v1/classroom/lessons/1/enter?runtime=pilot&task_id=student-room-task-3", nil)
+	normalEnter.Header.Set("Authorization", "Bearer "+studentToken)
+	w = httptest.NewRecorder()
+	app2.Router().ServeHTTP(w, normalEnter)
+	normalEntered := doJSON(t, w)
+	require.Equal(t, 0, normalEntered.Code, normalEntered.Msg)
+	normalCommand := httptest.NewRequest(http.MethodPost, "/api/v1/classroom/lessons/1/pilot-command", strings.NewReader(`{"task_id":"student-room-task-3","command_id":"cmd-http-2","kind":"lesson.step","payload":"{\"step\":true}"}`))
+	normalCommand.Header.Set("Authorization", "Bearer "+studentToken)
+	normalCommand.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	app2.Router().ServeHTTP(w, normalCommand)
+	normalCommandResp := doJSON(t, w)
+	require.Equal(t, 0, normalCommandResp.Code, normalCommandResp.Msg)
 
 }
