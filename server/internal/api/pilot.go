@@ -2,7 +2,9 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -85,6 +87,44 @@ func (a *App) registerPilotRoutes(g *gin.RouterGroup) {
 			return
 		}
 		a.Log.InfoCtx(c.Request.Context(), "pilot", "pilot_lesson_created", map[string]any{"lesson_id": receipt.LessonID, "student_id": receipt.StudentID, "book_id": receipt.BookID, "replayed": receipt.Replayed, "operator": claimsOf(c).UID})
+		c.JSON(http.StatusOK, ok(receipt))
+	})
+	student := g.Group("/student", a.roleMW(auth.RoleStudent))
+	student.GET("/pilot/lessons/:id/enter", func(c *gin.Context) {
+		lessonID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+		if err != nil || lessonID <= 0 {
+			c.JSON(http.StatusOK, fail(errBadRequest, "invalid pilot lesson"))
+			return
+		}
+		taskID := strings.TrimSpace(c.Query("task_id"))
+		room, state, err := a.EnterPilotRoom(c.Request.Context(), lessonID, claimsOf(c).UID, taskID)
+		if err != nil || room == nil {
+			c.JSON(http.StatusOK, fail(http.StatusConflict, "pilot room unavailable"))
+			return
+		}
+		c.JSON(http.StatusOK, ok(gin.H{"lesson_id": lessonID, "student_id": claimsOf(c).UID, "phase": state.Phase, "checkpoint_version": state.CheckpointVersion, "lifecycle": state.Lifecycle}))
+	})
+	student.POST("/pilot/lessons/:id/commands", func(c *gin.Context) {
+		lessonID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+		if err != nil || lessonID <= 0 {
+			c.JSON(http.StatusOK, fail(errBadRequest, "invalid pilot lesson"))
+			return
+		}
+		var in struct{ TaskID, CommandID, Kind, Payload string }
+		if c.ShouldBindJSON(&in) != nil || strings.TrimSpace(in.TaskID) == "" || strings.TrimSpace(in.CommandID) == "" || strings.TrimSpace(in.Kind) == "" || !json.Valid([]byte(in.Payload)) {
+			c.JSON(http.StatusOK, fail(errBadRequest, "invalid pilot command"))
+			return
+		}
+		room, _, err := a.EnterPilotRoom(c.Request.Context(), lessonID, claimsOf(c).UID, in.TaskID)
+		if err != nil {
+			c.JSON(http.StatusOK, fail(http.StatusConflict, "pilot room unavailable"))
+			return
+		}
+		receipt, err := room.Submit(c.Request.Context(), in.CommandID, in.Kind, in.Payload)
+		if err != nil {
+			c.JSON(http.StatusOK, fail(http.StatusConflict, "pilot command rejected"))
+			return
+		}
 		c.JSON(http.StatusOK, ok(receipt))
 	})
 }
