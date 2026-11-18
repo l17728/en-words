@@ -31,18 +31,18 @@ test('two browser processes replay one pilot command without double commit', asy
   try {
     const taskID = 'pilot-e2e-room'
     await Promise.all(contexts.map(async context => {
-      const enter = await context.request.get(`/api/v1/student/pilot/lessons/${created.lesson_id ?? created.ID}/enter?task_id=${taskID}`, { headers: { Authorization: `Bearer ${studentLogin.token}` } })
+      const enter = await context.request.post(`/api/v1/classroom/lessons/${created.lesson_id ?? created.ID}/enter?runtime=pilot&task_id=${taskID}`, { headers: { Authorization: `Bearer ${studentLogin.token}` } })
       expect((await enter.json()).code).toBe(0)
     }))
     const lessonID = created.lesson_id ?? created.ID
-    const submit = (context: any) => context.request.post(`/api/v1/student/pilot/lessons/${lessonID}/commands`, {
+    const submit = (context: any) => context.request.post(`/api/v1/classroom/lessons/${lessonID}/pilot-command`, {
       headers: { Authorization: `Bearer ${studentLogin.token}` },
       data: { task_id: taskID, command_id: 'pilot-e2e-command', kind: 'lesson.start', payload: '{"start":true}' },
     }).then((response: any) => response.json())
     const results = [await submit(contexts[0]), await submit(contexts[1])]
     console.log('pilot command results', JSON.stringify(results))
     expect(results.map(result => result.code).sort()).toEqual([0, 0])
-    expect(results.filter(result => result.data?.replayed === true)).toHaveLength(1)
+    expect(results.filter(result => result.data?.receipt?.replayed === true)).toHaveLength(1)
   } finally {
     await Promise.all(contexts.map(context => context.close()))
   }
