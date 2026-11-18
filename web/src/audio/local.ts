@@ -52,7 +52,11 @@ function session(signal: AbortSignal) {
 // A finite capture, with cancellation releasing both recording and microphone tracks.
 export async function recordLocal(lessonId: string, language: string, signal: AbortSignal, onStage?: (stage: 'recording' | 'transcribing') => void, maxDurationMs = 4000): Promise<string> {
   const identity = session(signal)
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+  } })
   let audioContext: AudioContext | undefined
   let vadTimer: ReturnType<typeof setInterval> | undefined
   try {
