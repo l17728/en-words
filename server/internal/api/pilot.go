@@ -110,7 +110,12 @@ func (a *App) registerPilotRoutes(g *gin.RouterGroup) {
 			c.JSON(http.StatusOK, fail(errBadRequest, "invalid pilot lesson"))
 			return
 		}
-		var in struct{ TaskID, CommandID, Kind, Payload string }
+		var in struct {
+			TaskID    string `json:"task_id"`
+			CommandID string `json:"command_id"`
+			Kind      string `json:"kind"`
+			Payload   string `json:"payload"`
+		}
 		if c.ShouldBindJSON(&in) != nil || strings.TrimSpace(in.TaskID) == "" || strings.TrimSpace(in.CommandID) == "" || strings.TrimSpace(in.Kind) == "" || !json.Valid([]byte(in.Payload)) {
 			c.JSON(http.StatusOK, fail(errBadRequest, "invalid pilot command"))
 			return
