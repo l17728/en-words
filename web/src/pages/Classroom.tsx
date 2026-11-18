@@ -263,6 +263,7 @@ export default function ClassroomPage() {
     if (epoch !== ttsEpochRef.current) return
     if (next.context.epoch !== contextRef.current.epoch || next.context.turn !== contextRef.current.turn) {
       ttsBusyRef.current = false
+      pumpTts()
       return
     }
     let fired = false
@@ -312,7 +313,7 @@ export default function ClassroomPage() {
       if (!failure) pumpTts()
     }
     const once = () => complete()
-    if (phaseRef.current === 'repeating') { ttsBusyRef.current = false; return }
+    if (phaseRef.current === 'repeating') { ttsBusyRef.current = false; pumpTts(); return }
     const localSpeech = next.lang === 'zh-CN' ? providersRef.current?.tts_zh : providersRef.current?.tts_en
     if (!ttsAvail.current && !localSpeech) {
       complete('unavailable')
