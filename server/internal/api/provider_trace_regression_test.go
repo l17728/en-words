@@ -2,10 +2,12 @@ package api
 
 import (
 	"bytes"
+	"encoding/json"
 	"enwords/internal/auth"
 	"enwords/internal/localmodel"
 	"enwords/internal/obs"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
 	"mime/multipart"
@@ -118,4 +120,65 @@ func TestClassroomASRForwardsBrowserPCMWithOwnedLessonTrace(t *testing.T) {
 	require.Contains(t, logs.String(), `"request_trace_id":`)
 	require.Contains(t, logs.String(), `"format":"wav"`)
 	require.NotContains(t, logs.String(), "untrusted-name")
+}
+
+func TestTranscribeUnavailableAdvertisesExplicitTextFallback(t *testing.T) {
+	a, _, lid, _ := setupRoom(t)
+	token, _ := loginGet(t, a, "sfin", "pw")
+	req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/classroom/lessons/%d/transcribe", lid), nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	response := httptest.NewRecorder()
+	a.Router().ServeHTTP(response, req)
+	require.Equal(t, 503, response.Code)
+	var envelope struct {
+		Code int `json:"code"`
+		Data struct {
+			Fallback  string `json:"fallback"`
+			Retryable bool   `json:"retryable"`
+			Reason    string `json:"reason"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(response.Body.Bytes(), &envelope))
+	assert.Equal(t, 503, envelope.Code)
+	assert.Equal(t, "text", envelope.Data.Fallback)
+	assert.True(t, envelope.Data.Retryable)
+	assert.Equal(t, "provider_unavailable", envelope.Data.Reason)
+}
+
+func TestTranscribeProviderErrorAdvertisesRetryableTextFallback(t *testing.T) {
+	a, _, lid, _ := setupRoom(t)
+	token, _ := loginGet(t, a, "sfin", "pw")
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadGateway)
+	}))
+	defer upstream.Close()
+	client, err := localmodel.New(upstream.URL, a.Log)
+	require.NoError(t, err)
+	client.Services["asr"] = localmodel.Service{ID: "asr", Model: "fixture", Capabilities: []string{"asr"}}
+	a.Local = client
+	var body bytes.Buffer
+	form := multipart.NewWriter(&body)
+	part, err := form.CreateFormFile("file", "sample.wav")
+	require.NoError(t, err)
+	_, err = part.Write([]byte("RIFF-fallback-fixture"))
+	require.NoError(t, err)
+	require.NoError(t, form.WriteField("language", "en"))
+	require.NoError(t, form.Close())
+	req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/classroom/lessons/%d/transcribe", lid), &body)
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", form.FormDataContentType())
+	response := httptest.NewRecorder()
+	a.Router().ServeHTTP(response, req)
+	require.Equal(t, 503, response.Code)
+	var envelope struct {
+		Data struct {
+			Fallback  string `json:"fallback"`
+			Retryable bool   `json:"retryable"`
+			Reason    string `json:"reason"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(response.Body.Bytes(), &envelope))
+	assert.Equal(t, "text", envelope.Data.Fallback)
+	assert.True(t, envelope.Data.Retryable)
+	assert.Equal(t, "provider_error", envelope.Data.Reason)
 }

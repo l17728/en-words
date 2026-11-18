@@ -97,8 +97,13 @@ func (a *App) registerProviderRoutes(g *gin.RouterGroup) {
 			a.Log.ErrorCtx(obs.WithTrace(c.Request.Context(), fmt.Sprintf("lesson-%d", id)), "speech", "audio_rejected", map[string]any{"lesson_id": id, "student_id": claimsOf(c).UID, "reason": reason, "request_trace_id": obs.TraceID(c.Request.Context())})
 			c.JSON(status, fail(status, message))
 		}
+		speechFallback := func(status int, reason, message string) {
+			ctx := obs.WithTrace(c.Request.Context(), fmt.Sprintf("lesson-%d", id))
+			a.Log.ErrorCtx(ctx, "speech", "audio_fallback_available", map[string]any{"lesson_id": id, "student_id": claimsOf(c).UID, "reason": reason, "fallback": "text", "retryable": true, "request_trace_id": obs.TraceID(ctx)})
+			c.JSON(status, failWithData(status, message, map[string]any{"fallback": "text", "retryable": true, "reason": reason}))
+		}
 		if a.Local == nil {
-			reject(503, "provider_unavailable", "本机语音识别不可用，请使用文字输入")
+			speechFallback(503, "provider_unavailable", "本机语音识别不可用，请使用文字输入")
 			return
 		}
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, localmodel.MaxAudio+(64<<10))
@@ -137,7 +142,7 @@ func (a *App) registerProviderRoutes(g *gin.RouterGroup) {
 		a.Log.InfoCtx(ctx, "speech", "audio_received", map[string]any{"lesson_id": id, "student_id": claimsOf(c).UID, "request_trace_id": obs.TraceID(c.Request.Context()), "bytes": len(raw), "language": lang, "format": format})
 		text, err := a.Local.Transcribe(ctx, raw, name, lang)
 		if err != nil {
-			c.JSON(503, fail(503, "语音识别失败，请使用文字输入"))
+			speechFallback(503, "provider_error", "语音识别失败，请使用文字输入")
 			return
 		}
 		transcribedPayload := map[string]any{"lesson_id": id, "student_id": claimsOf(c).UID, "text_length": len([]rune(text))}

@@ -31,6 +31,12 @@ test('two browser processes replay one pilot command without double commit', asy
   await api('/admin/pilot/enable', admin.token)
   const created = await api('/admin/pilot/lessons', admin.token, { task_id: 'pilot-e2e-create', student_id: student.ID, book_id: book.ID, open_at: '2030-01-01T09:00:00Z', word_ids: [imported.entries[0].ID] })
   const studentLogin = await api('/auth/login', undefined, { username: 'pilot-student', password })
+  const fallbackResponse = await request.post(`/api/v1/classroom/lessons/${created.lesson_id ?? created.ID}/transcribe`, {
+    headers: { Authorization: `Bearer ${studentLogin.token}` },
+  })
+  expect(fallbackResponse.status()).toBe(503)
+  const fallbackBody = await fallbackResponse.json()
+  expect(fallbackBody.data).toMatchObject({ fallback: 'text', retryable: true, reason: 'provider_unavailable' })
   const contexts = await Promise.all([browser.newContext(), browser.newContext()])
   try {
     const taskID = 'pilot-e2e-room'

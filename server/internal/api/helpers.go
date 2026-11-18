@@ -71,6 +71,12 @@ func fail(code int, msg string) Resp {
 	return Resp{Code: code, Msg: msg}
 }
 
+// failWithData keeps the stable error envelope while exposing machine-readable
+// recovery guidance to clients.
+func failWithData(code int, msg string, data any) Resp {
+	return Resp{Code: code, Msg: msg, Data: data}
+}
+
 // 错误码约定（HTTP 200 + 业务码；网络层错误用 HTTP 状态）
 const (
 	errUnauthorized = 401
