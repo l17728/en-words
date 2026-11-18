@@ -888,8 +888,13 @@ export default function ClassroomPage() {
           // input turn. Re-open a short capture window so the student can try
           // the same word again; a successful match changes context/phase and
           // the gate closes before the next iteration.
-          if (phase === 'repeating') await new Promise<void>(resolve => setTimeout(resolve, 250))
-          else break
+          if (phase === 'repeating') {
+            await new Promise<void>(resolve => setTimeout(resolve, 250))
+            // The accepted repeat can advance the phase before the delayed
+            // retry wakes up. Re-check the live refs so one answer never
+            // opens a second microphone capture window.
+            if (phaseRef.current !== 'repeating' || !inputGate.current.accepts(contextRef.current, phaseRef.current, onlineRef.current, inputTurn)) return
+          } else break
         }
       } catch (e) {
         console.debug('[classroom_asr_gate]', { event: 'capture_error', phase, turn: inputTurn.turn,
