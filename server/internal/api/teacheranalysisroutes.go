@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -101,6 +102,23 @@ func (a *App) registerTeacherAnalysisRoutes(g *gin.RouterGroup) {
 			return
 		}
 		c.JSON(http.StatusOK, ok(rows))
+	})
+	admin.POST("/teacher-analysis/process-next", func(c *gin.Context) {
+		if a.DB == nil {
+			c.JSON(http.StatusOK, fail(http.StatusServiceUnavailable, "persistence unavailable"))
+			return
+		}
+		owner := "admin-teacher-analysis-" + strconv.FormatInt(claimsOf(c).UID, 10)
+		if err := a.ProcessNextTeacherAnalysis(c.Request.Context(), owner); err != nil {
+			if errors.Is(err, store.ErrTeacherJobUnavailable) {
+				c.JSON(http.StatusOK, ok(gin.H{"processed": false, "reason": "no_due_job"}))
+				return
+			}
+			c.JSON(http.StatusOK, fail(http.StatusBadRequest, "analysis processing failed"))
+			return
+		}
+		a.Log.InfoCtx(c.Request.Context(), "teacher_analysis", "teacher_analysis_processed", map[string]any{"operator": claimsOf(c).UID})
+		c.JSON(http.StatusOK, ok(gin.H{"processed": true}))
 	})
 	admin.POST("/teacher-analysis/:id/evaluate", func(c *gin.Context) {
 		if a.DB == nil {
