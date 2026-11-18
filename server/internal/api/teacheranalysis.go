@@ -28,6 +28,36 @@ func classifyTeacherFailure(failureType, target, transcript string) (string, str
 	return "转写未与目标文本匹配", "检查发音、环境噪声和麦克风距离；允许使用已批准的朗读变体。", 0.86
 }
 
+// ScanPronunciationVariants materializes deterministic speech normalizations
+// for one published or draft book. It is safe to rerun: variants are unique by
+// entry and text and are never written for words unchanged by the rules.
+func (a *App) ScanPronunciationVariants(bookID int64) (int, error) {
+	if a == nil || a.DB == nil || bookID <= 0 {
+		return 0, store.ErrTeacherJobUnavailable
+	}
+	entries, _, err := a.Books.ListEntries(bookID, 1, 5000)
+	if err != nil {
+		return 0, err
+	}
+	now := time.Now()
+	created := 0
+	for _, entry := range entries {
+		variant := strings.TrimSpace(speechnormalize.NormalizeForSpeech(entry.Word))
+		if variant == "" || strings.EqualFold(strings.TrimSpace(entry.Word), variant) {
+			continue
+		}
+		row := store.WordPronunciationVariant{EntryID: entry.ID, Variant: variant, Kind: "rule_normalized", Source: "speechnormalize", Confidence: 1, Enabled: true, Version: 1, CreatedAt: now, UpdatedAt: now}
+		result := a.DB.Where("entry_id = ? AND variant = ?", entry.ID, variant).FirstOrCreate(&row)
+		if result.Error != nil {
+			return created, result.Error
+		}
+		if result.RowsAffected > 0 {
+			created++
+		}
+	}
+	return created, nil
+}
+
 // ProcessNextTeacherAnalysis claims and completes one queued analysis. The
 // worker is deliberately separate from enqueueTeacherFailure so the classroom
 // response never waits for analysis or a model call.

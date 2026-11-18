@@ -90,6 +90,16 @@ func (a *App) registerTeacherAnalysisRoutes(g *gin.RouterGroup) {
 		a.Log.InfoCtx(c.Request.Context(), "speech", "speech_cache_refreshed", map[string]any{"operator": claimsOf(c).UID, "language": in.Lang, "text_length": len([]rune(in.Text))})
 		c.JSON(http.StatusOK, ok(gin.H{"status": "ready"}))
 	})
+	admin.POST("/wordbooks/:id/pronunciation-scan", func(c *gin.Context) {
+		bookID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		created, err := a.ScanPronunciationVariants(bookID)
+		if err != nil {
+			c.JSON(http.StatusOK, fail(errBadRequest, "pronunciation scan failed"))
+			return
+		}
+		a.Log.InfoCtx(c.Request.Context(), "teacher_analysis", "pronunciation_scan_completed", map[string]any{"book_id": bookID, "created": created, "operator": claimsOf(c).UID})
+		c.JSON(http.StatusOK, ok(gin.H{"book_id": bookID, "created": created}))
+	})
 	admin.GET("/teacher-analysis", func(c *gin.Context) {
 		if a.DB == nil {
 			c.JSON(http.StatusOK, ok([]any{}))
