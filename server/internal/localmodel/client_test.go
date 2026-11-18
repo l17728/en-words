@@ -3,13 +3,17 @@ package localmodel
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
+	"enwords/internal/obs"
 	"github.com/stretchr/testify/require"
 )
 
@@ -211,4 +215,44 @@ func TestProfileRoutesRequestsToAssignedServices(t *testing.T) {
 	got, err := c.Transcribe(context.Background(), []byte("audio"), "recording.wav", "en")
 	require.NoError(t, err)
 	require.Equal(t, "cat", got)
+}
+
+func TestConcurrentTranscribeKeepsTraceAndPayloadIsolated(t *testing.T) {
+	var mu sync.Mutex
+	seen := map[string]bool{}
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		trace := r.Header.Get("X-Trace-ID")
+		if trace == "" {
+			t.Error("missing trace")
+		}
+		if err := r.ParseMultipartForm(1024); err != nil {
+			t.Error(err)
+			return
+		}
+		defer r.MultipartForm.RemoveAll()
+		mu.Lock()
+		seen[trace] = true
+		mu.Unlock()
+		time.Sleep(5 * time.Millisecond)
+		_, _ = w.Write([]byte(`{"text":"` + r.FormValue("language") + `"}`))
+	}))
+	defer s.Close()
+	c, err := New(s.URL, nil)
+	require.NoError(t, err)
+	c.Services["asr"] = Service{Model: "fixture", Capabilities: []string{"asr"}}
+	var wg sync.WaitGroup
+	for i, lang := range []string{"en", "zh", "en", "zh"} {
+		wg.Add(1)
+		go func(i int, lang string) {
+			defer wg.Done()
+			ctx := obs.WithTrace(context.Background(), fmt.Sprintf("student-%d", i))
+			got, e := c.Transcribe(ctx, []byte("audio"), "recording.wav", lang)
+			require.NoError(t, e)
+			require.Equal(t, lang, got)
+		}(i, lang)
+	}
+	wg.Wait()
+	mu.Lock()
+	defer mu.Unlock()
+	require.Len(t, seen, 4)
 }
