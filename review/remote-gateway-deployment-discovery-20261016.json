@@ -1,0 +1,107 @@
+{
+  "scope": "read_only_root_names_and_port8001_listener_identity",
+  "root_names": [
+    ".bash_history",
+    ".bashrc",
+    ".bashrc.bak.1780244220",
+    ".bun",
+    ".cache",
+    ".claude",
+    ".claude.json",
+    ".codex",
+    ".config",
+    ".gitconfig",
+    ".hermes",
+    ".local",
+    ".net",
+    ".npm",
+    ".npmrc",
+    ".nvm",
+    ".omo",
+    ".orca_term",
+    ".pip",
+    ".playwright-mcp",
+    ".profile",
+    ".pydistutils.cfg",
+    ".ssh",
+    ".viminfo",
+    ".zai",
+    "Picer.IndexService-linux-x64.tar.gz",
+    "ai-full-duplex-design.md",
+    "distill",
+    "homedoctor-backups",
+    "llm-api-connection.md",
+    "snap",
+    "ui-scanner.cjs",
+    "会战管理_SaaS多租户用户管理使用手册.docx",
+    "吹面不寒杨柳风.png"
+  ],
+  "root_names_truncated": false,
+  "port8001_listener_inode_count": 2,
+  "listeners": [
+    {
+      "pid": 1066958,
+      "exe": "/usr/sbin/nginx",
+      "cwd": "/",
+      "service_units": [
+        "nginx.service"
+      ],
+      "unit_file_paths": [
+        "/lib/systemd/system/nginx.service"
+      ],
+      "nginx_version": "1.18.0"
+    },
+    {
+      "pid": 1083886,
+      "exe": "/usr/sbin/nginx",
+      "cwd": "/",
+      "service_units": [
+        "nginx.service"
+      ],
+      "unit_file_paths": [
+        "/lib/systemd/system/nginx.service"
+      ],
+      "nginx_version": "1.18.0"
+    },
+    {
+      "pid": 1083887,
+      "exe": "/usr/sbin/nginx",
+      "cwd": "/",
+      "service_units": [
+        "nginx.service"
+      ],
+      "unit_file_paths": [
+        "/lib/systemd/system/nginx.service"
+      ],
+      "nginx_version": "1.18.0"
+    },
+    {
+      "pid": 1083888,
+      "exe": "/usr/sbin/nginx",
+      "cwd": "/",
+      "service_units": [
+        "nginx.service"
+      ],
+      "unit_file_paths": [
+        "/lib/systemd/system/nginx.service"
+      ],
+      "nginx_version": "1.18.0"
+    },
+    {
+      "pid": 1083889,
+      "exe": "/usr/sbin/nginx",
+      "cwd": "/",
+      "service_units": [
+        "nginx.service"
+      ],
+      "unit_file_paths": [
+        "/lib/systemd/system/nginx.service"
+      ],
+      "nginx_version": "1.18.0"
+    }
+  ],
+  "read_cmdline": false,
+  "read_environ": false,
+  "model_requests": 0,
+  "service_changes": false
+}

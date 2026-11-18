@@ -2,9 +2,12 @@
 package api
 
 import (
+	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"enwords/internal/auth"
 	"enwords/internal/classroom"
@@ -19,6 +22,7 @@ func (a *App) Router() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Recovery())
+	r.Use(a.traceMW())
 	v := r.Group("/api/v1")
 
 	// ---- 首次启动向导（无 admin 时开放；SDD §17）----
@@ -27,7 +31,9 @@ func (a *App) Router() *gin.Engine {
 	// ---- 认证 ----
 	v.POST("/auth/login", func(c *gin.Context) {
 		var body map[string]string
-		_ = c.ShouldBindJSON(&body)
+		if !a.readIdentityBody(c, &body) {
+			return
+		}
 		u := body["username"]
 		p := body["password"]
 		tok, user, err := a.Auth.Login(u, p)
@@ -44,6 +50,11 @@ func (a *App) Router() *gin.Engine {
 
 	// ---- 学生/管理员共用（需登录）----
 	authed := v.Group("", a.authMW())
+	a.registerProviderRoutes(authed)
+	a.registerTeacherAnalysisRoutes(authed)
+	a.registerModelProfileRoutes(authed)
+	a.registerPilotRoutes(authed)
+	a.registerDuplexPreflight(authed)
 	authed.POST("/auth/change_password", func(c *gin.Context) {
 		var in struct{ OldPassword, NewPassword string }
 		_ = c.ShouldBindJSON(&in)
@@ -51,6 +62,7 @@ func (a *App) Router() *gin.Engine {
 			c.JSON(http.StatusOK, fail(errBadRequest, "原密码错误或新密码不合规"))
 			return
 		}
+		a.persistUser(claimsOf(c).Username)
 		a.Log.Info("auth", "password_changed", map[string]any{
 			"username": claimsOf(c).Username})
 		c.JSON(http.StatusOK, ok("changed"))
@@ -67,7 +79,9 @@ func (a *App) Router() *gin.Engine {
 	})
 	// 修改昵称（含编码防御）
 	authed.POST("/me/nickname", func(c *gin.Context) {
-		var in struct{ Nickname string `json:"nickname"` }
+		var in struct {
+			Nickname string `json:"nickname"`
+		}
 		if err := c.ShouldBindJSON(&in); err != nil || strings.TrimSpace(in.Nickname) == "" {
 			c.JSON(http.StatusOK, fail(errBadRequest, "nickname required"))
 			return
@@ -76,6 +90,7 @@ func (a *App) Router() *gin.Engine {
 			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
 			return
 		}
+		a.persistUser(claimsOf(c).Username)
 		a.Log.Info("auth", "nickname_updated", map[string]any{
 			"username": claimsOf(c).Username})
 		c.JSON(http.StatusOK, ok("updated"))
@@ -135,14 +150,25 @@ func (a *App) Router() *gin.Engine {
 		c.JSON(http.StatusOK, ok("deleted"))
 	})
 	adminOnly.POST("/:id/import/commit", func(c *gin.Context) {
+		started := time.Now()
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 		var in struct{ Entries []wordbook.EntryInput }
-		_ = c.ShouldBindJSON(&in)
-		res, err := a.Books.ImportBatch(id, in.Entries)
-		if err != nil {
-			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
+		if err := c.ShouldBindJSON(&in); err != nil {
+			c.JSON(http.StatusOK, fail(errBadRequest, "导入内容格式不正确，请检查后重试"))
 			return
 		}
+		res, err := a.Books.ImportBatchContext(c.Request.Context(), id, in.Entries)
+		if err != nil {
+			a.Log.ErrorCtx(c.Request.Context(), "wordbook", "import_failed", map[string]any{"book_id": id, "input_count": len(in.Entries), "reason": "transaction_failed", "duration_ms": time.Since(started).Milliseconds()})
+			c.JSON(http.StatusOK, fail(errBadRequest, "导入失败，本次词条未保存，请稍后重试"))
+			return
+		}
+		if created, scanErr := a.ScanPronunciationVariants(id); scanErr != nil {
+			a.Log.Warn("teacher_analysis", "pronunciation_scan_failed", map[string]any{"book_id": id, "error": scanErr.Error()})
+		} else {
+			a.Log.Info("teacher_analysis", "pronunciation_scan_completed", map[string]any{"book_id": id, "created": created, "trigger": "import"})
+		}
+		a.Log.InfoCtx(c.Request.Context(), "wordbook", "import_completed", map[string]any{"book_id": id, "inserted": res.Inserted, "skipped": len(res.Skipped), "duration_ms": time.Since(started).Milliseconds()})
 		c.JSON(http.StatusOK, ok(res))
 	})
 	adminOnly.POST("/:id/publish", func(c *gin.Context) {
@@ -150,6 +176,11 @@ func (a *App) Router() *gin.Engine {
 		if err := a.Books.Publish(id); err != nil {
 			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
 			return
+		}
+		if created, scanErr := a.ScanPronunciationVariants(id); scanErr != nil {
+			a.Log.Warn("teacher_analysis", "pronunciation_scan_failed", map[string]any{"book_id": id, "error": scanErr.Error()})
+		} else {
+			a.Log.Info("teacher_analysis", "pronunciation_scan_completed", map[string]any{"book_id": id, "created": created, "trigger": "publish"})
 		}
 		c.JSON(http.StatusOK, ok("published"))
 	})
@@ -177,17 +208,22 @@ func (a *App) Router() *gin.Engine {
 		c.JSON(http.StatusOK, ok(a.MyBooks(claimsOf(c).UID)))
 	})
 	student.POST("/books/:bookId/enable", func(c *gin.Context) {
+		started := time.Now()
 		bid, _ := strconv.ParseInt(c.Param("bookId"), 10, 64)
-		if err := a.EnableBook(claimsOf(c).UID, bid); err != nil {
-			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
+		if err := a.EnableBookContext(c.Request.Context(), claimsOf(c).UID, bid); err != nil {
+			a.Log.ErrorCtx(c.Request.Context(), "wordbook", "enable_failed", map[string]any{"book_id": bid, "student_id": claimsOf(c).UID, "reason": "operation_failed", "duration_ms": time.Since(started).Milliseconds()})
+			c.JSON(http.StatusOK, fail(errBadRequest, "暂时无法选择此词库，请刷新后重试"))
 			return
 		}
+		a.Log.InfoCtx(c.Request.Context(), "wordbook", "enable_completed", map[string]any{"book_id": bid, "student_id": claimsOf(c).UID, "duration_ms": time.Since(started).Milliseconds()})
 		c.JSON(http.StatusOK, ok("enabled"))
 	})
 	student.DELETE("/books/:bookId", func(c *gin.Context) {
 		bid, _ := strconv.ParseInt(c.Param("bookId"), 10, 64)
 		if err := a.Sched.RemoveBook(claimsOf(c).UID, bid); err != nil {
-			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
+			a.Log.ErrorCtx(c.Request.Context(), "wordbook", "book_remove_failed", map[string]any{
+				"book_id": bid, "student_id": claimsOf(c).UID, "reason": "operation_failed"})
+			c.JSON(http.StatusOK, fail(errBadRequest, "暂时无法移除词库，请稍后重试"))
 			return
 		}
 		a.Log.Info("student", "book_removed", map[string]any{
@@ -222,13 +258,23 @@ func (a *App) Router() *gin.Engine {
 			KnownWordIDs []int64 `json:"knownWordIds"`
 			Finish       bool    `json:"finish"`
 		}
-		_ = c.ShouldBindJSON(&in)
-		if err := a.PlacementSubmit(claimsOf(c).UID, bid, in.KnownWordIDs, in.Finish); err != nil {
-			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
+		if err := c.ShouldBindJSON(&in); err != nil {
+			c.JSON(http.StatusOK, fail(errBadRequest, "摸底数据格式不正确"))
+			return
+		}
+		if err := a.PlacementSubmitContext(c.Request.Context(), claimsOf(c).UID, bid, in.KnownWordIDs, in.Finish); err != nil {
+			message := "摸底提交未完成，请保留选择后重试"
+			var planErr *placementPlanError
+			if errors.As(err, &planErr) {
+				message = "摸底选择已保存，但课程安排未完成，请重试完成摸底"
+			}
+			c.JSON(http.StatusOK, fail(errBadRequest, message))
 			return
 		}
 		c.JSON(http.StatusOK, ok(gin.H{"finished": in.Finish}))
 	})
+	a.registerStatsRoutes(student)
+	a.registerPlaybackRoutes(student, false)
 	student.GET("/lessons", func(c *gin.Context) {
 		bid, _ := strconv.ParseInt(c.Query("bookId"), 10, 64)
 		ls, err := a.Sched.Lessons(claimsOf(c).UID, bid)
@@ -240,6 +286,9 @@ func (a *App) Router() *gin.Engine {
 	})
 	student.GET("/lessons/:id/report", func(c *gin.Context) {
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		if !a.ownLesson(c, id) {
+			return
+		}
 		res, okk := a.Report(id)
 		if !okk {
 			c.JSON(http.StatusOK, fail(errNotFound, "report not found"))
@@ -247,40 +296,39 @@ func (a *App) Router() *gin.Engine {
 		}
 		c.JSON(http.StatusOK, ok(LessonReportView{LessonID: id, Report: res.Report, Correct: res.Correct}))
 	})
-
-	student.GET("/notifications", func(c *gin.Context) {
-		c.JSON(http.StatusOK, ok(a.Notifications(claimsOf(c).UID)))
-	})
-	student.POST("/notifications/read", func(c *gin.Context) {
-		a.mu.Lock()
-		defer a.mu.Unlock()
-		for i := range a.notifications {
-			if a.notifications[i].UserID == claimsOf(c).UID {
-				a.notifications[i].Read = true
-			}
-		}
-		c.JSON(http.StatusOK, ok("read"))
-	})
-
-	// ---- 反馈（学生；文字/语音同管线 G-2）----
-	fb := authed.Group("/feedbacks", a.roleMW(auth.RoleStudent))
-	fb.POST("", func(c *gin.Context) {
-		var in struct{ Text, Channel string }
-		_ = c.ShouldBindJSON(&in)
-		if strings.TrimSpace(in.Text) == "" {
-			c.JSON(http.StatusOK, fail(errBadRequest, "text required"))
+	student.POST("/lessons/:id/start-now", func(c *gin.Context) {
+		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		lesson, err := a.Sched.StartLessonNow(claimsOf(c).UID, id)
+		if err != nil {
+			c.JSON(http.StatusOK, fail(errBadRequest, "当前课程无法立即开始，请刷新课程表后重试"))
 			return
 		}
-		c.JSON(http.StatusOK, ok(a.HandleFeedback(claimsOf(c).UID, in.Text)))
-	})
-	fb.GET("/mine", func(c *gin.Context) {
-		c.JSON(http.StatusOK, ok(a.Feedbacks(claimsOf(c).UID)))
+		a.Log.InfoCtx(c.Request.Context(), "scheduler", "lesson_started_immediately", map[string]any{
+			"lesson_id": lesson.ID, "student_id": lesson.StudentID, "book_id": lesson.BookID,
+		})
+		c.JSON(http.StatusOK, ok(lesson))
 	})
 
-	// ---- 课堂（学生）----
+	a.registerNotificationRoutes(student)
+	a.registerFeedbackRoutes(authed.Group("/feedbacks", a.roleMW(auth.RoleStudent)))
+
 	cr := authed.Group("/classroom", a.roleMW(auth.RoleStudent))
+	cr.Use(a.classroomGenerationMiddleware())
 	cr.POST("/lessons/:id/enter", func(c *gin.Context) {
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		if !a.ownLesson(c, id) {
+			return
+		}
+		if c.Query("runtime") == "pilot" && a.Pilot != nil {
+			taskID := strings.TrimSpace(c.Query("task_id"))
+			room, state, err := a.EnterPilotRoom(c.Request.Context(), id, claimsOf(c).UID, taskID)
+			if err != nil || room == nil {
+				c.JSON(http.StatusOK, fail(http.StatusConflict, "pilot room unavailable"))
+				return
+			}
+			c.JSON(http.StatusOK, ok(gin.H{"runtime": "pilot", "lesson_id": id, "student_id": claimsOf(c).UID, "phase": state.Phase, "lifecycle": state.Lifecycle, "checkpoint_version": state.CheckpointVersion, "logical_input_revision": state.LogicalInputRevision, "question_key": state.QuestionKey}))
+			return
+		}
 		// 开放时间校验（D1；-testmode 跳过：E2E 可立即上课）
 		lesson, err := a.Sched.Lesson(id)
 		if err != nil {
@@ -291,24 +339,67 @@ func (a *App) Router() *gin.Engine {
 			c.JSON(http.StatusOK, fail(errForbidden, "lesson not open yet"))
 			return
 		}
-		room, snap, err := a.Rooms.Enter(id, claimsOf(c).UID)
+		room, snap, err := a.Rooms.EnterContext(c.Request.Context(), id, claimsOf(c).UID)
 		if err != nil {
-			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
+			code := errBadRequest
+			if errors.Is(err, errLessonUnavailable) {
+				code = errForbidden
+			}
+			c.JSON(http.StatusOK, fail(code, err.Error()))
 			return
 		}
-		ticket := a.IssueTicket(id, claimsOf(c).UID)
-		c.JSON(http.StatusOK, ok(gin.H{"ticket": ticket, "snapshot": snap, "status": room.Status()}))
+		ticket, err := a.issueTicketContext(c.Request.Context(), id, claimsOf(c).UID)
+		if err != nil {
+			c.JSON(http.StatusOK, fail(errForbidden, "classroom generation retired"))
+			return
+		}
+		a.writeClassroomResponse(c, id, ok(gin.H{"ticket": ticket, "snapshot": snap, "status": room.Status()}))
+	})
+	cr.POST("/lessons/:id/pilot-command", func(c *gin.Context) {
+		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		if !a.ownLesson(c, id) {
+			return
+		}
+		if a.Pilot == nil {
+			c.JSON(http.StatusOK, fail(http.StatusConflict, "pilot runtime disabled"))
+			return
+		}
+		var in struct {
+			TaskID    string `json:"task_id"`
+			CommandID string `json:"command_id"`
+			Kind      string `json:"kind"`
+			Payload   string `json:"payload"`
+		}
+		if c.ShouldBindJSON(&in) != nil || strings.TrimSpace(in.TaskID) == "" || strings.TrimSpace(in.CommandID) == "" || strings.TrimSpace(in.Kind) == "" || !json.Valid([]byte(in.Payload)) {
+			c.JSON(http.StatusOK, fail(errBadRequest, "invalid pilot command"))
+			return
+		}
+		room, _, err := a.EnterPilotRoom(c.Request.Context(), id, claimsOf(c).UID, in.TaskID)
+		if err != nil {
+			c.JSON(http.StatusOK, fail(http.StatusConflict, "pilot room unavailable"))
+			return
+		}
+		receipt, err := room.Submit(c.Request.Context(), in.CommandID, in.Kind, in.Payload)
+		if err != nil {
+			c.JSON(http.StatusOK, fail(http.StatusConflict, "pilot command rejected"))
+			return
+		}
+		c.JSON(http.StatusOK, ok(gin.H{"runtime": "pilot", "receipt": receipt}))
 	})
 	// REST 事件通道（WS 不可用/测试/文本兜底；与 WS 同一 Room 管线）
 	// R4-sec#6：event 白名单校验（防任意字符串触发未定义行为）
 	cr.POST("/lessons/:id/event", func(c *gin.Context) {
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		if !a.ownLesson(c, id) {
+			return
+		}
 		room, okk := a.Rooms.Room(id)
 		if !okk {
 			c.JSON(http.StatusOK, fail(errNotFound, "room not found"))
 			return
 		}
 		var in struct {
+			ClientEnvelope
 			Event string `json:"event"`
 			Text  string `json:"text"`
 		}
@@ -317,95 +408,79 @@ func (a *App) Router() *gin.Engine {
 			c.JSON(http.StatusOK, fail(errBadRequest, "unknown event"))
 			return
 		}
-		msgs := room.HandleEvent(classroom.Event{Type: in.Event, Text: sanitizeText(in.Text)})
-		c.JSON(http.StatusOK, ok(msgs))
+		if len(in.Text) > 2048 {
+			c.JSON(http.StatusOK, fail(errBadRequest, "event text too long"))
+			return
+		}
+		msgs := room.HandleClientEventContext(c.Request.Context(), in.ClientEnvelope, classroom.Event{Type: in.Event, Text: in.Text})
+		a.writeClassroomResponse(c, id, ok(msgs))
 	})
 	cr.POST("/lessons/:id/voice", func(c *gin.Context) {
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-		var in struct{ Text string }
-		_ = c.ShouldBindJSON(&in)
+		if !a.ownLesson(c, id) {
+			return
+		}
+		var in struct {
+			ClientEnvelope
+			Text string
+		}
+		if bindFeedbackJSON(c, &in, false) != nil {
+			c.JSON(200, fail(400, "invalid_json"))
+			return
+		}
 		room, okk := a.Rooms.Room(id)
 		if !okk {
 			c.JSON(http.StatusOK, fail(errNotFound, "room not found"))
 			return
 		}
 		// R4-sec#3：长度限制+控制字符清洗（防注入下游管线）
-		in.Text = sanitizeText(in.Text)
-		if in.Text == "" {
-			c.JSON(http.StatusOK, fail(errBadRequest, "empty text"))
+		if !validVoiceText(in.Text) {
+			c.JSON(200, fail(400, "invalid voice text"))
 			return
 		}
-		cmd, msgs := room.HandleVoiceText(in.Text)
-		out := gin.H{"command": cmd, "frames": msgs}
-		if cmd == "feedback" { // 语音反馈闭环（与 WS 同管线）
-			select {
-			case fb := <-room.FeedbackCh:
-				rec := a.HandleFeedback(claimsOf(c).UID, fb)
-				out["feedback"] = rec
-			default:
+		if _, body, matched := room.voiceParser.MatchFeedback(in.Text); matched {
+			if _, err := normalizeFeedback(FeedbackSubmission{SubmissionID: in.SubmissionID, Text: body, Channel: "voice"}); err != nil {
+				a.respondFeedbackError(c, err)
+				return
 			}
 		}
-		c.JSON(http.StatusOK, ok(out))
+		cmd, body, msgs := room.HandleClientVoiceSubmissionContext(c.Request.Context(), in.ClientEnvelope, in.Text)
+		out := gin.H{"command": cmd, "frames": msgs}
+		if cmd == "feedback" {
+			rec, err := a.SubmitFeedback(c.Request.Context(), claimsOf(c).UID, FeedbackSubmission{SubmissionID: in.SubmissionID, Text: body, Channel: "voice"})
+			if err != nil {
+				a.respondFeedbackError(c, err)
+				return
+			}
+			out["feedback"] = rec
+		}
+		a.writeClassroomResponse(c, id, ok(out))
 	})
 	cr.POST("/lessons/:id/resume", func(c *gin.Context) {
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		if !a.ownLesson(c, id) {
+			return
+		}
 		room, okk := a.Rooms.Room(id)
 		if !okk {
 			c.JSON(http.StatusOK, fail(errNotFound, "room not found"))
 			return
 		}
-		c.JSON(http.StatusOK, ok(room.Resume()))
+		a.writeClassroomResponse(c, id, ok(room.Resume()))
 	})
 
 	// ---- 配置（admin；Agent 走工具）----
 	cfgg := authed.Group("/config", a.roleMW(auth.RoleAdmin))
-	cfgg.GET("", func(c *gin.Context) {
-		out := gin.H{}
-		for _, k := range []string{"wordsPerLesson", "groupSize", "ttsEnRepeat", "repeatTimes",
-			"quizOldWords", "overdueHours", "goalMode", "ladder", "sessionTimeoutMin"} {
-			switch k {
-			case "goalMode":
-				out[k] = a.Cfg.String(0, k)
-			case "ladder":
-				out[k] = a.Cfg.Ladder(0)
-			default:
-				out[k] = a.Cfg.Int(0, k)
-			}
-		}
-		c.JSON(http.StatusOK, ok(out))
-	})
-	cfgg.POST("/set", func(c *gin.Context) {
-		var in struct {
-			Scope     string `json:"scope"`
-			StudentID int64  `json:"studentId"`
-			Key       string `json:"key"`
-			Value     any    `json:"value"`
-			Reason    string `json:"reason"`
-		}
-		_ = c.ShouldBindJSON(&in)
-		who := claimsOf(c).Username
-		var err error
-		if in.Scope == "student" {
-			err = a.Cfg.SetStudent(who, in.StudentID, in.Key, in.Value, in.Reason)
-		} else {
-			err = a.Cfg.SetGlobal(who, in.Key, in.Value, in.Reason)
-		}
-		if err != nil {
-			c.JSON(http.StatusOK, fail(errBadRequest, err.Error()))
-			return
-		}
-		a.Log.Info("config", "config_set", map[string]any{
-			"actor": who, "scope": in.Scope, "student_id": in.StudentID,
-			"key": in.Key, "value": in.Value})
-		c.JSON(http.StatusOK, ok("set"))
-	})
-	// 覆盖删除（BE-08，总验收门补齐）
-	a.registerConfigRoutes(cfgg.Group(""))
+	a.registerEffectiveConfigRoutes(cfgg)
 
 	// ---- 管理员：用户/审计 ----
 	admin := authed.Group("/admin", a.roleMW(auth.RoleAdmin))
+	a.registerPlaybackRoutes(admin, true)
 	admin.POST("/users", func(c *gin.Context) {
-		var in struct{ Username, Password, Nickname string; Role string }
+		var in struct {
+			Username, Password, Nickname string
+			Role                         string
+		}
 		_ = c.ShouldBindJSON(&in)
 		u, err := a.Auth.CreateUser(in.Username, in.Password, in.Nickname, auth.Role(in.Role))
 		if err != nil {
@@ -416,7 +491,7 @@ func (a *App) Router() *gin.Engine {
 		c.JSON(http.StatusOK, ok(u))
 	})
 	admin.GET("/audit", func(c *gin.Context) {
-		c.JSON(http.StatusOK, ok(a.ToolAudit.Entries))
+		c.JSON(http.StatusOK, ok(a.ToolAudit.Snapshot()))
 	})
 	// 用户管理 + 待办（TX-01；总验收门补齐）
 	a.registerUserRoutes(admin.Group(""))
@@ -428,7 +503,7 @@ func (a *App) Router() *gin.Engine {
 	})
 	agent.POST("/tools/call", func(c *gin.Context) {
 		var in struct {
-			Name string      `json:"name"`
+			Name string     `json:"name"`
 			Args tools.Args `json:"args"`
 		}
 		_ = c.ShouldBindJSON(&in)
@@ -452,6 +527,56 @@ func (a *App) Router() *gin.Engine {
 	return r
 }
 
+// writeClassroomResponse keeps the generation's effect permit through JSON
+// serialization and the synchronous response write. The request lease alone
+// only delays retirement; it does not authorize publishing stale frames after
+// admission has closed.
+func (a *App) writeClassroomResponse(c *gin.Context, lessonID int64, payload any) {
+	lease := generationLeaseFromContext(c.Request.Context(), lessonID)
+	if lease == nil || lease.Context().Err() != nil {
+		a.Log.WarnCtx(c.Request.Context(), "classroom", "generation_response_rejected", map[string]any{"lesson_id": lessonID, "reason": "missing_or_canceled_lease"})
+		c.JSON(http.StatusOK, fail(errForbidden, "classroom generation retired"))
+		return
+	}
+	permit, err := lease.Token().Permit()
+	if err != nil {
+		a.Log.WarnCtx(c.Request.Context(), "classroom", "generation_response_rejected", map[string]any{"lesson_id": lessonID, "generation": lease.Token().id, "reason": err.Error()})
+		c.JSON(http.StatusOK, fail(errForbidden, "classroom generation retired"))
+		return
+	}
+	defer permit.Release()
+	if lease.Context().Err() != nil {
+		a.Log.WarnCtx(c.Request.Context(), "classroom", "generation_response_rejected", map[string]any{"lesson_id": lessonID, "generation": lease.Token().id, "reason": "lease_canceled_before_write"})
+		c.JSON(http.StatusOK, fail(errForbidden, "classroom generation retired"))
+		return
+	}
+	c.JSON(http.StatusOK, payload)
+}
+
+func (a *App) classroomGenerationMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		lessonID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+		if err != nil || lessonID <= 0 {
+			c.Next()
+			return
+		}
+		// Authenticate ownership before allocating a persistent generation entry.
+		// The route handler repeats this check under the acquired lease before use.
+		if !a.ownLesson(c, lessonID) {
+			return
+		}
+		lease, err := a.generations.acquire(c.Request.Context(), lessonID)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusOK, fail(errForbidden, "classroom generation unavailable"))
+			return
+		}
+		defer lease.Release()
+		ctx := withGenerationLease(lease.Context(), lease)
+		c.Request = c.Request.WithContext(ctx)
+		c.Next()
+	}
+}
+
 // ---- 中间件 ----
 
 const claimsKey = "claims"
@@ -463,6 +588,10 @@ func (a *App) authMW() gin.HandlerFunc {
 		cl, err := a.Auth.Verify(tok)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusOK, fail(errUnauthorized, "unauthorized"))
+			return
+		}
+		if !a.activeAccount(c.Request.Context(), cl.UID, cl.Role, cl.Username) {
+			c.AbortWithStatusJSON(http.StatusOK, fail(errUnauthorized, "account unavailable"))
 			return
 		}
 		c.Set(claimsKey, cl)

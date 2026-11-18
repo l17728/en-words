@@ -71,6 +71,12 @@ func fail(code int, msg string) Resp {
 	return Resp{Code: code, Msg: msg}
 }
 
+// failWithData keeps the stable error envelope while exposing machine-readable
+// recovery guidance to clients.
+func failWithData(code int, msg string, data any) Resp {
+	return Resp{Code: code, Msg: msg, Data: data}
+}
+
 // 错误码约定（HTTP 200 + 业务码；网络层错误用 HTTP 状态）
 const (
 	errUnauthorized = 401
@@ -85,7 +91,7 @@ const (
 // validClassroomEvent 课堂事件白名单（防任意 event 字符串触发未定义行为）。
 func validClassroomEvent(ev string) bool {
 	switch ev {
-	case "word_clicked", "tts_finished", "repeat_done", "repeat_skipped", "answer_submitted":
+	case "word_clicked", "tts_finished", "tts_failed", "tts_skip", "asr_failed", "repeat_done", "repeat_skipped", "repeat_replay", "answer_submitted":
 		return true
 	}
 	return false

@@ -1,0 +1,71 @@
+{
+  "repository": "FunAudioLLM/Fun-ASR",
+  "revision": "c0a20e2bb698bbad11d143bdccd6c0760e9d6e5b",
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "1dc5a14c7b0ba6329b9a1efff2b70e28c6ea51162fa5f6a27997111fa4cf6ac8",
+      "bytes": 26199
+    },
+    {
+      "path": "ctc.py",
+      "sha256": "67d65f49fcd1a9e573976b03eb0175010c48e3473019ec9374c59d740cc0c5d7",
+      "bytes": 1697
+    },
+    {
+      "path": "model.py",
+      "sha256": "223e24104889df1bd5d7f85fa7584233ad31936ea43b0c57afde37a3d9c90da5",
+      "bytes": 33738
+    },
+    {
+      "path": "requirements.txt",
+      "sha256": "8f4ea59e8308e3c713003e7402ad8b1c566599e6e503cd3fc74f9c7814362330",
+      "bytes": 137
+    },
+    {
+      "path": "tools/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "tools/cn_tn.py",
+      "sha256": "b3b8c931dcf22e05e920a66e00fcf3bde25f4261b30d04e1096d6f2f9ee7f593",
+      "bytes": 60857
+    },
+    {
+      "path": "tools/compute_ja_cer.py",
+      "sha256": "f0a78ac189090be642ceaeca9271e765b8a20f7b16bf7819f87c0ba02a48f9ea",
+      "bytes": 3307
+    },
+    {
+      "path": "tools/format5res.py",
+      "sha256": "86c55b06e3ad9980394ce1e603bb95c83494e6fd5c3397e80e195813857463bb",
+      "bytes": 9809
+    },
+    {
+      "path": "tools/scp2jsonl.py",
+      "sha256": "1d038203aea623046fb98cf1dedf0295cf4309af87dbfeee68f0b9bd313c5711",
+      "bytes": 5071
+    },
+    {
+      "path": "tools/sdr_eval_demo/score_sdr.py",
+      "sha256": "3384a2eb414a6342d774ef9eb9bec3225ede1dd719a41e16eac76ec4e482b980",
+      "bytes": 31915
+    },
+    {
+      "path": "tools/sdr_eval_demo/split_chunks_by_dur_sdr.py",
+      "sha256": "389ff208961141dccce9e74f0aa31e7848146252a94bd30048da16511cc01958",
+      "bytes": 13699
+    },
+    {
+      "path": "tools/utils.py",
+      "sha256": "c8d22d62f5cb8bd967552de0129696e1576eeba578c286dfb895a5db290fc08b",
+      "bytes": 2202
+    },
+    {
+      "path": "tools/whisper_mix_normalize.py",
+      "sha256": "db5ede24ab73fe4c67940907a7ee652f96c09918c2f4e6a15a59b8d64415d8aa",
+      "bytes": 8608
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "status": "completed_isolated_baseline",
+  "date": "2026-10-15",
+  "cases": [
+    {
+      "data": {
+        "create_calls_in_transaction": 100,
+        "creates": 100,
+        "elapsed_ms": 258,
+        "error": "<nil>",
+        "operation": "import",
+        "other_student_failures": 0,
+        "other_student_max_ms": 4,
+        "other_student_p95_ms": 4,
+        "other_student_samples": 3,
+        "pool_wait_count": 12,
+        "pool_wait_ms": 4,
+        "queries_including_other_student": 111,
+        "size": 100,
+        "unique_create_transactions": 100
+      },
+      "kind": "import_enable"
+    },
+    {
+      "data": {
+        "create_calls_in_transaction": 100,
+        "creates": 100,
+        "elapsed_ms": 266,
+        "error": "<nil>",
+        "operation": "enable_first",
+        "other_student_failures": 0,
+        "other_student_max_ms": 2,
+        "other_student_p95_ms": 2,
+        "other_student_samples": 3,
+        "pool_wait_count": 11,
+        "pool_wait_ms": 6,
+        "queries_including_other_student": 110,
+        "size": 100,
+        "unique_create_transactions": 100
+      },
+      "kind": "import_enable"
+    },
+    {
+      "data": {
+        "create_calls_in_transaction": 0,
+        "creates": 0,
+        "elapsed_ms": 14,
+        "error": "<nil>",
+        "operation": "enable_repeat",
+        "other_student_failures": 0,
+        "other_student_max_ms": 5,
+        "other_student_p95_ms": 5,
+        "other_student_samples": 1,
+        "pool_wait_count": 4,
+        "pool_wait_ms": 4,
+        "queries_including_other_student": 106,
+        "size": 100,
+        "unique_create_transactions": 0
+      },
+      "kind": "import_enable"
+    },
+    {
+      "data": {
+        "create_calls_in_transaction": 1000,
+        "creates": 1000,
+        "elapsed_ms": 4049,
+        "error": "<nil>",
+        "operation": "import",
+        "other_student_failures": 0,
+        "other_student_max_ms": 36,
+        "other_student_p95_ms": 35,
+        "other_student_samples": 35,
+        "pool_wait_count": 139,
+        "pool_wait_ms": 196,
+        "queries_including_other_student": 1075,
+        "size": 1000,
+        "unique_create_transactions": 1000
+      },
+      "kind": "import_enable"
+    },
+    {
+      "data": {
+        "create_calls_in_transaction": 1000,
+        "creates": 1000,
+        "elapsed_ms": 2163,
+        "error": "<nil>",
+        "operation": "enable_first",
+        "other_student_failures": 0,
+        "other_student_max_ms": 5,
+        "other_student_p95_ms": 5,
+        "other_student_samples": 22,
+        "pool_wait_count": 86,
+        "pool_wait_ms": 33,
+        "queries_including_other_student": 1048,
+        "size": 1000,
+        "unique_create_transactions": 1000
+      },
+      "kind": "import_enable"
+    },
+    {
+      "data": {
+        "create_calls_in_transaction": 0,
+        "creates": 0,
+        "elapsed_ms": 103,
+        "error": "<nil>",
+        "operation": "enable_repeat",
+        "other_student_failures": 0,
+        "other_student_max_ms": 9,
+        "other_student_p95_ms": 9,
+        "other_student_samples": 1,
+        "pool_wait_count": 3,
+        "pool_wait_ms": 8,
+        "queries_including_other_student": 1006,
+        "size": 1000,
+        "unique_create_transactions": 0
+      },
+      "kind": "import_enable"
+    }
+  ],
+  "source_log": ".test-artifacts\\import-enable-baseline-reviewed-20261015.txt",
+  "log_sha256": "50847cde86a06c0a23c6beb88ecf72e1fc2dade56cc299b097a7e7bc949ab7df",
+  "limitations": [
+    "One sample per operation/size; no confidence interval or fsync tracing.",
+    "No concurrent browser, race, or model inference; original browser 99.484s import and 74.916s unfinished enable occurred under shared load.",
+    "unique_create_transactions counts retained distinct *sql.Tx identities used by Create callbacks, not all SQL transactions.",
+    "GET p95 uses nearest rank; short operations yield few samples.",
+    "No product code modified for this baseline."
+  ]
+}

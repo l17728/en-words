@@ -1,0 +1,20 @@
+{
+  "scope": "user listening confirmation for three independently generated Chinese ASR source recordings; not whole-set quality acceptance",
+  "manifest": "review/audio-fixtures/manifest-zh.json",
+  "manifest_sha256": "81eb3c61c4a8c0238aea2078eedb1ccf69ed26e6063d54fe33f852109a9a87d4",
+  "source": "user feedback relayed by root agent on 2026-10-14",
+  "user_statement": "其他可以听清楚",
+  "cases": [
+    {"case_id": "ASR-ZH-04", "reference": "安静", "human_intelligibility": "confirmed", "model_observed": "暗金。"},
+    {"case_id": "ASR-ZH-08", "reference": "我想跳过", "human_intelligibility": "confirmed", "model_observed": "我想挑过。"},
+    {"case_id": "ASR-ZH-10", "reference": "每课五十个词", "human_intelligibility": "confirmed", "model_observed": "每克五十格词。"}
+  ],
+  "other_cases": "not covered by this confirmation",
+  "journey_cat": {
+    "file": "review/audio-fixtures/journey-cat-zh.wav",
+    "user_statement": "不能，发音不清或不是猫",
+    "classification": "invalid acoustic fixture; exclude from model-quality conclusions, retain failed journey evidence",
+    "part_of_frozen_12": false
+  },
+  "frozen_manifest_modified": false
+}

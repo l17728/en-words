@@ -1,0 +1,34 @@
+﻿[
+    {
+        "path":  "platform/manager\\tts-server.js",
+        "sha256":  "6fea95d5fe54546658a569944991a1584dd5e5c3927cf9d77b66512a869829c7"
+    },
+    {
+        "path":  "platform/sherpa-onnx\\include\\sherpa-onnx\\c-api\\c-api.h",
+        "sha256":  "55e97b3d579316f951164801817bc1b1a8c64a98daca5e2c45b6ea4abae32bec"
+    },
+    {
+        "path":  "platform/sherpa-onnx\\lib\\sherpa-onnx-c-api.dll",
+        "sha256":  "f80a93e69fda12aaab23581f71097010c70fb8b8c042fec7c0efead04be5c441"
+    },
+    {
+        "path":  "platform/sherpa-onnx\\lib\\onnxruntime.dll",
+        "sha256":  "b9f6713c3602a4742680a7e6a77e3f9ac4a676ad9447bce609e53efcda795d7e"
+    },
+    {
+        "path":  "platform/models\\sherpa-onnx-vits-zh-ll\\model.onnx",
+        "sha256":  "6c349bdd73dc928234dd7bc86929748bba32cd5264d32d915bf7b7aa0595965b"
+    },
+    {
+        "path":  "review/platform-tts-server.candidate.cjs",
+        "sha256":  "241bb1261290df73f1f97e0fcfaf26031d33923ca00d8d7c022e28408552c123"
+    },
+    {
+        "path":  "review/platform-tts-utf8-worker.cpp",
+        "sha256":  "8fa0f94c0bafb269a9837e7c66ec884083adda210fb93c6a81083409e6834c3a"
+    },
+    {
+        "path":  ".test-tools/tts-utf8-worker.exe",
+        "sha256":  "f7e0bf5cb6666548f0cf3bb218e2beab75783009d5d8db86ccd40de1cc8af56e"
+    }
+]

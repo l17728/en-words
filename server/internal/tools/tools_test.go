@@ -187,7 +187,7 @@ func TestHandlerError(t *testing.T) {
 	assert.Contains(t, err.Error(), "boom")
 	require.Len(t, a.Entries, 1)
 	assert.False(t, a.Entries[0].OK)
-	assert.Equal(t, "boom", a.Entries[0].Result)
+	assert.Equal(t, "handler_failed", a.Entries[0].Result)
 }
 
 // ---- reason 空白串拦截（双保险第二层）----
@@ -304,5 +304,7 @@ func TestBudgetGuardOrder(t *testing.T) {
 	// 预算耗尽后即使未知工具也先被预算拦截
 	_, err = r.Call(ctx, teacher, "who.knows", json.RawMessage(`{}`))
 	assert.ErrorIs(t, err, ErrBudgetExceeded)
-	require.Len(t, a.Entries, 1, "预算拦截不产生审计条目")
+	require.Len(t, a.Entries, 2, "budget denial must also be audited")
+	assert.False(t, a.Entries[1].OK)
+	assert.Equal(t, "budget_denied", a.Entries[1].Result)
 }

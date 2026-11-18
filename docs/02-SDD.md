@@ -33,7 +33,7 @@
 
 ```
 ┌─────────────────────────────── 用户层 ────────────────────────────────┐
-│  学生浏览器 (React18+AntD5+Zustand)          管理员浏览器（管理后台）    │
+│  学生浏览器 (React19+AntD6+Zustand)          管理员浏览器（管理后台）    │
 │   学习UI / 协同课堂UI / 反馈 / TTS播放/语音识别/麦克风 │ 词库管理/配置/审计    │
 └──────────────┬──────────────────────────────┬────────────────────────┘
                │ HTTPS(WSS)                   │ HTTPS
@@ -303,7 +303,7 @@ Agent(LLM function call)
 LESSON（可跨多个 SESSION 续课，见 §5.5）
   ├─ TEACHING (w=1..W, W=wordsPerLesson)  # 教学阶段，逐词顺序推进（无分组、无插入测试）
   │   ├─ SHOW_WORD                        #   中英对照展示（点击或 0.8s 自动开读）
-  │   ├─ TTS_SEG (i=1..N+1)               #   朗读段：en×ttsEnRepeat 后 zh×1（R2-FE-02 拆分）
+  │   ├─ TTS_SEG (i=1..N+M)               #   朗读段：en×ttsEnRepeat 后 zh×ttsZhRepeat（间隔见14）
   │   ├─ REPEATING                        #   学生跟读一遍；老师听读判读（ASR 转写匹配当前词，
   │   │                                   #   correct/near → 判定读完；超时 nudge 后计为完成兜底）
   │   └─ WORD_DONE → 下一个词（直至全部教完）
@@ -430,12 +430,12 @@ ladderDefault = [1,1,2,2,4,7,14,30]  // 天；ladder[k]=第k+1次复习距上次
   - **长期毕业**（card-scoped）：`LadderStep ≥ len(ladder)` 且最近一次到期测试答对 → `status=graduated`，退出排课，进 30 天维护抽查（答错重置 `LadderStep = min(5, len-1)` 回 learning）。
 - **step 推进规则**（结课时结算；R3 澄清：**新学不算复习**——新词首课=step 0 起点，只有后续课的复习成功才 +1）：本课该词任一测试（小测/综合/期末）答对 ≥1 次 → 视为本次复习成功，`LadderStep+1`；全错 → step 不变（省力再学），`LastReviewAt` 仍更新（间隔从本课重起）；**未上课（未进课堂）不触发任何结算**，由 §6.4 逾期重排处理。
 - **逾期缺课**："省力再学" = 该词 `LadderStep` **不变**（错过不清零、也不前进，重走本级间隔）。
-- **ladder 配置缩短**（R2-AR-02）：`config.set(ladder)` 生效时，同事务内将全部 `memory_cards.ladder_step` 截断为 `min(step, 新len-1)`，杜绝越界；毕业门槛随新 len 同步降低（截断到 len-1 的词再成功一次复习即 ≥ 新 len 毕业），自洽（R3-BE）。
+- **有效 ladder 配置变化**（R2-AR-02，2026-10-16 原子协调器）：仅对事务前后有效梯度实际变化的学生，将该学生 `memory_cards.ladder_step > 新len-1` 的卡裁剪到 `新len-1`；其他学生、有效梯度不变的学生及所有非 `ladder_step` 学习字段保持不变。扩长不提升步骤，既有 `NextDueAt` 不重排。配置、revision、卡步骤和审计在同一事务内提交；提交失败不得刷新缓存或暴露部分写入。详见 [40-有效复习梯度原子协调器](40-有效复习梯度原子协调器.md)。
 
 ### 6.3 排课算法（plan_next_lesson）
 
 ```
-输入: studentId, bookId, config(wordsPerLesson W∈[40,100])
+输入: studentId, bookId, config(wordsPerLesson W∈[50,100])
 1. dueWords  = {status=learning, NextDueAt ≤ now+24h} 按 NextDueAt 升序   ← 全部保留
 2. boosted   = {BoostFlag=true 且未在 due} 按标记时间倒序
 3. newWords  = {status=new, 未被摸底标记 mastered} 按词库序
@@ -499,7 +499,7 @@ submitted → processing → applied
 
 | 调整 | 边界 | 超界处理 |
 |---|---|---|
-| wordsPerLesson | [40,100] | 学生确认 or escalate |
+| wordsPerLesson | [50,100] | 超界不应用，需确认或升级 |
 | lessonsPerDay | [1,2] | 同上 |
 | 推迟天数 | ≤7 天/次，月累计 ≤3 次 | 同上 |
 | 单词 Boost | 每词库同时 ≤20 词 | FIFO 淘汰最旧 |
@@ -515,8 +515,11 @@ submitted → processing → applied
 | key | 类型 | 默认 | 边界 | 说明 |
 |---|---|---|---|---|
 | wordsPerLesson | int | 60 | [50,100] | 每课词数（用户定案 2026-08-25：一次课 50~100 词） |
-| ttsEnRepeat | int | 3 | [1,5] | 英文朗读遍数（3 遍英文+1 遍中文） |
-| ttsIntervalMs | int | 1500 | [500,4000] | 朗读间隔 |
+| ttsEnRepeat | int | 3 | [1,5] | 英文朗读遍数；3英文+1中文为默认，可分别设置 |
+| ttsZhRepeat | int | 1 | [1,5] | 中文朗读遍数 |
+| ttsIntervalMs | int | 1500 | [0,10000] | 相邻英文段间隔（毫秒） |
+| ttsZhIntervalMs | int | 1500 | [0,10000] | 相邻中文段间隔（毫秒） |
+| ttsSwitchIntervalMs | int | 1500 | [0,10000] | 英文切换中文的间隔（毫秒）；五项原子保存与冻结见14 |
 | repeatTimes | int | 1 | [1,5] | 跟读遍数（用户定案 2026-08-25：跟读一遍，老师听读判读通过即下一词） |
 | timeoutShowWordS | int | 8 | [3,30] | 展示等点击（实际生效 0.8s 自动开读，见 §5.3 定案注记） |
 | timeoutRepeatS | int | 10 | [5,60] | 单遍跟读（超时 nudge 后计为完成兜底） |
@@ -662,9 +665,10 @@ GET  /feedbacks/mine                   # 历史+处理结果
 
 ### 10.6 配置与管理（admin / system_agent）
 ```
-GET  /config?keys=…                    # 配置读取（全局+学生覆盖）
-POST /config/set                       {scope, studentId?, key, value, reason}
-DELETE /config/override                {studentId, key}   # 删除学生覆盖→回落全局
+GET  /config?keys=…                    # 配置读取（admin，全局视图）
+GET  /config/effective?studentId=…     # admin读取目标学生有效值、来源与 global/student revision
+POST /config/set                       {scope, studentId?, key, value, reason} # admin；敏感配置原子更新
+DELETE /config/override                {studentId, key}   # admin；删除学生覆盖→按继承值原子协调
 GET  /admin/audit?actor&tool&from&to   # 审计查询（admin）
 
 GET/POST  /admin/users                             # 学生账号管理（FR-A1/A4）
@@ -673,6 +677,8 @@ POST /admin/users/:username/disable                # 停用（踢下线）
 POST /admin/users/:username/enable
 GET  /admin/todos                                  # 人工待办（投诉/越权告警）
 ```
+
+配置变更成功响应明确区分 `committed` 与 `refresh_pending`，并返回 `changed_cards`、`affected_students`、`noop`。写入或提交失败整体回滚；提交成功但运行缓存刷新失败时不得重放写请求，后续有效值读取以持久层为准。目标授权、严格 JSON 边界及有效梯度影响范围见 [40-有效复习梯度原子协调器](40-有效复习梯度原子协调器.md)。
 
 ### 10.7 Agent 专用
 ```
@@ -715,7 +721,7 @@ GET  /agent/tools                      # 该 Agent 可见工具清单（给 LLM 
 |---|---|---|
 | `student_event` | {event, text?} | 学生活动；event 白名单（R4-sec#6）：word_clicked / tts_finished / repeat_done / repeat_skipped / answer_submitted |
 | `voice_text` | {text} | 语音转写文本（浏览器 Web Speech / Omni 中继）：指令解析→**跟读判读**→反馈捕获→作答 |
-| `heartbeat` | — | 30s 心跳（回 heartbeat_ack） |
+| `heartbeat` | — | 连接后立即发送；当前 ACK 后 10s 再发，10s 未 ACK 判离线并重取 ticket（详见31） |
 | `resume` | — | 断点续课 |
 
 ### 11.3 可靠性
@@ -742,7 +748,9 @@ GET  /agent/tools                      # 该 Agent 可见工具清单（给 LLM 
           首页/课程表/统计/开始学习(L3 导航)
           （"我读完了"口令已随 2026-08-25"老师听学生读完"定案移除——
             跟读推进只认听读判读，不认口令/按钮）
-  匹配: 归一化(去标点/全半角) + 编辑距离≤1 容错("下一下"→下一个) + 前缀触发(反馈类)
+  控制匹配(38): NFC/小写/空白折叠，仅单末尾句号/感叹号可去，整句词表匹配。
+      问号/连续混合标点/引用/否定保留；无前缀/编辑距离/语气词猜删。
+      “下一个！”有效；“下一下/嗯嗯下一个啊”不命中。反馈前缀与正文捕获独立不变。
   优先级: 反馈触发 > 教学指令 > 跟读判读 > 测试作答
           (quiz 阶段指令仅"跳过"生效; repeating 阶段指令仅"跳过"生效, 其余转写交听读判读)
 产出: VoiceCommand{Type, Payload} → 注入课堂事件总线(等价对应 UI 按钮点击) → UI 按钮高亮回执(L4)
@@ -754,10 +762,10 @@ GET  /agent/tools                      # 该 Agent 可见工具清单（给 LLM 
 接口: TTSProvider.Synthesize(ctx, text, lang, voice) → audio bytes/URL
 实现: MockTTS(返回标记文本，前端转 Web Speech API 本地朗读)
       DashScopeTTS(Omni 非实时 qwen3.5-omni-plus 单段合成+播放队列编排, D-17 定案; cosyvoice 已砍, 见05)
-播放: 前端 audio/ 模块统一排队播放（en×n 间隔 ttsIntervalMs + zh×1）
-兜底: Web Speech API 的 voices 异步加载/onend 不可靠 → 前端按字数估时+1s 看门狗
-      强制视为完成；Web Speech 完全不可用 → 静音计时+视觉动画，tts_finished 照常
-      上报，流程不阻塞（评审发现 FE-03，P0）
+播放: 前端串行队列按课程冻结配置播放（en×ttsEnRepeat 后 zh×ttsZhRepeat，三类间隔见14）
+失败: Web Speech无声/错误/看门狗触发取消时显示失败，不发送成功tts_finished。
+      仅真实onend/平台ended成功ACK；服务端原超时策略可记tts_skipped推进（17/18）。
+      历史FE-03“静音计时视完成”已撤销，不能用视觉流程通过冒充真实发声。
 选声: voice 显式选择·严格本地优先（精确 lang 本地→同语言族本地→任意本地→
       浏览器默认兜底），u.lang 与选中 voice 对齐——2026-08-26 无声 BUG：默认
       选声可命中 Google 在线语音（国内不可达→speak 静默挂起，看门狗推进=
@@ -772,14 +780,17 @@ GET  /agent/tools                      # 该 Agent 可见工具清单（给 LLM 
    不发 TTS（nudge 提醒同样仅文字）——杜绝老师语音被学生麦克风拾音
 1. 学生跟读开口 → 浏览器 Web Speech（en-US）/ Omni InputTranscript 持续识别
 2. 转写文本 → HandleVoiceText 跟读判读分支：
-   Judge(当前词, meanings, 转写) ∈ {correct, near} → 老师确认"听到了" → repeat_done → 下一词
-   不匹配 → 继续听（不推进、不报错）
+   EvaluateRepeat(当前目标词/词组, 原始完整转写) == "matched" → repeat_done → 下一词
+   不使用meanings/同义或LLM；不匹配继续听，unsupported_target仅固定原因日志，保原skip/timeout。
+   目标支持NFC Latin、词内撇号/连字符及目标侧占位骨架；复杂目标限制详38。
 3. 总超时（timeoutRepeatS）兜底：nudge_repeat 温和提醒（"再试一次，大声读出来～"）
    → 仍超时 → 计为完成自动推进（不阻塞课堂）
 4. 学生也可说"跳过"（跟读相位唯一放行指令）
-输出: repeat_done 事件（不录音、不上传——只上传判定结果）
+输出: 服务端匹配成功才生成repeat_done；输入为原始转写。
+      本机ASR模式实际上传PCM WAV，Web Speech路径上传文本，不能笼统声称不录音/不上传。
 注: 前端 VAD 能量门限方案（RMS 基线+动态门限+TRAILING 判定）已废弃——
-    能量只能证明"发了声"不能证明"读的是这个词"；判读走 ASR 转写+判分器 L1。
+    能量不能证明目标词；当前跟读为ASR转写+RepeatMatch，不是发音质量/真人来源验证。
+    设备预检能量仪表/未来双工声学VAD不在此课堂链路中（32–35）。
 ```
 
 ### 12.4 ASR + LLM 判分（测试作答）
@@ -788,7 +799,7 @@ GET  /agent/tools                      # 该 Agent 可见工具清单（给 LLM 
 学生语音作答（wait_answer 相位浏览器自动开麦，zh-CN）→ Web Speech / Omni 转写文本
   → WS voice_text 帧 / REST /voice（同一 HandleVoiceText 管线）
   → 非指令文本 → answer_submitted 进判分管线
-  → Judge 两级判分: L1 归一化关键词匹配（中文同义/英文不区分大小写与冠词）
+  → Judge 两级判分: L1 整体短答与显式同义表（英文保留完整词序，可选冠词及重复；复杂句交L2）
                    L2 智谱 GLM 语义判分（近似/同义表述）
 文本兜底: 测试界面常驻输入框（K3 双通道；E2E/无麦克风环境走 REST 提交）
 ```
@@ -851,6 +862,8 @@ feedbackStore / adminStore —— classroomStore 只由 WS 与本地回执写入
 
 - **trace_id 贯穿**：REST 入口/WS 帧/Agent 决策轮/工具执行/判分/排课——同一请求链路同 ID。
 - **必记事件清单**：登录、工具调用(全量)、状态机每次迁移、TTS/ASR 调用、判分输入输出、配置变更、排课计算（含选词依据）、反馈处理、逾期重排、WS 连接/断开/重连、错误（含堆栈）。
+- 配置原子协调使用同一 trace 记录 `config_mutation_started`，并以 `config_mutation_committed`、`config_mutation_rolled_back` 或 `config_mutation_refresh_pending` 之一结束；摘要仅含 operation/key/scope/student_id、affected_students、changed_cards、transaction_outcome 和固定 error_code，不记录自由原因、配置值或 SQL。
+- 跟读专用事件（38）：`classroom/repeat_evaluated`沿用课堂trace，记录lesson_id、word_id、purpose=repeat、source=target_match、result及duration_ms；result为matched/no_match/unsupported_target/canceled。成功另记`repeat_verified`的ID及answer_length，不记录词面、学生原文或模型正文；此事件仅证明文本匹配，不能代替声学验收。
 - classroom_events 表存课堂事件流（与日志互补：面向回放与 E2E 断言）。
 
 ### 14.2 排障路径示例
@@ -917,15 +930,109 @@ feedbackStore / adminStore —— classroomStore 只由 WS 与本地回执写入
 
 ## 17. 部署设计
 
-```
-构建: make build → dist/enwords-server.exe(内嵌 web/dist 静态资源) + enwords.db
+> 反馈任务增量实施合同见docs12 §8，覆盖本文件旧反馈单状态/共享语音队列描述。API仍采用`{code,msg,data}`，错误补充`error_code/submission_id/retryable`，不改变成功code=0的约定。
+
+| 反馈增量入口 | 权限与语义 |
+|---|---|
+| POST `/api/v1/feedbacks` | 学生；text/channel/submission_id，16KiB JSON；同ID同文返回原任务，异文409 |
+| GET `/api/v1/feedbacks/mine` | 当前学生历史，逐项results及version |
+| GET `/api/v1/feedbacks/submissions/:id` | 当前学生查询，不重新执行业务 |
+| POST `/api/v1/feedbacks/submissions/:id/retry` | 当前学生显式恢复未完成项，空体或{}，不允许替换原文 |
+| GET `/api/v1/admin/todos`、`/todos/:id` | 管理员独立待办列表/详情；不以总反馈状态筛选 |
+| GET `/api/v1/admin/notifications` | 管理员自己的通知 |
+| POST `/api/v1/admin/notifications/read` | 管理员自己的通知已读；学生沿用student入口 |
+
+课堂REST voice和WS voice_text携带submission_id。event_processed回显event_id/command/submission_id，反馈分支增加normalized_text；event_rejected回显两ID。feedback_reply保留status/reply并带完整feedback记录；该记录依submission_id/version合并，独立于课堂seq/turn。WS任务上下文使用连接生命周期并保留HTTP trace，不能复用已结束的升级请求上下文。
+
+反馈凭证采用feedback_tasks/feedback_intents/feedback_todos/feedback_notices独立表，配置revision保留删除墓碑。日志沿HTTP trace记录task/attempt/intent、工具与资源摘要、事务提交或回滚，不输出反馈正文或底层错误原文。旧反馈迁移只迁历史及待办，不重新执行工具或发通知。
+
+以下为原始部署目标，当前仓库尚无`make build`、静态资源内嵌或每日自动备份实现，不能当作可执行说明或已验收能力。当前可执行开发启动与持久化参数见09/10；技术栈基线采用01的2026-10-14 ADR（React19/AntD6）。
+
+```text
+目标构建: make build → dist/enwords-server.exe(内嵌 web/dist 静态资源) + enwords.db
 运行: 双击/命令行启动 → 监听 :8080 → 家庭局域网访问 http://<host>:8080
       开发: go run ./cmd/server [-persist] [-testmode] [-providers real]
       参数: -persist 启用 SQLite 持久化（默认 data/enwords.db；-db <路径> 自定义）
             -providers mock|real（real=智谱 GLM 判分L2+反馈解析，密钥读 secrets）
             -testmode 跳过课程开放时间校验（E2E 专用，产品禁用）
-      持久化范围: 用户/词库/词条/记忆卡/课程/摸底草稿（store 包 14 表 GORM 自动迁移）
+      持久化范围: 用户/词库/词条/记忆卡/课程/摸底草稿，以及运行记录、反馈任务/意图/待办/通知与配置版本；表清单以store.Open的GORM迁移列表为准。
 首次: 引导创建管理员 → 导入词库 → 建学生账号
 备份: SQLite 单文件，内置每日自动 backup 到 ./backups（保留 14 份）
 升级: 替换单文件，migrations 自动执行
 ```
+# 2026-10-14 工具与持久任务实施补充
+
+本节更新历史“22工具”口径：当前31个真实Registry名称与角色边界以 `review/tool-capability-catalog.json` 和 docs/16 对照表为准；管理词库REST是管理能力，不能等同Agent自主权限。`feedback.apply_adjustment` 的规范执行名为 `config.set_student`，无新增别名写旁路。Teacher冻结效果→工具→Hub单一发送出口；工具不回调Room锁，锁外模型结果按代次提交，详见18。
+
+逾期巡检调用 `App.RunOverdue`：Agent冻结重排计划，工具事务提交旧课expired、新课预约、学生通知、审计和OverdueTask完成凭证。任务键绑定原课与OpenAt，prepared计划包含PlannedAt/Version，冷恢复目标过期保留历史并重计划；连续逾期仅建议暂停。已存在课堂48小时保护，不静默判空答。旧Scheduler.HandleOverdue不是生产调用入口。
+
+反馈POST `/api/v1/feedbacks` 新增可选 `parent_submission_id`，列表与详情返回 `parent_submission_id/conversation_id/clarification_answered`。父必须为同学生的已完成clarify结果；父认领和子冻结计划同事务，拒绝不得残留无计划子任务。同提交ID不同父构成冲突。月主动改期计同学生、原任务北京时间自然月中成功D意图receipt，前三次可执行、第四次need_confirm且无绕额度确认写接口。每学生词库难词池容量20、BoostSequence FIFO，重复加强不刷新年龄，消费保留序号。协议、故障与UI合同见19。
+
+### 反馈显式数量约束增量（26；下述待验语句为实施时记录）
+
+新增合同见[26-反馈显式数量与动作授权边界.md](26-反馈显式数量与动作授权边界.md)。平台对规则/模型/携Raw规划统一核对数量、单位、维度及候选一致性，拒绝显式零被当作相对调整省略值；教学决策仍由Agent负责。保留合法混合与明确历史分句边界。现有反馈API与配置键不变；`need_confirm`无越界确认写入口。§14日志补`feedback_constraint_rejected`固定原因摘要及trace，不记录原文。实际代码独审和定向通过，完整Go/race及真实浏览器证据待回收。
+
+### 判分来源观测增量（27；下述为实施时记录）
+
+§14新增`judge_decision`：每次JudgeContext只记录一次source=l1/l2/fallback、result=correct/near/wrong与固定reason。合法模型wrong记model_verdict；非法/缺失枚举返回ErrInvalidJudgment并记invalid_judgment，不能冒充成功模型判断。App钩子读取当前日志器、沿用课堂lesson trace；不记录答案、词面、原始模型回复或底层错误。评分/提示/机会数不变，取消后结果仍由Room代次校验拒绝。具体合同与红绿证据见27。
+
+新增日志 `feedback_quota_checked/boost_pool_updated/feedback_clarification_linked/overdue_replanned/overdue_replan_failed/overdue_conflict` 记录父trace和任务/资源ID；事务内日志标明pending，业务成功以提交凭证和提交后事件为准，不记录正文、记忆内容、token或音频。最新增量最终验收尚未封版，不能沿用历史覆盖率宣称新代码已验收。
+
+
+### 28 语义判分边界增量（实现已验收，真实模型质量未达门）
+
+L1 不再以任意英文 token 或泛编辑距离放行；英文含义与同义词也保留词边界。整体中文义项与显式同义表保留；复杂句、否定、多选及元指令交 L2。仅调整安全判分边界，不改老师 Agent 的课次与两次机会政策。候选提示已冻结但未采纳，须经28的95%/安全误接收0/旧100不退化门。
+
+2026-10-15状态核对：26/27的确定性验收已纳入`review/runtime-browser-acceptance-20261014-final78.json`；28/30后续冻结树Go r8覆盖率/vet/race通过，浏览器86为同树77+9分批通过，Node27及8构建/lint通过，见`review/runtime-backend-acceptance.md`及`review/runtime-browser-acceptance-20261014-final86.json`。原“全量待验”是历史阶段状态。六组真实判分评测已完成，候选新40虽78/80但错误接受2，未达到安全门，生产未采用候选提示；不能把实现回归通过写成模型质量通过。10及28保存完整分账。这些前轮证据不替代下方31交互改动与IX14的新树验收。
+
+## 交互响应与可靠性补充（2026-10-15）
+
+规格、用例和实测基线见[31-交互性能与可靠性评估.md](31-交互性能与可靠性评估.md)。本补充不改变教学决策、词序、机会数或配置键。
+
+- REST普通请求30秒期限包含响应体读取；取消/网络错误/5xx写操作提示结果待确认，不能自动重发。旧会话响应不得清除新会话或更新页面。
+- 中文合成仅缓存本账号本课堂成功播放的完整WAV，最多16条/8MiB、5分钟，换课/登出清空；每次重播独立实际播放、字幕和完成ACK。合成/识别HTTP各30秒，录音4秒和播放时间不计入网络期限。
+- WS读泵与容量16的串行业务队列分离；heartbeat不等待慢模型。队列满断开并记录固定原因，依快照恢复，不自动重放业务。前台正常调度下静默失联检测最多20秒，恢复仍受新ticket请求和退避影响；后台标签不承诺此期限。
+- 快照持久化尊重传入context取消；SQLite驱动busy等待不能据此保证立即退出。定时扫描跳过已成功结算/退休房间，尚未结算的LESSON_END仍保留重试。
+- 仅登录`POST /api/v1/auth/login`和未初始化的`POST /api/v1/bootstrap`使用完整正文16KiB/接收10秒门，含chunked及尾随字节；超限413、超时408、畸形400。成功恢复连接读期限，拒绝关闭连接；已初始化bootstrap仍先返回原HTTP200/code403并关闭连接，不读取慢正文。导入、媒体及其他路由不继承该小报文限额。
+- §14定位补充：`ws_worker_cleanup_timeout`和业务背压记录课堂trace、容量与固定原因；前端`speech_cache/playback_completed`记录课堂trace、命中和总播放耗时（并非纯网络耗时），禁止记录token、语音、密码或反馈正文。UI操作等待、取消与失败原因须与实际请求状态一致。
+- §14身份入口补`auth/identity_body_rejected`：请求trace、route、固定reason和limit_bytes，不记录用户名、密码、原文或底层错误。媒体补`speech/media_request_timeout`：lesson数字ID或preview trace、transcribe/synthesize、期限与实际耗时，仅表示头+body网络等待超时，不表示模型已停止；主动取消不冒充服务故障。前端`ws/heartbeat_timeout`与`ws/send_failed`使用课堂trace和固定原因，无自动业务重放。
+- 本节实施与分域代码复核通过，最终Go/浏览器全量证据仍待回收；独立模型语义质量与SQLite busy限制不由交互回归关闭。
+- IX14实现前合同：导入的非法输入/同库重复仍按原输入顺序Skipped；存储读取、写入、提交或context取消失败整次有效写回滚并返回错误，不得记为普通Skipped。词条ID按合法输入顺序分配，跨库同词允许。选库缺失卡单事务分块INSERT，三元组冲突DO NOTHING保留全部既有学习进度；SQLite/MemRepo原子语义一致。HTTP请求context传至事务，旧内部入口保留Background包装。成功日志仅在提交后记数量；失败仅固定原因，不回显词面。详见31 IX14，实施和回归结果另行登记。
+- IX14当前实现核对：固定sql.Conn内GORM Begin/Commit保留sql.Tx，失败提交在归池前对同连接清理；独立清理context不受已取消请求影响，清理失败丢弃连接，每个替换连接重用DSN foreign_keys/busy_timeout配置。拒绝嵌套仓储事务调用，不把失败提交后的脏连接交下一请求。§14补`wordbook/import_completed`、`import_failed`、`enable_completed`、`enable_failed`，包含请求trace、book/student适用ID、数量/耗时及固定失败原因；成功只在commit后发，无词面和SQL原错。实际代码与定向已通过，最终全量待本轮新树证据。
+<!-- Current IX15 atomic placement contract; validation status is maintained in docs/31. -->
+
+本轮IX15摸底保存增量：HTTP请求context传入原子仓储，SQLite在同一固定连接事务中先取得writer再读取卡，只批量修改真正发生new↔mastered转换的status列，并同事务保存原顺序known草稿。learning/graduated、复习时间等其他字段不变；Mem在同锁内准备副本后发布，内存事务也复制草稿。自定义非原子仓储明确拒绝。保存成功后记录`placement_saved`的input_count/changed_count，失败记录固定reason且不输出正文；finish的ResetForReplacement/PlanNext仍在此事务之外，其失败使用`placement_plan_failed`与“摸底选择已保存，但课程安排未完成”文案，不能声称草稿回滚。前置词库归属读取仍沿原无context接口，不承诺取消这些读取。主审已复核实现，新增双池/取消/提交故障及浏览器总验收待回收。
+2026-10-15冻结树收口核对：IX01–16的代码、端点、局部配置与WS协议增量已交叉审查，当前新增代码评审阻断为0。IX15双池/取消/真实COMMIT及专项UI已绿；普通Go r11已通过489顶层/1009含子用例、7跳过、vet=0及全部覆盖门。最终race和116浏览器验收尚待汇总，不代表全阶段结束。IX16七项计时只约束callAgentTool路径的日志，浏览器聚焦committed classroom.*且必须包含play_tts；独立正常课堂transaction最大79ms不能证明历史15.545秒停顿已修复。SQLite写忙取消延迟、单连接读取等待和真实模型质量门未过仍保留。
+
+### 2026-10-15 后端最终验收更新：r11普通与race同树通过
+
+已核原始 `server/.test-artifacts/final-runtime-coverage-r11-summary.json` 和 `server/.test-artifacts/final-runtime-race-r11-summary.json`：普通/覆盖率/vet运行119.64秒，489顶层、1009含子用例通过，7项显式opt-in或测试harness跳过，20个测试包通过（另1包无测试），vet退出0，覆盖率全部达门。race运行217.58秒，同样489顶层/1009含子通过及7跳过，退出0，无失败/竞争报告。
+
+两轮源码前后均为 `d8dffa31bccdc49265483a0e585b768d233be7fd778bfb37c47593d2d0fb6eb4`，source_unchanged=true。此前“race待回收”为历史时点，此处为最新状态。116浏览器总族仍执行中，恢复组27条已过但不能替代总族；本阶段尚未封板。真实模型质量缺口、SQLitebusy边界及IX16只观测不等于15.545秒停顿消除的结论保持不变。
+
+## 2026-10-15 交互阶段最终验收封板
+
+本轮已准入IX01–16阶段验收完成，新增代码评审阻断0。后端r11普通/覆盖率/vet与race同树全部通过（489顶层、1009含子通过、7显式跳过；普通119.64秒/race217.58秒），覆盖率全部过门；前述“待验收”保留为历史时点，由本节更新现态。
+
+浏览器按三段**完整用例族**接受，总计116：首段recovery41+overdue1；第二段feedback26+legacy9+journey1+closure6+firstuse1+playback1；第三段interaction30。接受族全部0 skipped/unexpected/flaky，Node60、lint0、九族构建通过。不是一次运行全绿：首段feedback有19通过/1旧英文错误文案断言失败/6未跑；续段interaction有29通过/1 AntD离场图标影响精确名称的夹具失败。两次原报告保留，修正仅测试后分别整族重跑，不合并失败族的零散通过项、不修改生产或放宽产品超时。
+
+三段原始manifest已独立核验生产SHA `ea3283a7f342a97310d19ff29981c9110bd4d4db05799e2091a8e127ef11a7c3`、server `5686ce420d5c2c10a6bcbc8e93d687104e5a956547092b9b2a63ee7638a10bfe`、harness `0b47afff2d672fd7a86ad1d1ff8b87243cca5ae4fe126a0cd9f53b62ac43fc07` 一致且unchanged=true。证据汇总为 `review/interaction-browser-final116-20261015.json`，完整阶段说明为 `review/interaction-final-acceptance-20261015.md`；Go源SHA与上述前后端生产指纹范围不同，不混为同一hash。
+
+阶段完成不等于所有历史任务完成：IX16仅分阶段观测，历史15.545秒长尾未宣称消除；SQLitebusy和单连接等待、摸底草稿与排课部分成功边界保留；真实文本/ASR质量未过不被mock回归替代。共享模型未在本轮切换，AGENTS未修改。
+
+## 2026-10-15 全双工基础扩展
+
+新增合同以[33-全双工课堂SDD.md](33-全双工课堂SDD.md)为准，实施与验收状态见35。`GET /api/v1/classroom/lessons/:id/duplex-capabilities`仅学生本人课次可读，鉴权沿现有响应包装合同；返回预检开关、固定能力状态和限制，不泄露远端配置。`ENWORDS_DUPLEX_PILOT=1`只开启本机设备预检；当前`native_duplex`和`automatic_teaching`始终为false。
+
+新增协议、严格文本客户端及持久提交组件尚未接管Room；原课堂输入及教学策略不变。不能将组件测试等同于课堂事务、流式音频或声学验收。新课堂事件、持久回执、模式互斥和事务后发布按33设计另行接线评审。
+
+## 2026-10-15 简单语音确认首片（docs38，主审批准、验收待回收）
+
+本次只落旧课堂 RepeatMatch 与精确控制：跟读仅整体目标词/词组规则，不使用中文释义/同义或LLM；quiz现有整体英文短答、中文释义、同义与L2评分保持。所有控制命令NFC/小写/空白折叠后整句匹配，单末尾句号/感叹号可去，问号/连续混合标点/否定/引用保留；不再前缀、编辑距离或猜删语气词。“下一个！”保留，“下一下/嗯嗯下一个啊”改为不匹配。反馈正文捕获及各相位许可不变。
+
+完整决策、兼容变化、日志和单测/E2E矩阵见38§6–7：锁定中文释义不能冒充跟读、重复目标可通过、零LLM、否定/问句不skip、quiz不退化及多用户隔离；同lesson trace区分repeat规则来源与quiz。当前仅设计准入，产品实现与同树全量待验，不以旧树结果代替。36统一提交、37新库迁移及真人声学质量不在本片实施范围。
+首片不新增意图澄清：否定/问句只保证不误执行控制；repeating未匹配留当前，quiz非命令仍按普通答案规则，可能wrong并消耗机会，不承诺保机会或完全不推进。
+
+## 2026-10-30 测验语音确认补充
+
+更新前述38号首片在quiz保持原释义判分规则的限制：学生可说出中文释义，也可用精确短语自报“认识/不会”。词表、精确归一化、skip统计、审计字段和准入测试以[76-quiz-voice-confirmation-sdd.md](76-quiz-voice-confirmation-sdd.md)为准；它是本次唯一行为合同。短语确认在本地确定性处理，不调用L2；“不会”使用原两次机会，显式“跳过”作为错答记入未掌握并立即推进。此更新不改变跟读判读或麦克风声学质量验收。

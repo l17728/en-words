@@ -1,0 +1,95 @@
+package api
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"enwords/internal/classroom"
+	"enwords/internal/judge"
+	"enwords/internal/obs"
+)
+
+type roomJudgment struct {
+	turn   TurnContext
+	cancel context.CancelFunc
+}
+
+// Stable across REST, WebSocket, recovery and the settlement tool transaction.
+func (r *Room) traceContext() context.Context {
+	return obs.WithTrace(context.Background(), fmt.Sprintf("lesson-%d", r.lessonID))
+}
+
+// Caller holds r.mu; the network runs outside it. Return always reacquires it.
+func (r *Room) evaluateLocked(word classroom.Word, text string) (judge.Judgment, bool) {
+	if r.pendingJudge != nil || r.machine.Paused() || r.retired {
+		return "", false
+	}
+	base := r.inputContext
+	if base == nil {
+		base = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(obs.WithTrace(base, fmt.Sprintf("lesson-%d", r.lessonID)), 8*time.Second)
+	pending := &roomJudgment{turn: r.contextLocked(), cancel: cancel}
+	r.pendingJudge = pending
+	r.app.saveLessonStateWithToken(r.traceContext(), r.lessonID, r.machine.Snapshot(), r.generation)
+	r.app.Log.InfoCtx(ctx, "judge", "judge_started", map[string]any{"lesson_id": r.lessonID, "word_id": word.ID, "answer_length": len([]rune(text)), "turn": pending.turn.Turn})
+	start := time.Now()
+	r.mu.Unlock()
+	result := r.app.Judge.JudgeContext(ctx, word.Word, append([]string(nil), word.Meanings...), text)
+	r.mu.Lock()
+	valid := r.pendingJudge == pending && !r.retired && !r.machine.Paused() && pending.turn == r.contextLocked() && ctx.Err() == nil
+	if r.pendingJudge == pending {
+		r.pendingJudge = nil
+	}
+	cancel()
+	event := "judge_completed"
+	if !valid {
+		event = "judge_stale"
+	}
+	r.app.Log.InfoCtx(ctx, "judge", event, map[string]any{"lesson_id": r.lessonID, "word_id": word.ID, "turn": pending.turn.Turn, "duration_ms": time.Since(start).Milliseconds()})
+	return result, valid
+}
+
+func (r *Room) cancelJudgmentLocked() {
+	if r.pendingJudge != nil {
+		r.pendingJudge.cancel()
+		r.pendingJudge = nil
+	}
+}
+
+func (r *Room) activeLocked(c Client) bool {
+	if r.currentCli != c || r.retired || r.generation.state == nil || r.generation.state.state.Load()&generationClosedBit != 0 {
+		return false
+	}
+	if state, ok := c.(interface{ IsClosed() bool }); ok && state.IsClosed() {
+		return false
+	}
+	return true
+}
+
+// Legacy WS resume remains FIFO, but cannot resume a replacement connection.
+func (r *Room) resumeClient(ctx context.Context, client Client) {
+	lease, owned, err := r.operationLease(ctx)
+	if err != nil {
+		return
+	}
+	if owned {
+		defer lease.Release()
+		ctx = withGenerationLease(lease.Context(), lease)
+	}
+	effect, err := r.generation.Permit()
+	if err != nil {
+		return
+	}
+	defer effect.Release()
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if ctx.Err() != nil || !r.activeLocked(client) {
+		return
+	}
+	r.inputContext = ctx
+	defer func() { r.inputContext = nil }()
+	r.machine.Resume()
+	r.broadcastLocked()
+}

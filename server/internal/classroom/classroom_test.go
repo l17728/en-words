@@ -47,7 +47,7 @@ func must(err error) {
 
 func teachWord(m *Machine, cfg config.EffectiveSnapshot) {
 	must(m.OnEvent(Event{Type: EvWordClicked}))
-	for i := 0; i < cfg.TtsEnRepeat+1; i++ {
+	for i := 0; i < cfg.TtsEnRepeat+cfg.TtsZhRepeat; i++ {
 		must(m.OnEvent(Event{Type: EvTTSFinished}))
 	}
 	for i := 0; i < cfg.RepeatTimes; i++ {
@@ -130,7 +130,7 @@ func teachToRepeating(m *Machine, cfg config.EffectiveSnapshot) {
 		_ = m.OnEvent(Event{Type: EvTTSFinished})
 	}
 	m.DrainActions()
-}// ---- SM-01 教学主线 ----
+} // ---- SM-01 教学主线 ----
 
 func TestHappyPathTeachOneWord(t *testing.T) {
 	m, cfg := newMachine(t, batchN(5))
@@ -182,8 +182,9 @@ func TestTwoChancesThenSkip(t *testing.T) {
 	m.DrainActions()
 	require.Equal(t, PhaseReteachShow, m.Phase())
 	// 走完 RETEACH 闭环到重测
-	require.NoError(t, m.OnEvent(Event{Type: EvTTSFinished})) // zh
-	require.NoError(t, m.OnEvent(Event{Type: EvTTSFinished})) // en
+	for i := 0; i < cfg.TtsZhRepeat+cfg.TtsEnRepeat; i++ {
+		require.NoError(t, m.OnEvent(Event{Type: EvTTSFinished}))
+	}
 	m.DrainActions()
 	for i := 0; i < cfg.RepeatTimes; i++ {
 		require.NoError(t, m.OnEvent(Event{Type: EvRepeatDone}))
@@ -203,6 +204,54 @@ func TestTwoChancesThenSkip(t *testing.T) {
 	assert.Equal(t, 2, m.state.ReteachN[it1.WordID], "未掌握已记录（两轮各+1）")
 }
 
+func TestExplicitQuizSkipIsOneWrongAttemptAndDoesNotCountAsReteach(t *testing.T) {
+	m, cfg := newMachine(t, batchN(5))
+	teachAllWords(m, cfg)
+	m.DrainActions()
+	item := m.CurrentItem().ID()
+	wrongBefore := len(m.state.FirstWrong)
+	reteachBefore := m.state.ReteachN[item.WordID]
+	answerSamplesBefore := len(m.state.AnswerMs)
+
+	require.NoError(t, m.OnEvent(Event{Type: EvQuizSkipped, Item: &item}))
+	require.Equal(t, JudgmentWrong, m.state.Judged[item])
+	assert.True(t, m.state.FirstWrong[item.WordID])
+	assert.Equal(t, reteachBefore, m.state.ReteachN[item.WordID], "skip does not claim a reteach occurred")
+	assert.Len(t, m.state.AnswerMs, answerSamplesBefore+1)
+	assert.Zero(t, m.state.AnswerMs[len(m.state.AnswerMs)-1])
+	assert.NotContains(t, m.state.Mastered, item.WordID)
+	assert.Contains(t, m.state.FinalWrong, item.WordID)
+	actions := m.DrainActions()
+	require.NotNil(t, findAction(actions, ActShowCross))
+	require.NotNil(t, findAction(actions, ActSayHint))
+	assert.Equal(t, PhaseWaitAnswer, m.Phase())
+	next := m.CurrentItem().ID()
+	assert.NotEqual(t, item, next)
+
+	// Replayed/late event for the previous item is stale and cannot consume the next item.
+	require.NoError(t, m.OnEvent(Event{Type: EvQuizSkipped, Item: &item}))
+	assert.Equal(t, next, m.CurrentItem().ID())
+	assert.Equal(t, wrongBefore+1, len(m.state.FirstWrong))
+	assert.Equal(t, reteachBefore, m.state.ReteachN[item.WordID])
+	for m.Phase() == PhaseWaitAnswer {
+		current := m.CurrentItem().ID()
+		if current == item {
+			t.Fatal("skipped item unexpectedly re-entered the quiz")
+		}
+		m.OnJudged(current, JudgmentCorrect)
+	}
+	for i := 0; m.Phase() == PhaseTTSSeg && i < 100; i++ {
+		require.NoError(t, m.OnEvent(Event{Type: EvTTSFinished}))
+	}
+	assert.Equal(t, PhaseLessonEnd, m.Phase(), "light review must finish before reading the lesson result")
+	result := m.Result()
+	require.NotNil(t, result)
+	assert.False(t, result.Correct[item.WordID], "skipped item remains unsettled")
+	assert.Contains(t, result.Report.WrongWords, item.WordID)
+	assert.InDelta(t, float64(len(m.words)-1)/float64(len(m.words)), result.Report.FirstTryRate, 0.0001)
+	assert.Contains(t, m.state.ReviewList, item.WordID)
+}
+
 // 说"不会"（判 wrong）同理：重测轮放弃 → 跳过
 func TestGiveUpSkipsOnRetest(t *testing.T) {
 	m, cfg := newMachine(t, batchN(5))
@@ -210,8 +259,9 @@ func TestGiveUpSkipsOnRetest(t *testing.T) {
 	m.DrainActions()
 	it := m.CurrentItem().ID()
 	require.Equal(t, JudgmentWrong, m.OnJudged(it, JudgmentWrong))
-	require.NoError(t, m.OnEvent(Event{Type: EvTTSFinished}))
-	require.NoError(t, m.OnEvent(Event{Type: EvTTSFinished}))
+	for i := 0; i < cfg.TtsZhRepeat+cfg.TtsEnRepeat; i++ {
+		require.NoError(t, m.OnEvent(Event{Type: EvTTSFinished}))
+	}
 	for i := 0; i < cfg.RepeatTimes; i++ {
 		require.NoError(t, m.OnEvent(Event{Type: EvRepeatDone}))
 	}
@@ -246,7 +296,7 @@ func TestTTSSegTimeoutZhLonger(t *testing.T) {
 	dZh, ok := m.TimeoutFor()
 	require.True(t, ok)
 	assert.Greater(t, dZh, dEn, "zh 段（长释义）超时应大于 en 段")
-	assert.Equal(t, 14*time.Second, dZh, "25 字符释义 → 25/2+2=14s")
+	assert.Equal(t, 14*time.Second+time.Duration(cfg.TtsSwitchIntervalMs)*time.Millisecond, dZh, "释义播放预算加语种切换间隔")
 
 	// RETEACH 上下文同样适用（视同 zh 段）
 	teachAllWords(m, cfg)
@@ -275,25 +325,25 @@ func TestShowWordTimeoutAutoPlay(t *testing.T) {
 	m, _ := newMachine(t, batchN(5))
 	d, ok := m.TimeoutFor()
 	require.True(t, ok)
-	assert.Equal(t, 800*time.Millisecond, d) // 用户定案：show_word 0.8s 自动开读（二合一节奏）
+	assert.Equal(t, 250*time.Millisecond, d) // default lead time; scheduler tick may add bounded overshoot
 	require.NoError(t, m.OnTimeout(PhaseShowWord))
 	assert.Equal(t, PhaseTTSSeg, m.Phase())
 	assert.NotNil(t, findAction(m.DrainActions(), ActPlayTTS))
 }
 
-// ---- R2-05 TTS 段级超时跳段 ----
+// ---- TTS 段级超时暂停，等待显式确认 ----
 
-func TestTTSSegTimeoutSkipsSegment(t *testing.T) {
+func TestTTSSegTimeoutPausesCurrentSegment(t *testing.T) {
 	m, _ := newMachine(t, batchN(5))
 	require.NoError(t, m.OnEvent(Event{Type: EvWordClicked}))
 	m.DrainActions()
 	require.NoError(t, m.OnTimeout(PhaseTTSSeg))
 	as := m.DrainActions()
-	assert.NotNil(t, findAction(as, ActTTSSkipped))
+	assert.NotNil(t, findAction(as, ActLessonPaused))
 	assert.Equal(t, PhaseTTSSeg, m.Phase())
-	p := findAction(as, ActPlayTTS)
-	require.NotNil(t, p)
-	assert.Equal(t, 2, p.SegIdx)
+	assert.True(t, m.Paused())
+	assert.Nil(t, findAction(as, ActTTSSkipped))
+	assert.Equal(t, 1, m.Snapshot().TtsSegIdx)
 }
 
 // ---- SM-04 跟读超时计为完成 ----
@@ -320,6 +370,25 @@ func TestRepeatSkipped(t *testing.T) {
 	}
 	m.DrainActions()
 	assert.Equal(t, PhaseShowWord, m.Phase())
+}
+
+func TestRepeatReplayPlaysOneSegmentAndReturnsWithoutConsumingAttempt(t *testing.T) {
+	m, cfg := newMachine(t, batchN(5))
+	teachToRepeating(m, cfg)
+	before := m.Snapshot()
+	require.NoError(t, m.ReplayRepeat())
+	assert.Equal(t, PhaseTTSSeg, m.Phase())
+	assert.True(t, m.Snapshot().ReplayOnce)
+	actions := m.DrainActions()
+	replay := findAction(actions, ActPlayTTS)
+	require.NotNil(t, replay)
+	assert.Equal(t, "en", replay.Lang)
+	assert.Equal(t, 1, replay.SegIdx)
+	require.NoError(t, m.OnEvent(Event{Type: EvTTSFinished}))
+	assert.Equal(t, PhaseRepeating, m.Phase())
+	assert.False(t, m.Snapshot().ReplayOnce)
+	assert.Equal(t, before.RepeatCount, m.Snapshot().RepeatCount)
+	assert.NotNil(t, findAction(m.DrainActions(), ActStartRepeat))
 }
 
 // ---- 用户定案（2026-08-25）：教学测试分离——全部词教完才测试，教学中零 quiz ----
@@ -385,7 +454,9 @@ func TestWrongAnswerReteachLoop(t *testing.T) {
 	en := findAction(enA, ActPlayTTS)
 	require.NotNil(t, en)
 	assert.Equal(t, "en", en.Lang)
-	require.NoError(t, m.OnEvent(Event{Type: EvTTSFinished})) // en
+	for i := 0; i < cfg.TtsEnRepeat; i++ {
+		require.NoError(t, m.OnEvent(Event{Type: EvTTSFinished}))
+	}
 	assert.Equal(t, PhaseRepeating, m.Phase(), "en 完成进跟读（R4-test#1）")
 	m.DrainActions()
 	for i := 0; i < cfg.RepeatTimes; i++ {
@@ -556,7 +627,7 @@ func TestTimeoutMatrix(t *testing.T) {
 	m, cfg := newMachine(t, batchN(5))
 	d, ok := m.TimeoutFor()
 	require.True(t, ok)
-	assert.Equal(t, 800*time.Millisecond, d) // 用户定案：show_word 0.8s 自动开读（二合一节奏）
+	assert.Equal(t, 250*time.Millisecond, d)
 
 	teachToRepeating(m, cfg)
 	d, ok = m.TimeoutFor()
@@ -631,7 +702,7 @@ func TestResultAndReport(t *testing.T) {
 	m, cfg := newMachine(t, batchN(5))
 	teachAllWords(m, cfg)
 	m.DrainActions()
-	first := m.CurrentItem().WordID // final 池已打乱，用首题词
+	first := m.CurrentItem().WordID             // final 池已打乱，用首题词
 	answerN(m, cfg, 6, map[int64]int{first: 1}) // final: 首题词 先错后对(5题+1重测)
 	for m.Phase() != PhaseLessonEnd {           // 错词回顾 → 下课
 		driveOneStep(m, cfg)

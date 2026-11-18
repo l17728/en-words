@@ -1,0 +1,152 @@
+{
+  "scope": "Read-only reproduction of target validator; Go Unicode Latin/White_Space tables; no Go compilation, no seed changes",
+  "source_sha256": "25e672ad3b941ef5a760568205965968ce0414414c0b6a0bd4e7237289b931d2",
+  "books": {
+    "wordbook-g10.json": {
+      "total": 986,
+      "unsupported": 35,
+      "words": [
+        "sign up（for sth.）",
+        "quit (quit,quit)",
+        "stadium (pl. stadiums or stadia)",
+        "pretend to do sth.",
+        "even if/though",
+        "compare...with/to...",
+        "sweep (swept,swept)",
+        "date back (to...)",
+        "no matter where,who, what, etc.",
+        "remind sb. of sb./sth.",
+        "keep（……）in mind",
+        "Achilles’ heel",
+        "break away (from sb/sth)",
+        "keep your eyes open (for)",
+        "bagpipes (pl.)",
+        "absorbed in sth/sb",
+        "in addition （to sb/sth）",
+        "from （then） on",
+        "dress（sb）up",
+        "Thanksgiving（day）",
+        "the Naadam Festival “",
+        "a great deal（of）",
+        "the Wenhai Scholarship “",
+        "the North/South Pole",
+        "（at）first hand",
+        "cm abbr.（centimetre or centimeter）",
+        "so as to（do sth）",
+        "Sputnik “",
+        "the USSR abbr. the Union of Soviet Socialist Republics",
+        "NASA abbr. National Aeronautics and Space Administration",
+        "Voyager 1 “",
+        "Soyuz 11 “",
+        "Challenger “",
+        "Jade Rabbit “",
+        "GPS abbr. global positioning system"
+      ],
+      "sha256": "e6f8343606bb437bbf68c1066223f561fc08162083faad6c8f3761df8ed11371"
+    },
+    "wordbook-g11.json": {
+      "total": 667,
+      "unsupported": 29,
+      "words": [
+        "botanical adi.",
+        "analyse (NAmE -ze]",
+        "flee ( fled, fled )",
+        "flow /",
+        "genius ( pl. geniuses)",
+        "moustache [especially US mustache]",
+        "vr.",
+        "SARS   abbr.",
+        "switch off/on",
+        "innovation /",
+        "in this sense (in ... sense)",
+        "artificial intelligence [AI]",
+        "keep in touch (with...) ( .....",
+        "librarian   nI.",
+        "swing ( swung, swung)",
+        "aquarium ( pl. aquariums or aquaria /-ria/ )",
+        "the Arctic /'a:ktrk/ Circle",
+        "bend /bend/ ( bent, bent)",
+        "inquire   (= enquire)",
+        "crisis ( pl. crises   )",
+        "overcome ( overcame, overcome)",
+        "urban  /",
+        "fertiliser ( NAmE -izer )",
+        "bacterium ( pl. -ria/-ria/)",
+        "LED abbr( light- emitting diode )",
+        "junk food=junk",
+        "bean curd=tofu",
+        "chilli=chili",
+        "face up/down"
+      ],
+      "sha256": "fa5a20008c49967b5fa4450b247252544cdf6cec67cd1980aae2ff847fc124bb"
+    },
+    "wordbook-g12.json": {
+      "total": 649,
+      "unsupported": 26,
+      "words": [
+        "fine art (also fine arts)",
+        "water lily m.",
+        "People's Liberation Army (PLA]",
+        "undergo ( underwent, undergone )",
+        "submit  L&",
+        "dozen (-)",
+        "vigour  (NAmE vigor)",
+        "sink (sank  or sunk , sunk)",
+        "good/bad-tempered",
+        "shelf ( pl. shelves  )",
+        "sow ( sowed, sown sowed )",
+        "science fiction (informal sci-fi]",
+        "backwards (NAmE backward]",
+        "Braille (also braille]",
+        "The Three- Body Problem",
+        "dive ( dived/dove, dived )",
+        "behold ( beheld, beheld)",
+        "withdraw ( withdrew, withdrawn)",
+        "coverage /'kvard3/",
+        "rigid /'rd3yd/",
+        "criterion ( pl. criteria /-ri/ )",
+        "( real ) estate agent",
+        "resume ( BrE CV)",
+        "sew ( sewed, sewn/sewed )",
+        "PETS (Public English Test System)",
+        "CV (BrE)"
+      ],
+      "sha256": "a300c09548f1f385cd2ddf156cc8c25b27739cc7a1ae9f42b16ba31d24d608e4"
+    },
+    "wordbook-g7.json": {
+      "total": 691,
+      "unsupported": 6,
+      "words": [
+        "Ms.",
+        "Mr.",
+        "P.E.",
+        "A.M.",
+        "P.M.",
+        "Mrs."
+      ],
+      "sha256": "3491c6971f6b26a39a49d55c4510018e316ba56684af0fbfe5486fb83e6f5d29"
+    },
+    "wordbook-g8.json": {
+      "total": 698,
+      "unsupported": 0,
+      "words": [],
+      "sha256": "5b1d9caf1f5d56f8fc91c238e1486d205f56dd651694a3d0391960d1ee4c418c"
+    },
+    "wordbook-g9.json": {
+      "total": 531,
+      "unsupported": 1,
+      "words": [
+        "drive sb. crazy"
+      ],
+      "sha256": "092728513dd7abcbc2272bae22da0d52f465ada17eeb55e51886434531f6baaa"
+    },
+    "wordbook-gaokao.json": {
+      "total": 1346,
+      "unsupported": 0,
+      "words": [],
+      "sha256": "e7f0f3c845ba242075fb57e43e4ffd9ead3dda60b28e86d4a09b97de94ffb75b"
+    }
+  },
+  "total": 5568,
+  "unsupported": 97
+}

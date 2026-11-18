@@ -3,6 +3,7 @@
 package wordbook
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"sort"
@@ -21,12 +22,12 @@ const (
 )
 
 var (
-	ErrBookNotFound   = fmt.Errorf("wordbook: book not found")
-	ErrEntryNotFound  = fmt.Errorf("wordbook: entry not found")
-	ErrDuplicateWord  = fmt.Errorf("wordbook: duplicate word in book")
-	ErrBookEmpty      = fmt.Errorf("wordbook: empty book cannot publish")
-	ErrInvalidStatus  = fmt.Errorf("wordbook: invalid status transition")
-	ErrInvalidInput   = fmt.Errorf("wordbook: invalid input")
+	ErrBookNotFound  = fmt.Errorf("wordbook: book not found")
+	ErrEntryNotFound = fmt.Errorf("wordbook: entry not found")
+	ErrDuplicateWord = fmt.Errorf("wordbook: duplicate word in book")
+	ErrBookEmpty     = fmt.Errorf("wordbook: empty book cannot publish")
+	ErrInvalidStatus = fmt.Errorf("wordbook: invalid status transition")
+	ErrInvalidInput  = fmt.Errorf("wordbook: invalid input")
 )
 
 var validGrades = map[string]bool{
@@ -46,15 +47,15 @@ type Book struct {
 }
 
 type Entry struct {
-	ID        int64
-	BookID    int64
-	Word      string
-	NormKey   string   // 归一化 key（小写去非字母数字），库内唯一
-	Phonetic  string   // 可空（高中/高考库待补全）
-	Meanings  []string // ≤2 条
-	Unit      string
-	IsPhrase  bool
-	FreqRank  int
+	ID       int64
+	BookID   int64
+	Word     string
+	NormKey  string   // 归一化 key（小写去非字母数字），库内唯一
+	Phonetic string   // 可空（高中/高考库待补全）
+	Meanings []string // ≤2 条
+	Unit     string
+	IsPhrase bool
+	FreqRank int
 }
 
 // EntryInput 写入入参（ImportBatch/AddEntry 共用）。
@@ -376,7 +377,15 @@ func (s *Service) EntriesByIDs(bookID int64, ids []int64) ([]*Entry, error) {
 	if _, err := s.repo.GetBook(bookID); err != nil {
 		return nil, err
 	}
-	all, _, err := s.repo.ListEntries(bookID, 1, 1<<30)
+	var all []*Entry
+	var err error
+	if batch, ok := s.repo.(interface {
+		EntriesByIDs(int64, []int64) ([]*Entry, error)
+	}); ok {
+		all, err = batch.EntriesByIDs(bookID, ids)
+	} else {
+		all, _, err = s.repo.ListEntries(bookID, 1, 1<<30)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -393,6 +402,19 @@ func (s *Service) EntriesByIDs(bookID int64, ids []int64) ([]*Entry, error) {
 	return out, nil
 }
 
+// EntriesByIDs avoids materializing unrelated words for an in-memory classroom.
+func (m *MemRepo) EntriesByIDs(bookID int64, ids []int64) ([]*Entry, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	out := make([]*Entry, 0, len(ids))
+	for _, id := range ids {
+		if e, ok := m.entries[id]; ok && e.BookID == bookID {
+			out = append(out, cloneEntry(e))
+		}
+	}
+	return out, nil
+}
+
 func (s *Service) CountEntries(bookID int64) (int64, error) { return s.repo.CountEntries(bookID) }
 
 // EntryByKey 按归一化 key 查词条（反馈 E 难词定位用）。
@@ -402,34 +424,7 @@ func (s *Service) EntryByKey(bookID int64, key string) (*Entry, error) {
 
 // ImportBatch 批量导入：逐条校验，重复/非法跳过并记录（不中断整批，B4）。
 func (s *Service) ImportBatch(bookID int64, ins []EntryInput) (*ImportResult, error) {
-	if _, err := s.repo.GetBook(bookID); err != nil {
-		return nil, err
-	}
-	res := &ImportResult{}
-	for _, in := range ins {
-		e, err := validateEntry(in)
-		if err != nil {
-			res.Skipped = append(res.Skipped, in.Word)
-			continue
-		}
-		if _, err := s.repo.EntryByKey(bookID, e.NormKey); err == nil {
-			res.Skipped = append(res.Skipped, in.Word)
-			continue
-		}
-		e.BookID = bookID
-		if e.ID == 0 {
-			if nid, ok := s.repo.(interface{ NextEntryID() int64 }); ok {
-				e.ID = nid.NextEntryID() // SQLite 自增
-			}
-		}
-		if err := s.repo.CreateEntry(e); err != nil {
-			res.Skipped = append(res.Skipped, in.Word)
-			continue
-		}
-		res.Inserted++
-	}
-	s.refreshCount(bookID)
-	return res, nil
+	return s.ImportBatchContext(context.Background(), bookID, ins)
 }
 
 func (s *Service) refreshCount(bookID int64) {

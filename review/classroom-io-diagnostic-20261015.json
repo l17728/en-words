@@ -1,0 +1,140 @@
+{
+  "scope": "readonly isolated browser failure, no production changes or rerun",
+  "source": "web\\.test-artifacts\\closure-1792033463310-5548\\browser\\interaction-boundaries-IX1-536d3--a-fresh-report-can-be-read",
+  "events": [
+    {
+      "ts": "2026-10-15T11:05:45.154+0800",
+      "module": "tools",
+      "event": "tool_called",
+      "trace_id": "lesson-1",
+      "lesson_id": 1,
+      "tool": "classroom.say",
+      "transaction_outcome": "committed"
+    },
+    {
+      "ts": "2026-10-15T11:05:46.471+0800",
+      "module": "tools",
+      "event": "tool_called",
+      "trace_id": "lesson-1",
+      "lesson_id": 1,
+      "tool": "classroom.show_word",
+      "transaction_outcome": "committed"
+    },
+    {
+      "ts": "2026-10-15T11:05:48.095+0800",
+      "module": "tools",
+      "event": "tool_called",
+      "trace_id": "lesson-1",
+      "lesson_id": 1,
+      "tool": "classroom.play_tts",
+      "transaction_outcome": "committed"
+    },
+    {
+      "ts": "2026-10-15T11:05:48.095+0800",
+      "module": "classroom",
+      "event": "tts_segment_scheduled",
+      "trace_id": "lesson-1",
+      "lesson_id": 1,
+      "segment": 1
+    },
+    {
+      "ts": "2026-10-15T11:05:49.273+0800",
+      "module": "classroom",
+      "event": "event_received",
+      "trace_id": "lesson-1",
+      "lesson_id": 1,
+      "event_type": "tts_finished"
+    },
+    {
+      "ts": "2026-10-15T11:05:50.170+0800",
+      "module": "tools",
+      "event": "tool_called",
+      "trace_id": "lesson-1",
+      "lesson_id": 1,
+      "tool": "classroom.play_tts",
+      "transaction_outcome": "committed"
+    },
+    {
+      "ts": "2026-10-15T11:05:50.171+0800",
+      "module": "classroom",
+      "event": "tts_segment_scheduled",
+      "trace_id": "lesson-1",
+      "lesson_id": 1,
+      "segment": 2
+    },
+    {
+      "ts": "2026-10-15T11:05:51.779+0800",
+      "module": "classroom",
+      "event": "event_received",
+      "trace_id": "lesson-1",
+      "lesson_id": 1,
+      "event_type": "tts_finished"
+    },
+    {
+      "ts": "2026-10-15T11:06:07.324+0800",
+      "module": "tools",
+      "event": "tool_called",
+      "trace_id": "lesson-1",
+      "tool": "classroom.play_tts",
+      "transaction_outcome": "committed",
+      "lesson_id": 1
+    },
+    {
+      "ts": "2026-10-15T11:06:07.328+0800",
+      "module": "classroom",
+      "event": "tts_segment_scheduled",
+      "trace_id": "lesson-1",
+      "lesson_id": 1,
+      "segment": 3
+    },
+    {
+      "ts": "2026-10-15T11:06:08.611+0800",
+      "module": "tools",
+      "event": "tool_called",
+      "trace_id": "lesson-1",
+      "transaction_outcome": "committed",
+      "lesson_id": 1,
+      "tool": "classroom.play_tts"
+    },
+    {
+      "ts": "2026-10-15T11:06:08.611+0800",
+      "module": "classroom",
+      "event": "tts_segment_scheduled",
+      "trace_id": "lesson-1",
+      "segment": 3,
+      "lesson_id": 1
+    }
+  ],
+  "audit_rows_without_args": [
+    {
+      "ts": "2026-10-15 11:05:47.2745593+08:00",
+      "tool": "classroom.play_tts",
+      "duration_ms": 1,
+      "ok": 1,
+      "trace_id": "lesson-1"
+    },
+    {
+      "ts": "2026-10-15 11:05:49.2742063+08:00",
+      "tool": "classroom.play_tts",
+      "duration_ms": 1,
+      "ok": 1,
+      "trace_id": "lesson-1"
+    },
+    {
+      "ts": "2026-10-15 11:05:51.7807464+08:00",
+      "tool": "classroom.play_tts",
+      "duration_ms": 1,
+      "ok": 1,
+      "trace_id": "lesson-1"
+    },
+    {
+      "ts": "2026-10-15 11:06:08.4584405+08:00",
+      "tool": "classroom.play_tts",
+      "duration_ms": 1,
+      "ok": 1,
+      "trace_id": "lesson-1"
+    }
+  ],
+  "finding": "Third tool body audit duration1ms; audit timestamp11:05:51.7807464 to committed log11:06:07.324 is15.543s. Need separate audit SQL insert/commit/postcommit timing before root cause claim.",
+  "boundary": "Room mutex remains held across persistence; same-socket heartbeat can block on active-client check even though slow-model path releases room lock."
+}

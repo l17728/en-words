@@ -1,0 +1,364 @@
+{
+  "status": "passed, bounded TTS-only scope",
+  "date": "2026-10-15",
+  "passed": 1,
+  "failed": 0,
+  "test_duration_ms": 25900,
+  "report": ".test-artifacts/interaction-real-tts-cache.json",
+  "log": ".test-artifacts/interaction-real-tts-cache.log",
+  "screenshot": "review\\actual-chinese-cache-subtitle-20261015.png",
+  "server_sha256": "a7924bdbf163266df444f84d2ee459f62c28f77e42700e65210d958a7add25dd",
+  "frontend_source_sha256": "4b87ff8be005d7ff4de3ddea46d1915186099ec2deaa82a745c1271bb1ef64c7",
+  "frontend_files": [
+    {
+      "path": "web\\src\\api\\client.ts",
+      "sha256": "0c7cc67dc367dba183032b74f7c8a5d7e97be957a45f491ccef695dab0c184c5"
+    },
+    {
+      "path": "web\\src\\App.tsx",
+      "sha256": "291d42f57e1560b10a71fd5be704cef3bd6e044dac74b1e9bcd14058fe072ec1"
+    },
+    {
+      "path": "web\\src\\audio\\caption.ts",
+      "sha256": "22c8886505d1504316a301ba6f32a4ec4600c3221eeeeb1201ec167349c238d6"
+    },
+    {
+      "path": "web\\src\\audio\\local.ts",
+      "sha256": "40de11096c98a75449e914552e38e059d9751b133b4cc8ca3f29cbc9400186f0"
+    },
+    {
+      "path": "web\\src\\audio\\media-request.ts",
+      "sha256": "1db5596dead90be381db1a6445a7c5058f8b8d286132552e6c753a9d88a2ef78"
+    },
+    {
+      "path": "web\\src\\audio\\playback.ts",
+      "sha256": "d0f4896c5e4760e958076a187922a454650293d9c256cf72b13a5a858ff55e80"
+    },
+    {
+      "path": "web\\src\\audio\\speech-cache.ts",
+      "sha256": "02884e516520fa23e2ce831055fb387026b535764ff45663f0c0849eab449522"
+    },
+    {
+      "path": "web\\src\\audio\\wav.ts",
+      "sha256": "fde111329bcfe7e88786888746abd67d2a24533221d59d9dc4bdfb1eca2c90f1"
+    },
+    {
+      "path": "web\\src\\feedback\\ClarificationReply.tsx",
+      "sha256": "c92f9f033a1fbd712a0d7e4b21ecbe8073e1b9babac939adeccd56db97315b07"
+    },
+    {
+      "path": "web\\src\\feedback\\FeedbackResults.tsx",
+      "sha256": "fa58efc22620d1546d6af54a054c1d7df5b4476be1e922d03266ba329ed48d9f"
+    },
+    {
+      "path": "web\\src\\feedback\\pending.ts",
+      "sha256": "bb049ccded6cbe9c5f143b4126425596046673932d96210365e6965e67113e9b"
+    },
+    {
+      "path": "web\\src\\feedback\\useFeedback.ts",
+      "sha256": "2ca1cc157524167ac6cdb0cd6739a5e14d2dfbb98fa8a28bcf834f75c85dd3f8"
+    },
+    {
+      "path": "web\\src\\index.css",
+      "sha256": "535c25dd1f338486ab3678832fc698011c8b8d1fe4ffd3d0ef5e33181457cc9f"
+    },
+    {
+      "path": "web\\src\\interaction\\answer-flight.ts",
+      "sha256": "11c41dd2ba01b5d0f960ea85fd975148951a87c51df99bc9f2ded86206cf6bcd"
+    },
+    {
+      "path": "web\\src\\interaction\\client-id.ts",
+      "sha256": "da6d2ddefc87d8e9a3613b363f13fcdcdcd80a70031febbb15ebb846c3b63401"
+    },
+    {
+      "path": "web\\src\\interaction\\exclusive-action.ts",
+      "sha256": "9693d6b5844a6a1c1cf677cbf799f01b2f173cfa5e4f14376da12202b16a1e63"
+    },
+    {
+      "path": "web\\src\\interaction\\feedback-draft.ts",
+      "sha256": "3d0d628dff632a0cebc0404fa5dc86239b4a3faa6b4a181d2fd4b6acbf448a2b"
+    },
+    {
+      "path": "web\\src\\interaction\\latest-read.ts",
+      "sha256": "9f33e289e2f75845f2a2c876b66013b8a46a94bde607f14b7418ee636f040864"
+    },
+    {
+      "path": "web\\src\\interaction\\placement-save.ts",
+      "sha256": "bdecd9ccbd87903fe10775c6796fed1e8d9fa856076848b5aedde37df4f490c2"
+    },
+    {
+      "path": "web\\src\\main.tsx",
+      "sha256": "3dfdadd2b21159cb4c5586b9e9776862e7461cb0c7ba8d9fe1c1cc3fd5910af2"
+    },
+    {
+      "path": "web\\src\\pages\\Admin.tsx",
+      "sha256": "f0d200b6483e0d26083b17f0bbf05dbea6ef48e85645924f8d4bc36cfd30fe25"
+    },
+    {
+      "path": "web\\src\\pages\\Books.tsx",
+      "sha256": "c02b5d1484483a7b0f6d0376250717a6043510b8da2a58f7b3ae365ddb694681"
+    },
+    {
+      "path": "web\\src\\pages\\Classroom.tsx",
+      "sha256": "22110f50807269bea00e45605f06d9e27d79ed8bffd6502dee40d3380353bb99"
+    },
+    {
+      "path": "web\\src\\pages\\Dashboard.tsx",
+      "sha256": "7da8081e8d444b106ae331f649b4c770851021827583e7e52ccc6b379349796a"
+    },
+    {
+      "path": "web\\src\\pages\\Login.tsx",
+      "sha256": "7eb2004a723f2e76d4edee512333a18a1cef747fe476922c9b0e8c07e6818b7d"
+    },
+    {
+      "path": "web\\src\\pages\\Placement.tsx",
+      "sha256": "e9746a8443429e94997379ce3d42379a15401c6b4e0d107b4b46c3a4d3199adb"
+    },
+    {
+      "path": "web\\src\\pages\\Settings.tsx",
+      "sha256": "ef083dba78567237a80390f89e13563fdd441adc622e138147151039466899f0"
+    },
+    {
+      "path": "web\\src\\pages\\Stats.tsx",
+      "sha256": "ed11ed0a8aafc812c54b0946ed1d2cca2febac77ed01dfededd86fb8fa3b96a8"
+    },
+    {
+      "path": "web\\src\\schedule\\clock.ts",
+      "sha256": "77d96e30535358ef30e9d06072850ba7e7ac67a1f1a89d59acd2d5bf92d84bd1"
+    },
+    {
+      "path": "web\\src\\stores\\auth.ts",
+      "sha256": "0e31b1192bbe32a892178b0d4889c09a3bd3a055e6810d7912b9fb066e098942"
+    },
+    {
+      "path": "web\\src\\ws\\client.ts",
+      "sha256": "f706d573f20c99b7fd1639a5cef013ddc58f4d68c4259fe46ee0f017e0ba79bd"
+    },
+    {
+      "path": "web\\src\\ws\\input-readiness.ts",
+      "sha256": "96932625985541a4b470f6060d1cb2e0380c02ca9bcb2bb2d649d84ece134602"
+    }
+  ],
+  "text": "猫是一种常见的家养动物。",
+  "english_text": "cat",
+  "real_synthesis_http_requests": 1,
+  "actual_chinese_playbacks": 3,
+  "actual_english_playbacks": 3,
+  "cache_misses": 1,
+  "cache_hits": 2,
+  "asr_requests": 0,
+  "judge_requests": 0,
+  "timings": [
+    {
+      "playback": 1,
+      "cache": "miss",
+      "configured_gap_ms": 300,
+      "scheduled_to_playing_ms": 8363.2,
+      "actual_audio_ms": 2184.5
+    },
+    {
+      "playback": 2,
+      "cache": "hit",
+      "configured_gap_ms": 300,
+      "scheduled_to_playing_ms": 373.2,
+      "actual_audio_ms": 2052.3
+    },
+    {
+      "playback": 3,
+      "cache": "hit",
+      "configured_gap_ms": 300,
+      "scheduled_to_playing_ms": 377.2,
+      "actual_audio_ms": 2048.4
+    }
+  ],
+  "measurement_note": "n=1 journey. Scheduled-to-playing includes configured 300ms gap and browser scheduling; cache duration_ms includes full audio playback, not network latency. Does not prove isolated-word audio quality or complete B classroom/semantic scoring. Backend is pre-IX15/IX16 binary; frontend media implementation unchanged.",
+  "evidence": {
+    "responses": [
+      {
+        "status": 200,
+        "mime": "audio/wav"
+      }
+    ],
+    "asr": [],
+    "cache": [
+      "[speech_cache] {module: speech, event: playback_completed, trace_id: lesson-1, lesson_id: 1, cache: miss}",
+      "[speech_cache] {module: speech, event: playback_completed, trace_id: lesson-1, lesson_id: 1, cache: hit}",
+      "[speech_cache] {module: speech, event: playback_completed, trace_id: lesson-1, lesson_id: 1, cache: hit}"
+    ],
+    "state": {
+      "cache": [
+        {
+          "module": "speech",
+          "event": "playback_completed",
+          "trace_id": "lesson-1",
+          "lesson_id": "1",
+          "cache": "miss",
+          "duration_ms": 10247
+        },
+        {
+          "module": "speech",
+          "event": "playback_completed",
+          "trace_id": "lesson-1",
+          "lesson_id": "1",
+          "cache": "hit",
+          "duration_ms": 2110
+        },
+        {
+          "module": "speech",
+          "event": "playback_completed",
+          "trace_id": "lesson-1",
+          "lesson_id": "1",
+          "cache": "hit",
+          "duration_ms": 2114
+        }
+      ],
+      "scheduled": [
+        {
+          "lesson_id": "1",
+          "epoch": "tr-561644346053a05f",
+          "turn": "3:tts_seg/0/1/0/0/0/0/false/false/0/false/0/0",
+          "segment": 1,
+          "language": "en-US",
+          "delay_before_ms": 0,
+          "at": 1868.4000000059605
+        },
+        {
+          "lesson_id": "1",
+          "epoch": "tr-561644346053a05f",
+          "turn": "4:tts_seg/0/2/0/0/0/0/false/false/0/false/0/0",
+          "segment": 2,
+          "language": "en-US",
+          "delay_before_ms": 300,
+          "at": 3546.300000011921
+        },
+        {
+          "lesson_id": "1",
+          "epoch": "tr-561644346053a05f",
+          "turn": "5:tts_seg/0/3/0/0/0/0/false/false/0/false/0/0",
+          "segment": 3,
+          "language": "en-US",
+          "delay_before_ms": 300,
+          "at": 5568.600000008941
+        },
+        {
+          "lesson_id": "1",
+          "epoch": "tr-561644346053a05f",
+          "turn": "6:tts_seg/0/4/0/0/0/0/false/false/0/false/0/0",
+          "segment": 4,
+          "language": "zh-CN",
+          "delay_before_ms": 300,
+          "at": 7543
+        },
+        {
+          "lesson_id": "1",
+          "epoch": "tr-561644346053a05f",
+          "turn": "7:tts_seg/0/5/0/0/0/0/false/false/0/false/0/0",
+          "segment": 5,
+          "language": "zh-CN",
+          "delay_before_ms": 300,
+          "at": 18461.80000001192
+        },
+        {
+          "lesson_id": "1",
+          "epoch": "tr-561644346053a05f",
+          "turn": "8:tts_seg/0/6/0/0/0/0/false/false/0/false/0/0",
+          "segment": 6,
+          "language": "zh-CN",
+          "delay_before_ms": 300,
+          "at": 20941.90000000596
+        }
+      ],
+      "captions": [
+        {
+          "text": "",
+          "at": 38.5
+        },
+        {
+          "text": "cat",
+          "at": 2211.1000000089407
+        },
+        {
+          "text": "",
+          "at": 3512.800000011921
+        },
+        {
+          "text": "cat",
+          "at": 3968.9000000059605
+        },
+        {
+          "text": "",
+          "at": 5239.300000011921
+        },
+        {
+          "text": "cat",
+          "at": 6002.300000011921
+        },
+        {
+          "text": "",
+          "at": 7273
+        },
+        {
+          "text": "猫是一种常见的家养动物。",
+          "at": 15911.300000011921
+        },
+        {
+          "text": "",
+          "at": 18100.90000000596
+        },
+        {
+          "text": "猫是一种常见的家养动物。",
+          "at": 18837.40000000596
+        },
+        {
+          "text": "",
+          "at": 20891.5
+        },
+        {
+          "text": "猫是一种常见的家养动物。",
+          "at": 21321.5
+        },
+        {
+          "text": "",
+          "at": 23372.80000001192
+        }
+      ],
+      "audio": [
+        {
+          "start": 15906.20000000298,
+          "end": 18090.70000000298,
+          "errors": 0
+        },
+        {
+          "start": 18835,
+          "end": 20887.30000001192,
+          "errors": 0
+        },
+        {
+          "start": 21319.10000000894,
+          "end": 23367.5,
+          "errors": 0
+        }
+      ],
+      "english": [
+        {
+          "text": "cat",
+          "start": 2206.6000000089407,
+          "end": 3509.800000011921,
+          "errors": 0
+        },
+        {
+          "text": "cat",
+          "start": 3966.300000011921,
+          "end": 5235.9000000059605,
+          "errors": 0
+        },
+        {
+          "text": "cat",
+          "start": 5999.70000000298,
+          "end": 7268.4000000059605,
+          "errors": 0
+        }
+      ]
+    }
+  }
+}

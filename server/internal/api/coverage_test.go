@@ -181,16 +181,17 @@ func TestCov_AgentToolsAndClassroomErrors(t *testing.T) {
 	assert.Equal(t, errForbidden, resp.Code)
 
 	// 课堂错误路径：坏课 enter / 无房间 event、voice、resume
+	// Missing and foreign lessons share a denial, preventing existence disclosure.
 	resp = req2(t, app.Router(), "POST", "/api/v1/classroom/lessons/999/enter", stok, nil)
-	assert.Equal(t, errNotFound, resp.Code)
+	assert.Equal(t, errForbidden, resp.Code)
 	resp = req2(t, app.Router(), "POST", "/api/v1/classroom/lessons/1/event", stok,
 		map[string]string{"event": "word_clicked"})
-	assert.Equal(t, errNotFound, resp.Code, "无房间")
+	assert.Equal(t, errForbidden, resp.Code, "无房间")
 	resp = req2(t, app.Router(), "POST", "/api/v1/classroom/lessons/1/voice", stok,
 		map[string]string{"text": "下一个"})
-	assert.Equal(t, errNotFound, resp.Code)
+	assert.Equal(t, errForbidden, resp.Code)
 	resp = req2(t, app.Router(), "POST", "/api/v1/classroom/lessons/1/resume", stok, nil)
-	assert.Equal(t, errNotFound, resp.Code)
+	assert.Equal(t, errForbidden, resp.Code)
 	_ = clk
 }
 
@@ -286,7 +287,7 @@ func TestCov_TicketLifecycle(t *testing.T) {
 func TestCov_RealWSRoundtrip(t *testing.T) {
 	app, clk := newTestApp(t)
 	atok, _ := loginGet(t, app, "admin", "adminpw")
-	bid := seedBook(t, app, atok, "ws库", "g7", []string{"w1", "w2", "w3", "w4", "w5"})
+	bid := seedBook(t, app, atok, "ws库", "g7", []string{"cat", "dog", "owl", "bee", "fox"})
 	_, _ = app.Auth.CreateUser("sws", "pw", "小", auth.RoleStudent)
 	stok, uid := loginGet(t, app, "sws", "pw")
 	require.NoError(t, app.EnableBook(uid, bid))
@@ -325,67 +326,43 @@ func TestCov_RealWSRoundtrip(t *testing.T) {
 	var snap Msg
 	require.NoError(t, conn.ReadJSON(&snap))
 	require.Equal(t, "state_snapshot", snap["type"])
-	assert.Equal(t, "w1", snap["word"])
+	assert.Equal(t, "cat", snap["word"])
 
 	// 心跳
 	require.NoError(t, conn.WriteJSON(Msg{"type": "heartbeat"}))
 	var ack Msg
-	require.NoError(t, conn.ReadJSON(&ack))
-	assert.Equal(t, "heartbeat_ack", ack["type"])
+	var turnContext any = snap["context"]
+	for {
+		require.NoError(t, conn.ReadJSON(&ack))
+		if context, ok := ack["context"]; ok {
+			turnContext = context
+		}
+		if ack["type"] == "heartbeat_ack" {
+			break
+		}
+		require.Contains(t, []string{"ui_action", "state_snapshot", "teacher_say"}, ack["type"])
+		if ack["type"] == "ui_action" {
+			action, ok := ack["action"].(map[string]any)
+			require.True(t, ok)
+			require.NotEmpty(t, action["type"])
+		}
+	}
 
 	// 学生事件（点击单词）→ ui_action 流（首帧可能含 join 前遗留的 show_word，逐帧找 play_tts）
-	require.NoError(t, conn.WriteJSON(Msg{"type": "student_event", "event": "word_clicked"}))
+	frames := sendFixtureWS(t, conn, &turnContext, Msg{"type": "student_event", "event": "word_clicked"}, "fixture-click")
 	foundPlay := false
-	_ = conn.SetReadDeadline(time.Now().Add(3 * time.Second))
-	for i := 0; i < 6 && !foundPlay; i++ {
-		var act Msg
-		if err := conn.ReadJSON(&act); err != nil {
-			break
-		}
-		if act["type"] == "ui_action" {
-			a, _ := act["action"].(map[string]any)
-			if a["type"] == "play_tts" {
-				foundPlay = true
-			}
+	for _, frame := range frames {
+		if action, ok := frame["action"].(map[string]any); ok && action["type"] == "play_tts" {
+			foundPlay = true
 		}
 	}
-	assert.True(t, foundPlay, "点击单词应产生 play_tts")
-
-	// 驱动机器走完 w1 教学流程回 show_word(w2)：tts_finished×4 + repeat_done×3
+	assert.True(t, foundPlay)
 	for i := 0; i < 4; i++ {
-		require.NoError(t, conn.WriteJSON(Msg{"type": "student_event", "event": "tts_finished"}))
+		sendFixtureWS(t, conn, &turnContext, Msg{"type": "student_event", "event": "tts_finished"}, "fixture-tts-"+itoa(i))
 	}
-	for i := 0; i < 3; i++ {
-		require.NoError(t, conn.WriteJSON(Msg{"type": "student_event", "event": "repeat_done"}))
-	}
-	_ = conn.SetReadDeadline(time.Now().Add(2 * time.Second))
-	for i := 0; i < 12; i++ {
-		var m Msg
-		if err := conn.ReadJSON(&m); err != nil {
-			break
-		}
-		if m["type"] == "state_snapshot" || m["type"] == "heartbeat_ack" {
-			continue
-		}
-		if m["type"] == "ui_action" {
-			a, _ := m["action"].(map[string]any)
-			if a["type"] == "show_word" { // 到达 w2 展示相位
-				break
-			}
-		}
-	}
+	sendFixtureWS(t, conn, &turnContext, Msg{"type": "voice_text", "text": "cat"}, "fixture-repeat")
+	frames = sendFixtureWS(t, conn, &turnContext, Msg{"type": "voice_text", "text": "下一个"}, "fixture-next")
 
-	// 语音指令（下一个=点击单词，show_word 相位合法）→ UI 帧
-	require.NoError(t, conn.WriteJSON(Msg{"type": "voice_text", "text": "下一个"}))
-	var frames []Msg
-	_ = conn.SetReadDeadline(time.Now().Add(2 * time.Second))
-	for i := 0; i < 6; i++ {
-		var m Msg
-		if err := conn.ReadJSON(&m); err != nil {
-			break
-		}
-		frames = append(frames, m)
-	}
 	found := false
 	for _, f := range frames {
 		if f["type"] == "ui_action" {

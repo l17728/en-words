@@ -6,7 +6,10 @@ package tools
 import (
 	"context"
 	"encoding/json"
+	"enwords/internal/obs"
+	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -73,13 +76,14 @@ type ToolDef struct {
 // ---- 审计 ----
 
 type AuditEntry struct {
+	TraceID    string
 	TS         time.Time
 	ActorID    string
 	ActorRole  Role
 	Tool       string
 	Risk       Risk
 	OK         bool
-	Result     string // ok | denied | unknown_tool | <error>
+	Result     string // Stable outcome code; never a raw handler error.
 	Args       string
 	DurationMs int64
 }
@@ -100,14 +104,39 @@ func (a *MemAuditor) ToolCalled(e AuditEntry) {
 	a.Entries = append(a.Entries, e)
 }
 
+// Snapshot returns a consistent copy; readers must not access Entries while calls run.
+// A task-private MemAuditor can also buffer records for an enclosing transaction.
+func (a *MemAuditor) Snapshot() []AuditEntry {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return append([]AuditEntry{}, a.Entries...)
+}
+
 // ---- 事件预算 Guard（FR-I7：单事件工具调用上限）----
 
 type budgetKey struct{}
 
-// WithEventBudget 注入单事件调用预算；超出后 Call 返回 ErrBudgetExceeded。
+type eventBudget struct {
+	mu        sync.Mutex
+	remaining int
+}
+
+func (b *eventBudget) take() bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.remaining <= 0 {
+		return false
+	}
+	b.remaining--
+	return true
+}
+
+// WithEventBudget injects a shared budget. Derived/nested scopes cannot replenish it.
 func WithEventBudget(ctx context.Context, n int) context.Context {
-	v := n
-	return context.WithValue(ctx, budgetKey{}, &v)
+	if _, ok := ctx.Value(budgetKey{}).(*eventBudget); ok {
+		return ctx
+	}
+	return context.WithValue(ctx, budgetKey{}, &eventBudget{remaining: n})
 }
 
 // ---- Registry ----
@@ -141,6 +170,8 @@ func (r *Registry) Register(t Tool) error {
 	if _, dup := r.tools[t.Name]; dup {
 		return fmt.Errorf("tools: duplicate tool %q", t.Name)
 	}
+	t.Scope = append([]Role(nil), t.Scope...)
+	t.InputSchema = append(json.RawMessage(nil), t.InputSchema...)
 	r.tools[t.Name] = t
 	return nil
 }
@@ -149,30 +180,24 @@ func (r *Registry) Register(t Tool) error {
 func (r *Registry) ToolsFor(role Role) []ToolDef {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	var out []ToolDef
+	out := make([]ToolDef, 0)
 	for _, t := range r.tools {
 		for _, sc := range t.Scope {
 			if sc == role {
 				out = append(out, ToolDef{Name: t.Name, Domain: t.Domain,
-					Description: t.Description, Risk: t.Risk, InputSchema: t.InputSchema})
+					Description: t.Description, Risk: t.Risk, InputSchema: append(json.RawMessage(nil), t.InputSchema...)})
 				break
 			}
 		}
 	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out
 }
 
 // Call 统一管线：预算 → 查找 → 作用域 → Schema → 高风险 reason → 执行 → 审计（SDD §3.3）。
 func (r *Registry) Call(ctx context.Context, caller Caller, name string, args json.RawMessage) (any, error) {
-	// ① 事件预算 Guard（FR-I7）
-	if b, ok := ctx.Value(budgetKey{}).(*int); ok {
-		if *b <= 0 {
-			return nil, ErrBudgetExceeded
-		}
-		*b--
-	}
 	start := time.Now()
-	entry := AuditEntry{TS: start, ActorID: caller.ID, ActorRole: caller.Role, Tool: name, Args: string(args)}
+	entry := AuditEntry{TS: start, ActorID: caller.ID, ActorRole: caller.Role, Tool: name, Args: fmt.Sprintf(`{"bytes":%d}`, len(args)), TraceID: obs.TraceID(ctx)}
 	done := func(ok bool, result string) (any, error) {
 		entry.OK = ok
 		entry.Result = result
@@ -181,6 +206,16 @@ func (r *Registry) Call(ctx context.Context, caller Caller, name string, args js
 			r.audit.ToolCalled(entry)
 		}
 		return nil, nil
+	}
+	// Canceled work does not consume budget. Every ordinary return is audited;
+	// panics remain the caller's recovery responsibility.
+	if err := ctx.Err(); err != nil {
+		done(false, contextOutcome(err))
+		return nil, err
+	}
+	if b, ok := ctx.Value(budgetKey{}).(*eventBudget); ok && !b.take() {
+		done(false, "budget_denied")
+		return nil, ErrBudgetExceeded
 	}
 
 	// ② 工具查找
@@ -201,7 +236,7 @@ func (r *Registry) Call(ctx context.Context, caller Caller, name string, args js
 
 	// ④ JSON Schema 校验（子集：type/properties/required）
 	if err := validateSchema(t.InputSchema, args); err != nil {
-		done(false, err.Error())
+		done(false, "invalid_args")
 		return nil, fmt.Errorf("tools: %s: %w", name, err)
 	}
 
@@ -214,22 +249,26 @@ func (r *Registry) Call(ctx context.Context, caller Caller, name string, args js
 		// 必须是 JSON 字符串且非空白（防 {"reason":123}/{"reason":null} 绕过）
 		if len(payload.Reason) == 0 || payload.Reason[0] != '"' {
 			err := fmt.Errorf("high-risk tool %q requires string reason", name)
-			done(false, err.Error())
+			done(false, "reason_required")
 			return nil, err
 		}
 		var reason string
 		_ = json.Unmarshal(payload.Reason, &reason)
 		if strings.TrimSpace(reason) == "" {
 			err := fmt.Errorf("high-risk tool %q requires non-blank reason", name)
-			done(false, err.Error())
+			done(false, "reason_required")
 			return nil, err
 		}
 	}
 
 	// ⑥ 执行
+	if err := ctx.Err(); err != nil {
+		done(false, contextOutcome(err))
+		return nil, err
+	}
 	res, err := t.Handler(ctx, caller, args)
 	if err != nil {
-		done(false, err.Error())
+		done(false, contextOutcome(err))
 		return nil, err
 	}
 	// ⑦ 成功审计
@@ -240,6 +279,16 @@ func (r *Registry) Call(ctx context.Context, caller Caller, name string, args js
 		r.audit.ToolCalled(entry)
 	}
 	return res, nil
+}
+
+func contextOutcome(err error) string {
+	if errors.Is(err, context.Canceled) {
+		return "canceled"
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return "deadline_exceeded"
+	}
+	return "handler_failed"
 }
 
 func scopeAllows(scope []Role, role Role) bool {
@@ -264,9 +313,9 @@ func elapsedMs(start time.Time) int64 {
 // 空 Schema / 无 type 属性 = 任意值；未知关键字忽略。
 
 type schemaNode struct {
-	Type       string                 `json:"type"`
-	Properties map[string]schemaNode  `json:"properties"`
-	Required   []string               `json:"required"`
+	Type       string                `json:"type"`
+	Properties map[string]schemaNode `json:"properties"`
+	Required   []string              `json:"required"`
 }
 
 func validateSchema(schema, args json.RawMessage) error {

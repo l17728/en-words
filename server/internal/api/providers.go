@@ -1,0 +1,204 @@
+package api
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
+	"enwords/internal/auth"
+	"enwords/internal/feedback"
+	"enwords/internal/judge"
+	"enwords/internal/localmodel"
+	"enwords/internal/obs"
+	"enwords/internal/speechnormalize"
+	"github.com/gin-gonic/gin"
+)
+
+func (a *App) EnableLocalProviders(ctx context.Context) error {
+	c, err := localmodel.New(os.Getenv("ENWORDS_MODEL_CONSOLE"), a.Log)
+	if err != nil {
+		return err
+	}
+	if err = c.Discover(ctx); err != nil {
+		return err
+	}
+	// Audio and text are independent. A failed text probe leaves deterministic
+	// classroom judgment and feedback available alongside any speech service.
+	a.Local = c
+	if profile, profileErr := a.ensureDefaultModelProfile(); profileErr == nil {
+		if applyErr := a.applyModelProfile(profile); applyErr != nil {
+			a.Log.WarnCtx(ctx, "provider", "model_profile_degraded", map[string]any{"reason": applyErr.Error(), "profile": profile.Name})
+		} else {
+			a.Log.InfoCtx(ctx, "provider", "model_profile_applied", map[string]any{"profile": profile.Name})
+		}
+	}
+	a.Judge.LLM = nil
+	a.FB.SetLLM(nil)
+	if !c.Has("vl", "text") {
+		a.Log.WarnCtx(ctx, "provider", "local_text_degraded", map[string]any{"reason": "not_registered"})
+		return nil
+	}
+	var ping struct {
+		OK bool `json:"ok"`
+	}
+	if err = c.ChatJSON(ctx, "Return only JSON.", `Return {"ok":true}.`, &ping); err != nil {
+		a.Log.WarnCtx(ctx, "provider", "local_text_degraded", map[string]any{"reason": "health_probe_failed"})
+		return nil
+	}
+	if !ping.OK {
+		a.Log.WarnCtx(ctx, "provider", "local_text_degraded", map[string]any{"reason": "invalid_health_reply"})
+		return nil
+	}
+	a.Judge.LLM = judge.NewZhipu(c)
+	a.FB.SetLLM(feedback.NewZhipuParser(c))
+	return nil
+}
+
+func (a *App) traceMW() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		ctx := obs.WithTrace(c.Request.Context(), obs.NewTraceID())
+		c.Request = c.Request.WithContext(ctx)
+		c.Header("X-Trace-ID", obs.TraceID(ctx))
+		c.Next()
+		a.Log.InfoCtx(ctx, "http", "request_completed", map[string]any{"method": c.Request.Method, "route": c.FullPath(), "status": c.Writer.Status(), "duration_ms": time.Since(start).Milliseconds()})
+	}
+}
+
+func (a *App) ownLesson(c *gin.Context, id int64) bool {
+	l, err := a.Sched.Lesson(id)
+	if err != nil || l.StudentID != claimsOf(c).UID {
+		c.AbortWithStatusJSON(http.StatusOK, fail(errForbidden, "lesson unavailable"))
+		return false
+	}
+	return true
+}
+
+func (a *App) registerProviderRoutes(g *gin.RouterGroup) {
+	g.GET("/providers", func(c *gin.Context) {
+		local := a.Local != nil
+		ready := map[string]bool{}
+		if local {
+			ready = a.Local.Ready(c.Request.Context())
+		}
+		c.JSON(200, ok(gin.H{"local": local, "asr": ready["asr"], "tts_zh": ready["tts"], "tts_en": ready["tts-en"]}))
+	})
+	g.POST("/classroom/lessons/:id/transcribe", a.roleMW(auth.RoleStudent), func(c *gin.Context) {
+		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		if !a.ownLesson(c, id) {
+			return
+		}
+		reject := func(status int, reason, message string) {
+			a.Log.ErrorCtx(obs.WithTrace(c.Request.Context(), fmt.Sprintf("lesson-%d", id)), "speech", "audio_rejected", map[string]any{"lesson_id": id, "student_id": claimsOf(c).UID, "reason": reason, "request_trace_id": obs.TraceID(c.Request.Context())})
+			c.JSON(status, fail(status, message))
+		}
+		speechFallback := func(status int, reason, message string) {
+			ctx := obs.WithTrace(c.Request.Context(), fmt.Sprintf("lesson-%d", id))
+			a.Log.ErrorCtx(ctx, "speech", "audio_fallback_available", map[string]any{"lesson_id": id, "student_id": claimsOf(c).UID, "reason": reason, "fallback": "text", "retryable": true, "request_trace_id": obs.TraceID(ctx)})
+			c.JSON(status, failWithData(status, message, map[string]any{"fallback": "text", "retryable": true, "reason": reason}))
+		}
+		if a.Local == nil {
+			speechFallback(503, "provider_unavailable", "本机语音识别不可用，请使用文字输入")
+			return
+		}
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, localmodel.MaxAudio+(64<<10))
+		if err := c.Request.ParseMultipartForm(localmodel.MaxAudio); err != nil {
+			if c.Request.MultipartForm != nil {
+				_ = c.Request.MultipartForm.RemoveAll()
+			}
+			reject(400, "invalid_multipart_or_limit", "音频过大或格式错误")
+			return
+		}
+		defer c.Request.MultipartForm.RemoveAll()
+		f, header, err := c.Request.FormFile("file")
+		if err != nil {
+			reject(400, "missing_audio", "缺少音频")
+			return
+		}
+		defer f.Close()
+		raw, err := io.ReadAll(io.LimitReader(f, localmodel.MaxAudio+1))
+		if err != nil || len(raw) == 0 || len(raw) > localmodel.MaxAudio {
+			reject(400, "empty_unreadable_or_oversized", "音频为空、过大或不可读取")
+			return
+		}
+		lang := c.PostForm("language")
+		if lang != "en" && lang != "zh" {
+			reject(400, "invalid_language", "language 必须为 en 或 zh")
+			return
+		}
+		// Do not accept user-controlled paths as an upstream filename.
+		name := "recording.webm"
+		format := "browser_container"
+		if header.Header.Get("Content-Type") == "audio/wav" {
+			name = "recording.wav"
+			format = "wav"
+		}
+		ctx := obs.WithTrace(c.Request.Context(), fmt.Sprintf("lesson-%d", id))
+		a.Log.InfoCtx(ctx, "speech", "audio_received", map[string]any{"lesson_id": id, "student_id": claimsOf(c).UID, "request_trace_id": obs.TraceID(c.Request.Context()), "bytes": len(raw), "language": lang, "format": format})
+		transcribeCtx, cancelTranscribe := context.WithTimeout(ctx, localmodel.TranscribeTimeout)
+		text, err := a.Local.Transcribe(transcribeCtx, raw, name, lang)
+		cancelTranscribe()
+		if err != nil {
+			reason := "provider_error"
+			if errors.Is(transcribeCtx.Err(), context.DeadlineExceeded) {
+				reason = "provider_timeout"
+			}
+			speechFallback(503, reason, "语音识别失败，请使用文字输入")
+			return
+		}
+		transcribedPayload := map[string]any{"lesson_id": id, "student_id": claimsOf(c).UID, "text_length": len([]rune(text))}
+		// Transcript logging is intentionally opt-in because it contains user speech.
+		// Enable it only for a local diagnostic session with ENWORDS_LOG_ASR_TEXT=1.
+		if os.Getenv("ENWORDS_LOG_ASR_TEXT") == "1" {
+			transcribedPayload["transcript"] = text
+		}
+		a.Log.InfoCtx(ctx, "speech", "audio_transcribed", transcribedPayload)
+		if !validVoiceText(text) {
+			reject(400, "invalid_transcript", "invalid voice text")
+			return
+		}
+		c.JSON(200, ok(gin.H{"text": text}))
+	})
+	g.POST("/speech/synthesize", func(c *gin.Context) {
+		if a.Local == nil {
+			c.JSON(503, fail(503, "本机语音合成不可用"))
+			return
+		}
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 4096)
+		var in struct {
+			Text     string `json:"text"`
+			Lang     string `json:"lang"`
+			LessonID int64  `json:"lesson_id,omitempty"`
+		}
+		if c.ShouldBindJSON(&in) != nil || (in.Lang != "zh" && in.Lang != "en") || strings.TrimSpace(in.Text) == "" || len([]rune(in.Text)) > 300 {
+			a.Log.ErrorCtx(c.Request.Context(), "speech", "synthesis_rejected", map[string]any{"reason": "invalid_text_or_language"})
+			c.JSON(400, fail(400, "仅支持短中文或英文朗读"))
+			return
+		}
+		ctx := c.Request.Context()
+		if in.LessonID != 0 {
+			if !a.ownLesson(c, in.LessonID) {
+				return
+			}
+			ctx = obs.WithTrace(ctx, fmt.Sprintf("lesson-%d", in.LessonID))
+		}
+		a.Log.InfoCtx(ctx, "speech", "synthesis_requested", map[string]any{"lesson_id": in.LessonID, "student_id": claimsOf(c).UID, "request_trace_id": obs.TraceID(c.Request.Context()), "text_length": len([]rune(in.Text)), "language": in.Lang})
+		speechText := in.Text
+		if in.Lang == "en" {
+			speechText = speechnormalize.NormalizeForSpeech(in.Text)
+			a.Log.InfoCtx(ctx, "speech", "speech_normalization_completed", map[string]any{"lesson_id": in.LessonID, "original_length": len([]rune(in.Text)), "speech_length": len([]rune(speechText)), "changed": speechText != in.Text})
+		}
+		raw, _, err := a.synthesizeCached(ctx, speechText, in.Lang)
+		if err != nil {
+			c.JSON(503, fail(503, "语音合成失败"))
+			return
+		}
+		c.Data(200, "audio/wav", raw)
+	})
+}

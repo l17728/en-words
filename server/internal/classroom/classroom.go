@@ -4,6 +4,7 @@
 package classroom
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"sort"
@@ -53,6 +54,7 @@ const (
 	EvRepeatDone      = "repeat_done"
 	EvRepeatSkipped   = "repeat_skipped"
 	EvAnswerSubmitted = "answer_submitted"
+	EvQuizSkipped     = "quiz_skipped"
 )
 
 type QuizItemID struct {
@@ -60,6 +62,41 @@ type QuizItemID struct {
 	Kind   string `json:"kind"` // final（历史值 group_quiz/cumulative 已随 2026-08-25 定案废弃）
 	Round  int    `json:"round"`
 	Seq    int    `json:"seq"` // 测验实例序号（每轮 quiz 递增；同词跨 quiz 不碰撞）
+}
+
+// Text encoding makes composite IDs safe as JSON map keys in durable snapshots.
+func (id QuizItemID) MarshalText() ([]byte, error) {
+	return json.Marshal([]any{id.WordID, id.Kind, id.Round, id.Seq})
+}
+func (id *QuizItemID) UnmarshalText(b []byte) error {
+	var parts []json.RawMessage
+	if err := json.Unmarshal(b, &parts); err != nil {
+		return err
+	}
+	if len(parts) != 4 {
+		return fmt.Errorf("invalid quiz item key")
+	}
+	for i, v := range []any{&id.WordID, &id.Kind, &id.Round, &id.Seq} {
+		if err := json.Unmarshal(parts[i], v); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func (id QuizItemID) MarshalJSON() ([]byte, error) {
+	type plain QuizItemID
+	return json.Marshal(plain(id))
+}
+func (id *QuizItemID) UnmarshalJSON(b []byte) error {
+	if len(b) > 0 && b[0] == '"' {
+		var key string
+		if err := json.Unmarshal(b, &key); err != nil {
+			return err
+		}
+		return id.UnmarshalText([]byte(key))
+	}
+	type plain QuizItemID
+	return json.Unmarshal(b, (*plain)(id))
 }
 
 type Event struct {
@@ -114,26 +151,32 @@ type Result struct {
 }
 
 type Action struct {
-	Type     string   `json:"type"`
-	Lang     string   `json:"lang,omitempty"`
-	SegIdx   int      `json:"seg_idx,omitempty"`
-	WordID   int64    `json:"word_id,omitempty"`
-	Word     string   `json:"word,omitempty"`
-	WithZh   bool     `json:"with_zh,omitempty"`
-	Kind     string   `json:"kind,omitempty"`
-	Total    int      `json:"total,omitempty"`
-	Round    int      `json:"round,omitempty"`
-	Meanings []string `json:"meanings,omitempty"`
-	Reason   string   `json:"reason,omitempty"`
+	DelayBeforeMs int    `json:"delay_before_ms"`
+	Type          string `json:"type"`
+	Lang          string `json:"lang,omitempty"`
+	SegIdx        int    `json:"seg_idx,omitempty"`
+	WordID        int64  `json:"word_id,omitempty"`
+	Word          string `json:"word,omitempty"`
+	// SpeechText is the deterministic pronunciation form used by TTS. Word is
+	// retained for the learner-facing subtitle and matching target.
+	SpeechText string   `json:"speech_text,omitempty"`
+	WithZh     bool     `json:"with_zh,omitempty"`
+	Kind       string   `json:"kind,omitempty"`
+	Total      int      `json:"total,omitempty"`
+	Round      int      `json:"round,omitempty"`
+	Meanings   []string `json:"meanings,omitempty"`
+	Reason     string   `json:"reason,omitempty"`
 }
 
 // ---- 状态 ----
 
 type State struct {
+	Config                      *config.EffectiveSnapshot
 	LessonID, BookID, StudentID int64
 	Phase                       string
-	GroupIdx, WordIdx           int // GroupIdx 废弃（D-21），保留持久化兼容
-	TtsSegIdx                   int // 1..N(en)+1(zh)
+	GroupIdx, WordIdx           int  // GroupIdx 废弃（D-21），保留持久化兼容
+	TtsSegIdx                   int  // Active teaching segment, 1..N(en)+M(zh).
+	ReplayOnce                  bool // A manual repeat replay plays one English segment, then returns to repeating.
 	RepeatCount                 int
 	RepeatNudged                bool
 	// quiz
@@ -143,11 +186,12 @@ type State struct {
 	AnswerStage int
 	PendingText string
 	InReteach   bool // RETEACH 上下文（跟读完成后重测）
-	ReteachSeg  int  // 1=zh 2=en
+	ReteachSeg  int  // Version 1: active 1..M(zh)+N(en); legacy: 0=zh, 1=en.
 	// 轻量回顾
 	InReview   bool
 	ReviewList []int64
 	ReviewIdx  int
+	ReviewSeg  int
 	// 统计
 	Consec      map[int64]int
 	Judged      map[QuizItemID]Judgment
@@ -160,6 +204,7 @@ type State struct {
 	AnswerMs    []int
 	StartedAt   time.Time
 	Paused      bool
+	InputFailed bool
 	Finished    bool
 }
 
@@ -179,6 +224,11 @@ type Machine struct {
 
 func NewMachine(lessonID, bookID, studentID int64, words []Word,
 	cfg config.EffectiveSnapshot, clock interface{ Now() time.Time }) *Machine {
+	if cfg.PlaybackVersion == 0 {
+		cfg = playbackDefaults(cfg)
+		cfg.TtsZhIntervalMs, cfg.TtsSwitchIntervalMs = 1500, 1500
+		cfg.PlaybackVersion = 1
+	}
 	m := &Machine{
 		lessonID: lessonID, bookID: bookID, studentID: studentID,
 		words: words, cfg: cfg, clock: clock,
@@ -188,6 +238,7 @@ func NewMachine(lessonID, bookID, studentID int64, words []Word,
 		m.wordByID[w.ID] = w
 	}
 	m.state = &State{
+		Config:   &cfg,
 		LessonID: lessonID, BookID: bookID, StudentID: studentID,
 		Phase:      PhaseShowWord,
 		Consec:     map[int64]int{},
@@ -248,13 +299,54 @@ func (m *Machine) DrainActions() []Action {
 	return as
 }
 
-func (m *Machine) Snapshot() State { return *m.state }
+func (m *Machine) Snapshot() State {
+	// Deep copy maps/slices: saved state must not be mutated by the live machine.
+	b, err := json.Marshal(m.state)
+	if err != nil {
+		panic(err)
+	}
+	var out State
+	if err = json.Unmarshal(b, &out); err != nil {
+		panic(err)
+	}
+	return out
+}
 
 func (m *Machine) Restore(s State) error {
-	if s.Phase == "" {
+	if err := m.validateRuntimePosition(s); err != nil {
+		return err
+	}
+	raw, err := json.Marshal(s)
+	if err != nil {
 		return fmt.Errorf("classroom: bad snapshot")
 	}
-	cp := s
+	var cp State
+	if err := json.Unmarshal(raw, &cp); err != nil {
+		return fmt.Errorf("classroom: bad snapshot")
+	}
+	var restoredCfg config.EffectiveSnapshot
+	if cp.Config == nil || cp.Config.PlaybackVersion == 0 {
+		restoredCfg = legacySnapshotConfig(cp.Config)
+	} else {
+		restoredCfg = *cp.Config
+		if restoredCfg.SnapshotVersion == 0 {
+			// Existing playback-version-1 snapshots predate showWordLeadMs.
+			restoredCfg.ShowWordLeadMs = 800
+			restoredCfg.SnapshotVersion = 1
+		}
+	}
+	if err := validatePlaybackSnapshot(restoredCfg); err != nil {
+		return err
+	}
+	if err := validatePlaybackPosition(cp, restoredCfg); err != nil {
+		return err
+	}
+	m.cfg = restoredCfg
+	frozenCfg := m.cfg
+	cp.Config = &frozenCfg
+	if cp.InReview && cp.ReviewSeg == 0 {
+		cp.ReviewSeg = 1
+	}
 	if cp.Judged == nil {
 		cp.Judged = map[QuizItemID]Judgment{}
 	}
@@ -273,6 +365,9 @@ func (m *Machine) Result() *Result {
 		return nil
 	}
 	correct := map[int64]bool{}
+	for _, w := range m.words {
+		correct[w.ID] = false
+	}
 	for it, j := range m.state.Judged {
 		if j.IsCorrect() {
 			correct[it.WordID] = true
@@ -283,7 +378,13 @@ func (m *Machine) Result() *Result {
 
 func (m *Machine) buildReport(correct map[int64]bool) LessonReport {
 	st := m.state
-	rep := LessonReport{TotalWords: len(m.words), CorrectCount: len(correct)}
+	correctCount := 0
+	for _, ok := range correct {
+		if ok {
+			correctCount++
+		}
+	}
+	rep := LessonReport{TotalWords: len(m.words), CorrectCount: correctCount}
 	rep.WrongFirstTry = len(st.FirstWrong)
 	rep.FirstTryRate = float64(rep.TotalWords-rep.WrongFirstTry) / float64(rep.TotalWords)
 	rep.StreakBest = st.StreakBest
@@ -326,8 +427,7 @@ func (m *Machine) buildReport(correct map[int64]bool) LessonReport {
 func (m *Machine) TimeoutFor() (time.Duration, bool) {
 	switch m.state.Phase {
 	case PhaseShowWord:
-		// 用户定案（二合一节奏）：show_word 仅 0.8s 自动开读（不等长思考；点击仍可立即开始）
-		return 800 * time.Millisecond, true
+		return time.Duration(m.cfg.ShowWordLeadMs) * time.Millisecond, true
 	case PhaseRepeating:
 		return time.Duration(m.cfg.TimeoutRepeatS) * time.Second, true
 	case PhaseWaitAnswer:
@@ -336,9 +436,10 @@ func (m *Machine) TimeoutFor() (time.Duration, bool) {
 		return 5 * time.Second, true
 	case PhaseTTSSeg, PhaseReteachShow:
 		// R4-arch#7：zh 段（释义更长）超时按释义长度估算；RETEACH 视同 zh 段
-		w := m.CurrentWord()
+		action := m.currentPlaybackAction()
+		w := m.wordByID[action.WordID]
 		base := len(w.Word) + 2
-		if m.state.TtsSegIdx > m.cfg.TtsEnRepeat || m.state.InReteach || m.state.InReview {
+		if action.Lang == "zh" {
 			// zh 段：按首释义字符数估算（中文朗读约 2 字符/秒）
 			n := 3
 			if len(w.Meanings) > 0 {
@@ -348,7 +449,7 @@ func (m *Machine) TimeoutFor() (time.Duration, bool) {
 				base = n
 			}
 		}
-		return time.Duration(base) * time.Second, true
+		return time.Duration(base)*time.Second + time.Duration(action.DelayBeforeMs)*time.Millisecond, true
 	}
 	return 0, false
 }
@@ -361,13 +462,9 @@ func (m *Machine) OnTimeout(phase string) error {
 	case PhaseShowWord:
 		return m.enterTTS()
 	case PhaseTTSSeg:
-		if m.state.InReview {
-			return m.reviewAdvance()
-		}
-		m.acts = append(m.acts, Action{Type: ActTTSSkipped, SegIdx: m.state.TtsSegIdx})
-		return m.ttsAdvance()
+		return m.PauseForPlaybackFailure()
 	case PhaseReteachShow:
-		return m.reteachAdvance()
+		return m.PauseForPlaybackFailure()
 	case PhaseRepeating:
 		if !m.state.RepeatNudged {
 			m.acts = append(m.acts, Action{Type: ActNudgeRepeat})
@@ -387,6 +484,45 @@ func (m *Machine) OnTimeout(phase string) error {
 	}
 	return nil
 }
+
+// PauseForPlaybackFailure keeps the current segment in place for a retry.
+func (m *Machine) PauseForPlaybackFailure() error {
+	if m.state.Paused || (m.state.Phase != PhaseTTSSeg && m.state.Phase != PhaseReteachShow) {
+		return nil
+	}
+	m.state.Paused = true
+	m.acts = append(m.acts, Action{Type: ActLessonPaused})
+	return nil
+}
+
+// PauseForInputFailure preserves the current answer opportunity when ASR fails.
+func (m *Machine) PauseForInputFailure() error {
+	if m.state.Paused || (m.state.Phase != PhaseRepeating && m.state.Phase != PhaseWaitAnswer) {
+		return nil
+	}
+	m.state.Paused = true
+	m.state.InputFailed = true
+	m.acts = append(m.acts, Action{Type: ActLessonPaused})
+	return nil
+}
+
+// SkipUnheardSegment is only called after an explicit student confirmation.
+func (m *Machine) SkipUnheardSegment() error {
+	if !m.state.Paused || (m.state.Phase != PhaseTTSSeg && m.state.Phase != PhaseReteachShow) {
+		return nil
+	}
+	m.state.Paused = false
+	m.acts = append(m.acts, Action{Type: ActTTSSkipped, SegIdx: m.PlaybackSegment()})
+	if m.state.Phase == PhaseReteachShow {
+		return m.reteachAdvance()
+	}
+	if m.state.InReview {
+		return m.reviewAdvance()
+	}
+	return m.ttsAdvance()
+}
+
+func (m *Machine) PlaybackSegment() int { return m.currentPlaybackAction().SegIdx }
 
 // ---- 事件 ----
 
@@ -429,6 +565,31 @@ func (m *Machine) OnEvent(e Event) error {
 			m.state.PendingText = e.Text // 文本兜底重答
 			m.acts = append(m.acts, Action{Type: ActJudgeRequest, WordID: m.currentQuizItem().WordID})
 		}
+	case EvQuizSkipped:
+		if m.state.Phase != PhaseWaitAnswer {
+			return nil
+		}
+		item := m.currentQuizItem()
+		if e.Item != nil && *e.Item != item {
+			return nil
+		}
+		if _, done := m.state.Judged[item]; done {
+			return nil
+		}
+		m.state.Judged[item] = JudgmentWrong
+		m.state.AnswerMs = append(m.state.AnswerMs, 0)
+		delete(m.state.Mastered, item.WordID)
+		m.state.FirstWrong[item.WordID] = true
+		m.state.Consec[item.WordID] = 0
+		m.state.Streak = 0
+		if item.Kind == "final" {
+			m.state.FinalWrong = appendUnique(m.state.FinalWrong, item.WordID)
+		}
+		m.acts = append(m.acts,
+			Action{Type: ActShowCross, WordID: item.WordID, Reason: "explicit_skip"},
+			Action{Type: ActSayHint, WordID: item.WordID, Reason: "give_up_next"},
+		)
+		return m.quizNext()
 	}
 	return nil
 }
@@ -446,9 +607,22 @@ func (m *Machine) enterTTS() error {
 	st.TtsSegIdx = 1
 	w := m.CurrentWord()
 	// Meanings：点击即显示中英对照（原始需求：点击后发音并显示汉语意思——不等到 zh 段）
-	m.acts = append(m.acts, Action{Type: ActPlayTTS, Lang: "en", SegIdx: 1,
-		WordID: w.ID, Word: w.Word, Meanings: w.Meanings})
-	fmt.Printf("[classroom] enterTTS word=%q seg=1 lang=en meanings=%v\n", w.Word, w.Meanings)
+	m.acts = append(m.acts, m.playbackAction(w, 1, false, false))
+	return nil
+}
+
+// ReplayRepeat returns the current word to its teaching playback once. The
+// classroom timer is reset by the phase transition, so a replay never consumes
+// the student's repeat opportunity or advances the word.
+func (m *Machine) ReplayRepeat() error {
+	if m.state.Paused || m.state.Phase != PhaseRepeating {
+		return nil
+	}
+	m.state.Phase = PhaseTTSSeg
+	m.state.TtsSegIdx = 1
+	m.state.ReplayOnce = true
+	m.state.RepeatNudged = false
+	m.acts = append(m.acts, m.playbackAction(m.CurrentWord(), 1, false, false))
 	return nil
 }
 
@@ -474,24 +648,22 @@ func stripPOS(s string) string {
 func (m *Machine) ttsAdvance() error {
 	st := m.state
 	w := m.CurrentWord()
-	switch {
-	case st.TtsSegIdx < m.cfg.TtsEnRepeat:
+	if st.ReplayOnce {
+		st.ReplayOnce = false
+		st.Phase = PhaseRepeating
+		st.RepeatNudged = false
+		m.acts = append(m.acts, Action{Type: ActStartRepeat, WordID: w.ID})
+		return nil
+	}
+	en, zh := m.playbackCounts(false, false)
+	if st.TtsSegIdx < en+zh {
 		st.TtsSegIdx++
-		m.acts = append(m.acts, Action{Type: ActPlayTTS, Lang: "en", SegIdx: st.TtsSegIdx,
-			WordID: w.ID, Word: w.Word}) // Word=朗读文本（前端直接发声，无需查表）
-		fmt.Printf("[classroom] ttsAdvance word=%q seg=%d/%d lang=en\n", w.Word, st.TtsSegIdx, m.cfg.TtsEnRepeat)
-	case st.TtsSegIdx == m.cfg.TtsEnRepeat:
-		st.TtsSegIdx = m.cfg.TtsEnRepeat + 1
-		zh := firstMeaning(w) // zh 段朗读文本=中文释义（非英文单词——防 zh 嗓音硬读英文）
-		m.acts = append(m.acts, Action{Type: ActPlayTTS, Lang: "zh", SegIdx: st.TtsSegIdx,
-			WordID: w.ID, Word: zh})
-		fmt.Printf("[classroom] ttsAdvance word=%q seg=%d lang=zh text=%q\n", w.Word, st.TtsSegIdx, zh)
-	default:
+		m.acts = append(m.acts, m.playbackAction(w, st.TtsSegIdx, false, false))
+	} else {
 		st.Phase = PhaseRepeating
 		st.RepeatCount = 0
 		st.RepeatNudged = false
 		m.acts = append(m.acts, Action{Type: ActStartRepeat, WordID: w.ID})
-		fmt.Printf("[classroom] ttsAdvance word=%q → start_repeat\n", w.Word)
 	}
 	return nil
 }
@@ -588,8 +760,9 @@ func (m *Machine) OnJudged(item QuizItemID, j Judgment) Judgment {
 
 // applyJudge 执行判分迁移；auto=超时自动判错。
 // 用户定案（2026-08-23）：每词最多 2 次机会——
-//   第 1 次错（Round==0）→ RETEACH 完整闭环后重测；
-//   第 2 次错（Round>=1 重测仍错）或说"不会"→ 记未掌握，直接下一题。
+//
+//	第 1 次错（Round==0）→ RETEACH 完整闭环后重测；
+//	第 2 次错（Round>=1 重测仍错）或说"不会"→ 记未掌握，直接下一题。
 func (m *Machine) applyJudge(item QuizItemID, j Judgment, auto bool) error {
 	st := m.state
 	if _, done := st.Judged[item]; done {
@@ -621,9 +794,12 @@ func (m *Machine) applyJudge(item QuizItemID, j Judgment, auto bool) error {
 	// 第 1 次错：RETEACH 完整闭环（显中文→zh→en→跟读→重测）
 	st.Phase = PhaseReteachShow
 	st.ReteachSeg = 0
+	if m.cfg.PlaybackVersion > 0 {
+		st.ReteachSeg = 1
+	}
 	st.InReteach = true
 	m.acts = append(m.acts, Action{Type: ActShowWord, WordID: item.WordID, Word: w.Word, WithZh: true})
-	m.acts = append(m.acts, Action{Type: ActPlayTTS, Lang: "zh", SegIdx: 1, WordID: item.WordID})
+	m.acts = append(m.acts, m.playbackAction(w, 1, true, false))
 	return nil
 }
 
@@ -673,10 +849,14 @@ func (m *Machine) reteachAdvance() error {
 	st := m.state
 	item := m.currentQuizItem()
 	st.ReteachSeg++
-	switch st.ReteachSeg {
-	case 1:
-		m.acts = append(m.acts, Action{Type: ActPlayTTS, Lang: "en", SegIdx: 2, WordID: item.WordID})
-	case 2:
+	seg := st.ReteachSeg
+	if m.cfg.PlaybackVersion == 0 {
+		seg++
+	}
+	en, zh := m.playbackCounts(true, false)
+	if seg <= en+zh {
+		m.acts = append(m.acts, m.playbackAction(m.wordByID[item.WordID], seg, true, false))
+	} else {
 		st.Phase = PhaseRepeating
 		st.RepeatCount = 0
 		st.RepeatNudged = false
@@ -709,6 +889,7 @@ func (m *Machine) afterFinal() error {
 	}
 	st.InReview = true
 	st.ReviewIdx = 0
+	st.ReviewSeg = 1
 	st.ReviewList = st.FinalWrong
 	st.Phase = PhaseTTSSeg
 	m.acts = append(m.acts, Action{Type: ActStartReview, Total: len(st.ReviewList)})
@@ -720,12 +901,22 @@ func (m *Machine) emitReviewItem() {
 	st := m.state
 	w := m.wordByID[st.ReviewList[st.ReviewIdx]]
 	m.acts = append(m.acts, Action{Type: ActShowWord, WordID: w.ID, Word: w.Word, WithZh: true})
-	m.acts = append(m.acts, Action{Type: ActPlayTTS, Lang: "en", SegIdx: 1, WordID: w.ID})
+	if st.ReviewSeg < 1 {
+		st.ReviewSeg = 1
+	}
+	m.acts = append(m.acts, m.playbackAction(w, st.ReviewSeg, false, true))
 }
 
 func (m *Machine) reviewAdvance() error {
 	st := m.state
+	en, zh := m.playbackCounts(false, true)
+	if st.ReviewSeg < en+zh {
+		st.ReviewSeg++
+		m.acts = append(m.acts, m.playbackAction(m.wordByID[st.ReviewList[st.ReviewIdx]], st.ReviewSeg, false, true))
+		return nil
+	}
 	st.ReviewIdx++
+	st.ReviewSeg = 1
 	if st.ReviewIdx >= len(st.ReviewList) {
 		return m.enterEnd()
 	}
@@ -762,6 +953,7 @@ func (m *Machine) Resume() {
 		return
 	}
 	st.Paused = false
+	st.InputFailed = false
 	st.StartedAt = m.clock.Now()
 	switch st.Phase {
 	case PhaseWaitAnswer, PhaseJudging:
@@ -769,11 +961,13 @@ func (m *Machine) Resume() {
 	case PhaseReteachShow:
 		w := m.wordByID[m.currentQuizItem().WordID]
 		m.acts = append(m.acts, Action{Type: ActShowWord, WordID: w.ID, Word: w.Word, WithZh: true})
+		m.acts = append(m.acts, m.currentPlaybackAction())
 	case PhaseTTSSeg:
 		if st.InReview {
 			m.emitReviewItem()
 		} else {
 			m.acts = append(m.acts, m.showWordAction())
+			m.acts = append(m.acts, m.currentPlaybackAction())
 		}
 	case PhaseRepeating:
 		w := m.CurrentWord()

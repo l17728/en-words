@@ -1,0 +1,232 @@
+{
+  "model": "Qwen3-ASR-1.7B Q8_0",
+  "runtime": "llama.cpp b12167 CUDA 13.4 isolated binary",
+  "entry": "8090 manager proxy -> 8001",
+  "source": "frozen independent synthetic fixtures",
+  "cases": [
+    {
+      "case_id": "ASR-ZH-01",
+      "language": "zh",
+      "expected": "苹果",
+      "actual": "苹果。",
+      "duration_ms": 482,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-ZH-02",
+      "language": "zh",
+      "expected": "老师",
+      "actual": "老师。",
+      "duration_ms": 128,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-ZH-03",
+      "language": "zh",
+      "expected": "图书",
+      "actual": "图书。",
+      "duration_ms": 116,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-ZH-04",
+      "language": "zh",
+      "expected": "安静",
+      "actual": "暗金。",
+      "duration_ms": 113,
+      "exact_normalized": false
+    },
+    {
+      "case_id": "ASR-ZH-05",
+      "language": "zh",
+      "expected": "我不知道",
+      "actual": "我不知道。",
+      "duration_ms": 150,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-ZH-06",
+      "language": "zh",
+      "expected": "我会了",
+      "actual": "我会了。",
+      "duration_ms": 154,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-ZH-07",
+      "language": "zh",
+      "expected": "请再说一遍",
+      "actual": "请再说一遍。",
+      "duration_ms": 176,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-ZH-08",
+      "language": "zh",
+      "expected": "我想跳过",
+      "actual": "我想挑过。",
+      "duration_ms": 139,
+      "exact_normalized": false
+    },
+    {
+      "case_id": "ASR-ZH-09",
+      "language": "zh",
+      "expected": "每天两次",
+      "actual": "每天两次。",
+      "duration_ms": 122,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-ZH-10",
+      "language": "zh",
+      "expected": "每课五十个词",
+      "actual": "每克五十格词。",
+      "duration_ms": 177,
+      "exact_normalized": false
+    },
+    {
+      "case_id": "ASR-ZH-11",
+      "language": "zh",
+      "expected": "我想减少单词",
+      "actual": "我想减少单词。",
+      "duration_ms": 171,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-ZH-12",
+      "language": "zh",
+      "expected": "课程改到明天",
+      "actual": "课程改到明天。",
+      "duration_ms": 185,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-EN-01",
+      "language": "en",
+      "expected": "apple",
+      "actual": "Apple.",
+      "duration_ms": 210,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-EN-02",
+      "language": "en",
+      "expected": "banana",
+      "actual": "Banana.",
+      "duration_ms": 189,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-EN-03",
+      "language": "en",
+      "expected": "orange",
+      "actual": "Orange.",
+      "duration_ms": 177,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-EN-04",
+      "language": "en",
+      "expected": "book",
+      "actual": "Vog.",
+      "duration_ms": 135,
+      "exact_normalized": false
+    },
+    {
+      "case_id": "ASR-EN-05",
+      "language": "en",
+      "expected": "cat",
+      "actual": "Cat.",
+      "duration_ms": 124,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-EN-06",
+      "language": "en",
+      "expected": "dog",
+      "actual": "Dog.",
+      "duration_ms": 129,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-EN-07",
+      "language": "en",
+      "expected": "teacher",
+      "actual": "Teacher.",
+      "duration_ms": 108,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-EN-08",
+      "language": "en",
+      "expected": "beautiful",
+      "actual": "Beautiful.",
+      "duration_ms": 111,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-EN-09",
+      "language": "en",
+      "expected": "look after",
+      "actual": "Look after.",
+      "duration_ms": 132,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-EN-10",
+      "language": "en",
+      "expected": "give up",
+      "actual": "Give up.",
+      "duration_ms": 124,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-EN-11",
+      "language": "en",
+      "expected": "take care of",
+      "actual": "Take care of.",
+      "duration_ms": 154,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-EN-12",
+      "language": "en",
+      "expected": "good morning",
+      "actual": "Good morning.",
+      "duration_ms": 136,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-EN-13",
+      "language": "en",
+      "expected": "I do not know",
+      "actual": "I do not know.",
+      "duration_ms": 185,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-EN-14",
+      "language": "en",
+      "expected": "Two lessons today",
+      "actual": "Two lessons today.",
+      "duration_ms": 164,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-EN-15",
+      "language": "en",
+      "expected": "Tomorrow is October fifteenth",
+      "actual": "Tomorrow is October fifteenth.",
+      "duration_ms": 210,
+      "exact_normalized": true
+    },
+    {
+      "case_id": "ASR-EN-16",
+      "language": "en",
+      "expected": "Please repeat that",
+      "actual": "Please repeat that.",
+      "duration_ms": 170,
+      "exact_normalized": true
+    }
+  ]
+}

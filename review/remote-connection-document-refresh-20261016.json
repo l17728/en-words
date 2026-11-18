@@ -1,0 +1,23 @@
+{
+  "path": "/root/llm-api-connection.md",
+  "bytes": 2199,
+  "sha256": "0af7650c2c40bb35e9817ec4fd38a88b57367f28f740f801cd32d7cb3b3d6c13",
+  "mtime_utc": "2026-10-15T07:12:53.097332+00:00",
+  "api_paths": [],
+  "model_alias_examples": [
+    "claude-sonnet-4-5",
+    "qwen-omni"
+  ],
+  "parameter_names_mentioned": [
+    "max_tokens"
+  ],
+  "selected_sanitized_contract_evidence": [
+    "## 当前模型名称",
+    "模型列表测试："
+  ],
+  "related_document_or_source_paths": [],
+  "claims_are_documented_not_runtime_verified": true,
+  "model_requests": 0,
+  "service_changes": false,
+  "credentials_recorded": false
+}

@@ -1,0 +1,19 @@
+{
+  "mode": "isolated actual candidate HTTP wrapper and wide-path C API helper",
+  "port": 18002,
+  "input": "猫",
+  "timeout_seconds": 20,
+  "human_listening": "pending",
+  "pid": 17388,
+  "status": 200,
+  "bytes": 15916,
+  "mime": "audio/wav",
+  "channels": 1,
+  "sample_rate": 16000,
+  "sample_width": 2,
+  "frames": 7936,
+  "rms": 431.4175866519359,
+  "sha256": "5c94086a0fda5f94594aa78841dd90770f87317732f15872047270eeb4d1a8ad",
+  "duration_ms": 7000,
+  "isolated_server_stopped": true
+}

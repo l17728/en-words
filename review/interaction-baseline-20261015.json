@@ -1,0 +1,2907 @@
+{
+  "date": "2026-10-15",
+  "cpu": "Intel Core i3-4130, 2 cores / 4 logical processors",
+  "scope": "temporary SQLite and local httptest; no provider requests",
+  "source_files": {
+    "before_locks": "interaction-baseline-lock-r3-20261015.txt",
+    "before_timer_body": "interaction-baseline-reviewed-20261015.txt",
+    "after": "interaction-baseline-after-20261015.txt"
+  },
+  "percentile": "nearest-rank",
+  "caveats": [
+    "before_timer_body run had a lock-fixture failure; only passing timer/body rows retained",
+    "timer: real started scheduled rooms, deliveryReady=false, no connected clients; completed-first worst-order scan",
+    "free mode is immediately canceled; not an uncanceled write-latency benchmark",
+    "SQLite busy-handler cancellation is not guaranteed by WithContext",
+    "parallel Chromium tests and short builds may affect elapsed time; SQL call counts are primary"
+  ],
+  "before": {
+    "lock/free": {
+      "n": 20,
+      "metrics": {
+        "cancel_at_ms": {
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "other_student_notifications_ms": {
+          "p50": 0,
+          "p95": 2,
+          "max": 3
+        },
+        "pool_wait_ms": {
+          "p50": 0,
+          "p95": 0,
+          "max": 2
+        },
+        "release_at_ms": {
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "save_ms": {
+          "p50": 0,
+          "p95": 1,
+          "max": 5
+        }
+      }
+    },
+    "lock/pool_held": {
+      "n": 20,
+      "metrics": {
+        "cancel_at_ms": {
+          "p50": 200,
+          "p95": 200,
+          "max": 200
+        },
+        "other_student_notifications_ms": {
+          "p50": 1003,
+          "p95": 1020,
+          "max": 1028
+        },
+        "pool_wait_ms": {
+          "p50": 2006,
+          "p95": 2041,
+          "max": 2056
+        },
+        "release_at_ms": {
+          "p50": 1000,
+          "p95": 1000,
+          "max": 1000
+        },
+        "save_ms": {
+          "p50": 1003,
+          "p95": 1021,
+          "max": 1028
+        }
+      }
+    },
+    "lock/sqlite_write_held": {
+      "n": 20,
+      "metrics": {
+        "cancel_at_ms": {
+          "p50": 200,
+          "p95": 200,
+          "max": 200
+        },
+        "other_student_notifications_ms": {
+          "p50": 1051,
+          "p95": 1111,
+          "max": 1117
+        },
+        "pool_wait_ms": {
+          "p50": 1051,
+          "p95": 1111,
+          "max": 1116
+        },
+        "release_at_ms": {
+          "p50": 1000,
+          "p95": 1000,
+          "max": 1000
+        },
+        "save_ms": {
+          "p50": 1051,
+          "p95": 1112,
+          "max": 1117
+        }
+      }
+    },
+    "timer/0": {
+      "n": 10,
+      "metrics": {
+        "active_first_wait_ms": {
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "create_or_upsert_calls": {
+          "p50": 2,
+          "p95": 2,
+          "max": 2
+        },
+        "session_scan_ms": {
+          "p50": 0,
+          "p95": 1,
+          "max": 1
+        },
+        "tick_us": {
+          "p50": 0,
+          "p95": 9,
+          "max": 9
+        }
+      }
+    },
+    "timer/100": {
+      "n": 10,
+      "metrics": {
+        "active_first_wait_ms": {
+          "p50": 22,
+          "p95": 25,
+          "max": 25
+        },
+        "create_or_upsert_calls": {
+          "p50": 102,
+          "p95": 102,
+          "max": 102
+        },
+        "session_scan_ms": {
+          "p50": 23,
+          "p95": 26,
+          "max": 26
+        },
+        "tick_us": {
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        }
+      }
+    },
+    "timer/1000": {
+      "n": 10,
+      "metrics": {
+        "active_first_wait_ms": {
+          "p50": 219,
+          "p95": 262,
+          "max": 262
+        },
+        "create_or_upsert_calls": {
+          "p50": 1002,
+          "p95": 1002,
+          "max": 1002
+        },
+        "session_scan_ms": {
+          "p50": 219,
+          "p95": 263,
+          "max": 263
+        },
+        "tick_us": {
+          "p50": 128,
+          "p95": 1001,
+          "max": 1001
+        }
+      }
+    },
+    "body/1069": {
+      "n": 1,
+      "metrics": {
+        "elapsed_ms": {
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        }
+      }
+    },
+    "body/65581": {
+      "n": 1,
+      "metrics": {
+        "elapsed_ms": {
+          "p50": 3,
+          "p95": 3,
+          "max": 3
+        }
+      }
+    },
+    "body/1048621": {
+      "n": 1,
+      "metrics": {
+        "elapsed_ms": {
+          "p50": 12,
+          "p95": 12,
+          "max": 12
+        }
+      }
+    },
+    "body/8388653": {
+      "n": 1,
+      "metrics": {
+        "elapsed_ms": {
+          "p50": 130,
+          "p95": 130,
+          "max": 130
+        }
+      }
+    },
+    "slow_body/single": {
+      "n": 1,
+      "metrics": {
+        "other_request_ms": {
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "window_ms": {
+          "p50": 2051,
+          "p95": 2051,
+          "max": 2051
+        }
+      }
+    }
+  },
+  "after": {
+    "lock/free": {
+      "n": 20,
+      "metrics": {
+        "cancel_at_ms": {
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "other_student_notifications_ms": {
+          "p50": 0,
+          "p95": 1,
+          "max": 1
+        },
+        "pool_wait_ms": {
+          "p50": 0,
+          "p95": 0,
+          "max": 1
+        },
+        "release_at_ms": {
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "save_ms": {
+          "p50": 0,
+          "p95": 1,
+          "max": 4
+        }
+      }
+    },
+    "lock/pool_held": {
+      "n": 20,
+      "metrics": {
+        "cancel_at_ms": {
+          "p50": 200,
+          "p95": 200,
+          "max": 200
+        },
+        "other_student_notifications_ms": {
+          "p50": 1001,
+          "p95": 1007,
+          "max": 1094
+        },
+        "pool_wait_ms": {
+          "p50": 1201,
+          "p95": 1211,
+          "max": 1295
+        },
+        "release_at_ms": {
+          "p50": 1000,
+          "p95": 1000,
+          "max": 1000
+        },
+        "save_ms": {
+          "p50": 200,
+          "p95": 204,
+          "max": 205
+        }
+      }
+    },
+    "lock/sqlite_write_held": {
+      "n": 20,
+      "metrics": {
+        "cancel_at_ms": {
+          "p50": 200,
+          "p95": 200,
+          "max": 200
+        },
+        "other_student_notifications_ms": {
+          "p50": 1056,
+          "p95": 1148,
+          "max": 1167
+        },
+        "pool_wait_ms": {
+          "p50": 1052,
+          "p95": 1144,
+          "max": 1166
+        },
+        "release_at_ms": {
+          "p50": 1000,
+          "p95": 1000,
+          "max": 1000
+        },
+        "save_ms": {
+          "p50": 1051,
+          "p95": 1141,
+          "max": 1165
+        }
+      }
+    },
+    "timer/0": {
+      "n": 10,
+      "metrics": {
+        "active_first_wait_ms": {
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "create_or_upsert_calls": {
+          "p50": 2,
+          "p95": 2,
+          "max": 2
+        },
+        "session_scan_ms": {
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "tick_us": {
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        }
+      }
+    },
+    "timer/100": {
+      "n": 10,
+      "metrics": {
+        "active_first_wait_ms": {
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "create_or_upsert_calls": {
+          "p50": 2,
+          "p95": 2,
+          "max": 2
+        },
+        "session_scan_ms": {
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "tick_us": {
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        }
+      }
+    },
+    "timer/1000": {
+      "n": 10,
+      "metrics": {
+        "active_first_wait_ms": {
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "create_or_upsert_calls": {
+          "p50": 2,
+          "p95": 2,
+          "max": 2
+        },
+        "session_scan_ms": {
+          "p50": 0,
+          "p95": 1,
+          "max": 1
+        },
+        "tick_us": {
+          "p50": 0,
+          "p95": 1012,
+          "max": 1012
+        }
+      }
+    },
+    "body/1069": {
+      "n": 1,
+      "metrics": {
+        "elapsed_ms": {
+          "p50": 2,
+          "p95": 2,
+          "max": 2
+        }
+      }
+    },
+    "body/65581": {
+      "n": 1,
+      "metrics": {
+        "elapsed_ms": {
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        }
+      }
+    },
+    "body/1048621": {
+      "n": 1,
+      "metrics": {
+        "elapsed_ms": {
+          "p50": 12,
+          "p95": 12,
+          "max": 12
+        }
+      }
+    },
+    "body/8388653": {
+      "n": 1,
+      "metrics": {
+        "elapsed_ms": {
+          "p50": 72,
+          "p95": 72,
+          "max": 72
+        }
+      }
+    },
+    "slow_body/single": {
+      "n": 1,
+      "metrics": {
+        "other_request_ms": {
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "window_ms": {
+          "p50": 2043,
+          "p95": 2043,
+          "max": 2043
+        }
+      }
+    }
+  },
+  "raw_before": [
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 3,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 2,
+        "release_at_ms": 0,
+        "sample": 0,
+        "save_ms": 5
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 1,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 1,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 2,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 3,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 1,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 4,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 1,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 5,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 6,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 7,
+        "save_ms": 1
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 8,
+        "save_ms": 1
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 2,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 9,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 10,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 11,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 12,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 13,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 14,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 15,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 16,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 17,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 18,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 19,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1002,
+        "pool_wait_count": 3,
+        "pool_wait_ms": 2005,
+        "release_at_ms": 1000,
+        "sample": 0,
+        "save_ms": 1002
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1011,
+        "pool_wait_count": 3,
+        "pool_wait_ms": 2022,
+        "release_at_ms": 1000,
+        "sample": 1,
+        "save_ms": 1011
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1001,
+        "pool_wait_count": 3,
+        "pool_wait_ms": 2003,
+        "release_at_ms": 1000,
+        "sample": 2,
+        "save_ms": 1001
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1002,
+        "pool_wait_count": 3,
+        "pool_wait_ms": 2003,
+        "release_at_ms": 1000,
+        "sample": 3,
+        "save_ms": 1002
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1009,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 2018,
+        "release_at_ms": 1000,
+        "sample": 4,
+        "save_ms": 1009
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1013,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 2027,
+        "release_at_ms": 1000,
+        "sample": 5,
+        "save_ms": 1013
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1003,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 2006,
+        "release_at_ms": 1000,
+        "sample": 6,
+        "save_ms": 1003
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1003,
+        "pool_wait_count": 3,
+        "pool_wait_ms": 2006,
+        "release_at_ms": 1000,
+        "sample": 7,
+        "save_ms": 1003
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1011,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 2021,
+        "release_at_ms": 1000,
+        "sample": 8,
+        "save_ms": 1010
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1001,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 2002,
+        "release_at_ms": 1000,
+        "sample": 9,
+        "save_ms": 1001
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1001,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 2003,
+        "release_at_ms": 1000,
+        "sample": 10,
+        "save_ms": 1001
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1019,
+        "pool_wait_count": 3,
+        "pool_wait_ms": 2036,
+        "release_at_ms": 1000,
+        "sample": 11,
+        "save_ms": 1020
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1012,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 2024,
+        "release_at_ms": 1000,
+        "sample": 12,
+        "save_ms": 1013
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1003,
+        "pool_wait_count": 3,
+        "pool_wait_ms": 2005,
+        "release_at_ms": 1000,
+        "sample": 13,
+        "save_ms": 1002
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1006,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 2011,
+        "release_at_ms": 1000,
+        "sample": 14,
+        "save_ms": 1005
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1006,
+        "pool_wait_count": 3,
+        "pool_wait_ms": 2012,
+        "release_at_ms": 1000,
+        "sample": 15,
+        "save_ms": 1006
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1002,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 2004,
+        "release_at_ms": 1000,
+        "sample": 16,
+        "save_ms": 1002
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1028,
+        "pool_wait_count": 3,
+        "pool_wait_ms": 2056,
+        "release_at_ms": 1000,
+        "sample": 17,
+        "save_ms": 1028
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1020,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 2041,
+        "release_at_ms": 1000,
+        "sample": 18,
+        "save_ms": 1021
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1001,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 2001,
+        "release_at_ms": 1000,
+        "sample": 19,
+        "save_ms": 1001
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1037,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1037,
+        "release_at_ms": 1000,
+        "sample": 0,
+        "save_ms": 1037
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1068,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1066,
+        "release_at_ms": 1000,
+        "sample": 1,
+        "save_ms": 1067
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1070,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1070,
+        "release_at_ms": 1000,
+        "sample": 2,
+        "save_ms": 1071
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1092,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1091,
+        "release_at_ms": 1000,
+        "sample": 3,
+        "save_ms": 1091
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1054,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1054,
+        "release_at_ms": 1000,
+        "sample": 4,
+        "save_ms": 1054
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1111,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1111,
+        "release_at_ms": 1000,
+        "sample": 5,
+        "save_ms": 1112
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1059,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1059,
+        "release_at_ms": 1000,
+        "sample": 6,
+        "save_ms": 1059
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1083,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1083,
+        "release_at_ms": 1000,
+        "sample": 7,
+        "save_ms": 1083
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1097,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1096,
+        "release_at_ms": 1000,
+        "sample": 8,
+        "save_ms": 1097
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1065,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1065,
+        "release_at_ms": 1000,
+        "sample": 9,
+        "save_ms": 1065
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1049,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1049,
+        "release_at_ms": 1000,
+        "sample": 10,
+        "save_ms": 1049
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1043,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1043,
+        "release_at_ms": 1000,
+        "sample": 11,
+        "save_ms": 1043
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1039,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1039,
+        "release_at_ms": 1000,
+        "sample": 12,
+        "save_ms": 1040
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1051,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1051,
+        "release_at_ms": 1000,
+        "sample": 13,
+        "save_ms": 1051
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1038,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1038,
+        "release_at_ms": 1000,
+        "sample": 14,
+        "save_ms": 1038
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1039,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1039,
+        "release_at_ms": 1000,
+        "sample": 15,
+        "save_ms": 1040
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1041,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1040,
+        "release_at_ms": 1000,
+        "sample": 16,
+        "save_ms": 1041
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1039,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1039,
+        "release_at_ms": 1000,
+        "sample": 17,
+        "save_ms": 1039
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1039,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1039,
+        "release_at_ms": 1000,
+        "sample": 18,
+        "save_ms": 1039
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1117,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1116,
+        "release_at_ms": 1000,
+        "sample": 19,
+        "save_ms": 1117
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 0,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 1,
+        "session_scan_ms": 1,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 2,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 3,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 4,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 5,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 6,
+        "session_scan_ms": 0,
+        "tick_us": 9
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 7,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 8,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 9,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 21,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 102,
+        "order": "completed_then_active_worst_order",
+        "sample": 0,
+        "session_scan_ms": 21,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 24,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 102,
+        "order": "completed_then_active_worst_order",
+        "sample": 1,
+        "session_scan_ms": 25,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 25,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 102,
+        "order": "completed_then_active_worst_order",
+        "sample": 2,
+        "session_scan_ms": 26,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 21,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 102,
+        "order": "completed_then_active_worst_order",
+        "sample": 3,
+        "session_scan_ms": 22,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 22,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 102,
+        "order": "completed_then_active_worst_order",
+        "sample": 4,
+        "session_scan_ms": 23,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 25,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 102,
+        "order": "completed_then_active_worst_order",
+        "sample": 5,
+        "session_scan_ms": 25,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 22,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 102,
+        "order": "completed_then_active_worst_order",
+        "sample": 6,
+        "session_scan_ms": 22,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 23,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 102,
+        "order": "completed_then_active_worst_order",
+        "sample": 7,
+        "session_scan_ms": 24,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 18,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 102,
+        "order": "completed_then_active_worst_order",
+        "sample": 8,
+        "session_scan_ms": 19,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 24,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 102,
+        "order": "completed_then_active_worst_order",
+        "sample": 9,
+        "session_scan_ms": 25,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 238,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 1002,
+        "order": "completed_then_active_worst_order",
+        "sample": 0,
+        "session_scan_ms": 238,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 258,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 1002,
+        "order": "completed_then_active_worst_order",
+        "sample": 1,
+        "session_scan_ms": 258,
+        "tick_us": 803
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 212,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 1002,
+        "order": "completed_then_active_worst_order",
+        "sample": 2,
+        "session_scan_ms": 212,
+        "tick_us": 1001
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 226,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 1002,
+        "order": "completed_then_active_worst_order",
+        "sample": 3,
+        "session_scan_ms": 227,
+        "tick_us": 1001
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 218,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 1002,
+        "order": "completed_then_active_worst_order",
+        "sample": 4,
+        "session_scan_ms": 218,
+        "tick_us": 564
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 211,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 1002,
+        "order": "completed_then_active_worst_order",
+        "sample": 5,
+        "session_scan_ms": 212,
+        "tick_us": 128
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 262,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 1002,
+        "order": "completed_then_active_worst_order",
+        "sample": 6,
+        "session_scan_ms": 263,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 219,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 1002,
+        "order": "completed_then_active_worst_order",
+        "sample": 7,
+        "session_scan_ms": 219,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 237,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 1002,
+        "order": "completed_then_active_worst_order",
+        "sample": 8,
+        "session_scan_ms": 237,
+        "tick_us": 654
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 218,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 1002,
+        "order": "completed_then_active_worst_order",
+        "sample": 9,
+        "session_scan_ms": 219,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "bytes": 1069,
+        "elapsed_ms": 1,
+        "http_status": 200,
+        "response_bytes": 45
+      },
+      "kind": "body"
+    },
+    {
+      "data": {
+        "bytes": 65581,
+        "elapsed_ms": 3,
+        "http_status": 200,
+        "response_bytes": 45
+      },
+      "kind": "body"
+    },
+    {
+      "data": {
+        "bytes": 1048621,
+        "elapsed_ms": 12,
+        "http_status": 200,
+        "response_bytes": 45
+      },
+      "kind": "body"
+    },
+    {
+      "data": {
+        "bytes": 8388653,
+        "elapsed_ms": 130,
+        "http_status": 200,
+        "response_bytes": 45
+      },
+      "kind": "body"
+    },
+    {
+      "data": {
+        "other_http_status": 200,
+        "other_request_ms": 0,
+        "read_other_error": false,
+        "read_timed_out": true,
+        "response_bytes_before_client_close": 0,
+        "window_ms": 2051
+      },
+      "kind": "slow_body"
+    }
+  ],
+  "raw_after": [
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 1,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1,
+        "release_at_ms": 0,
+        "sample": 0,
+        "save_ms": 4
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 1,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 2,
+        "save_ms": 1
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 3,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 4,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 5,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 6,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 7,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 8,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 9,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 10,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 11,
+        "save_ms": 1
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 12,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 13,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 14,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 15,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 16,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 17,
+        "save_ms": 1
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 0,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 18,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 0,
+        "mode": "free",
+        "other_student_notifications_ms": 1,
+        "pool_wait_count": 0,
+        "pool_wait_ms": 0,
+        "release_at_ms": 0,
+        "sample": 19,
+        "save_ms": 0
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1005,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1209,
+        "release_at_ms": 1000,
+        "sample": 0,
+        "save_ms": 204
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1001,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1201,
+        "release_at_ms": 1000,
+        "sample": 1,
+        "save_ms": 200
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1001,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1201,
+        "release_at_ms": 1000,
+        "sample": 2,
+        "save_ms": 201
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1002,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1202,
+        "release_at_ms": 1000,
+        "sample": 3,
+        "save_ms": 201
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1005,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1205,
+        "release_at_ms": 1000,
+        "sample": 4,
+        "save_ms": 200
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1007,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1211,
+        "release_at_ms": 1000,
+        "sample": 5,
+        "save_ms": 205
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1001,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1201,
+        "release_at_ms": 1000,
+        "sample": 6,
+        "save_ms": 200
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1001,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1201,
+        "release_at_ms": 1000,
+        "sample": 7,
+        "save_ms": 200
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1001,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1200,
+        "release_at_ms": 1000,
+        "sample": 8,
+        "save_ms": 200
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1001,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1202,
+        "release_at_ms": 1000,
+        "sample": 9,
+        "save_ms": 201
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1002,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1203,
+        "release_at_ms": 1000,
+        "sample": 10,
+        "save_ms": 201
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1094,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1295,
+        "release_at_ms": 1000,
+        "sample": 11,
+        "save_ms": 200
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1000,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1200,
+        "release_at_ms": 1000,
+        "sample": 12,
+        "save_ms": 200
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1001,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1201,
+        "release_at_ms": 1000,
+        "sample": 13,
+        "save_ms": 200
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1000,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1201,
+        "release_at_ms": 1000,
+        "sample": 14,
+        "save_ms": 200
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1001,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1201,
+        "release_at_ms": 1000,
+        "sample": 15,
+        "save_ms": 200
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1001,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1201,
+        "release_at_ms": 1000,
+        "sample": 16,
+        "save_ms": 200
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1000,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1200,
+        "release_at_ms": 1000,
+        "sample": 17,
+        "save_ms": 200
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1000,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1201,
+        "release_at_ms": 1000,
+        "sample": 18,
+        "save_ms": 200
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "pool_held",
+        "other_student_notifications_ms": 1002,
+        "pool_wait_count": 2,
+        "pool_wait_ms": 1205,
+        "release_at_ms": 1000,
+        "sample": 19,
+        "save_ms": 203
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1106,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1105,
+        "release_at_ms": 1000,
+        "sample": 0,
+        "save_ms": 1103
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1100,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1098,
+        "release_at_ms": 1000,
+        "sample": 1,
+        "save_ms": 1098
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1052,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1050,
+        "release_at_ms": 1000,
+        "sample": 2,
+        "save_ms": 1050
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1019,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1018,
+        "release_at_ms": 1000,
+        "sample": 3,
+        "save_ms": 1017
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1076,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1075,
+        "release_at_ms": 1000,
+        "sample": 4,
+        "save_ms": 1073
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1167,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1166,
+        "release_at_ms": 1000,
+        "sample": 5,
+        "save_ms": 1165
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1066,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1065,
+        "release_at_ms": 1000,
+        "sample": 6,
+        "save_ms": 1064
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1043,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1039,
+        "release_at_ms": 1000,
+        "sample": 7,
+        "save_ms": 1038
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1042,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1040,
+        "release_at_ms": 1000,
+        "sample": 8,
+        "save_ms": 1039
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1038,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1036,
+        "release_at_ms": 1000,
+        "sample": 9,
+        "save_ms": 1035
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1056,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1052,
+        "release_at_ms": 1000,
+        "sample": 10,
+        "save_ms": 1051
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1092,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1088,
+        "release_at_ms": 1000,
+        "sample": 11,
+        "save_ms": 1085
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1040,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1037,
+        "release_at_ms": 1000,
+        "sample": 12,
+        "save_ms": 1037
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1061,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1060,
+        "release_at_ms": 1000,
+        "sample": 13,
+        "save_ms": 1060
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1046,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1043,
+        "release_at_ms": 1000,
+        "sample": 14,
+        "save_ms": 1042
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1056,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1055,
+        "release_at_ms": 1000,
+        "sample": 15,
+        "save_ms": 1055
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1055,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1052,
+        "release_at_ms": 1000,
+        "sample": 16,
+        "save_ms": 1050
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1148,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1144,
+        "release_at_ms": 1000,
+        "sample": 17,
+        "save_ms": 1141
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1083,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1082,
+        "release_at_ms": 1000,
+        "sample": 18,
+        "save_ms": 1082
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "cancel_at_ms": 200,
+        "mode": "sqlite_write_held",
+        "other_student_notifications_ms": 1044,
+        "pool_wait_count": 1,
+        "pool_wait_ms": 1043,
+        "release_at_ms": 1000,
+        "sample": 19,
+        "save_ms": 1042
+      },
+      "kind": "lock"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 0,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 1,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 2,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 3,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 4,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 5,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 6,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 7,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 8,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 0,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 9,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 0,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 1,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 2,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 3,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 4,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 5,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 6,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 7,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 8,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 100,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 9,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 0,
+        "session_scan_ms": 0,
+        "tick_us": 1012
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 1,
+        "session_scan_ms": 0,
+        "tick_us": 641
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 2,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 3,
+        "session_scan_ms": 0,
+        "tick_us": 526
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 4,
+        "session_scan_ms": 0,
+        "tick_us": 133
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 5,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 6,
+        "session_scan_ms": 1,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 7,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 8,
+        "session_scan_ms": 0,
+        "tick_us": 539
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "active_first_wait_ms": 0,
+        "active_rooms": 2,
+        "completed_rooms": 1000,
+        "create_or_upsert_calls": 2,
+        "order": "completed_then_active_worst_order",
+        "sample": 9,
+        "session_scan_ms": 0,
+        "tick_us": 0
+      },
+      "kind": "timer"
+    },
+    {
+      "data": {
+        "bytes": 1069,
+        "elapsed_ms": 2,
+        "http_status": 200,
+        "response_bytes": 45
+      },
+      "kind": "body"
+    },
+    {
+      "data": {
+        "bytes": 65581,
+        "elapsed_ms": 1,
+        "http_status": 200,
+        "response_bytes": 45
+      },
+      "kind": "body"
+    },
+    {
+      "data": {
+        "bytes": 1048621,
+        "elapsed_ms": 12,
+        "http_status": 200,
+        "response_bytes": 45
+      },
+      "kind": "body"
+    },
+    {
+      "data": {
+        "bytes": 8388653,
+        "elapsed_ms": 72,
+        "http_status": 200,
+        "response_bytes": 45
+      },
+      "kind": "body"
+    },
+    {
+      "data": {
+        "other_http_status": 200,
+        "other_request_ms": 0,
+        "read_other_error": false,
+        "read_timed_out": true,
+        "response_bytes_before_client_close": 0,
+        "window_ms": 2043
+      },
+      "kind": "slow_body"
+    }
+  ],
+  "evidence_sha256": {
+    "interaction-baseline-lock-r3-20261015.txt": "22f6f7298d6641703852e4194e317a51ef7938fa82c1531e328cbe5b056cbe44",
+    "interaction-baseline-reviewed-20261015.txt": "328bab77828e3015ef2056afaa5e3370ec5d646c837d55921344616854e09ba1",
+    "interaction-baseline-after-20261015.txt": "5d40fa8e8bd5d8fd1095c3ab6e52450fdeaf1a8026365323f5223b17b0292a78"
+  },
+  "fixture_sha256": "14a6378adf6a923fdde005a57ba31ff03ed20b2978480da69ea7267286195dbd",
+  "fixture_hash_scope": "Final reviewed fixture; before timer/body same logic, lock Before(begin_transaction) corrected in r3. Not a whole repository production hash."
+}

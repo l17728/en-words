@@ -1,0 +1,41 @@
+{
+  "scope": "models_and_public_text_only",
+  "native_audio_verified": false,
+  "duplex_verified": false,
+  "results": [
+    {
+      "case": "models",
+      "sample": "public_synthetic_text",
+      "stream": false,
+      "status": 200,
+      "aliases_present": {
+        "qwen-omni": true,
+        "minicpm-o": true
+      },
+      "model_count": 3,
+      "duration_ms": 871
+    },
+    {
+      "case": "qwen-omni",
+      "sample": "public_synthetic_text",
+      "stream": false,
+      "status": 200,
+      "choice_count": 1,
+      "finish_reason": "stop",
+      "text_chars": 49,
+      "json_object": false,
+      "duration_ms": 1058
+    },
+    {
+      "case": "minicpm-o",
+      "sample": "public_synthetic_text",
+      "stream": false,
+      "status": 200,
+      "choice_count": 1,
+      "finish_reason": "length",
+      "text_chars": 252,
+      "json_object": false,
+      "duration_ms": 1574
+    }
+  ]
+}

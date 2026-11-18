@@ -1,0 +1,212 @@
+{
+  "status": "passed deterministic application regression; model quality remains separate",
+  "browser_passed": 116,
+  "failed": 0,
+  "skipped": 0,
+  "flaky": 0,
+  "playwright_retries": 0,
+  "execution": "Three complete-suite segments, not a single all-green attempt. Production and binary hashes identical throughout.",
+  "segments": [
+    {
+      "manifest": ".test-artifacts\\interaction-final116-20261015\\manifest.json",
+      "source_before": "ea3283a7f342a97310d19ff29981c9110bd4d4db05799e2091a8e127ef11a7c3",
+      "source_after": "ea3283a7f342a97310d19ff29981c9110bd4d4db05799e2091a8e127ef11a7c3",
+      "unchanged": true
+    },
+    {
+      "manifest": ".test-artifacts\\interaction-final116-continuation-20261015\\manifest.json",
+      "source_before": "ea3283a7f342a97310d19ff29981c9110bd4d4db05799e2091a8e127ef11a7c3",
+      "source_after": "ea3283a7f342a97310d19ff29981c9110bd4d4db05799e2091a8e127ef11a7c3",
+      "unchanged": true
+    },
+    {
+      "manifest": ".test-artifacts\\interaction-final116-interaction-20261015\\manifest.json",
+      "source_before": "ea3283a7f342a97310d19ff29981c9110bd4d4db05799e2091a8e127ef11a7c3",
+      "source_after": "ea3283a7f342a97310d19ff29981c9110bd4d4db05799e2091a8e127ef11a7c3",
+      "unchanged": true
+    }
+  ],
+  "accepted_suites": [
+    {
+      "suite": "recovery",
+      "passed": 41,
+      "segment": 1,
+      "report": ".test-artifacts\\interaction-final116-20261015\\recovery-results.json",
+      "stats": {
+        "startTime": "2026-10-15T03:44:34.945Z",
+        "duration": 530553.406,
+        "expected": 41,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "suite": "overdue",
+      "passed": 1,
+      "segment": 1,
+      "report": ".test-artifacts\\interaction-final116-20261015\\overdue-results.json",
+      "stats": {
+        "startTime": "2026-10-15T03:53:26.679Z",
+        "duration": 33792.898,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "suite": "feedback",
+      "passed": 26,
+      "segment": 2,
+      "report": ".test-artifacts\\interaction-final116-continuation-20261015\\feedback-results.json",
+      "stats": {
+        "startTime": "2026-10-15T04:02:38.094Z",
+        "duration": 187571.36000000002,
+        "expected": 26,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "suite": "legacy",
+      "passed": 9,
+      "segment": 2,
+      "report": ".test-artifacts\\interaction-final116-continuation-20261015\\legacy-results.json",
+      "stats": {
+        "startTime": "2026-10-15T04:05:46.769Z",
+        "duration": 79407.83499999999,
+        "expected": 9,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "suite": "journey",
+      "passed": 1,
+      "segment": 2,
+      "report": ".test-artifacts\\interaction-final116-continuation-20261015\\journey-results.json",
+      "stats": {
+        "startTime": "2026-10-15T04:07:07.346Z",
+        "duration": 81227.946,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "suite": "closure",
+      "passed": 6,
+      "segment": 2,
+      "report": ".test-artifacts\\interaction-final116-continuation-20261015\\closure-results.json",
+      "stats": {
+        "startTime": "2026-10-15T04:08:29.953Z",
+        "duration": 58165.29,
+        "expected": 6,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "suite": "firstuse",
+      "passed": 1,
+      "segment": 2,
+      "report": ".test-artifacts\\interaction-final116-continuation-20261015\\firstuse-results.json",
+      "stats": {
+        "startTime": "2026-10-15T04:09:29.241Z",
+        "duration": 78009.102,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "suite": "playback",
+      "passed": 1,
+      "segment": 2,
+      "report": ".test-artifacts\\interaction-final116-continuation-20261015\\playback-results.json",
+      "stats": {
+        "startTime": "2026-10-15T04:10:48.333Z",
+        "duration": 73490.922,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "suite": "interaction",
+      "passed": 30,
+      "segment": 3,
+      "report": ".test-artifacts\\interaction-final116-interaction-20261015\\interaction-results.json",
+      "stats": {
+        "startTime": "2026-10-15T04:21:29.380Z",
+        "duration": 270777.70900000003,
+        "expected": 30,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    }
+  ],
+  "production_source_sha256": "ea3283a7f342a97310d19ff29981c9110bd4d4db05799e2091a8e127ef11a7c3",
+  "source_hash_scope": "Exact non-test Go plus web/src bytes and relative Windows paths; excludes dependencies/config/environment. Supplied binary provenance in backend build evidence.",
+  "server_sha256": "5686ce420d5c2c10a6bcbc8e93d687104e5a956547092b9b2a63ee7638a10bfe",
+  "harness_sha256": "0b47afff2d672fd7a86ad1d1ff8b87243cca5ae4fe126a0cd9f53b62ac43fc07",
+  "node": {
+    "passed": 60,
+    "failed": 0,
+    "log": ".test-artifacts\\interaction-final116-interaction-20261015\\node-unit.log"
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 0,
+    "log": ".test-artifacts\\interaction-final116-interaction-20261015\\lint.log"
+  },
+  "builds": {
+    "accepted_unique_suite_builds": 9,
+    "superseded_attempt_builds": 2,
+    "total_across_segments": 11,
+    "evidence": "Each formal suite starts npm run e2e:serve with build prerequisite and reuseExistingServer=false. Successful fresh preview readiness establishes build success; build stdout suppressed by Playwright, large-chunk advisory retained."
+  },
+  "superseded_attempts": [
+    {
+      "report": ".test-artifacts\\interaction-final116-20261015\\feedback-results.json",
+      "stats": {
+        "startTime": "2026-10-15T03:54:01.641Z",
+        "duration": 180341.01499999998,
+        "expected": 19,
+        "skipped": 6,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "reason": "Legacy English network error expectation synchronized to approved Chinese pending state and disabled original draft."
+    },
+    {
+      "report": ".test-artifacts\\interaction-final116-continuation-20261015\\interaction-results.json",
+      "stats": {
+        "startTime": "2026-10-15T04:12:02.919Z",
+        "duration": 305614.528,
+        "expected": 29,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "reason": "AntD zero-width transparent leaving spinner polluted exact name; query completed200 and button enabled/non-loading. Test waits querycode0, enabled/no-loadingclass and normal manual retry."
+    }
+  ],
+  "intermediate_history": "review/interaction-browser-progress-20261015.json",
+  "real_tts_cache": "review/interaction-real-tts-cache-20261015.json",
+  "cold_login": "review/interaction-cold-login-20261015.json",
+  "tool_stage_observation": "review/interaction-tool-stage-timing-20261015.json",
+  "limits": [
+    "Real TTS-only cache on pre-IX15/16 backend with unchanged frontend media is not full semantic classroom acceptance.",
+    "Earlier15.545s event-to-tool delay preserved; passing run does not prove root cause fixed or IO SLA.",
+    "Cold login five fresh contexts/local server/maybe warm OS cache; sample p95=max five, not population SLA."
+  ]
+}

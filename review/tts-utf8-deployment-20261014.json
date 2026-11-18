@@ -1,0 +1,36 @@
+﻿{
+    "authorization":  "Root confirmed explicit user continue authorization for reviewed 8002-only deployment",
+    "timestamp":  "2026-10-14T16:40:25.7568742+08:00",
+    "backup":  "D:\\VL-models\\service-backups\\tts-utf8-20261014-164025",
+    "old_pid":  12616,
+    "unchanged_ports":  [
+                            {
+                                "LocalPort":  8090,
+                                "OwningProcess":  3552
+                            },
+                            {
+                                "LocalPort":  8001,
+                                "OwningProcess":  7728
+                            }
+                        ],
+    "original_files":  [
+                           "tts-server.js"
+                       ],
+    "status":  "applied_smoke_passed",
+    "new_pid":  8908,
+    "installed_hashes":  [
+                             {
+                                 "sha256":  "241bb1261290df73f1f97e0fcfaf26031d33923ca00d8d7c022e28408552c123",
+                                 "name":  "tts-server.js"
+                             },
+                             {
+                                 "sha256":  "8fa0f94c0bafb269a9837e7c66ec884083adda210fb93c6a81083409e6834c3a",
+                                 "name":  "tts-utf8-worker.cpp"
+                             },
+                             {
+                                 "sha256":  "f7e0bf5cb6666548f0cf3bb218e2beab75783009d5d8db86ccd40de1cc8af56e",
+                                 "name":  "tts-utf8-worker.exe"
+                             }
+                         ],
+    "finished":  "2026-10-14T16:40:31.3831543+08:00"
+}

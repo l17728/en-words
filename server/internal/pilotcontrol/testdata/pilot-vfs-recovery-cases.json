@@ -1,0 +1,854 @@
+{
+  "manifest_version": 1,
+  "source_sdd": "docs/62-pilot-vfs-initialization-and-recovery-amendment.md",
+  "source_sdd_sha256": "44333074581018d3a98d0b0cf8aab8edaf53d0c195ea3429bb71a33221e04ed8",
+  "status": "DESIGN_CASES_NOT_EXECUTED",
+  "cases": [
+    {
+      "id": "VFS-ADOPT-ABSENT-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "empty schema preflight succeeds; creator-only WAL/init path may proceed",
+        "expected_readiness": "INITIALIZATION_ALLOWED",
+        "setup": "no WAL, SHM, or journal exists for a pinned empty new DB",
+        "barrier": "before SQLite registration and after exact-name enumeration"
+      }
+    },
+    {
+      "id": "VFS-ADOPT-JOURNAL-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": true,
+        "namespace_mutation": "PAGER_RECOVERY_ONLY",
+        "required_assertion": "SQLite alone performs rollback; journal delete/sync only as pager recovery requires",
+        "expected_readiness": "MAY_READY_AFTER_FULL_VALIDATION",
+        "setup": "valid rollback journal matches registered inode and passes ACL/metadata checks",
+        "barrier": "after journal adoption; before pager read"
+      }
+    },
+    {
+      "id": "VFS-ADOPT-LIFECYCLE-LOCK-ACQUIRE-ERR-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "expected_readiness": "QUARANTINED",
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "lifecycle OFD EXCLUSIVE acquisition fails; quarantine before identity mutation or SQLite, with exact-once fd cleanup",
+        "setup": "valid WAL plus stale SHM; lifecycle lock acquisition is injected to fail before unlink",
+        "barrier": "after lock acquisition failure and before any namespace mutation",
+        "prior_process_drain_proven": true,
+        "suspect_entry_preserved": true,
+        "service_namespace_mutations": 0,
+        "sqlite_entry_calls": 0,
+        "close_every_acquired_fd_once": true,
+        "acquired_fd_close_balance": 0,
+        "unlink_done": false,
+        "durability": "NOT_APPLICABLE",
+        "rollback_reported": false,
+        "lifecycle_lock_outcome": "ACQUIRE_FAILED"
+      }
+    },
+    {
+      "id": "VFS-ADOPT-LIFECYCLE-LOCK-RELEASE-ERR-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "expected_readiness": "QUARANTINED",
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "SHM_UNLINK_DIRSYNC_DURABLE_RELEASE_FAILED",
+        "required_assertion": "lifecycle OFD EXCLUSIVE release fails after durable SHM unlink; quarantine without SQLite entry or rollback claim and close every acquired fd exactly once",
+        "setup": "valid WAL plus stale SHM; unlink and root-directory fsync succeed; lifecycle lock release is injected to fail before SQLite registration",
+        "barrier": "after successful directory fsync and before first SQLite recovery call",
+        "prior_process_drain_proven": true,
+        "suspect_entry_preserved": false,
+        "service_namespace_mutations": 1,
+        "sqlite_entry_calls": 0,
+        "close_every_acquired_fd_once": true,
+        "acquired_fd_close_balance": 0,
+        "unlink_done": true,
+        "durability": "DURABLE",
+        "rollback_reported": false,
+        "lifecycle_lock_outcome": "RELEASE_FAILED_THEN_CLOSED_ON_QUARANTINE"
+      }
+    },
+    {
+      "id": "VFS-ADOPT-OBSOLETE-JOURNAL-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": true,
+        "namespace_mutation": "PAGER_RECOVERY_ONLY",
+        "required_assertion": "SQLite pager determines disposition; no app initialization or reseed",
+        "expected_readiness": "MAY_READY_AFTER_FULL_VALIDATION",
+        "setup": "obsolete valid journal exists with database state requiring pager classification",
+        "barrier": "before pager access and after classification"
+      }
+    },
+    {
+      "id": "VFS-ADOPT-PAGER-ZERO-JOURNAL-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "expected_readiness": "QUARANTINED",
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "setup": "zero-page DB with zero-byte journal and no WAL",
+        "barrier": "trace PRAGMA schema_version from before open through close",
+        "required_assertion": "no journal xOpen/xClose/xDelete; quarantine for missing schema/marker",
+        "setup_idempotency": "separate from synthetic xDelete callback test"
+      }
+    },
+    {
+      "id": "VFS-ADOPT-PROCESS-DRAIN-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "expected_readiness": "QUARANTINED",
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "prior-generation absence is unproven; quarantine before SQLite, preserve names and close every acquired fd exactly once",
+        "setup": "retained child records and bound cgroup cannot prove the previous service generation and descendants are gone",
+        "barrier": "after supervisor lock and before root pinning or sidecar adoption",
+        "prior_process_drain_proven": false,
+        "suspect_entry_preserved": true,
+        "service_namespace_mutations": 0,
+        "sqlite_entry_calls": 0,
+        "close_every_acquired_fd_once": true,
+        "acquired_fd_close_balance": 0,
+        "lifecycle_lock_outcome": "NOT_ATTEMPTED",
+        "unlink_done": false,
+        "durability": "NOT_APPLICABLE",
+        "rollback_reported": false
+      }
+    },
+    {
+      "id": "VFS-ADOPT-REJECT-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "symlink",
+        "expected_readiness": "QUARANTINED",
+        "setup": "symlink",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary",
+        "suspect_entry_preserved": true,
+        "service_namespace_mutations": 0,
+        "sqlite_entry_calls": 0,
+        "close_every_acquired_fd_once": true,
+        "acquired_fd_close_balance": 0
+      }
+    },
+    {
+      "id": "VFS-ADOPT-REJECT-02",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "hardlink",
+        "expected_readiness": "QUARANTINED",
+        "setup": "hardlink",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary",
+        "suspect_entry_preserved": true,
+        "service_namespace_mutations": 0,
+        "sqlite_entry_calls": 0,
+        "close_every_acquired_fd_once": true,
+        "acquired_fd_close_balance": 0
+      }
+    },
+    {
+      "id": "VFS-ADOPT-REJECT-03",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "FIFO",
+        "expected_readiness": "QUARANTINED",
+        "setup": "FIFO",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary",
+        "suspect_entry_preserved": true,
+        "service_namespace_mutations": 0,
+        "sqlite_entry_calls": 0,
+        "close_every_acquired_fd_once": true,
+        "acquired_fd_close_balance": 0
+      }
+    },
+    {
+      "id": "VFS-ADOPT-REJECT-04",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "device",
+        "expected_readiness": "QUARANTINED",
+        "setup": "device",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary",
+        "suspect_entry_preserved": true,
+        "service_namespace_mutations": 0,
+        "sqlite_entry_calls": 0,
+        "close_every_acquired_fd_once": true,
+        "acquired_fd_close_balance": 0
+      }
+    },
+    {
+      "id": "VFS-ADOPT-REJECT-05",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "wrong owner",
+        "expected_readiness": "QUARANTINED",
+        "setup": "wrong owner",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary",
+        "suspect_entry_preserved": true,
+        "service_namespace_mutations": 0,
+        "sqlite_entry_calls": 0,
+        "close_every_acquired_fd_once": true,
+        "acquired_fd_close_balance": 0
+      }
+    },
+    {
+      "id": "VFS-ADOPT-REJECT-06",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "wrong group",
+        "expected_readiness": "QUARANTINED",
+        "setup": "wrong group",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary",
+        "suspect_entry_preserved": true,
+        "service_namespace_mutations": 0,
+        "sqlite_entry_calls": 0,
+        "close_every_acquired_fd_once": true,
+        "acquired_fd_close_balance": 0
+      }
+    },
+    {
+      "id": "VFS-ADOPT-REJECT-07",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "wrong mode",
+        "expected_readiness": "QUARANTINED",
+        "setup": "wrong mode",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary",
+        "suspect_entry_preserved": true,
+        "service_namespace_mutations": 0,
+        "sqlite_entry_calls": 0,
+        "close_every_acquired_fd_once": true,
+        "acquired_fd_close_balance": 0
+      }
+    },
+    {
+      "id": "VFS-ADOPT-REJECT-08",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "present ACL",
+        "expected_readiness": "QUARANTINED",
+        "setup": "present ACL",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary",
+        "suspect_entry_preserved": true,
+        "service_namespace_mutations": 0,
+        "sqlite_entry_calls": 0,
+        "close_every_acquired_fd_once": true,
+        "acquired_fd_close_balance": 0
+      }
+    },
+    {
+      "id": "VFS-ADOPT-REJECT-09",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "ACL query error",
+        "expected_readiness": "QUARANTINED",
+        "setup": "ACL query error",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary",
+        "suspect_entry_preserved": true,
+        "service_namespace_mutations": 0,
+        "sqlite_entry_calls": 0,
+        "close_every_acquired_fd_once": true,
+        "acquired_fd_close_balance": 0
+      }
+    },
+    {
+      "id": "VFS-ADOPT-REJECT-10",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "mount mismatch",
+        "expected_readiness": "QUARANTINED",
+        "setup": "mount mismatch",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary",
+        "suspect_entry_preserved": true,
+        "service_namespace_mutations": 0,
+        "sqlite_entry_calls": 0,
+        "close_every_acquired_fd_once": true,
+        "acquired_fd_close_balance": 0
+      }
+    },
+    {
+      "id": "VFS-ADOPT-REJECT-11",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "name replacement",
+        "expected_readiness": "QUARANTINED",
+        "setup": "name replacement",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary",
+        "suspect_entry_preserved": true,
+        "service_namespace_mutations": 0,
+        "sqlite_entry_calls": 0,
+        "close_every_acquired_fd_once": true,
+        "acquired_fd_close_balance": 0
+      }
+    },
+    {
+      "id": "VFS-ADOPT-SHM-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "quarantine the orphan SHM untouched; do not call SQLite or dispatch application work",
+        "expected_readiness": "QUARANTINED",
+        "setup": "an owned, metadata-valid SHM sidecar exists but the corresponding WAL is absent",
+        "barrier": "after exact sidecar enumeration and before SQLite registration"
+      }
+    },
+    {
+      "id": "VFS-ADOPT-SHM-DIRSYNC-ERR-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "expected_readiness": "QUARANTINED",
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "SHM_UNLINK_DIRSYNC_FAILED",
+        "required_assertion": "SHM unlink succeeded but directory fsync returned EIO; record unlink_done=true and durability=unknown, quarantine without rollback claim or SQLite entry",
+        "setup": "valid WAL plus stale SHM; lifecycle lock held; unlink succeeds and root-directory fsync is injected to return EIO",
+        "barrier": "after unlinkat succeeds and before startup returns from directory fsync",
+        "prior_process_drain_proven": true,
+        "suspect_entry_preserved": false,
+        "service_namespace_mutations": 1,
+        "sqlite_entry_calls": 0,
+        "close_every_acquired_fd_once": true,
+        "acquired_fd_close_balance": 0,
+        "unlink_done": true,
+        "durability": "UNKNOWN",
+        "rollback_reported": false,
+        "lifecycle_lock_outcome": "HELD_THEN_CLOSED_ON_QUARANTINE"
+      }
+    },
+    {
+      "id": "VFS-ADOPT-SHM-LOCK-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "contender before unlink",
+        "expected_readiness": "MAY_READY_AFTER_FULL_VALIDATION",
+        "setup": "contender before unlink",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-ADOPT-SHM-LOCK-02",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "SHM_UNLINK_DIRSYNC_AFTER_IDENTITY",
+        "required_assertion": "hold lifecycle lock across unlink and directory fsync; contender is excluded until release",
+        "expected_readiness": "MAY_READY_AFTER_FULL_VALIDATION",
+        "setup": "contender after unlink before directory fsync",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-ADOPT-SHM-LOCK-03",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "release lifecycle lock exactly once before SQLite registration; successful recovery may proceed after full validation",
+        "expected_readiness": "MAY_READY_AFTER_FULL_VALIDATION",
+        "setup": "release lock before SQLite registration",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-ADOPT-WAL-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": true,
+        "namespace_mutation": "PAGER_RECOVERY_AND_REGISTERED_SIDECAR_CREATE",
+        "required_assertion": "adoption leaves registered WAL identity/content unchanged; pager may create verified SHM and recover before validation",
+        "expected_readiness": "MAY_READY_AFTER_FULL_VALIDATION",
+        "setup": "one valid WAL matches registered inode and ownership contract",
+        "barrier": "before and after WAL identity adoption; before pager access"
+      }
+    },
+    {
+      "id": "VFS-ADOPT-WAL-JOURNAL-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "quarantine with all names untouched and no SQLite call",
+        "expected_readiness": "QUARANTINED",
+        "setup": "WAL and rollback journal coexist",
+        "barrier": "after complete sidecar inventory; before SQLite registration"
+      }
+    },
+    {
+      "id": "VFS-ADOPT-WAL-SHM-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": true,
+        "namespace_mutation": "SHM_UNLINK_DIRSYNC_AND_REGISTERED_RECREATE",
+        "required_assertion": "WAL remains pinned; stale SHM unlink and directory sync occur under lifecycle EXCLUSIVE; SQLite recreates/uses SHM once",
+        "expected_readiness": "MAY_READY_AFTER_FULL_VALIDATION",
+        "setup": "valid WAL plus stale SHM",
+        "barrier": "before unlink, after unlink before directory fsync, after sync"
+      }
+    },
+    {
+      "id": "VFS-ADOPT-WAL-ZERO-JOURNAL-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "quarantine with all names untouched and no SQLite call",
+        "expected_readiness": "QUARANTINED",
+        "setup": "WAL and zero-byte rollback journal coexist",
+        "barrier": "after complete sidecar inventory; before SQLite registration"
+      }
+    },
+    {
+      "id": "VFS-ADOPT-ZERO-JOURNAL-DELETE-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "SYNTHETIC_REGISTERED_FILE_UNLINK_AND_DIRSYNC",
+        "required_assertion": "xDelete returns SQLITE_OK; exact registered inode unlinks, directory sync succeeds, generation retires exactly once",
+        "expected_readiness": "NOT_APPLICABLE",
+        "setup": "registered zero-byte journal inode, independent of the zero-page pager fixture",
+        "barrier": "invoke synthetic xDelete while SQLite lock state is RESERVED"
+      }
+    },
+    {
+      "id": "VFS-INIT-PRAGMA-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "foreign_keys set/readback failure",
+        "expected_readiness": "QUARANTINED",
+        "setup": "foreign_keys set/readback failure",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-INIT-PRAGMA-02",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "recursive_triggers set/readback failure",
+        "expected_readiness": "QUARANTINED",
+        "setup": "recursive_triggers set/readback failure",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-INIT-PRAGMA-03",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "first connection before SQL",
+        "expected_readiness": "MAY_READY_AFTER_FULL_VALIDATION",
+        "setup": "first connection before SQL",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-INIT-PRAGMA-04",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "every pooled connection before validation",
+        "expected_readiness": "MAY_READY_AFTER_FULL_VALIDATION",
+        "setup": "every pooled connection before validation",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-INIT-PREFLIGHT-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "new empty DB/user_version=0",
+        "expected_readiness": "INITIALIZATION_ALLOWED",
+        "setup": "new empty DB/user_version=0",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-INIT-PREFLIGHT-02",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "foreign schema without recovery",
+        "expected_readiness": "QUARANTINED",
+        "setup": "foreign schema without recovery",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-INIT-PREFLIGHT-03",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "existing DB with missing initialization marker",
+        "expected_readiness": "QUARANTINED",
+        "setup": "existing DB with missing initialization marker",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-INIT-PREFLIGHT-JOURNAL-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": true,
+        "namespace_mutation": "PAGER_RECOVERY_ONLY",
+        "required_assertion": "foreign non-v3 DB hot rollback journal recovery; pager restoration allowed, app writes forbidden",
+        "expected_readiness": "QUARANTINED",
+        "setup": "foreign non-v3 DB hot rollback journal recovery; pager restoration allowed, app writes forbidden",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-INIT-TX-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "marker is final atomic statement after DDL and fixed seed rows",
+        "expected_readiness": "READY_AFTER_FULL_VALIDATION",
+        "setup": "marker is final atomic statement after DDL and fixed seed rows",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-INIT-TX-CRASH-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "crash during DDL",
+        "expected_readiness": "QUARANTINED",
+        "setup": "crash during DDL",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-INIT-TX-CRASH-02",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "crash after seed before commit",
+        "expected_readiness": "QUARANTINED",
+        "setup": "crash after seed before commit",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-INIT-TX-CRASH-03",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "uncertain commit resolved only by exact marker and full validation",
+        "expected_readiness": "RESTART_VALIDATION_REQUIRED",
+        "setup": "uncertain commit resolved only by exact marker and full validation",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-INIT-WAL-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "creator WAL pragma readback equals wal before init transaction",
+        "expected_readiness": "CONTINUE_TO_INITIALIZATION",
+        "setup": "creator WAL pragma readback equals wal before init transaction",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-INIT-WAL-CRASH-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "crash before WAL result",
+        "expected_readiness": "QUARANTINED",
+        "setup": "crash before WAL result",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-INIT-WAL-CRASH-02",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": false,
+        "namespace_mutation": "FORBIDDEN",
+        "required_assertion": "uncertain WAL pragma result",
+        "expected_readiness": "QUARANTINED",
+        "setup": "uncertain WAL pragma result",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-RECOVER-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": true,
+        "namespace_mutation": "PAGER_RECOVERY_ONLY",
+        "required_assertion": "pager rollback marker oracle",
+        "expected_readiness": "MAY_READY_AFTER_FULL_VALIDATION",
+        "setup": "pager rollback marker oracle",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-RECOVER-02",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": true,
+        "namespace_mutation": "PAGER_RECOVERY_ONLY",
+        "required_assertion": "WAL recovery marker oracle",
+        "expected_readiness": "MAY_READY_AFTER_FULL_VALIDATION",
+        "setup": "WAL recovery marker oracle",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-RECOVER-03",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": true,
+        "namespace_mutation": "PAGER_RECOVERY_ONLY",
+        "required_assertion": "no application dispatch before READY",
+        "expected_readiness": "MAY_READY_AFTER_FULL_VALIDATION",
+        "setup": "no application dispatch before READY",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-RECOVER-04",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": true,
+        "namespace_mutation": "PAGER_RECOVERY_ONLY",
+        "required_assertion": "exact-once recovery effect",
+        "expected_readiness": "MAY_READY_AFTER_FULL_VALIDATION",
+        "setup": "exact-once recovery effect",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-RECOVER-CRASH-01",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": true,
+        "namespace_mutation": "PAGER_RECOVERY_ONLY",
+        "required_assertion": "crash during pager recovery",
+        "expected_readiness": "RESTART_VALIDATION_REQUIRED",
+        "setup": "crash during pager recovery",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-RECOVER-CRASH-02",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": true,
+        "namespace_mutation": "PAGER_RECOVERY_ONLY",
+        "required_assertion": "crash after unlink before directory fsync",
+        "expected_readiness": "RESTART_VALIDATION_REQUIRED",
+        "setup": "crash after unlink before directory fsync",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    },
+    {
+      "id": "VFS-RECOVER-CRASH-03",
+      "status": "DESIGN_CASES_NOT_EXECUTED",
+      "oracle": {
+        "application_dispatch": 0,
+        "application_writes_allowed": false,
+        "reseed": false,
+        "pager_recovery_write_allowed": true,
+        "namespace_mutation": "PAGER_RECOVERY_ONLY",
+        "required_assertion": "crash after directory sync before validation",
+        "expected_readiness": "RESTART_VALIDATION_REQUIRED",
+        "setup": "crash after directory sync before validation",
+        "barrier": "at the named case barrier in docs/62 before the corresponding SQLite or application boundary"
+      }
+    }
+  ]
+}

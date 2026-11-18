@@ -6,15 +6,17 @@
 package api
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
 
-	"enwords/internal/agent"
 	"enwords/internal/classroom"
-	"enwords/internal/judge"
+	"enwords/internal/config"
 	"enwords/internal/scripts"
 	"enwords/internal/voicecmd"
+	"gorm.io/gorm"
 )
 
 // seedRng 话术确定性随机源（seed=lessonId，04 §7.1）。
@@ -30,25 +32,40 @@ type Client interface {
 
 // Room 一间课堂。
 type Room struct {
-	mu           sync.Mutex
-	app          *App
-	lessonID     int64
-	bookID       int64
-	studentID    int64
-	machine      *classroom.Machine
-	words        map[int64]classroom.Word
-	clients      map[Client]bool
-	currentCli   Client // 当前活跃学生连接（StrictMode 重复 Join 时踢旧）
-	seq          int
-	lastAnswer   string
-	finished     bool
-	voiceParser  *voicecmd.Parser
-	lessonStatus string // open | in_progress | finished
-	FeedbackCh   chan string
-	phaseSince   time.Time
-	lastPhase    string
-	lastActions  []classroom.Action // 最近一批 machine 动作（话术层输入）
-	encourageCounter int             // 自上次鼓励的判对数（encourageEveryN）
+	inputContext        context.Context
+	generation          generationToken
+	pendingJudge        *roomJudgment
+	retired             bool
+	deliveryReady       bool
+	teacherPending      string
+	teacherText         string
+	epoch               string
+	lastTurnSignature   string
+	turnVersion         uint64
+	seenEvents          map[string]bool
+	eventOrder          []string
+	mu                  sync.Mutex
+	app                 *App
+	lessonID            int64
+	bookID              int64
+	studentID           int64
+	machine             *classroom.Machine
+	words               map[int64]classroom.Word
+	clients             map[Client]bool
+	currentCli          Client // 当前活跃学生连接（StrictMode 重复 Join 时踢旧）
+	seq                 int
+	lastAnswer          string
+	finished            bool
+	settlementUncertain bool
+	voiceParser         *voicecmd.Parser
+	lessonStatus        string // open | in_progress | finished
+	FeedbackCh          chan string
+	phaseSince          time.Time
+	lastPhase           string
+	lastActions         []classroom.Action // 最近一批 machine 动作（话术层输入）
+	deferEffects        bool
+	deferredActions     []classroom.Action
+	encourageCounter    int // 自上次鼓励的判对数（encourageEveryN）
 }
 
 // Hub 房间表。
@@ -62,21 +79,98 @@ func NewHub(app *App) *Hub {
 	return &Hub{app: app, rooms: map[int64]*Room{}}
 }
 
+var errLessonUnavailable = errors.New("lesson unavailable")
+
 // Enter 进入/重进课堂：房间懒建（有持久化快照则恢复，IT-12）。
 func (h *Hub) Enter(lessonID, studentID int64) (*Room, Msg, error) {
+	return h.EnterContext(context.Background(), lessonID, studentID)
+}
+
+func (h *Hub) EnterContext(ctx context.Context, lessonID, studentID int64) (*Room, Msg, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, nil, err
+	}
+	lease := generationLeaseFromContext(ctx, lessonID)
+	ownedLease := false
+	if lease == nil {
+		var err error
+		lease, err = h.app.generations.acquire(ctx, lessonID)
+		if err != nil {
+			return nil, nil, err
+		}
+		ownedLease = true
+		ctx = withGenerationLease(lease.Context(), lease)
+	}
+	if ownedLease {
+		defer lease.Release()
+	}
+	token := lease.Token()
+	enterEffect, err := token.Permit()
+	if err != nil {
+		return nil, nil, err
+	}
+	defer enterEffect.Release()
+	owned, err := h.app.Sched.Lesson(lessonID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if owned.StudentID != studentID || owned.Status == "expired" {
+		return nil, nil, errLessonUnavailable
+	}
+	// A new classroom freezes a fresh configuration before acquiring Hub.mu.
+	// Restored/existing rooms retain their original configuration even if reads fail.
+	h.mu.Lock()
+	_, alreadyOpen := h.rooms[lessonID]
+	h.mu.Unlock()
+	var fresh config.EffectiveSnapshot
+	if !alreadyOpen {
+		var saved *classroom.State
+		if h.app.DB != nil {
+			var state classroom.State
+			e := h.app.readRuntimeError(fmt.Sprintf("snapshot/%d", lessonID), &state)
+			if e == nil {
+				saved = &state
+			} else if !errors.Is(e, gorm.ErrRecordNotFound) {
+				return nil, nil, e
+			}
+		} else {
+			saved = h.app.lessonState(lessonID)
+		}
+		if saved != nil && saved.Config != nil {
+			fresh = *saved.Config
+		} else if saved == nil {
+			var e error
+			fresh, e = h.app.FreshConfigSnapshot(ctx, studentID)
+			if e != nil {
+				return nil, nil, e
+			}
+		}
+	}
 	h.mu.Lock()
 	r, ok := h.rooms[lessonID]
+	if ok && r.studentID != studentID {
+		h.mu.Unlock()
+		return nil, nil, errLessonUnavailable
+	}
+	if ok && (r.generation.id != token.id || r.generation.state != token.state) {
+		h.mu.Unlock()
+		return nil, nil, errLessonUnavailable
+	}
 	if !ok {
 		r = &Room{
-			app: h.app, lessonID: lessonID, studentID: studentID,
+			app: h.app, lessonID: lessonID, studentID: studentID, generation: token,
 			words: map[int64]classroom.Word{}, clients: map[Client]bool{},
 			voiceParser: voicecmd.New(voicecmd.DefaultTable()),
-			FeedbackCh: make(chan string, 8), lessonStatus: "in_progress",
+			FeedbackCh:  make(chan string, 8), lessonStatus: "in_progress",
 		}
 		lesson, err := h.app.Sched.Lesson(lessonID)
 		if err != nil {
 			h.mu.Unlock()
 			return nil, nil, err
+		}
+		if lesson.StudentID != studentID || lesson.Status == "expired" {
+			h.mu.Unlock()
+			return nil, nil, errLessonUnavailable
 		}
 		r.bookID = lesson.BookID
 		entries, err := h.app.Books.EntriesByIDs(lesson.BookID, lesson.BatchWordIDs)
@@ -91,20 +185,44 @@ func (h *Hub) Enter(lessonID, studentID int64) (*Room, Msg, error) {
 			r.words[e.ID] = w
 		}
 		r.machine = classroom.NewMachine(lessonID, lesson.BookID, studentID,
-			cw, h.app.Cfg.Snapshot(studentID), h.app.Clock)
+			cw, fresh, h.app.Clock)
 		// IT-12：进程重启（房间丢失）→ 从持久化快照恢复；全新机器才 Start
 		restored := false
-		if saved := h.app.lessonState(lessonID); saved != nil {
-			if err := r.machine.Restore(*saved); err == nil {
-				restored = true
-				r.lessonStatus = "in_progress"
+		var saved *classroom.State
+		if h.app.DB != nil {
+			var check classroom.State
+			err := h.app.readRuntimeError(fmt.Sprintf("snapshot/%d", lessonID), &check)
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				h.mu.Unlock()
+				return nil, nil, fmt.Errorf("saved classroom unavailable: %w", err)
 			}
+			if err == nil {
+				saved = &check
+			}
+		} else {
+			saved = h.app.lessonState(lessonID)
+		}
+		if saved != nil {
+			if err := r.machine.Restore(*saved); err != nil {
+				h.app.Log.ErrorCtx(r.traceContext(), "classroom", "snapshot_failed", map[string]any{"lesson_id": lessonID, "reason": "invalid_snapshot"})
+				h.mu.Unlock()
+				return nil, nil, fmt.Errorf("saved classroom unavailable: %w", err)
+			}
+			restored = true
+			r.machine.RecoverJudgment()
+			r.lessonStatus = "in_progress"
+			h.app.Log.InfoCtx(r.traceContext(), "classroom", "snapshot_restored", map[string]any{"lesson_id": lessonID, "phase": saved.Phase})
 		}
 		if !restored {
 			if err := r.machine.Start(); err != nil {
 				h.mu.Unlock()
 				return nil, nil, err
 			}
+		}
+		if restored {
+			r.teacherPending = "state_restored"
+		} else {
+			r.teacherPending = "lesson_started"
 		}
 		r.phaseSince = h.app.Clock.Now()
 		r.lastPhase = r.machine.Phase()
@@ -114,21 +232,102 @@ func (h *Hub) Enter(lessonID, studentID int64) (*Room, Msg, error) {
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if r.retired {
+		return nil, nil, errLessonUnavailable
+	}
+	r.inputContext = lease.Context()
+	defer func() { r.inputContext = nil }()
+	if r.teacherPending != "" {
+		event := r.teacherPending
+		r.teacherPending = ""
+		r.teacherLifecycleLocked(event)
+	}
 	return r, r.snapshotLocked(), nil
+}
+
+// A newly entered room must not emit its first audio before there is a
+// delivery path. Explicit REST input also activates REST-only classrooms.
+func (r *Room) activateDeliveryLocked() {
+	if !r.deliveryReady {
+		r.deliveryReady = true
+		r.phaseSince = r.app.Clock.Now()
+		r.app.Log.InfoCtx(r.traceContext(), "classroom", "delivery_ready", map[string]any{"lesson_id": r.lessonID})
+	}
 }
 
 // Join 注册连接并补发全量状态（重连快照，J4）。
 func (r *Room) Join(c Client) {
+	lease, err := r.app.generations.acquireFor(context.Background(), r.generation)
+	if err != nil {
+		if closer, ok := c.(interface{ Close() error }); ok {
+			_ = closer.Close()
+		}
+		return
+	}
+	defer lease.Release()
+	r.joinWithLease(lease.Context(), c)
+}
+
+func (r *Room) JoinContext(ctx context.Context, c Client) {
+	lease, owned, err := r.operationLease(ctx)
+	if err != nil {
+		if closer, ok := c.(interface{ Close() error }); ok {
+			_ = closer.Close()
+		}
+		return
+	}
+	if owned {
+		defer lease.Release()
+		ctx = lease.Context()
+	}
+	r.joinWithLease(ctx, c)
+}
+
+func (r *Room) joinWithLease(ctx context.Context, c Client) {
+	effect, err := r.generation.Permit()
+	if err != nil {
+		if closer, ok := c.(interface{ Close() error }); ok {
+			_ = closer.Close()
+		}
+		return
+	}
+	defer effect.Release()
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if r.retired {
+		if closer, ok := c.(interface{ Close() error }); ok {
+			_ = closer.Close()
+		}
+		return
+	}
+	r.inputContext = ctx
+	defer func() { r.inputContext = nil }()
+	r.activateDeliveryLocked()
 	// StrictMode/重连保护：同一学生重复 Join 时踢掉旧连接，防帧双投递
 	if r.currentCli != nil && r.currentCli != c {
 		delete(r.clients, r.currentCli)
 		_ = r.currentCli.Send(Msg{"type": "kick", "reason": "new_connection"})
+		if closer, ok := r.currentCli.(interface{ Close() error }); ok {
+			_ = closer.Close()
+		}
 	}
 	r.currentCli = c
 	r.clients[c] = true
+	wasFinished := r.finished
+	// A new delivery lease also invalidates any uncommitted answer from the old
+	// connection. Recover the same item without grading or consuming an attempt.
+	r.cancelJudgmentLocked()
+	r.turnVersion++
+	r.machine.RecoverDelivery(false)
+	r.phaseSince = r.app.Clock.Now()
 	_ = c.Send(r.snapshotLocked())
+	r.broadcastActionsOnly()
+	if wasFinished {
+		if result, ok := r.app.Report(r.lessonID); ok {
+			_ = c.Send(Msg{"type": "lesson_summary", "seq": r.nextSeqLocked(), "context": r.contextLocked(), "report": result.Report, "correct": result.Correct})
+		}
+	}
+	r.app.Log.InfoCtx(r.traceContext(), "classroom", "delivery_recovered", map[string]any{"lesson_id": r.lessonID, "phase": r.machine.Phase(), "turn": r.contextLocked().Turn})
 }
 
 func (r *Room) Leave(c Client) {
@@ -137,12 +336,20 @@ func (r *Room) Leave(c Client) {
 	delete(r.clients, c)
 }
 
+func (r *Room) IsActive(c Client) bool { r.mu.Lock(); defer r.mu.Unlock(); return r.activeLocked(c) }
+
 func (r *Room) snapshotLocked() Msg {
 	phase := r.machine.Phase()
 	m := Msg{
-		"type": "state_snapshot", "seq": r.nextSeqLocked(),
-		"lesson_id": r.lessonID, "phase": phase,
-		"paused": r.machine.Paused(),
+		"type": "state_snapshot", "seq": r.nextSeqLocked(), "teacher_text": r.teacherText,
+		"lesson_id": r.lessonID, "phase": phase, "tts_seg_idx": r.machine.PlaybackSegment(),
+		"paused": r.machine.Paused(), "context": r.contextLocked(),
+		"input_failed": r.machine.Snapshot().InputFailed,
+		"word_idx":     r.machine.Snapshot().WordIdx,
+		"in_reteach":   r.machine.Snapshot().InReteach,
+	}
+	if r.settlementUncertain {
+		m["settlement_uncertain"] = true
 	}
 	// 教学相位（show/tts/repeating/reteach）补全 word+zhMeaning：
 	// 重进课堂任何相位都能立即渲染完整中英对照（修复"重进只有…"）
@@ -168,6 +375,52 @@ func itemPayload(it classroom.QuizItemView) Msg {
 	return Msg{"word_id": it.WordID, "kind": it.Kind, "round": it.Round, "seq": it.Seq}
 }
 
+// durableSnapshot returns a detached state for the confirmation commit.
+func (r *Room) durableSnapshot() classroom.State {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.machine.Snapshot()
+}
+
+func (r *Room) restoreDurableSnapshot(state classroom.State) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if err := r.machine.Restore(state); err != nil {
+		return err
+	}
+	r.lastPhase = r.machine.Phase()
+	r.phaseSince = r.app.Clock.Now()
+	return nil
+}
+
+// beginDeferredEffects fences external Agent/TTS/judge effects while a duplex
+// confirmation is being committed. State transitions still run and their actions
+// are retained until flushDeferredEffects is called after the commit.
+func (r *Room) beginDeferredEffects() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.deferEffects = true
+	r.deferredActions = nil
+}
+
+func (r *Room) discardDeferredEffects() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.deferEffects = false
+	r.deferredActions = nil
+}
+
+func (r *Room) flushDeferredEffects(ctx context.Context) []Msg {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if len(r.deferredActions) == 0 {
+		r.deferEffects = false
+		return nil
+	}
+	r.deferEffects = false
+	return r.broadcastEffectsLocked(ctx, true)
+}
+
 func (r *Room) currentItemView() (classroom.QuizItemView, bool) {
 	switch r.machine.Phase() {
 	case classroom.PhaseWaitAnswer, classroom.PhaseJudging, classroom.PhaseReteachShow:
@@ -184,19 +437,96 @@ func (r *Room) nextSeqLocked() int {
 	return r.seq
 }
 
+func (r *Room) actionMsg(a classroom.Action) Msg {
+	if w, ok := r.words[a.WordID]; ok {
+		if a.Word == "" {
+			if a.Lang == "zh" {
+				a.Word = firstMeaning(w)
+			} else {
+				a.Word = w.Word
+			}
+		}
+		if a.Type == classroom.ActShowWord && a.WithZh {
+			a.Meanings = w.Meanings
+		}
+	}
+	m := Msg{"type": "ui_action", "seq": r.nextSeqLocked(), "action": a}
+	if a.Type == classroom.ActPlayTTS {
+		turn := r.contextLocked()
+		r.app.Log.InfoCtx(r.traceContext(), "classroom", "tts_segment_scheduled", map[string]any{
+			"student_id": r.studentID, "lesson_id": r.lessonID, "epoch": turn.Epoch, "turn": turn.Turn,
+			"segment": a.SegIdx, "language": a.Lang, "delay_before_ms": a.DelayBeforeMs,
+			"result": "scheduled",
+		})
+	}
+	if a.Type == classroom.ActShowQuizItem || a.Type == classroom.ActStartQuiz {
+		m["quiz_item"] = itemPayload(r.machine.CurrentItem())
+	}
+	return m
+}
+
 // broadcastLocked 排空 machine 动作→广播→返回（供 REST/WS 双通道）；
 // 判分接线：phase==Judging 时同步 Mock 判分；phase 变化时记录 phaseSince + §14 日志；
 // 每次迁移后快照持久化（IT-12）；老师话术层随关键动作异步注入（D-10）。
 func (r *Room) broadcastLocked() []Msg {
+	ctx, err := r.teacherTaskLocked()
+	if err != nil {
+		return r.effectFailureLocked("task_unavailable")
+	}
+	return r.broadcastEffectsLocked(ctx, true)
+}
+
+func (r *Room) effectFailureLocked(reason string) []Msg {
+	r.deliveryReady = false
+	r.app.saveLessonStateWithToken(r.traceContext(), r.lessonID, r.machine.Snapshot(), r.generation)
+	r.app.Log.ErrorCtx(r.traceContext(), "agent", "agent_action_failed", map[string]any{"lesson_id": r.lessonID, "reason": reason})
+	m := Msg{"type": "classroom_error", "code": "effect_unavailable", "retryable": true}
+	r.emitLocked(m)
+	return []Msg{m}
+}
+
+func (r *Room) broadcastEffectsLocked(ctx context.Context, allowJudge bool) []Msg {
+	effect, err := r.generation.Permit()
+	if err != nil {
+		return nil
+	}
+	defer effect.Release()
 	var out []Msg
-	r.lastActions = r.machine.DrainActions()
-	for _, a := range r.lastActions {
-		m := Msg{"type": "ui_action", "seq": r.nextSeqLocked(), "action": a}
+	actions := r.machine.DrainActions()
+	if len(r.deferredActions) > 0 {
+		actions = append(r.deferredActions, actions...)
+		r.deferredActions = nil
+	}
+	r.lastActions = actions
+	if r.deferEffects {
+		return nil
+	}
+	bound, err := withTeacherEffects(ctx, r.lastActions, r.machine.Snapshot())
+	if err != nil {
+		return r.effectFailureLocked("invalid_frozen_effects")
+	}
+	plans, err := r.app.Teacher.PlanEffects(r.lastActions)
+	if err != nil {
+		return r.effectFailureLocked("invalid_effect_plan")
+	}
+	for _, plan := range plans {
+		if r.lastActions[plan.Index].Type == classroom.ActLessonSummary {
+			continue
+		}
+		result, err := r.app.callAgentTool(bound, plan.Tool, map[string]any{"index": plan.Index})
+		if err != nil {
+			return append(out, r.effectFailureLocked("effect_tool_failed")...)
+		}
+		a, ok := result.(classroom.Action)
+		if !ok {
+			return append(out, r.effectFailureLocked("invalid_effect_result")...)
+		}
+		m := r.actionMsg(a)
 		r.emitLocked(m)
 		out = append(out, m)
 	}
 	if ph := r.machine.Phase(); ph != r.lastPhase {
-		r.app.Log.Info("classroom", "phase_changed", map[string]any{
+		r.app.Log.InfoCtx(r.traceContext(), "classroom", "phase_changed", map[string]any{
 			"lesson_id": r.lessonID, "from": r.lastPhase, "to": ph})
 		pm := Msg{"type": "phase_changed", "seq": r.nextSeqLocked(), // §11.2 帧
 			"from": r.lastPhase, "phase": ph, "lesson_id": r.lessonID}
@@ -205,54 +535,54 @@ func (r *Room) broadcastLocked() []Msg {
 		r.lastPhase = ph
 		r.phaseSince = r.app.Clock.Now()
 	}
-	out = append(out, r.emitTeacherUtterancesLocked()...)
-	if r.machine.Phase() == classroom.PhaseJudging {
-		out = append(out, r.judgeLocked()...)
+	out = append(out, r.emitTeacherUtterancesContextLocked(ctx)...)
+	if allowJudge && r.machine.Phase() == classroom.PhaseJudging {
+		out = append(out, r.judgeContextLocked(ctx)...)
+	}
+	if r.retired {
+		return nil
 	}
 	if r.machine.Phase() == classroom.PhaseLessonEnd {
-		r.maybeFinishLocked()
+		out = append(out, r.maybeFinishLocked()...)
 	}
-	r.app.saveLessonState(r.lessonID, r.machine.Snapshot())
+	r.app.saveLessonStateWithToken(r.traceContext(), r.lessonID, r.machine.Snapshot(), r.generation)
 	return out
 }
 
 // emitTeacherUtterancesLocked 老师话术层（D-10 快路径伴生）：
 // 由本步动作推导事件 → 决策表选槽 → seed=lessonId 渲染 → say 帧 + 日志。
 func (r *Room) emitTeacherUtterancesLocked() []Msg {
-	var out []Msg
-	say := func(cat string, vars map[string]any) {
-		rng := seedRng(r.lessonID)
-		text := r.app.Bank.Render(rng, cat, vars, nil)
-		if text == "" {
-			return
-		}
-		m := Msg{"type": "ui_action", "seq": r.nextSeqLocked(),
-			"action": map[string]any{"type": "say", "text": text}}
-		r.emitLocked(m)
-		out = append(out, m)
-		r.app.Log.Info("classroom", "teacher_say", map[string]any{
-			"lesson_id": r.lessonID, "category": cat, "text": text})
+	ctx, err := r.teacherTaskLocked()
+	if err != nil {
+		r.app.Log.ErrorCtx(r.traceContext(), "agent", "agent_action_failed", map[string]any{"lesson_id": r.lessonID, "error": err.Error()})
+		return nil
 	}
-	name := r.studentName()
-	for _, a := range r.lastActions {
-		switch a.Type {
-		case classroom.ActStartQuiz: // final 唯一测试（D-21：教学中零测试，教完才测）
-			say("transition", map[string]any{"name": name, "word": a.Word})
+	return r.emitTeacherUtterancesContextLocked(ctx)
+}
+
+func (r *Room) emitTeacherUtterancesContextLocked(ctx context.Context) []Msg {
+	var out []Msg
+	for _, action := range r.lastActions {
+		event := ""
+		switch action.Type {
+		case classroom.ActStartQuiz:
+			event = "start_quiz"
 		case classroom.ActShowCross:
-			say("correct", map[string]any{"name": name, "word": a.Word,
-				"meaning": firstMeaning(r.words[a.WordID]), "n": r.reteachCount(a.WordID)})
+			event = "judged_wrong"
 		case classroom.ActShowCheck:
 			r.encourageCounter++
-			// R4-arch#6：读配置中心生效值（一切参数可配置）
-			if r.encourageCounter >= r.app.Cfg.Int(r.studentID, "encourageEveryN") {
-				r.encourageCounter = 0
-				say("encourage", map[string]any{"name": name, "word": a.Word,
-					"n": r.machine.Snapshot().StreakBest})
+			event = "judged_correct"
+		case classroom.ActNudgeRepeat:
+			event = "repeat_timeout"
+		case classroom.ActNudgeAnswer:
+			event = "answer_timeout"
+		case classroom.ActShowWord:
+			if r.machine.Snapshot().WordIdx > 0 {
+				event = "word_done"
 			}
-		case classroom.ActNudgeRepeat, classroom.ActNudgeAnswer:
-			say("nudge", map[string]any{"name": name, "word": a.Word})
-		case classroom.ActLessonSummary:
-			say("closing", map[string]any{"name": name, "n": len(r.words), "m": 0, "p": 0})
+		}
+		if event != "" {
+			out = append(out, r.teacherUtteranceLocked(ctx, r.teacherInputLocked(event, action.WordID))...)
 		}
 	}
 	return out
@@ -277,66 +607,85 @@ func firstMeaning(w classroom.Word) string {
 }
 
 func (r *Room) emitLocked(m Msg) {
+	effect, err := r.generation.Permit()
+	if err != nil {
+		r.app.Log.WarnCtx(r.traceContext(), "classroom", "generation_effect_rejected", map[string]any{"lesson_id": r.lessonID, "effect": "frame", "reason": "generation_retired"})
+		return
+	}
+	defer effect.Release()
+	m["context"] = r.contextLocked()
 	for c := range r.clients {
 		_ = c.Send(m)
 	}
 }
 
 // judgeLocked 判分：judge L1(+L2) → OnJudged → 后续动作广播（§14 判分日志）。
-func (r *Room) judgeLocked() []Msg {
+func (r *Room) judgeContextLocked(ctx context.Context) []Msg {
 	var out []Msg
+	if r.pendingJudge != nil || r.machine.Paused() || r.retired {
+		return nil
+	}
 	it := r.machine.CurrentItem()
 	w := r.words[it.WordID]
-	j := r.app.Judge.Judge(w.Word, w.Meanings, r.lastAnswer)
-	r.app.Log.Info("judge", "quiz_judged", map[string]any{
+	answer := r.lastAnswer
+	j, valid := r.evaluateLocked(w, answer)
+	if !valid {
+		if !r.retired && r.pendingJudge == nil && r.machine.Phase() == classroom.PhaseJudging {
+			r.machine.RecoverDelivery(false)
+			return r.broadcastEffectsLocked(ctx, false)
+		}
+		return nil
+	}
+	r.app.Log.InfoCtx(r.traceContext(), "judge", "quiz_judged", map[string]any{
 		"lesson_id": r.lessonID, "word": w.Word, "word_id": it.WordID,
-		"kind": it.Kind, "round": it.Round,
-		"asr_text": r.lastAnswer, "judgment": string(j)})
+		"kind": it.Kind, "round": it.Round, "quiz_seq": it.Seq,
+		"epoch": r.contextLocked().Epoch, "turn": r.contextLocked().Turn,
+		"answer_length": len([]rune(answer)), "judgment": string(j)})
 	jm := Msg{"type": "judge_result", "seq": r.nextSeqLocked(),
-		"quiz_item": itemPayload(it), "judgment": string(j), "asr_text": r.lastAnswer}
+		"quiz_item": itemPayload(it), "judgment": string(j), "asr_text": answer}
 	r.emitLocked(jm)
 	out = append(out, jm)
 	_ = r.machine.OnJudged(it.ID(), classroom.Judgment(j))
-	out = append(out, r.broadcastActionsOnly()...)
+	out = append(out, r.broadcastEffectsLocked(ctx, false)...)
 	return out
 }
 
 // broadcastActionsOnly 只排空动作不再触发判分（防递归）；同样喂话术层与相位帧。
 func (r *Room) broadcastActionsOnly() []Msg {
-	var out []Msg
-	r.lastActions = r.machine.DrainActions()
-	for _, a := range r.lastActions {
-		m := Msg{"type": "ui_action", "seq": r.nextSeqLocked(), "action": a}
-		if a.Type == "play_tts" {
-			fmt.Printf("[hub] emit play_tts lesson=%d seg=%d lang=%q word=%q\n",
-				r.lessonID, a.SegIdx, a.Lang, a.Word)
-		}
-		r.emitLocked(m)
-		out = append(out, m)
+	ctx, err := r.teacherTaskLocked()
+	if err != nil {
+		return r.effectFailureLocked("task_unavailable")
 	}
-	if ph := r.machine.Phase(); ph != r.lastPhase {
-		r.app.Log.Info("classroom", "phase_changed", map[string]any{
-			"lesson_id": r.lessonID, "from": r.lastPhase, "to": ph})
-		pm := Msg{"type": "phase_changed", "seq": r.nextSeqLocked(),
-			"from": r.lastPhase, "phase": ph, "lesson_id": r.lessonID}
-		r.emitLocked(pm)
-		out = append(out, pm)
-		r.lastPhase = ph
-		r.phaseSince = r.app.Clock.Now()
-	}
-	out = append(out, r.emitTeacherUtterancesLocked()...)
-	if r.machine.Phase() == classroom.PhaseLessonEnd {
-		r.maybeFinishLocked()
-	}
-	r.app.saveLessonState(r.lessonID, r.machine.Snapshot())
-	return out
+	return r.broadcastEffectsLocked(ctx, false)
 }
 
 // HandleEvent 学生事件入口；返回本步产生的全部帧（REST/WS 双通道）。
 func (r *Room) HandleEvent(ev classroom.Event) []Msg {
+	lease, err := r.app.generations.acquireFor(context.Background(), r.generation)
+	if err != nil {
+		return nil
+	}
+	defer lease.Release()
+	effect, err := r.generation.Permit()
+	if err != nil {
+		return nil
+	}
+	defer effect.Release()
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	r.inputContext = lease.Context()
+	defer func() { r.inputContext = nil }()
+	return r.handleEventLocked(ev)
+}
+func (r *Room) handleEventLocked(ev classroom.Event) []Msg {
+	if r.retired {
+		return nil
+	}
+	r.activateDeliveryLocked()
 	if ev.Type == classroom.EvAnswerSubmitted {
+		if r.pendingJudge != nil || r.machine.Paused() {
+			return []Msg{r.snapshotLocked()}
+		}
 		r.lastAnswer = ev.Text
 	}
 	_ = r.machine.OnEvent(ev)
@@ -345,32 +694,128 @@ func (r *Room) HandleEvent(ev classroom.Event) []Msg {
 
 // FireTimeout 强制触发当前相位超时（测试钩子/平台兜底）。
 func (r *Room) FireTimeout() []Msg {
+	lease, err := r.app.generations.acquireFor(context.Background(), r.generation)
+	if err != nil {
+		return nil
+	}
+	defer lease.Release()
+	effect, err := r.generation.Permit()
+	if err != nil {
+		return nil
+	}
+	defer effect.Release()
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	r.inputContext = lease.Context()
+	defer func() { r.inputContext = nil }()
+	if r.retired {
+		return nil
+	}
 	_ = r.machine.OnTimeout(r.machine.Phase())
 	return r.broadcastLocked()
 }
 
 // Tick 生产计时循环节拍：相位驻留超时才触发。
 func (r *Room) Tick() {
+	lease, err := r.app.generations.acquireFor(context.Background(), r.generation)
+	if err != nil {
+		return
+	}
+	defer lease.Release()
+	effect, err := r.generation.Permit()
+	if err != nil {
+		return
+	}
+	defer effect.Release()
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if r.machine.Paused() || r.finished {
+	r.inputContext = lease.Context()
+	defer func() { r.inputContext = nil }()
+	if r.retired {
+		return
+	}
+	if r.machine.Phase() == classroom.PhaseLessonEnd && !r.finished {
+		r.maybeFinishLocked()
+		return
+	}
+	if r.machine.Paused() || r.finished || r.retired || r.machine.Phase() == classroom.PhaseJudging {
+		return
+	}
+	if !r.deliveryReady {
 		return
 	}
 	d, ok := r.machine.TimeoutFor()
 	if !ok {
 		return
 	}
+	// Local audio includes server-side synthesis/transcription before playback or
+	// an answer can arrive. Keep that service budget separate from speaking time.
+	if r.app.Local != nil {
+		switch r.machine.Phase() {
+		case classroom.PhaseTTSSeg, classroom.PhaseReteachShow:
+			if r.app.Local.Has("tts", "tts") || r.app.Local.Has("tts-en", "tts") {
+				d += 20 * time.Second
+			}
+		case classroom.PhaseRepeating, classroom.PhaseWaitAnswer:
+			if r.app.Local.Has("asr", "asr") {
+				d += 24 * time.Second
+			}
+		}
+	}
 	if r.app.Clock.Now().Sub(r.phaseSince) >= d {
+		before := r.machine.Snapshot()
+		var reminderItem classroom.QuizItemID
+		if before.Phase == classroom.PhaseWaitAnswer && before.AnswerStage == 0 {
+			reminderItem = r.machine.CurrentItem().ID()
+		}
 		_ = r.machine.OnTimeout(r.machine.Phase())
 		r.broadcastLocked()
+		// The first answer timeout only reminds the student. Teacher effects can
+		// continue while Room is locked after the nudge frame is emitted; start
+		// the second window when that work finishes, not partway through it.
+		after := r.machine.Snapshot()
+		if before.Phase == classroom.PhaseWaitAnswer && before.AnswerStage == 0 &&
+			after.Phase == classroom.PhaseWaitAnswer && after.AnswerStage == 1 &&
+			r.machine.CurrentItem().ID() == reminderItem && !r.retired && !r.finished &&
+			!r.machine.Paused() && r.deliveryReady {
+			r.phaseSince = r.app.Clock.Now()
+			r.app.Log.InfoCtx(r.traceContext(), "classroom", "answer_reminder_window_started", map[string]any{
+				"lesson_id": r.lessonID, "window_ms": d.Milliseconds(),
+			})
+		}
 	}
 }
 
 // HandleVoiceText 语音转写：指令优先→跟读判读→反馈捕获→作答（02 §12.1）。
 // 返回 (指令类型, 产生的帧)。
 func (r *Room) HandleVoiceText(text string) (string, []Msg) {
+	lease, err := r.app.generations.acquireFor(context.Background(), r.generation)
+	if err != nil {
+		return "", nil
+	}
+	defer lease.Release()
+	effect, err := r.generation.Permit()
+	if err != nil {
+		return "", nil
+	}
+	defer effect.Release()
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.inputContext = lease.Context()
+	defer func() { r.inputContext = nil }()
+	return r.handleVoiceLocked(text)
+}
+func (r *Room) handleVoiceLocked(text string) (string, []Msg) {
+	return r.handleVoiceInputLocked(text, text)
+}
+
+// Control and repetition inspect intact input. Only legacy quiz submission uses
+// the separately sanitized answer; stripping text must never grant permission.
+func (r *Room) handleVoiceInputLocked(text, answerText string) (string, []Msg) {
+	if r.retired || r.machine.Paused() {
+		return "", nil
+	}
+	r.activateDeliveryLocked()
 	if _, payload, ok := r.voiceParser.MatchFeedback(text); ok {
 		select {
 		case r.FeedbackCh <- payload:
@@ -380,6 +825,13 @@ func (r *Room) HandleVoiceText(text string) (string, []Msg) {
 	}
 	ph := r.machine.Phase()
 	quiz := ph == classroom.PhaseWaitAnswer || ph == classroom.PhaseJudging
+	if quiz && r.voiceParser.MatchesNormalizedAnswer(text,
+		"会", "会了", "我会了", "知道", "认识", "记得", "不会", "我不会", "不知道", "不认识", "不记得", "想不起来", "忘了", "不清楚", "没学过") {
+		if ph == classroom.PhaseWaitAnswer {
+			return "answer_confirmation", r.handleEventLocked(classroom.Event{Type: classroom.EvAnswerSubmitted, Text: answerText})
+		}
+		return "confirmation_ignored", nil
+	}
 	if cmd, ok := r.voiceParser.Match(text); ok {
 		// 跟读相位不放行指令（除跳过）：转写交给下方"听读判读"——
 		// 用户定案 2026-08-25：老师听学生读完即下一词，不靠口令/按钮。
@@ -391,22 +843,40 @@ func (r *Room) HandleVoiceText(text string) (string, []Msg) {
 			return cmd, r.applyCommand(cmd)
 		}
 	}
-	// 跟读判读：转写匹配当前词（判分器 L1 归一化）→ 老师确认听到，进下一词
+	// 跟读仅匹配目标词文本，不调用释义判分或L2；不代表声学发音质量通过。
 	if ph == classroom.PhaseRepeating {
+		if r.pendingJudge != nil {
+			return "", nil
+		}
 		w := r.machine.CurrentWord()
 		if st := r.machine.Snapshot(); st.InReteach {
 			if it := r.machine.CurrentItem(); it.WordID != 0 {
 				w = r.words[it.WordID]
 			}
 		}
-		if j := r.app.Judge.Judge(w.Word, w.Meanings, text); j == judge.JudgmentCorrect || j == judge.JudgmentNear {
-			r.app.Log.Info("classroom", "repeat_verified", map[string]any{
-				"lesson_id": r.lessonID, "word": w.Word, "asr_text": text})
-			return "repeat_read", r.HandleEvent(classroom.Event{Type: classroom.EvRepeatDone})
+		started := time.Now()
+		result := "no_match"
+		canceled := r.inputContext != nil && r.inputContext.Err() != nil
+		if canceled {
+			result = "canceled"
+		} else {
+			result = r.app.evaluateRepeatWithVariants(w.ID, w.Word, text)
 		}
-		return "", nil // 没读对：继续听（超时兜底推进）
+		r.app.Log.InfoCtx(r.traceContext(), "classroom", "repeat_evaluated", map[string]any{
+			"lesson_id": r.lessonID, "word_id": w.ID, "purpose": "repeat", "source": "target_match",
+			"result": result, "duration_ms": time.Since(started).Milliseconds(),
+		})
+		if result == "matched" {
+			r.app.Log.InfoCtx(r.traceContext(), "classroom", "repeat_verified", map[string]any{
+				"lesson_id": r.lessonID, "word_id": w.ID, "answer_length": len([]rune(text))})
+			return "repeat_read", r.handleEventLocked(classroom.Event{Type: classroom.EvRepeatDone})
+		}
+		if result == "no_match" {
+			r.app.enqueueTeacherFailure(r.lessonID, w.ID, r.studentID, w.Word, text, "target_mismatch", r.epoch)
+		}
+		return "", nil // 未确认目标词：继续听（原超时策略不变）
 	}
-	return "", r.HandleEvent(classroom.Event{Type: classroom.EvAnswerSubmitted, Text: text})
+	return "", r.handleEventLocked(classroom.Event{Type: classroom.EvAnswerSubmitted, Text: answerText})
 }
 
 func (r *Room) applyCommand(cmd string) []Msg {
@@ -417,6 +887,15 @@ func (r *Room) applyCommand(cmd string) []Msg {
 	case voicecmd.CmdSkip:
 		if r.machine.Phase() == classroom.PhaseRepeating {
 			ev = classroom.Event{Type: classroom.EvRepeatSkipped}
+		} else if r.machine.Phase() == classroom.PhaseWaitAnswer {
+			item := r.machine.CurrentItem().QuizItemID
+			ev = classroom.Event{Type: classroom.EvQuizSkipped, Item: &item}
+			msgs := r.handleEventLocked(ev)
+			r.app.Log.InfoCtx(r.traceContext(), "classroom", "quiz_skipped", map[string]any{
+				"lesson_id": r.lessonID, "word_id": item.WordID, "quiz_item": item,
+				"outcome": "wrong_advance", "reason": "explicit_skip",
+			})
+			return msgs
 		}
 	default:
 		return nil // replay/pause/exit/nav 由前端处理
@@ -424,67 +903,99 @@ func (r *Room) applyCommand(cmd string) []Msg {
 	if ev.Type == "" {
 		return nil
 	}
-	return r.HandleEvent(ev)
+	return r.handleEventLocked(ev)
 }
 
 // SessionTimeout 会话超时暂停（R2-09）。
 func (r *Room) SessionTimeout() []Msg {
+	lease, err := r.app.generations.acquireFor(context.Background(), r.generation)
+	if err != nil {
+		return nil
+	}
+	defer lease.Release()
+	effect, err := r.generation.Permit()
+	if err != nil {
+		return nil
+	}
+	defer effect.Release()
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	r.inputContext = lease.Context()
+	defer func() { r.inputContext = nil }()
+	if r.retired || r.finished {
+		return nil
+	}
 	_ = r.machine.OnSessionTimeout()
+	if r.machine.Paused() {
+		r.cancelJudgmentLocked()
+		r.machine.RecoverDelivery(false)
+	}
 	return r.broadcastLocked()
 }
 
 // Resume 续课。
 func (r *Room) Resume() []Msg {
+	lease, err := r.app.generations.acquireFor(context.Background(), r.generation)
+	if err != nil {
+		return nil
+	}
+	defer lease.Release()
+	effect, err := r.generation.Permit()
+	if err != nil {
+		return nil
+	}
+	defer effect.Release()
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	r.inputContext = lease.Context()
+	defer func() { r.inputContext = nil }()
+	wasPaused := r.machine.Paused()
 	r.machine.Resume()
+	if wasPaused && !r.machine.Paused() &&
+		(r.machine.Phase() == classroom.PhaseRepeating || r.machine.Phase() == classroom.PhaseWaitAnswer) {
+		// A long ASR outage must not consume the answer window while paused.
+		r.phaseSince = r.app.Clock.Now()
+		r.app.Log.InfoCtx(r.traceContext(), "classroom", "input_window_restarted", map[string]any{
+			"lesson_id": r.lessonID, "phase": r.machine.Phase(), "epoch": r.contextLocked().Epoch, "turn": r.contextLocked().Turn,
+		})
+	}
 	return r.broadcastLocked()
 }
 
 // maybeFinishLocked 结课结算：scheduler step 推进 + SystemAgent 决策 + 课报 + ticket 回收。
-func (r *Room) maybeFinishLocked() {
-	if r.finished || r.machine.Phase() != classroom.PhaseLessonEnd {
-		return
+func (r *Room) maybeFinishLocked() []Msg {
+	effect, err := r.generation.Permit()
+	if err != nil {
+		return nil
+	}
+	defer effect.Release()
+	if r.finished || r.settlementUncertain || r.machine.Phase() != classroom.PhaseLessonEnd {
+		return nil
+	}
+	res := r.machine.Result()
+	if res == nil {
+		return nil
+	}
+	if err := r.app.commitLessonWithGeneration(r.inputContext, r.generation, r.lessonID, r.studentID, r.bookID, res, r.machine.Snapshot()); err != nil {
+		uncertain := errors.Is(err, errAtomicOutcomeUncertain)
+		if uncertain {
+			r.settlementUncertain = true
+		}
+		outcome := "failed_cleaned"
+		if uncertain {
+			outcome = "outcome_uncertain"
+		}
+		r.app.Log.ErrorCtx(r.traceContext(), "scheduler", "settle_failed", map[string]any{"lesson_id": r.lessonID, "error_code": outcome, "transaction_outcome": outcome})
+		m := Msg{"type": "settlement_failed", "lesson_id": r.lessonID, "retryable": !uncertain, "outcome": outcome}
+		r.emitLocked(m)
+		return []Msg{m}
 	}
 	r.finished = true
 	r.lessonStatus = "finished"
-	res := r.machine.Result()
-	if res == nil {
-		return
-	}
-	// 结算失败则停止后续决策（R4-arch#1）
-	if err := r.app.Sched.SettleLessonFinished(r.studentID, r.bookID, res.Correct, r.app.Clock.Now()); err != nil {
-		r.app.Log.Error("scheduler", "settle_failed", map[string]any{
-			"lesson_id": r.lessonID, "error": err.Error()})
-		return
-	}
-	// 结课即排下一课（F2 只排一课；已排/无词则忽略）；testmode 拨至当前可立即进入
-	if nl, err := r.app.Sched.PlanNext(r.studentID, r.bookID); err != nil {
-		r.app.Log.Info("scheduler", "plan_after_lesson", map[string]any{
-			"lesson_id": r.lessonID, "result": err.Error()})
-	} else {
-		r.app.openNowIfTestMode(nl)
-	}
-	// D-13：系统 Agent 结课决策（S-01..S-04/S-15，Mock 确定性）
-	in := agent.SystemInput{Trigger: "lesson_finished",
-		StudentID: r.studentID, BookID: r.bookID,
-		CorrectRate: res.Report.FirstTryRate, AvgAnswerMs: res.Report.AvgAnswerMs}
-	for _, a := range r.app.System.Decide(in) {
-		if a.Kind == "adjust_words_down" {
-			cur := r.app.Cfg.Int(r.studentID, "wordsPerLesson")
-			_ = r.app.Cfg.SetStudent("system_agent", r.studentID, "wordsPerLesson",
-				max40(cur-10), "课报评估：首答率<60% 自动降量(S-03)")
-		}
-	}
-	sm := Msg{"type": "lesson_summary", "seq": r.nextSeqLocked(),
-		"report": res.Report, "correct": res.Correct}
-	r.emitLocked(sm)
+	m := Msg{"type": "lesson_summary", "seq": r.nextSeqLocked(), "report": res.Report, "correct": res.Correct}
+	r.emitLocked(m)
 	r.app.RevokeTicket(r.lessonID, r.studentID)
-	r.app.saveReport(r.lessonID, res)
-	r.app.Notify(r.studentID, "课报已生成",
-		"正确率 "+strconvPercent(res.Report.FirstTryRate)+"，"+res.Report.QualSolid)
+	return append([]Msg{m}, r.teacherLifecycleLocked("lesson_end")...)
 }
 
 func strconvPercent(f float64) string {
@@ -536,18 +1047,67 @@ func (h *Hub) Room(lessonID int64) (*Room, bool) {
 }
 
 // Drop 模拟进程重启（IT-12）：移除房间但快照已持久化于 App。
-func (h *Hub) Drop(lessonID int64) {
+func (h *Hub) Drop(lessonID int64) error {
+	retirement, err := h.app.generations.retire(lessonID)
+	if err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	if err := retirement.Wait(ctx); err != nil {
+		retirement.Fail()
+		return err
+	}
 	h.mu.Lock()
-	defer h.mu.Unlock()
+	r := h.rooms[lessonID]
 	delete(h.rooms, lessonID)
+	h.mu.Unlock()
+	var closeErrors []error
+	if r != nil {
+		r.mu.Lock()
+		r.retired = true
+		r.cancelJudgmentLocked()
+		clients := make([]Client, 0, len(r.clients))
+		for c := range r.clients {
+			clients = append(clients, c)
+		}
+		r.clients = map[Client]bool{}
+		r.currentCli = nil
+		r.mu.Unlock()
+		for _, c := range clients {
+			if closer, ok := c.(interface{ Close() error }); ok {
+				if err := closer.Close(); err != nil {
+					closeErrors = append(closeErrors, err)
+				}
+			}
+		}
+	}
+	h.app.revokeLessonTickets(lessonID)
+	if len(closeErrors) > 0 {
+		retirement.Fail()
+		return fmt.Errorf("classroom: close retired clients: %w", errors.Join(closeErrors...))
+	}
+	if err := retirement.Advance(); err != nil {
+		retirement.Fail()
+		return err
+	}
+	return nil
 }
 
 // RunTimers 生产计时循环（main 启动；测试不启动）。
 func (h *Hub) RunTimers() {
+	h.RunTimersContext(context.Background())
+}
+
+func (h *Hub) RunTimersContext(ctx context.Context) {
 	tick := time.NewTicker(time.Second)
 	sess := time.NewTicker(30 * time.Second)
+	defer tick.Stop()
+	defer sess.Stop()
 	for {
 		select {
+		case <-ctx.Done():
+			return
 		case <-tick.C:
 			h.mu.Lock()
 			rooms := make([]*Room, 0, len(h.rooms))

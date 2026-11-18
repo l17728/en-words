@@ -3,6 +3,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,6 +19,7 @@ import (
 	"enwords/internal/feedback"
 	"enwords/internal/judge"
 	"enwords/internal/llmzhipu"
+	"enwords/internal/localmodel"
 	"enwords/internal/memory"
 	"enwords/internal/obs"
 	"enwords/internal/scheduler"
@@ -36,36 +38,65 @@ type Clock interface {
 
 // App 全量装配。
 type App struct {
-	Auth    *auth.Service
-	Books   *wordbook.Service
-	Cfg     *config.Store
-	Sched   *scheduler.Service
-	Judge   *judge.Judge
-	FB      *feedback.Parser
-	Mem     *memory.Service
-	Bank    *scripts.Bank
-	Teacher *agent.TeacherAgent
-	System  *agent.SystemAgent
-	Tools   *tools.Registry
-	ToolAudit *tools.MemAuditor
-	Log     *obs.Logger
-	Clock   Clock
+	agentWriteMu         sync.Mutex
+	configRefreshPending bool // guarded by agentWriteMu; never a write-retry receipt
+	completionMu         sync.Mutex
+	atomicWriteObserved  func(context.Context, *gorm.DB, func(*gorm.DB) error, func(store.AtomicConnectionTiming)) error
+	feedbackState        *feedbackMemoryState
+	overdueTasks         map[string]store.OverdueTask
+	completionTargets    map[int64]int
+	completionTasks      map[int64]*lessonCompletion
+	StartupError         error
+	Local                *localmodel.Client
+	DuplexPreflight      bool // Explicit isolated device preflight only; never enables teaching.
+	DuplexShadow         bool // Bounded shadow ASR upload; never mutates teaching state.
+	Auth                 *auth.Service
+	Books                *wordbook.Service
+	Cfg                  *config.Store
+	Sched                *scheduler.Service
+	Judge                *judge.Judge
+	FB                   *feedback.Parser
+	Mem                  *memory.Service
+	Bank                 *scripts.Bank
+	Teacher              *agent.TeacherAgent
+	System               *agent.SystemAgent
+	Tools                *tools.Registry
+	ToolAudit            *tools.MemAuditor
+	Log                  *obs.Logger
+	Clock                Clock
 
-	Rooms   *Hub
-	tickets map[string]*Ticket // ticket → 绑定
-	reports map[int64]*classroom.Result        // lessonID → 课报
-	lessonStates map[int64]*classroom.State    // lessonID → 课堂快照（IT-12）
-	notifications []Notification
-	nextNotifID int64
-	feedbackRecs []FeedbackRecord
+	Rooms          *Hub
+	generations    *generationCoordinator
+	tickets        map[string]*Ticket          // ticket → 绑定
+	reports        map[int64]*classroom.Result // lessonID → 课报
+	lessonStates   map[int64]*classroom.State  // lessonID → 课堂快照（IT-12）
+	notifications  []Notification
+	nextNotifID    int64
+	feedbackRecs   []FeedbackRecord
 	nextFeedbackID int64
-	TestMode bool // -testmode：跳过课程开放时间校验（E2E 用）
-	DB *gorm.DB   // SQLite 持久化句柄（nil=纯内存模式）
-	mu      sync.Mutex
+	TestMode       bool     // -testmode：跳过课程开放时间校验（E2E 用）
+	DB             *gorm.DB // SQLite 持久化句柄（nil=纯内存模式）
+	DuplexStore    *store.DuplexRepo
+	// Pilot is nil unless an operator explicitly enables isolated pilot
+	// persistence. Legacy classroom traffic never uses it implicitly.
+	Pilot *store.PilotStore
+	mu    sync.Mutex
 }
 
 // SetTestMode 开启测试模式。
 func (a *App) SetTestMode() { a.TestMode = true }
+
+// EnableDuplexShadowStore opts in the persisted shadow receipt tables only
+// when the explicit pilot flag is enabled.
+func (a *App) EnableDuplexShadowStore() error {
+	if a.DB == nil {
+		return nil
+	}
+	if a.DuplexStore == nil {
+		a.DuplexStore = store.NewDuplexRepo(a.DB)
+	}
+	return a.DuplexStore.Migrate()
+}
 
 // persistUser 持久化模式落库（router/extra 共用；nil DB 时 no-op）。
 func (a *App) persistUser(username string) {
@@ -87,8 +118,8 @@ func (a *App) EnableRealProviders() error {
 		return err
 	}
 	zc := llmzhipu.New(key, baseURL, model)
-	a.Judge.LLM = judge.NewZhipu(zc)                      // L2 真实判分
-	a.FB.SetLLM(feedback.NewZhipuParser(zc))               // LLM 意图解析
+	a.Judge.LLM = judge.NewZhipu(zc)         // L2 真实判分
+	a.FB.SetLLM(feedback.NewZhipuParser(zc)) // LLM 意图解析
 	a.Log.Info("providers", "real_providers_enabled", map[string]any{
 		"llm": model, "judge": "zhipu_l2", "feedback": "zhipu_llm"})
 	return nil
@@ -155,37 +186,78 @@ func NewApp(clock Clock, db *gorm.DB) *App {
 		bookRepo = store.NewWordbookRepo(db)
 		schedRepo = store.NewSchedulerRepo(db)
 	}
-	cfgStore, _ := config.NewStore(nil, nil)
+	var cfgPersist config.Persister
+	var memRepo memory.Repo = memory.NewMemRepo()
+	if db != nil {
+		cfgPersist = store.NewConfigPersister(db)
+		memRepo = store.NewMemoryRepo(db)
+	}
+	cfgStore, cfgErr := config.NewStore(cfgPersist, nil)
+	if cfgErr != nil {
+		panic(fmt.Sprintf("load configuration: %v", cfgErr))
+	}
 	sched := scheduler.NewService(schedRepo, cfgStore, clock)
 	bank := scripts.NewBank()
 	bank.SeedAll()
-	mem := memory.NewService(memory.NewMemRepo())
+	mem := memory.NewService(memRepo)
 	fb := feedback.NewParser(clock.Now)
 	authSvc := auth.NewService("enwords-dev-secret", 7*24*time.Hour)
-	authSvc.EnsureAgentAccounts()
 	restoredUsers := 0
-	if db != nil { // 持久化：启动加载全部用户（重启不丢账号）
-		if n, err := store.NewAuthStore(db).LoadAll(authSvc); err == nil {
+	if db != nil {
+		err := db.Transaction(func(tx *gorm.DB) error {
+			// Serialize concurrent initializers before reading the persisted IDs.
+			if err := tx.Exec("UPDATE users SET id=id WHERE 1=0").Error; err != nil {
+				return err
+			}
+			p := store.NewAuthStore(tx)
+			n, err := p.LoadAll(authSvc)
+			if err != nil {
+				return err
+			}
 			restoredUsers = n
+			missing := []string{}
+			for _, name := range []string{"teacher-agent", "system-agent"} {
+				if !authSvc.HasUser(name) {
+					missing = append(missing, name)
+				}
+			}
+			authSvc.EnsureAgentAccounts()
+			for _, name := range missing {
+				if err := p.SaveUser(authSvc, name); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			panic("load or initialize persisted identities failed")
 		}
+	} else {
+		authSvc.EnsureAgentAccounts()
 	}
 	toolAudit := &tools.MemAuditor{}
 	app := &App{
-		Auth:      authSvc,
-		Books:     wordbook.NewService(bookRepo),
-		Cfg:       cfgStore,
-		Sched:     sched,
-		Judge:     judge.New(judge.DefaultSynonyms()),
-		FB:        fb,
-		Mem:       mem,
-		Bank:      bank,
-		Teacher:   agent.NewTeacherAgent(bank),
-		System:    agent.NewSystemAgent(bank, mem, fb),
-		Tools:     tools.New(toolAudit),
-		ToolAudit: toolAudit,
-		Log:       obs.Nop(),
-		Clock:     clock,
-		tickets:   map[string]*Ticket{},
+		Auth:        authSvc,
+		Books:       wordbook.NewService(bookRepo),
+		Cfg:         cfgStore,
+		Sched:       sched,
+		Judge:       judge.New(judge.DefaultSynonyms()),
+		FB:          fb,
+		Mem:         mem,
+		Bank:        bank,
+		Teacher:     agent.NewTeacherAgent(bank),
+		System:      agent.NewSystemAgent(bank, mem, fb),
+		Tools:       tools.New(toolAudit),
+		ToolAudit:   toolAudit,
+		Log:         obs.Nop(),
+		Clock:       clock,
+		generations: newGenerationCoordinator(),
+		tickets:     map[string]*Ticket{},
+	}
+	app.Judge.OnDecision = func(ctx context.Context, decision judge.Decision) {
+		app.Log.InfoCtx(ctx, "judge", "judge_decision", map[string]any{
+			"source": decision.Source, "reason": decision.Reason, "result": decision.Result,
+		})
 	}
 	if restoredUsers > 0 {
 		app.Log.Info("store", "users_restored", map[string]any{"count": restoredUsers})
@@ -197,13 +269,22 @@ func NewApp(clock Clock, db *gorm.DB) *App {
 			"lesson_id": l.ID, "open_at": l.OpenAt.Format(time.RFC3339),
 			"batch": len(l.BatchWordIDs)})
 	}
-	// R4-backend#3：config.ladder 变更 → scheduler 截断记忆卡 step（SDD §6.2 事务联动）
-	cfgStore.OnLadderChanged = func(newLadder []int) error {
-		return sched.TruncateLadderSteps(len(newLadder))
+	sched.OnPlacementSaved = func(ctx context.Context, studentID, bookID int64, inputCount, changed int) {
+		app.Log.InfoCtx(ctx, "scheduler", "placement_saved", map[string]any{"student_id": studentID, "book_id": bookID, "input_count": inputCount, "changed_count": changed})
 	}
+	if err := cfgStore.BindAtomicMutationHandler(app.ChangeConfig); err != nil {
+		panic(err)
+	}
+	sched.RequireConfigurationWork()
 	app.Rooms = NewHub(app)
 	app.registerTools()
+	app.registerStudentTools()
+	app.registerTeacherTools()
 	app.DB = db
+	app.restoreRuntime()
+	if err := app.migrateLegacyFeedback(); err != nil {
+		panic(fmt.Sprintf("migrate feedback: %v", err))
+	}
 	return app
 }
 
@@ -230,6 +311,16 @@ func (a *App) MyBooks(studentID int64) []*wordbook.Book {
 
 // EnableBook 选库：为该生该库建立记忆卡（未摸底）。
 func (a *App) EnableBook(studentID, bookID int64) error {
+	return a.EnableBookContext(context.Background(), studentID, bookID)
+}
+
+func (a *App) EnableBookContext(ctx context.Context, studentID, bookID int64) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	b, err := a.Books.GetBook(bookID)
 	if err != nil {
 		return err
@@ -241,16 +332,11 @@ func (a *App) EnableBook(studentID, bookID int64) error {
 	if err != nil {
 		return err
 	}
+	ids := make([]int64, 0, len(entries))
 	for _, e := range entries {
-		// 幂等（R17 类）：卡已存在（含已摸底 mastered）跳过——重复 enable 不得抹掉摸底结果
-		if _, err := a.Sched.GetCard(studentID, bookID, e.ID); err == nil {
-			continue
-		}
-		if err := a.Sched.SeedCard(studentID, bookID, e.ID); err != nil {
-			return err
-		}
+		ids = append(ids, e.ID)
 	}
-	return nil
+	return a.Sched.SeedCards(ctx, studentID, bookID, ids)
 }
 
 // PlacementSubmit 摸底提交（known=已会词 entryID；finish=true 触发首课）。
@@ -258,6 +344,21 @@ func (a *App) EnableBook(studentID, bookID int64) error {
 // 未开始的课作废+批次卡重置（ResetForReplacement），再以新摸底结果排新课。
 // R6-sec：knownWordIds 逐个校验归属该词库（防跨库 ID 注入打乱记忆卡）。
 func (a *App) PlacementSubmit(studentID, bookID int64, known []int64, finish bool) error {
+	return a.PlacementSubmitContext(context.Background(), studentID, bookID, known, finish)
+}
+
+type placementPlanError struct{ cause error }
+
+func (e *placementPlanError) Error() string { return "placement saved; plan incomplete" }
+func (e *placementPlanError) Unwrap() error { return e.cause }
+
+func (a *App) PlacementSubmitContext(ctx context.Context, studentID, bookID int64, known []int64, finish bool) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if len(known) > 0 {
 		valid := map[int64]bool{}
 		entries, _, err := a.Books.ListEntries(bookID, 1, 1<<30)
@@ -273,16 +374,23 @@ func (a *App) PlacementSubmit(studentID, bookID int64, known []int64, finish boo
 			}
 		}
 	}
-	if err := a.Sched.MarkPlacement(studentID, bookID, known); err != nil {
+	if err := a.Sched.MarkPlacementContext(ctx, studentID, bookID, known); err != nil {
+		a.Log.ErrorCtx(ctx, "scheduler", "placement_save_failed", map[string]any{"student_id": studentID, "book_id": bookID, "reason": "transaction_failed"})
 		return err
 	}
 	if finish {
-		if err := a.Sched.ResetForReplacement(studentID, bookID); err != nil {
+		var l *scheduler.Lesson
+		err := a.WithCurrentConfigWork(ctx, func(s *scheduler.Service) error {
+			if err := s.ResetForReplacement(studentID, bookID); err != nil {
+				return err
+			}
+			var err error
+			l, err = s.PlanNextWithPolicy(studentID, bookID, scheduler.PlanPolicy{ImmediateFirstLesson: true})
 			return err
-		}
-		l, err := a.Sched.PlanNext(studentID, bookID)
+		})
 		if err != nil {
-			return err
+			a.Log.ErrorCtx(ctx, "scheduler", "placement_plan_failed", map[string]any{"student_id": studentID, "book_id": bookID, "draft_committed": true, "reason": "plan_failed"})
+			return &placementPlanError{cause: err}
 		}
 		a.openNowIfTestMode(l)
 	}
@@ -295,40 +403,66 @@ func (a *App) openNowIfTestMode(l *scheduler.Lesson) {
 		return
 	}
 	l.OpenAt = a.Clock.Now()
-	_ = a.Sched.SaveLesson(l)
-	a.Sched.ReserveCards(l.StudentID, l.BookID, l.BatchWordIDs, l.OpenAt)
+	if err := a.Sched.SaveLesson(l); err != nil {
+		a.Log.Error("scheduler", "test_open_failed", map[string]any{"lesson_id": l.ID})
+		return
+	}
+	if err := a.Sched.ReserveCards(l.StudentID, l.BookID, l.BatchWordIDs, l.OpenAt); err != nil {
+		a.Log.Error("scheduler", "test_reserve_failed", map[string]any{"lesson_id": l.ID})
+	}
 }
 
 // SetLogger 注入生产日志器（main/测试用；默认 Nop）。
 func (a *App) SetLogger(l *obs.Logger) {
 	if l != nil {
 		a.Log = l
+		if a.FB != nil {
+			a.FB.SetLogger(l)
+		}
 	}
 }
 
 // CronOverdue 定时巡检（S-10/S-11）：scheduler 重排 + 逾期通知学生（§14 逾期日志）。
 func (a *App) CronOverdue() ([]int64, error) {
-	replanned, err := a.Sched.HandleOverdue()
+	before, err := a.Sched.AllLessons()
 	if err != nil {
 		return nil, err
 	}
-	for _, id := range replanned {
-		l, err := a.Sched.Lesson(id)
-		if err != nil {
-			continue
+	seen := map[int64]bool{}
+	for _, l := range before {
+		seen[l.ID] = true
+	}
+	if err := a.RunOverdue(context.Background()); err != nil {
+		return nil, err
+	}
+	after, err := a.Sched.AllLessons()
+	if err != nil {
+		return nil, err
+	}
+	a.agentWriteMu.Lock()
+	completed := map[int64]bool{}
+	if a.DB != nil {
+		var rows []store.OverdueTask
+		err = a.DB.Where("status=?", "completed").Find(&rows).Error
+		for _, row := range rows {
+			completed[row.NewLessonID] = true
 		}
-		old, _ := a.Sched.Lessons(l.StudentID, l.BookID)
-		var origAt string
-		for _, o := range old {
-			if o.ID != id && o.Status == "expired" {
-				origAt = o.OpenAt.Format("1月2日")
+	} else {
+		for _, row := range a.overdueTasks {
+			if row.Status == "completed" {
+				completed[row.NewLessonID] = true
 			}
 		}
-		a.Notify(l.StudentID, "课程已改期",
-			"你缺席了 "+origAt+" 的课，已改到 "+l.OpenAt.Format("1月2日 15:04")+"，别再错过啦")
-		a.Log.Warn("scheduler", "lesson_expired_replanned", map[string]any{
-			"student_id": l.StudentID, "old_lesson": origAt,
-			"new_lesson_id": id, "new_open_at": l.OpenAt.Format(time.RFC3339)})
+	}
+	a.agentWriteMu.Unlock()
+	if err != nil {
+		return nil, err
+	}
+	replanned := []int64{}
+	for _, l := range after {
+		if !seen[l.ID] && completed[l.ID] {
+			replanned = append(replanned, l.ID)
+		}
 	}
 	return replanned, nil
 }
@@ -337,11 +471,38 @@ func (a *App) CronOverdue() ([]int64, error) {
 
 // IssueTicket enter 签发（同 lesson 复用同一 ticket；R4-arch#3：含过期时间，判定时校验）。
 func (a *App) IssueTicket(lessonID, studentID int64) string {
+	lease, err := a.generations.acquire(context.Background(), lessonID)
+	if err != nil {
+		return ""
+	}
+	defer lease.Release()
+	ticket, err := a.issueTicketContext(withGenerationLease(lease.Context(), lease), lessonID, studentID)
+	if err != nil {
+		return ""
+	}
+	return ticket
+}
+
+func (a *App) issueTicketContext(ctx context.Context, lessonID, studentID int64) (string, error) {
+	lease := generationLeaseFromContext(ctx, lessonID)
+	if lease == nil {
+		var err error
+		lease, err = a.generations.acquire(ctx, lessonID)
+		if err != nil {
+			return "", err
+		}
+		defer lease.Release()
+	}
+	effect, err := lease.Token().Permit()
+	if err != nil {
+		return "", err
+	}
+	defer effect.Release()
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	for t, tk := range a.tickets {
 		if tk.LessonID == lessonID && tk.StudentID == studentID && !tk.expired(a) {
-			return t
+			return t, nil
 		}
 		if tk.LessonID == lessonID && tk.StudentID == studentID {
 			delete(a.tickets, t) // 过期清理
@@ -349,7 +510,7 @@ func (a *App) IssueTicket(lessonID, studentID int64) string {
 	}
 	t := newToken()
 	a.tickets[t] = &Ticket{LessonID: lessonID, StudentID: studentID, CreatedAt: a.Clock.Now()}
-	return t
+	return t, nil
 }
 
 // expired ticket 过期判定：创建时间 + open_at 窗口 + overdueHours + 1h（R2-AR-03）。
@@ -388,22 +549,44 @@ func (a *App) RevokeTicket(lessonID, studentID int64) {
 	}
 }
 
+func (a *App) revokeLessonTickets(lessonID int64) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	for ticket, tk := range a.tickets {
+		if tk.LessonID == lessonID {
+			delete(a.tickets, ticket)
+		}
+	}
+}
+
 // ---- 课报存档（D-13，课程详情端点用）----
 
 // LessonReportView 课程详情返回结构。
 type LessonReportView struct {
-	LessonID int64              `json:"lesson_id"`
+	LessonID int64                  `json:"lesson_id"`
 	Report   classroom.LessonReport `json:"report"`
-	Correct  map[int64]bool     `json:"correct"`
+	Correct  map[int64]bool         `json:"correct"`
 }
 
-func (a *App) saveReport(lessonID int64, res *classroom.Result) {
+func (a *App) saveReportWithToken(token generationToken, lessonID int64, res *classroom.Result) bool {
+	if token.owner == nil || token.lesson != lessonID {
+		return false
+	}
+	effect, err := token.Permit()
+	if err != nil {
+		return false
+	}
+	defer effect.Release()
 	a.mu.Lock()
 	defer a.mu.Unlock()
+	if !a.saveRuntimeLocked(fmt.Sprintf("report/%d", lessonID), res) {
+		return false
+	}
 	if a.reports == nil {
 		a.reports = map[int64]*classroom.Result{}
 	}
 	a.reports[lessonID] = res
+	return true
 }
 
 // Report 取课报。
@@ -411,24 +594,59 @@ func (a *App) Report(lessonID int64) (*classroom.Result, bool) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	r, ok := a.reports[lessonID]
+	if !ok && a.DB != nil {
+		var saved classroom.Result
+		if a.readRuntime(fmt.Sprintf("report/%d", lessonID), &saved) {
+			return &saved, true
+		}
+	}
 	return r, ok
 }
 
 // ---- 课堂状态持久化（IT-12：房间丢失后恢复）----
 
-func (a *App) saveLessonState(lessonID int64, st classroom.State) {
+func (a *App) saveLessonStateContext(ctx context.Context, lessonID int64, st classroom.State) bool {
+	lease := generationLeaseFromContext(ctx, lessonID)
+	if lease == nil {
+		a.Log.WarnCtx(runtimeTraceContext(ctx, fmt.Sprintf("snapshot/%d", lessonID)), "classroom", "generation_write_rejected", map[string]any{"lesson_id": lessonID, "effect": "snapshot", "reason": "missing_generation_lease"})
+		return false
+	}
+	return a.saveLessonStateWithToken(ctx, lessonID, st, lease.Token())
+}
+
+func (a *App) saveLessonStateWithToken(ctx context.Context, lessonID int64, st classroom.State, token generationToken) bool {
+	if token.owner == nil || token.lesson != lessonID {
+		a.Log.WarnCtx(runtimeTraceContext(ctx, fmt.Sprintf("snapshot/%d", lessonID)), "classroom", "generation_write_rejected", map[string]any{"lesson_id": lessonID, "effect": "snapshot", "reason": "invalid_generation_token"})
+		return false
+	}
+	effect, err := token.Permit()
+	if err != nil {
+		a.Log.WarnCtx(runtimeTraceContext(ctx, fmt.Sprintf("snapshot/%d", lessonID)), "classroom", "generation_effect_rejected", map[string]any{"lesson_id": lessonID, "effect": "snapshot", "reason": "generation_retired"})
+		return false
+	}
+	defer effect.Release()
 	a.mu.Lock()
 	defer a.mu.Unlock()
+	if !a.saveRuntimeContextLocked(ctx, fmt.Sprintf("snapshot/%d", lessonID), st) {
+		return false
+	}
 	if a.lessonStates == nil {
 		a.lessonStates = map[int64]*classroom.State{}
 	}
 	cp := st
 	a.lessonStates[lessonID] = &cp
+	return true
 }
 
 func (a *App) lessonState(lessonID int64) *classroom.State {
 	a.mu.Lock()
 	defer a.mu.Unlock()
+	if a.DB != nil {
+		var saved classroom.State
+		if a.readRuntime(fmt.Sprintf("snapshot/%d", lessonID), &saved) {
+			return &saved
+		}
+	}
 	return a.lessonStates[lessonID]
 }
 
@@ -436,12 +654,12 @@ func (a *App) lessonState(lessonID int64) *classroom.State {
 
 // Notification 通知。
 type Notification struct {
-	ID        int64  `json:"id"`
-	UserID    int64  `json:"user_id"`
-	Type      string `json:"type"`
-	Title     string `json:"title"`
-	Body      string `json:"body"`
-	Read      bool   `json:"read"`
+	ID        int64     `json:"id"`
+	UserID    int64     `json:"user_id"`
+	Type      string    `json:"type"`
+	Title     string    `json:"title"`
+	Body      string    `json:"body"`
+	Read      bool      `json:"read"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -454,57 +672,22 @@ func (a *App) Notify(userID int64, title, body string) {
 		ID: a.nextNotifID, UserID: userID, Type: "info",
 		Title: title, Body: body, CreatedAt: a.Clock.Now(),
 	})
+	a.saveRuntimeLocked("notifications", a.notifications)
 }
 
 // Notifications 用户通知列表。
 func (a *App) Notifications(userID int64) []Notification {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	var out []Notification
-	for _, n := range a.notifications {
-		if n.UserID == userID {
-			out = append(out, n)
-		}
-	}
+	out, _ := a.NotificationsContext(context.Background(), userID)
 	return out
 }
 
 // ---- 工具注册（memory 域 D-16 演示 + config.set 管理通道）----
 
 func (a *App) registerTools() {
-	// memory.append（owner 由 caller 角色决定）
-	_ = a.Tools.Register(tools.Tool{
-		Name: "memory.append", Domain: "memory", Risk: tools.RiskMid,
-		Scope: []tools.Role{tools.RoleTeacherAgent, tools.RoleSystemAgent},
-		InputSchema: mustSchema(`{"type":"object","properties":{
-			"scope":{"type":"string"},"student_id":{"type":"integer"},"book_id":{"type":"integer"},
-			"kind":{"type":"string"},"content":{"type":"string"},"importance":{"type":"integer"},
-			"source_lesson_id":{"type":"integer"}},"required":["scope","student_id","kind","content"]}`),
-		Handler: func(ctx tools.Ctx, caller tools.Caller, args tools.Args) (any, error) {
-			var in struct {
-				Scope         string `json:"scope"`
-				StudentID     int64  `json:"student_id"`
-				BookID        int64  `json:"book_id"`
-				Kind          string `json:"kind"`
-				Content       string `json:"content"`
-				Importance    int    `json:"importance"`
-				SourceLesson  int64  `json:"source_lesson_id"`
-			}
-			if err := decode(args, &in); err != nil {
-				return nil, err
-			}
-			owner := memory.OwnerTeacher
-			if caller.Role == tools.RoleSystemAgent {
-				owner = memory.OwnerSystem
-			}
-			return a.Mem.Append(owner, memory.Scope(in.Scope), in.StudentID, in.BookID,
-				in.Kind, in.Content, in.Importance, in.SourceLesson)
-		},
-	})
 	// config.set（high 风险 reason 双保险演示；IT-10 越权用）
 	_ = a.Tools.Register(tools.Tool{
 		Name: "config.set", Domain: "config", Risk: tools.RiskHigh,
-		Scope: []tools.Role{tools.RoleSystemAgent, tools.RoleAdmin},
+		Scope: []tools.Role{tools.RoleAdmin},
 		InputSchema: mustSchema(`{"type":"object","properties":{
 			"key":{"type":"string"},"value":{},"reason":{"type":"string"}},
 			"required":["key","value","reason"]}`),
@@ -518,10 +701,11 @@ func (a *App) registerTools() {
 				return nil, err
 			}
 			who := string(caller.Role)
-			if err := a.Cfg.SetGlobal(who, in.Key, in.Value, in.Reason); err != nil {
+			result, err := a.ChangeConfig(ctx, config.Mutation{Operation: "set", Actor: who, Scope: config.ScopeGlobal, Key: in.Key, Value: in.Value, Reason: in.Reason})
+			if err != nil {
 				return nil, err
 			}
-			return "ok", nil
+			return result, nil
 		},
 	})
 }

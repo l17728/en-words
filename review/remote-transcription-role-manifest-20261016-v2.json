@@ -1,0 +1,123 @@
+{
+  "status": "frozen_before_outputs_pending_independent_tool_review",
+  "scope": "public_synthetic_prompt_role_exploration_not_non_thinking_mode",
+  "source_manifest_sha256": "ec95ec8e23e6e7eb27a7cc0281db24540151a32475f2eb17aeb66cd0da41c82f",
+  "tool_sha256": "974dbe5f769f3e1b255248cd5892e37326364be3cb1139305ed501d42714da3f",
+  "instruction": "Transcribe only the spoken words in the attached audio, in the original language. Do not explain. If there is no speech, return an empty string.",
+  "cases": [
+    {
+      "id": "TTS-ZH-01",
+      "file": "review/local-tts-quality-20261014-utf8-fixed.json.TTS-ZH-01.wav",
+      "sha256": "e4e8c1d665979a3df07c22aebd6b44f114235e1712227e149828bc0f11080968",
+      "gold": "苹果",
+      "source": "independent_local_tts",
+      "human": "clear_correct_complete",
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width": 2,
+      "duration_ms": 523
+    },
+    {
+      "id": "ASR-EN-01",
+      "file": "review/audio-fixtures/en/01.wav",
+      "sha256": "4c7d98e368f9d06f1b0d9b64979ec032254a341025b3cec7f489cf03bdc1585f",
+      "gold": "apple",
+      "source": "independent_zira",
+      "human": "pending",
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width": 2,
+      "duration_ms": 1260
+    },
+    {
+      "id": "SILENCE-01",
+      "file": ".test-artifacts/remote-audio-expanded/silence.wav",
+      "sha256": "643f8a8dc8bd9c19225afffad2becfec5426180b3749cb208abdf1a6c8354efc",
+      "gold": "",
+      "source": "digital_silence",
+      "human": "not_applicable",
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width": 2,
+      "duration_ms": 1000
+    }
+  ],
+  "requests": [
+    {
+      "request_id": "qwen-omni:TTS-ZH-01:A",
+      "model": "qwen-omni",
+      "case_id": "TTS-ZH-01",
+      "arm": "A"
+    },
+    {
+      "request_id": "qwen-omni:TTS-ZH-01:B",
+      "model": "qwen-omni",
+      "case_id": "TTS-ZH-01",
+      "arm": "B"
+    },
+    {
+      "request_id": "qwen-omni:ASR-EN-01:B",
+      "model": "qwen-omni",
+      "case_id": "ASR-EN-01",
+      "arm": "B"
+    },
+    {
+      "request_id": "qwen-omni:ASR-EN-01:A",
+      "model": "qwen-omni",
+      "case_id": "ASR-EN-01",
+      "arm": "A"
+    },
+    {
+      "request_id": "qwen-omni:SILENCE-01:A",
+      "model": "qwen-omni",
+      "case_id": "SILENCE-01",
+      "arm": "A"
+    },
+    {
+      "request_id": "qwen-omni:SILENCE-01:B",
+      "model": "qwen-omni",
+      "case_id": "SILENCE-01",
+      "arm": "B"
+    },
+    {
+      "request_id": "minicpm-o:TTS-ZH-01:A",
+      "model": "minicpm-o",
+      "case_id": "TTS-ZH-01",
+      "arm": "A"
+    },
+    {
+      "request_id": "minicpm-o:TTS-ZH-01:B",
+      "model": "minicpm-o",
+      "case_id": "TTS-ZH-01",
+      "arm": "B"
+    },
+    {
+      "request_id": "minicpm-o:ASR-EN-01:B",
+      "model": "minicpm-o",
+      "case_id": "ASR-EN-01",
+      "arm": "B"
+    },
+    {
+      "request_id": "minicpm-o:ASR-EN-01:A",
+      "model": "minicpm-o",
+      "case_id": "ASR-EN-01",
+      "arm": "A"
+    },
+    {
+      "request_id": "minicpm-o:SILENCE-01:A",
+      "model": "minicpm-o",
+      "case_id": "SILENCE-01",
+      "arm": "A"
+    },
+    {
+      "request_id": "minicpm-o:SILENCE-01:B",
+      "model": "minicpm-o",
+      "case_id": "SILENCE-01",
+      "arm": "B"
+    }
+  ],
+  "deadline_seconds": 8,
+  "max_tokens": 1024,
+  "temperature": 0,
+  "normalization": "NFC/lower/ignore_whitespace_and_unicode_punctuation; format scored separately"
+}

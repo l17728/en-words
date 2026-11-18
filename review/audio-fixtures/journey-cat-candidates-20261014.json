@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "status": "predeclared_pending_human_listening",
+  "selection_policy": "A first; consider predeclared B only if human rejects A; no ASR outputs may inform selection",
+  "source": "Piper zh_CN-huayan-medium CPU; independent from platform Sherpa zh-ll",
+  "source_model_sha256": "9929917bf8cabb26fd528ea44d3a6699c11e87317a14765312420be230be0f3d",
+  "source_config_sha256": "d521dc45504a8ccc99e325822b35946dd701840bfb07e3dbb31a40929ed6a82b",
+  "source_license": "dataset license Unknown; local evaluation only; model weights not distributed",
+  "generator": "PiperVoice.synthesize_wav defaults; use_cuda=False; no speed, noise, volume or normalization override",
+  "labels_sha256": "6837312e98aa2c0b8fd218797ce7d4c0a2b4223606b7279d377f3e27860e987b",
+  "platform_calls": 0,
+  "asr_calls": 0,
+  "samples": [
+    {
+      "case_id": "JOURNEY-CAT-A",
+      "text": "猫。",
+      "file": "journey-cat-a-period-20261014.wav",
+      "category": "isolated_word_with_punctuation",
+      "sha256": "0f96c3357111535c9f08a85378794568b32df28ace90993d587df9a54e853f7c",
+      "sample_rate": 22050,
+      "channels": 1,
+      "frame_count": 10752,
+      "duration_ms": 487.6190476190476,
+      "pcm_rms": 0.16816294841865947,
+      "peak": 0.999969482421875,
+      "decoded_non_silent": true,
+      "human_listening": "pending",
+      "browser_four_second_eligible": true
+    },
+    {
+      "case_id": "JOURNEY-CAT-B",
+      "text": "这是一只猫。",
+      "file": "journey-cat-b-sentence-20261014.wav",
+      "category": "full_sentence",
+      "sha256": "48b4c8024ac97779747239a05c314332c93e5690b8652140916f19cd35603bf1",
+      "sample_rate": 22050,
+      "channels": 1,
+      "frame_count": 23296,
+      "duration_ms": 1056.5079365079366,
+      "pcm_rms": 0.22963963355999895,
+      "peak": 0.999969482421875,
+      "decoded_non_silent": true,
+      "human_listening": "pending",
+      "browser_four_second_eligible": true
+    }
+  ]
+}

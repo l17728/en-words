@@ -1,0 +1,871 @@
+{
+  "id": "manual-test-g10-g12-100",
+  "name": "高中综合手工测试词库（高一至高三代表词100）",
+  "grade": "g10",
+  "source": "g10/g11/g12 种子词库按课程顺序均匀抽样，各34/33/33词；用于手工课堂验收",
+  "entries": [
+    {
+      "word": "lecture",
+      "phonetic": null,
+      "meanings": [
+        "n. 讲座",
+        "n. 讲课"
+      ],
+      "unit": "Welcome Unit"
+    },
+    {
+      "word": "confidence",
+      "phonetic": null,
+      "meanings": [
+        "n. 信心",
+        "n. 信任"
+      ],
+      "unit": "Welcome Unit"
+    },
+    {
+      "word": "advance",
+      "phonetic": null,
+      "meanings": [
+        "n. 前进",
+        "n. 发展"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "arrangement",
+      "phonetic": null,
+      "meanings": [
+        "n. 安排",
+        "n. 筹备"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "economic",
+      "phonetic": null,
+      "meanings": [
+        "adj. 经济（上）的",
+        "adj. 经济学的"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "glory",
+      "phonetic": null,
+      "meanings": [
+        "n. 荣誉",
+        "n. 光荣"
+      ],
+      "unit": "Unit 3"
+    },
+    {
+      "word": "error",
+      "phonetic": null,
+      "meanings": [
+        "n. 错误",
+        "n. 差错"
+      ],
+      "unit": "Unit 3"
+    },
+    {
+      "word": "unify",
+      "phonetic": null,
+      "meanings": [
+        "vi. & vt. 统一",
+        "vi. & vt. （使）成一体"
+      ],
+      "unit": "Unit 4"
+    },
+    {
+      "word": "attitude",
+      "phonetic": null,
+      "meanings": [
+        "n. 态度",
+        "n. 看法"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "pants",
+      "phonetic": null,
+      "meanings": [
+        "n. 内裤",
+        "n. 短裤"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "likely",
+      "phonetic": null,
+      "meanings": [
+        "adj. 可能的",
+        "adv. 可能地"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "roof",
+      "phonetic": null,
+      "meanings": [
+        "n. 顶部",
+        "n. 屋顶"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "illegally",
+      "phonetic": null,
+      "meanings": [
+        "adv. 不合法地",
+        "adv. 非法的"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "Tibetan antelope",
+      "phonetic": null,
+      "meanings": [
+        "专有名词 藏羚羊"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "bird field guide",
+      "phonetic": null,
+      "meanings": [
+        "短语 鸟类图鉴"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "now that",
+      "phonetic": null,
+      "meanings": [
+        "短语 既然",
+        "短语 由于"
+      ],
+      "unit": "Unit 3"
+    },
+    {
+      "word": "author",
+      "phonetic": null,
+      "meanings": [
+        "n. 作者",
+        "n. 作家"
+      ],
+      "unit": "Unit 3"
+    },
+    {
+      "word": "keep your eyes open (for)",
+      "phonetic": null,
+      "meanings": [
+        "短语 留心",
+        "短语 留意"
+      ],
+      "unit": "Unit 4"
+    },
+    {
+      "word": "stringed",
+      "phonetic": null,
+      "meanings": [
+        "adj. 有弦的"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "set sth up",
+      "phonetic": null,
+      "meanings": [
+        "短语 安装好（设备或机器）"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "range from…to…",
+      "phonetic": null,
+      "meanings": [
+        "短语 包括从…….到……之间"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "have sth in common",
+      "phonetic": null,
+      "meanings": [
+        "短语 （兴趣、想法等方面）相同",
+        "短语 有相同的特征"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "moment",
+      "phonetic": null,
+      "meanings": [
+        "n. 片刻",
+        "n. 瞬间"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "fee",
+      "phonetic": null,
+      "meanings": [
+        "n. 专业服务费",
+        "n. 报酬"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "insurance",
+      "phonetic": null,
+      "meanings": [
+        "n. 保险",
+        "n. 保险业"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "a great deal（of）",
+      "phonetic": null,
+      "meanings": [
+        "短语 大量"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "graffiti",
+      "phonetic": null,
+      "meanings": [
+        "n. 涂鸦",
+        "n. 乱写乱画"
+      ],
+      "unit": "Unit 3"
+    },
+    {
+      "word": "accessory",
+      "phonetic": null,
+      "meanings": [
+        "n. 配饰",
+        "n. 附件"
+      ],
+      "unit": "Unit 3"
+    },
+    {
+      "word": "cm abbr.（centimetre or centimeter）",
+      "phonetic": null,
+      "meanings": [
+        "短语 厘米"
+      ],
+      "unit": "Unit 4"
+    },
+    {
+      "word": "lack",
+      "phonetic": null,
+      "meanings": [
+        "n. 缺乏",
+        "n. 短缺vt.没有"
+      ],
+      "unit": "Unit 4"
+    },
+    {
+      "word": "limited",
+      "phonetic": null,
+      "meanings": [
+        "adj. 有限的"
+      ],
+      "unit": "Unit 4"
+    },
+    {
+      "word": "narration",
+      "phonetic": null,
+      "meanings": [
+        "n. 叙述",
+        "n. 讲述"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "sequence",
+      "phonetic": null,
+      "meanings": [
+        "vt. 按顺序排列n.顺序",
+        "vt. 一系列"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "Portia Langham",
+      "phonetic": null,
+      "meanings": [
+        "专有名词 波西亚 兰厄姆"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "physiology",
+      "phonetic": null,
+      "meanings": [
+        "n. 生理学:生理机能"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "analyse (NAmE -ze]",
+      "phonetic": null,
+      "meanings": [
+        "vt. 分析"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "genius ( pl. geniuses)",
+      "phonetic": null,
+      "meanings": [
+        "n. 天才",
+        "n. 天资"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "sum up",
+      "phonetic": null,
+      "meanings": [
+        "短语 总结",
+        "短语 概括"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "appliance",
+      "phonetic": null,
+      "meanings": [
+        "n. 电器",
+        "n. 器具"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "cancer",
+      "phonetic": null,
+      "meanings": [
+        "n. 癌",
+        "n. 癌症"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "predict",
+      "phonetic": null,
+      "meanings": [
+        "vi. 预测",
+        "vi. 预言"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "librarian   nI.",
+      "phonetic": null,
+      "meanings": [
+        "短语 图书管理员",
+        "短语 图书馆馆长"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "bless",
+      "phonetic": null,
+      "meanings": [
+        "vt. 祝福"
+      ],
+      "unit": "Unit 3"
+    },
+    {
+      "word": "appeal",
+      "phonetic": null,
+      "meanings": [
+        "vi. 有吸引力:呼吁:恳求",
+        "vi. 上诉"
+      ],
+      "unit": "Unit 3"
+    },
+    {
+      "word": "Sarek National Park",
+      "phonetic": null,
+      "meanings": [
+        "专有名词 萨利克国家公园"
+      ],
+      "unit": "Unit 3"
+    },
+    {
+      "word": "waist",
+      "phonetic": null,
+      "meanings": [
+        "n. 腰",
+        "n. 腰部"
+      ],
+      "unit": "Unit 4"
+    },
+    {
+      "word": "clarify",
+      "phonetic": null,
+      "meanings": [
+        "vt. 使更清晰易懂",
+        "vt. 阐明"
+      ],
+      "unit": "Unit 4"
+    },
+    {
+      "word": "at work",
+      "phonetic": null,
+      "meanings": [
+        "短语 有某种影响:在T作"
+      ],
+      "unit": "Unit 4"
+    },
+    {
+      "word": "characteristic",
+      "phonetic": null,
+      "meanings": [
+        "n. 特征",
+        "n. 特点"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "sorghum",
+      "phonetic": null,
+      "meanings": [
+        "n. 高粱",
+        "n. 高粱米"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "bacterium ( pl. -ria/-ria/)",
+      "phonetic": null,
+      "meanings": [
+        "n. 细菌"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "once and for all",
+      "phonetic": null,
+      "meanings": [
+        "短语 最终地",
+        "短语 彻底地"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "thanks to",
+      "phonetic": null,
+      "meanings": [
+        "短语 由于"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "aerospace",
+      "phonetic": null,
+      "meanings": [
+        "n. 航空航天业"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "telescope",
+      "phonetic": null,
+      "meanings": [
+        "n. 望远镜"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "engage",
+      "phonetic": null,
+      "meanings": [
+        "vi. 参加",
+        "vt. 吸引"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "departure",
+      "phonetic": null,
+      "meanings": [
+        "n. 离开"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "angle",
+      "phonetic": null,
+      "meanings": [
+        "n. 角"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "vinegar",
+      "phonetic": null,
+      "meanings": [
+        "n. 醋"
+      ],
+      "unit": "Unit 3"
+    },
+    {
+      "word": "fig",
+      "phonetic": null,
+      "meanings": [
+        "n. 无花果"
+      ],
+      "unit": "Unit 3"
+    },
+    {
+      "word": "moderation",
+      "phonetic": null,
+      "meanings": [
+        "n. 适度"
+      ],
+      "unit": "Unit 3"
+    },
+    {
+      "word": "peak",
+      "phonetic": null,
+      "meanings": [
+        "n. 顶峰"
+      ],
+      "unit": "Unit 4"
+    },
+    {
+      "word": "alongside",
+      "phonetic": null,
+      "meanings": [
+        "prep. 在......旁边",
+        "prep. 与......一起"
+      ],
+      "unit": "Unit 4"
+    },
+    {
+      "word": "radiation",
+      "phonetic": null,
+      "meanings": [
+        "n. 辐射",
+        "n. 放射线"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "bath",
+      "phonetic": null,
+      "meanings": [
+        "n. 洗澡",
+        "vt. 给......洗澡"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "choke",
+      "phonetic": null,
+      "meanings": [
+        "vi. & vt. （使）窒息"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "suburb",
+      "phonetic": null,
+      "meanings": [
+        "n. 郊区"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "precise",
+      "phonetic": null,
+      "meanings": [
+        "adj. 准确的:精确的"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "client",
+      "phonetic": null,
+      "meanings": [
+        "n. 委托人:当事人:客户"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "permanent",
+      "phonetic": null,
+      "meanings": [
+        "adj. 永久的",
+        "adj. 永恒的:长久的"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "expansion",
+      "phonetic": null,
+      "meanings": [
+        "n. 扩张",
+        "n. 扩展"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "Tadpoles  Searching for Mother",
+      "phonetic": null,
+      "meanings": [
+        "专有名词 《小蝌蚪找妈妈》"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "discipline",
+      "phonetic": null,
+      "meanings": [
+        "n. 自制力:纪律",
+        "n. 学科"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "nut",
+      "phonetic": null,
+      "meanings": [
+        "n. 坚果"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "methane",
+      "phonetic": null,
+      "meanings": [
+        "n. 甲烷",
+        "n. 沼气"
+      ],
+      "unit": "Unit 3"
+    },
+    {
+      "word": "basin",
+      "phonetic": null,
+      "meanings": [
+        "n. 流域",
+        "n. 盆地"
+      ],
+      "unit": "Unit 3"
+    },
+    {
+      "word": "restore",
+      "phonetic": null,
+      "meanings": [
+        "vt. 恢复",
+        "vt. 使复原"
+      ],
+      "unit": "Unit 3"
+    },
+    {
+      "word": "turn sb down",
+      "phonetic": null,
+      "meanings": [
+        "短语 拒绝(某人)"
+      ],
+      "unit": "Unit 4"
+    },
+    {
+      "word": "good/bad-tempered",
+      "phonetic": null,
+      "meanings": [
+        "adj. 脾气好的/坏的"
+      ],
+      "unit": "Unit 4"
+    },
+    {
+      "word": "navigator",
+      "phonetic": null,
+      "meanings": [
+        "n. 领航员",
+        "n. (飞机、船舶等上的)航行者"
+      ],
+      "unit": "Unit 4"
+    },
+    {
+      "word": "Hubert Hudson",
+      "phonetic": null,
+      "meanings": [
+        "专有名词 休伯特·赫德森"
+      ],
+      "unit": "Unit 4"
+    },
+    {
+      "word": "mood",
+      "phonetic": null,
+      "meanings": [
+        "n. 情绪",
+        "n. 心情"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "civilian",
+      "phonetic": null,
+      "meanings": [
+        "n. 平民",
+        "n. 老百姓"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "grief",
+      "phonetic": null,
+      "meanings": [
+        "n. 悲伤",
+        "n. 悲痛"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "salary",
+      "phonetic": null,
+      "meanings": [
+        "n. 薪水",
+        "n. 薪金（月薪）in a high / low salary family"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "pros and cons",
+      "phonetic": null,
+      "meanings": [
+        "短语 事物的利与弊",
+        "短语 支持与反对"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "division",
+      "phonetic": null,
+      "meanings": [
+        "n. 分开",
+        "n. 分隔"
+      ],
+      "unit": "Unit 1"
+    },
+    {
+      "word": "foundation",
+      "phonetic": null,
+      "meanings": [
+        "n. 创建",
+        "n. 基础"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "entitle",
+      "phonetic": null,
+      "meanings": [
+        "vt. 给--命名(或题名)",
+        "vt. 使享有权利"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "pouch",
+      "phonetic": null,
+      "meanings": [
+        "n. 商儿袋",
+        "n. 小袋子"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "Bondi  Beach",
+      "phonetic": null,
+      "meanings": [
+        "专有名词 邦迪海滩"
+      ],
+      "unit": "Unit 2"
+    },
+    {
+      "word": "withdraw ( withdrew, withdrawn)",
+      "phonetic": null,
+      "meanings": [
+        "vi. & vt. (使)撤回",
+        "vi. & vt. 撤离"
+      ],
+      "unit": "Unit 3"
+    },
+    {
+      "word": "directory",
+      "phonetic": null,
+      "meanings": [
+        "n. 名录",
+        "n. 电话号码簿"
+      ],
+      "unit": "Unit 3"
+    },
+    {
+      "word": "secondary",
+      "phonetic": null,
+      "meanings": [
+        "adj. 中学的",
+        "adj. 次要的"
+      ],
+      "unit": "Unit 4"
+    },
+    {
+      "word": "fireplace",
+      "phonetic": null,
+      "meanings": [
+        "n. 壁炉"
+      ],
+      "unit": "Unit 4"
+    },
+    {
+      "word": "cardiac",
+      "phonetic": null,
+      "meanings": [
+        "adj. 心脏病的:心脏的"
+      ],
+      "unit": "Unit 4"
+    },
+    {
+      "word": "scenario",
+      "phonetic": null,
+      "meanings": [
+        "n. 设想",
+        "n. 方案"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "accountant",
+      "phonetic": null,
+      "meanings": [
+        "n. 会计:会计师"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "fry",
+      "phonetic": null,
+      "meanings": [
+        "n. 油煎的食物vt. &",
+        "vi. 油炸"
+      ],
+      "unit": "Unit 5"
+    },
+    {
+      "word": "CV (BrE)",
+      "phonetic": null,
+      "meanings": [
+        "n. 简历",
+        "n. 履历"
+      ],
+      "unit": "Unit 5"
+    }
+  ]
+}

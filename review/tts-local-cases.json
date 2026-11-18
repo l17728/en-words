@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "status": "frozen_reviewed",
+  "samples": [
+    {
+      "case_id": "TTS-ZH-01",
+      "text": "苹果",
+      "language": "zh",
+      "human_listening": "pending"
+    },
+    {
+      "case_id": "TTS-ZH-02",
+      "text": "老师",
+      "language": "zh",
+      "human_listening": "pending"
+    },
+    {
+      "case_id": "TTS-ZH-03",
+      "text": "美丽",
+      "language": "zh",
+      "human_listening": "pending"
+    },
+    {
+      "case_id": "TTS-ZH-04",
+      "text": "放弃",
+      "language": "zh",
+      "human_listening": "pending"
+    },
+    {
+      "case_id": "TTS-ZH-05",
+      "text": "苹果是一种水果。",
+      "language": "zh",
+      "human_listening": "pending"
+    },
+    {
+      "case_id": "TTS-ZH-06",
+      "text": "老师是教学生的人。",
+      "language": "zh",
+      "human_listening": "pending"
+    },
+    {
+      "case_id": "TTS-ZH-07",
+      "text": "美丽的意思是漂亮。",
+      "language": "zh",
+      "human_listening": "pending"
+    },
+    {
+      "case_id": "TTS-ZH-08",
+      "text": "放弃的意思是不再继续。",
+      "language": "zh",
+      "human_listening": "pending"
+    },
+    {
+      "case_id": "TTS-ZH-09",
+      "text": "请跟我朗读这个单词。",
+      "language": "zh",
+      "human_listening": "pending"
+    },
+    {
+      "case_id": "TTS-ZH-10",
+      "text": "现在开始今天的单词学习。",
+      "language": "zh",
+      "human_listening": "pending"
+    },
+    {
+      "case_id": "TTS-ZH-11",
+      "text": "请说出这个词的中文意思。",
+      "language": "zh",
+      "human_listening": "pending"
+    },
+    {
+      "case_id": "TTS-ZH-12",
+      "text": "今天的课程结束了，明天见。",
+      "language": "zh",
+      "human_listening": "pending"
+    }
+  ]
+}

@@ -44,10 +44,10 @@ func TestTeacherDecide(t *testing.T) {
 	assert.Equal(t, "closing", u.Category)
 
 	// 鼓励密度不足 → 无话术
-	u = ta.Decide(TeacherInput{LessonID: 12, Event: "judged_correct", EncourageN: 2})
+	u = ta.Decide(TeacherInput{LessonID: 12, Event: "judged_correct", EncourageN: 2, EncourageEveryN: 8})
 	assert.Nil(t, u)
 	// 密度到 → encourage
-	u = ta.Decide(TeacherInput{LessonID: 12, Event: "judged_correct", EncourageN: 8})
+	u = ta.Decide(TeacherInput{LessonID: 12, Event: "judged_correct", EncourageN: 8, EncourageEveryN: 8})
 	require.NotNil(t, u)
 	assert.Equal(t, "encourage", u.Category)
 
@@ -58,7 +58,7 @@ func TestTeacherDecide(t *testing.T) {
 func TestTeacherRenderDeterministic(t *testing.T) {
 	ta := NewTeacherAgent(nil)
 	in := TeacherInput{LessonID: 12, StudentName: "小明",
-		Word: classroom.Word{Word: "apple", Meanings: []string{"n. 苹果"}},
+		Word:  classroom.Word{Word: "apple", Meanings: []string{"n. 苹果"}},
 		Event: "judged_wrong"}
 	u := ta.Decide(in)
 	t1 := ta.Render(in, u)

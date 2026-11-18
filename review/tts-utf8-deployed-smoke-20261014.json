@@ -1,0 +1,17 @@
+{
+  "time": "2026-10-14T16:40:27.601958",
+  "endpoint": "http://127.0.0.1:8090/api/tts/speech",
+  "timeout_seconds": 20,
+  "fixture": "U+732B",
+  "human_listening": "pending",
+  "status": 200,
+  "channels": 1,
+  "sample_rate": 16000,
+  "sample_width": 2,
+  "frames": 7424,
+  "rms": 411.9664988171117,
+  "bytes": 14892,
+  "sha256": "569816554fd2b0849d0ef53ca735ec4149b27da578fcbdb1e47fe6cb04a440f5",
+  "success": true,
+  "duration_ms": 3093
+}

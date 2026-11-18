@@ -1,0 +1,459 @@
+{
+  "scope": "diagnostic direct Model Console calls; not product-route/browser acceptance",
+  "source_manifests": {
+    "en": "f010a25a88afb1423aaab959555c24b32813f129c8d9bfc431dc658ffad786f4",
+    "zh": "81eb3c61c4a8c0238aea2078eedb1ccf69ed26e6063d54fe33f852109a9a87d4"
+  },
+  "arms": [
+    "A",
+    "B"
+  ],
+  "background_load": "single-worker mocked browser regression and network-only GGUF download; no other model inference",
+  "model_from_inspected_startup_config": "qwen3-asr-1.7b Q8_0 (not dynamic model identity verification)",
+  "ffmpeg_sha256": "bf8afaf6d8ba94240abbe04293b21ea4fd0469faf4fd5d8bb8228353c79f95e9",
+  "timeout_seconds": 20,
+  "hotwords": false,
+  "prompt": null,
+  "arm": "B",
+  "language": "en",
+  "manifest_sha256": "f010a25a88afb1423aaab959555c24b32813f129c8d9bfc431dc658ffad786f4",
+  "expected_cases": 16,
+  "cases": [
+    {
+      "case_id": "ASR-EN-01",
+      "reference": "apple",
+      "source_sha256": "4c7d98e368f9d06f1b0d9b64979ec032254a341025b3cec7f489cf03bdc1585f",
+      "actual_input_sha256": "63712756642bd7cffbb95d4833116d058d16891da022ba893b8cfc78063dbf19",
+      "actual_input_file": "D:\\en-words\\review\\asr-comparison-ab-20261014\\pcm16k\\ASR-EN-01.wav",
+      "language_field": "en",
+      "temperature": null,
+      "transport_pass": true,
+      "raw_available": true,
+      "source_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1260.0
+      },
+      "actual_input_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1260.0
+      },
+      "provider_status": 200,
+      "raw_transcript": "language English<asr_text>Apple.",
+      "transcript": "Apple.",
+      "duration_ms": 156
+    },
+    {
+      "case_id": "ASR-EN-02",
+      "reference": "banana",
+      "source_sha256": "6e9d180a8b51265b52efec7feeead8313fe0f3f40cd98fe25212c77488812c4b",
+      "actual_input_sha256": "af4fce484a81b4e1d721da0614975d39544390c798c7893fae689a29616cc7e9",
+      "actual_input_file": "D:\\en-words\\review\\asr-comparison-ab-20261014\\pcm16k\\ASR-EN-02.wav",
+      "language_field": "en",
+      "temperature": null,
+      "transport_pass": true,
+      "raw_available": true,
+      "source_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1315.0
+      },
+      "actual_input_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1315.0
+      },
+      "provider_status": 200,
+      "raw_transcript": "language English<asr_text>Banana.",
+      "transcript": "Banana.",
+      "duration_ms": 187
+    },
+    {
+      "case_id": "ASR-EN-03",
+      "reference": "orange",
+      "source_sha256": "8fd1ec9af5dd7ed18672a76a2d9db73f1f819b87c4ff6458aeb8070bf6491caf",
+      "actual_input_sha256": "8f751affbdc8e360e72013f29874e1de853bdb25eeae1677198cfc75dc5c5f51",
+      "actual_input_file": "D:\\en-words\\review\\asr-comparison-ab-20261014\\pcm16k\\ASR-EN-03.wav",
+      "language_field": "en",
+      "temperature": null,
+      "transport_pass": true,
+      "raw_available": true,
+      "source_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1510.0
+      },
+      "actual_input_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1510.0
+      },
+      "provider_status": 200,
+      "raw_transcript": "language English<asr_text>Orange.",
+      "transcript": "Orange.",
+      "duration_ms": 156
+    },
+    {
+      "case_id": "ASR-EN-04",
+      "reference": "book",
+      "source_sha256": "f8b28919a2b3db827dfe934924d83ee0e990ebd68a4772ed69b3ec78b96b766f",
+      "actual_input_sha256": "6a5246c366adfb1d5077f7f30ad1baac398103ba59a71f6b899bc6c0cc5bc8c6",
+      "actual_input_file": "D:\\en-words\\review\\asr-comparison-ab-20261014\\pcm16k\\ASR-EN-04.wav",
+      "language_field": "en",
+      "temperature": null,
+      "transport_pass": true,
+      "raw_available": true,
+      "source_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1270.0
+      },
+      "actual_input_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1270.0
+      },
+      "provider_status": 200,
+      "raw_transcript": "language English<asr_text>Vog.",
+      "transcript": "Vog.",
+      "duration_ms": 141
+    },
+    {
+      "case_id": "ASR-EN-05",
+      "reference": "cat",
+      "source_sha256": "def819a48d66c1058257c227245f267714ff74547e122952d8f6e2a1adb2eca5",
+      "actual_input_sha256": "7f561ea90c95da6a3cc56a190d962ea4390c18caec6115d468c63b46484746be",
+      "actual_input_file": "D:\\en-words\\review\\asr-comparison-ab-20261014\\pcm16k\\ASR-EN-05.wav",
+      "language_field": "en",
+      "temperature": null,
+      "transport_pass": true,
+      "raw_available": true,
+      "source_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1260.0
+      },
+      "actual_input_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1260.0
+      },
+      "provider_status": 200,
+      "raw_transcript": "language English<asr_text>Cat.",
+      "transcript": "Cat.",
+      "duration_ms": 125
+    },
+    {
+      "case_id": "ASR-EN-06",
+      "reference": "dog",
+      "source_sha256": "446bff2b7ee7cafae8557928ddddb5d54d8cf8adb3decf842d53955c2ebaa723",
+      "actual_input_sha256": "c431e540309828e81b12b4be2a841c12920e648e56ee3ff6efc2d8785c549faa",
+      "actual_input_file": "D:\\en-words\\review\\asr-comparison-ab-20261014\\pcm16k\\ASR-EN-06.wav",
+      "language_field": "en",
+      "temperature": null,
+      "transport_pass": true,
+      "raw_available": true,
+      "source_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1270.0
+      },
+      "actual_input_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1270.0
+      },
+      "provider_status": 200,
+      "raw_transcript": "language English<asr_text>Dog.",
+      "transcript": "Dog.",
+      "duration_ms": 140
+    },
+    {
+      "case_id": "ASR-EN-07",
+      "reference": "teacher",
+      "source_sha256": "ece5159f3adad1f0714bebc1bb1134951375709b79af7d895c9c09fd5618aaf4",
+      "actual_input_sha256": "bdda0191b911a716a378bfbe04059e033b93f91b08e5a6eee0c7b8c8340ef6ed",
+      "actual_input_file": "D:\\en-words\\review\\asr-comparison-ab-20261014\\pcm16k\\ASR-EN-07.wav",
+      "language_field": "en",
+      "temperature": null,
+      "transport_pass": true,
+      "raw_available": true,
+      "source_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1410.0
+      },
+      "actual_input_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1410.0
+      },
+      "provider_status": 200,
+      "raw_transcript": "language English<asr_text>Teacher.",
+      "transcript": "Teacher.",
+      "duration_ms": 125
+    },
+    {
+      "case_id": "ASR-EN-08",
+      "reference": "beautiful",
+      "source_sha256": "430a9b419f00681446a9815e16ae2066ab8dda527630082a2b9f6a6d622c710c",
+      "actual_input_sha256": "8c9e5a86f1489752194f1b5d68c6388f0befe69e2a6b2d94d519426c1d30b28a",
+      "actual_input_file": "D:\\en-words\\review\\asr-comparison-ab-20261014\\pcm16k\\ASR-EN-08.wav",
+      "language_field": "en",
+      "temperature": null,
+      "transport_pass": true,
+      "raw_available": true,
+      "source_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1455.0
+      },
+      "actual_input_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1455.0
+      },
+      "provider_status": 200,
+      "raw_transcript": "language English<asr_text>Beautiful.",
+      "transcript": "Beautiful.",
+      "duration_ms": 141
+    },
+    {
+      "case_id": "ASR-EN-09",
+      "reference": "look after",
+      "source_sha256": "bc10b32f186bf9bd696568ac4f297cdceef5485353d4d6e37e4effd96ec7bf1a",
+      "actual_input_sha256": "ea98331a93395811297085d59c5e1d7777422f796e02603d7348bf272d528a96",
+      "actual_input_file": "D:\\en-words\\review\\asr-comparison-ab-20261014\\pcm16k\\ASR-EN-09.wav",
+      "language_field": "en",
+      "temperature": null,
+      "transport_pass": true,
+      "raw_available": true,
+      "source_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1485.0
+      },
+      "actual_input_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1485.0
+      },
+      "provider_status": 200,
+      "raw_transcript": "language English<asr_text>Look after.",
+      "transcript": "Look after.",
+      "duration_ms": 203
+    },
+    {
+      "case_id": "ASR-EN-10",
+      "reference": "give up",
+      "source_sha256": "f20ae5f28b61a85ebd9221bebc9ca5c020d36ebec8c970a60b05333ce415eab8",
+      "actual_input_sha256": "29b03dc6667cc9ac3d8c53690ce3fefb2ae4d2bcbef38d137a5d612654c02c37",
+      "actual_input_file": "D:\\en-words\\review\\asr-comparison-ab-20261014\\pcm16k\\ASR-EN-10.wav",
+      "language_field": "en",
+      "temperature": null,
+      "transport_pass": true,
+      "raw_available": true,
+      "source_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1315.0
+      },
+      "actual_input_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1315.0
+      },
+      "provider_status": 200,
+      "raw_transcript": "language English<asr_text>Give up.",
+      "transcript": "Give up.",
+      "duration_ms": 172
+    },
+    {
+      "case_id": "ASR-EN-11",
+      "reference": "take care of",
+      "source_sha256": "362e58ff33a7c7071afb93e86c8ba75f2fd6e77a238b6fd509f16e6d97df23f7",
+      "actual_input_sha256": "9cfb0364a7f48d5f63ecb9b96fd10cb528eb6e1b363dba5242658fe7a0240df3",
+      "actual_input_file": "D:\\en-words\\review\\asr-comparison-ab-20261014\\pcm16k\\ASR-EN-11.wav",
+      "language_field": "en",
+      "temperature": null,
+      "transport_pass": true,
+      "raw_available": true,
+      "source_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1615.0
+      },
+      "actual_input_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1615.0
+      },
+      "provider_status": 200,
+      "raw_transcript": "language English<asr_text>Take care of.",
+      "transcript": "Take care of.",
+      "duration_ms": 141
+    },
+    {
+      "case_id": "ASR-EN-12",
+      "reference": "good morning",
+      "source_sha256": "73a5506a5b61b95412c0c9a2ce765b763ddd7b5ae7c384ae2975b62e3feb9e50",
+      "actual_input_sha256": "5dcb351dee69ad2aeb30008e6bc0181622c778f3a32f8c3dcfb70a90a2f71369",
+      "actual_input_file": "D:\\en-words\\review\\asr-comparison-ab-20261014\\pcm16k\\ASR-EN-12.wav",
+      "language_field": "en",
+      "temperature": null,
+      "transport_pass": true,
+      "raw_available": true,
+      "source_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1520.0
+      },
+      "actual_input_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1520.0
+      },
+      "provider_status": 200,
+      "raw_transcript": "language English<asr_text>Good morning.",
+      "transcript": "Good morning.",
+      "duration_ms": 156
+    },
+    {
+      "case_id": "ASR-EN-13",
+      "reference": "I do not know",
+      "source_sha256": "226c417997dcb8cb659594566b0e73f8319ef862eb1a87feaa35355526b91074",
+      "actual_input_sha256": "570f0f8b6a80278b81ff5a9b89ea9d19c8831816c180a7a7055416599c385fdc",
+      "actual_input_file": "D:\\en-words\\review\\asr-comparison-ab-20261014\\pcm16k\\ASR-EN-13.wav",
+      "language_field": "en",
+      "temperature": null,
+      "transport_pass": true,
+      "raw_available": true,
+      "source_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1650.0
+      },
+      "actual_input_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1650.0
+      },
+      "provider_status": 200,
+      "raw_transcript": "language English<asr_text>I do not know.",
+      "transcript": "I do not know.",
+      "duration_ms": 156
+    },
+    {
+      "case_id": "ASR-EN-14",
+      "reference": "Two lessons today",
+      "source_sha256": "9c902b1714fe8f0005d784fff03f8678cf76174f8e75250fd825252e51011960",
+      "actual_input_sha256": "0aa2eef891c53bab42cb4d8ca27302526bac036ea746a12ff29557e176fa7322",
+      "actual_input_file": "D:\\en-words\\review\\asr-comparison-ab-20261014\\pcm16k\\ASR-EN-14.wav",
+      "language_field": "en",
+      "temperature": null,
+      "transport_pass": true,
+      "raw_available": true,
+      "source_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1885.0
+      },
+      "actual_input_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1885.0
+      },
+      "provider_status": 200,
+      "raw_transcript": "language English<asr_text>Two lessons today.",
+      "transcript": "Two lessons today.",
+      "duration_ms": 203
+    },
+    {
+      "case_id": "ASR-EN-15",
+      "reference": "Tomorrow is October fifteenth",
+      "source_sha256": "caeb0fcc8a7cb10a643764c726f272b9aaa63536f11f0d6dab160951dcb17b8d",
+      "actual_input_sha256": "9701a83a98a9452b07887f5a7d3d550a6e4a600b84dab537dcbf1d5fffac900e",
+      "actual_input_file": "D:\\en-words\\review\\asr-comparison-ab-20261014\\pcm16k\\ASR-EN-15.wav",
+      "language_field": "en",
+      "temperature": null,
+      "transport_pass": true,
+      "raw_available": true,
+      "source_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 2700.0
+      },
+      "actual_input_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 2700.0
+      },
+      "provider_status": 200,
+      "raw_transcript": "language English<asr_text>Tomorrow is October fifteenth.",
+      "transcript": "Tomorrow is October fifteenth.",
+      "duration_ms": 235
+    },
+    {
+      "case_id": "ASR-EN-16",
+      "reference": "Please repeat that",
+      "source_sha256": "e793553026402492708c6ccd34e317675f23f9ffd927bed8579f50bf9af7f763",
+      "actual_input_sha256": "f817d9bd525af8c1cf5935be5ddcda226c7b0060c68df7ecffdea8522d10e4bf",
+      "actual_input_file": "D:\\en-words\\review\\asr-comparison-ab-20261014\\pcm16k\\ASR-EN-16.wav",
+      "language_field": "en",
+      "temperature": null,
+      "transport_pass": true,
+      "raw_available": true,
+      "source_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1930.0
+      },
+      "actual_input_audio": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2,
+        "duration_ms": 1930.0
+      },
+      "provider_status": 200,
+      "raw_transcript": "language English<asr_text>Please repeat that.",
+      "transcript": "Please repeat that.",
+      "duration_ms": 188
+    }
+  ],
+  "human_listening": "see separate case-specific user record; not inferred here",
+  "completed_cases": 16,
+  "unattempted_cases": 0,
+  "failed_cases": 0
+}

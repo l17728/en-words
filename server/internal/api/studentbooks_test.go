@@ -5,9 +5,12 @@ package api
 // ② 后端无 GET /student/books。锁定：我的词库=仅已启用（有记忆卡），
 // enable 后未摸底也在列（dingdangcat 场景），空态返回 []（nonNilSlice 约定）。
 import (
+	"path/filepath"
+	"strconv"
 	"testing"
 
 	"enwords/internal/auth"
+	"enwords/internal/store"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -48,4 +51,31 @@ func TestStudentBooksEndpoint(t *testing.T) {
 	// 学生角色隔离：admin 不得走学生端点（roleMW 403）
 	resp = req2(t, app.Router(), "GET", "/api/v1/student/books", atok, nil)
 	assert.Equal(t, errForbidden, resp.Code)
+}
+
+func TestStudentRemoveBookHidesStorageFailureDetails(t *testing.T) {
+	db, err := store.Open(filepath.Join(t.TempDir(), "remove.db"))
+	require.NoError(t, err)
+	pool, err := db.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = pool.Close() })
+	app := NewApp(nil, db)
+	_, err = app.Auth.CreateUser("admin", "adminpw", "管理员", auth.RoleAdmin)
+	require.NoError(t, err)
+	require.NoError(t, store.NewAuthStore(db).SaveUser(app.Auth, "admin"))
+	admin, _ := loginGet(t, app, "admin", "adminpw")
+	bookID := seedBook(t, app, admin, "取消失败词库", "g7", []string{"cat", "dog"})
+	_, err = app.Auth.CreateUser("remove-student", "pw", "学生", auth.RoleStudent)
+	require.NoError(t, err)
+	require.NoError(t, store.NewAuthStore(db).SaveUser(app.Auth, "remove-student"))
+	token, studentID := loginGet(t, app, "remove-student", "pw")
+	require.NoError(t, app.EnableBook(studentID, bookID))
+	require.NoError(t, db.Exec("CREATE TRIGGER fail_student_remove BEFORE DELETE ON memory_cards BEGIN SELECT RAISE(ABORT,'private_sql_failure_marker'); END").Error)
+
+	resp := req2(t, app.Router(), "DELETE", "/api/v1/student/books/"+strconv.FormatInt(bookID, 10), token, nil)
+	require.Equal(t, errBadRequest, resp.Code)
+	require.Equal(t, "暂时无法移除词库，请稍后重试", resp.Msg)
+	var cards int64
+	require.NoError(t, db.Model(&store.MemoryCard{}).Where("student_id=? AND book_id=?", studentID, bookID).Count(&cards).Error)
+	require.Positive(t, cards)
 }

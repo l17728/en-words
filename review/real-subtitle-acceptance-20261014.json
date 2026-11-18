@@ -1,0 +1,519 @@
+{
+  "scope": "Real TTS subtitles only: three native English utterances and one local Chinese sentence; no ASR or student answers; not complete classroom acceptance",
+  "passed": 1,
+  "failed": 0,
+  "source_sha256": "54c462c90dd7581826fdf7f0163d561902e8cbe893fa274bda7cbcd9678984c9",
+  "source_unchanged": true,
+  "source_files": [
+    {
+      "path": "server\\cmd\\judge-eval\\main.go",
+      "sha256": "a2813c8d2ae6f3aa1d69d4a0066e0838065c020f5155a8c423429e32217eeafc"
+    },
+    {
+      "path": "server\\cmd\\local-eval\\main.go",
+      "sha256": "5a9a05bed15152b9448118fa55eaabc3d41d5d4dd2c010fb00980ed860900491"
+    },
+    {
+      "path": "server\\cmd\\server\\main.go",
+      "sha256": "f65636f9c207ca91c3e9e7b1d0757e151d1d860a62178fd24a7df57a5fd123dc"
+    },
+    {
+      "path": "server\\internal\\agent\\agent.go",
+      "sha256": "14f86e951aad2be7939aa799f29caa1be75b11c2d9374fb851ba557d557c18db"
+    },
+    {
+      "path": "server\\internal\\agent\\feedback_limits.go",
+      "sha256": "db69afaf3b592105578a394775670b5b1e780729bff42fa58785644af349f737"
+    },
+    {
+      "path": "server\\internal\\agent\\feedback_policy.go",
+      "sha256": "41966bb37579f2521d5e1ba5bb9a87fa07f6e08c6c83b48372c363a6ede61066"
+    },
+    {
+      "path": "server\\internal\\agent\\overdue_policy.go",
+      "sha256": "f3a11351fdca2a36acf864fe85ed29d7f78214c867c9b4a07bc946b0ec024cc7"
+    },
+    {
+      "path": "server\\internal\\agent\\teacher_effects.go",
+      "sha256": "521e5abea289d19397e3609c61094194bd2f593efd6f8fafcafd3a7baf9c54e0"
+    },
+    {
+      "path": "server\\internal\\api\\agenttools.go",
+      "sha256": "d3b82cac53195a9ba5e083af2cf0d3a82e34a5dc7cec8bdfe1a257264a11c4cb"
+    },
+    {
+      "path": "server\\internal\\api\\agenttransaction.go",
+      "sha256": "699469035797f15cd547c0736a8245713a2ac177db64bf52084f11e10bb28425"
+    },
+    {
+      "path": "server\\internal\\api\\app.go",
+      "sha256": "6c2cfe850636ec84c67fbd27a70d25b89f5bbd124015837ab5868be61a8c7519"
+    },
+    {
+      "path": "server\\internal\\api\\bootstrap.go",
+      "sha256": "af2ccd55cf1482792486625e2142fd63d1664f28853eed535cd8365052bc9042"
+    },
+    {
+      "path": "server\\internal\\api\\capabilityreports.go",
+      "sha256": "65ab28806e963356b594944e2706f5d4382d8f522f6cb33d471fa26bc5b349bf"
+    },
+    {
+      "path": "server\\internal\\api\\capabilitytools.go",
+      "sha256": "75eef05c6d85a089d1cb1b4b894de6651a0db6ecfce9b61d26f4081b4959171f"
+    },
+    {
+      "path": "server\\internal\\api\\extra.go",
+      "sha256": "8b939707f5c64506701a0f3a0b151c1efdfe6e2bad4acce50d0d58845e941225"
+    },
+    {
+      "path": "server\\internal\\api\\feedbackclarification.go",
+      "sha256": "e16533c0471a99838c6aae8c629f3329016131efba71a83115f547cd1dffa755"
+    },
+    {
+      "path": "server\\internal\\api\\feedbackexecution.go",
+      "sha256": "607212e32db8f40e5037ed4d47db96d82a2fb3e88221d79eea17addf9f2d9769"
+    },
+    {
+      "path": "server\\internal\\api\\feedbackflow.go",
+      "sha256": "4be0ff5df5b21d541f4f24cf6fa5ef82a035a4572a4775197aa02bfca0d7c3a0"
+    },
+    {
+      "path": "server\\internal\\api\\feedbacklimits.go",
+      "sha256": "79c747fe05b6fa7652957612a412f89aab66128193e140180b66f9af84c8651c"
+    },
+    {
+      "path": "server\\internal\\api\\feedbackplan.go",
+      "sha256": "c55b406677a481b86a27e6a8697d6e6651e61a5b7679021de4e7a836aa8e96c3"
+    },
+    {
+      "path": "server\\internal\\api\\feedbackquery.go",
+      "sha256": "2349116a3111055f8040bb36880cd0adf8857bbadd46d4dbb153c16a33d8ebf1"
+    },
+    {
+      "path": "server\\internal\\api\\feedbackroutes.go",
+      "sha256": "ea9bdfd8dbbdd0003350166ebfd476436151b15d6d5254d29dc9ac5dcd416b33"
+    },
+    {
+      "path": "server\\internal\\api\\feedbackstorage.go",
+      "sha256": "4a9b54763d353ca1d1ff0f522c4066174f72410091a67f5335f6c0241bc20807"
+    },
+    {
+      "path": "server\\internal\\api\\feedbacktools.go",
+      "sha256": "58789ff6ad6efb88552355818b35be07a11ec4479e158198e757104192f65f7d"
+    },
+    {
+      "path": "server\\internal\\api\\feedbacktypes.go",
+      "sha256": "78f2c0b8e1a5002fcaf16b2e08d4a4689b193e84ffefd752f626718b6335d07d"
+    },
+    {
+      "path": "server\\internal\\api\\helpers.go",
+      "sha256": "684641c8381dbeae936dc8bd9b7839bd139929ef5c61241ff90626ea5fc8d76e"
+    },
+    {
+      "path": "server\\internal\\api\\hub.go",
+      "sha256": "fb60bd6ff8fb278d55d1bef4443c0a94b28282b1e766b557691e9072c7ebfc11"
+    },
+    {
+      "path": "server\\internal\\api\\ingress.go",
+      "sha256": "1f0b74c6a4ea532981deda3c31baf6b9f86764f90d6986f14ee9d7a3df924f63"
+    },
+    {
+      "path": "server\\internal\\api\\lessonagenttools.go",
+      "sha256": "7def6182cacb95f9f9baaee793718502ccb2614e827f2678ebead29f5c78745b"
+    },
+    {
+      "path": "server\\internal\\api\\lessonexecution.go",
+      "sha256": "7db246a869dcd2c6e503619b2d9277dfb0fdf170bb2106bc30554ca4a4f527da"
+    },
+    {
+      "path": "server\\internal\\api\\lessonplan.go",
+      "sha256": "0d5aaa9b5596522d726efe46225bb7f17a2da8e8d0b3b6adb4521b1691c95ce0"
+    },
+    {
+      "path": "server\\internal\\api\\overdue.go",
+      "sha256": "81ef4c25e5eb74354741dc610564cad525ab3614198a4b2f62b0524cfaffd34c"
+    },
+    {
+      "path": "server\\internal\\api\\overduetools.go",
+      "sha256": "528746c26f3eff750d3153b0a4426acd90fe1c9535c30d520cbd6d3693461886"
+    },
+    {
+      "path": "server\\internal\\api\\persistence.go",
+      "sha256": "18d7e4e9f134464139e1d4c619f7407d9d50288854c00ce6c336ea6abb26b2c0"
+    },
+    {
+      "path": "server\\internal\\api\\playbacksettings.go",
+      "sha256": "c6d8fabdeb2dbffe9bf1c14b0a306356dc00fcf06c59e9e411f9f276b2c0a842"
+    },
+    {
+      "path": "server\\internal\\api\\providers.go",
+      "sha256": "003013635b3075d415a34614764cf5d5b467e20c8aa77b1f95d0bcb534293c60"
+    },
+    {
+      "path": "server\\internal\\api\\roomcontext.go",
+      "sha256": "be76c0f13da3d1ca485ede470a411f8715b4713d913c5e9e4f9eee421b5e37e7"
+    },
+    {
+      "path": "server\\internal\\api\\router.go",
+      "sha256": "67b67e35e1a9db6d8af6fc1db34c83482445da9eb0c3a6c189fef8a34933a424"
+    },
+    {
+      "path": "server\\internal\\api\\settlement.go",
+      "sha256": "0504a7830c52b87fb5286e35064075b38899036d9d41fbc0af5b284b7f21b05c"
+    },
+    {
+      "path": "server\\internal\\api\\statistics.go",
+      "sha256": "b528b490505c0453309ff6f913e330ed16375144f9c8428becc6da593f8c6a41"
+    },
+    {
+      "path": "server\\internal\\api\\teachereffects.go",
+      "sha256": "b25591bc44960c5c3508a35cd9a578c3776c7989979dbbd97da5907694850a47"
+    },
+    {
+      "path": "server\\internal\\api\\teachertools.go",
+      "sha256": "f377aa4344aeabcf44d4b8db44f156f6c96e733bf4a5c8ce1443ff76bd396369"
+    },
+    {
+      "path": "server\\internal\\api\\ws.go",
+      "sha256": "ae5119585a08c812098283cad80b17367df655a289fee8f7bc98d182a232cc7d"
+    },
+    {
+      "path": "server\\internal\\auth\\auth.go",
+      "sha256": "129c25874c7dd5b618516820fcf1ebf73c4c9babf48ea3c97ec13ae2f06113ed"
+    },
+    {
+      "path": "server\\internal\\classroom\\classroom.go",
+      "sha256": "cda1cf5fa7002c305f3e09b2e00073ed9ea5e3b67d4f53f2d749eccb1bb8c177"
+    },
+    {
+      "path": "server\\internal\\classroom\\playback.go",
+      "sha256": "5d334719aa0a4ba13a03536462b896a1d074dcf69d7d3e27a97e91face3199cf"
+    },
+    {
+      "path": "server\\internal\\classroom\\recovery.go",
+      "sha256": "a6e9b29e83a1395ee46f4486b02db2857e43f26f718bd795493cdd8ee7b0eae4"
+    },
+    {
+      "path": "server\\internal\\config\\config.go",
+      "sha256": "9e8f53493ec38402c721f1c27d0b8ce04a7600f479cee0e992231a15b2c54b2c"
+    },
+    {
+      "path": "server\\internal\\config\\playback.go",
+      "sha256": "dd07d13f1a13ab7b9b678abc2f3ed1a11c7e4ec91bfb21ac0421efc20df77785"
+    },
+    {
+      "path": "server\\internal\\config\\transaction.go",
+      "sha256": "973031ff787c2efe9fe442b3fc555e05590d8616688e2af293a801246981fa6f"
+    },
+    {
+      "path": "server\\internal\\feedback\\feedback.go",
+      "sha256": "d178b7961bfb5530f60da9e68c5f351c06dec8e876892715e6f761fca630c04b"
+    },
+    {
+      "path": "server\\internal\\feedback\\quantity_constraints.go",
+      "sha256": "67643e6217b955027d400e76cbff4e944b8a5f6a4d9c71cca5e975770537ad07"
+    },
+    {
+      "path": "server\\internal\\feedback\\zhipu.go",
+      "sha256": "455aff17fd85fc11a0d937bd74155ba5f2af14f21405e69cac7630226c31d714"
+    },
+    {
+      "path": "server\\internal\\judge\\judge.go",
+      "sha256": "07d4fa574d1c9708241d5ebb2136225e4ef15bfe93af85ae0544b089f91f25fb"
+    },
+    {
+      "path": "server\\internal\\llmzhipu\\client.go",
+      "sha256": "3ff244af16d61db6ab31788e18972cecbdccc36e766d04becc47b21c5cc16014"
+    },
+    {
+      "path": "server\\internal\\localmodel\\client.go",
+      "sha256": "e3fbc862f4040fc8e7382950b6d9b537f2ddafb4d2a7ca3b7f7fedbb4243a9b1"
+    },
+    {
+      "path": "server\\internal\\localmodel\\wav.go",
+      "sha256": "6a308e6760472cc8894c16c119277aa2fa1ab095783447afc4e57303de25652f"
+    },
+    {
+      "path": "server\\internal\\memory\\memory.go",
+      "sha256": "a85dac704e3fc71da9b6a4265f08d93934f4d474091aadabd422c4191f3734a8"
+    },
+    {
+      "path": "server\\internal\\memory\\transaction.go",
+      "sha256": "f32c0ebf11aa458f5bc1017679c7ce35a5d68f7c408f461797badbe9f4393a84"
+    },
+    {
+      "path": "server\\internal\\obs\\obs.go",
+      "sha256": "1e5f58dc1d5c295c3e88140fa1c483f16ebd922b40ef35f6596838cd651a4858"
+    },
+    {
+      "path": "server\\internal\\scheduler\\boost_policy.go",
+      "sha256": "57a168ca3ef1e056323ad98dcf41a70dba65c2ecec86c12d7ed2091f66fcb4d1"
+    },
+    {
+      "path": "server\\internal\\scheduler\\overdue.go",
+      "sha256": "806fdb27073db76e4947b88e0448983561900ea2fcd5e4ab66abd15d03d02501"
+    },
+    {
+      "path": "server\\internal\\scheduler\\plan_policy.go",
+      "sha256": "f2ceefbd59bb001d9f3347db438d9d0407ea0dbbe9b308e177aa7615361dfec8"
+    },
+    {
+      "path": "server\\internal\\scheduler\\queries.go",
+      "sha256": "7fd75f560d46e7e1ab41fe692b504555c09029f9dc152c937c25773924f5ed8e"
+    },
+    {
+      "path": "server\\internal\\scheduler\\scheduler.go",
+      "sha256": "8ecd438e40a5a6db222a12e41713a8994cfb6ad4ec32969231cfb2f81dc3c66d"
+    },
+    {
+      "path": "server\\internal\\scheduler\\settlement.go",
+      "sha256": "5ac5c0c211f8b1d1033040a3ed55e3c93830e86a6a4e5b70119088e191f14b8f"
+    },
+    {
+      "path": "server\\internal\\scheduler\\statistics.go",
+      "sha256": "4b8b9aadf5c20d0a0f35d866edcb7b196ac033143c26e75ea6a0adcc64c5d4e9"
+    },
+    {
+      "path": "server\\internal\\scheduler\\transaction.go",
+      "sha256": "6ffea755e0566beda59067c97e689fe2d6f4fea08491548caa96a099c5ffab94"
+    },
+    {
+      "path": "server\\internal\\scripts\\scripts.go",
+      "sha256": "b46bb3e4d7fd3f6460384af7235ae54bb7a85b0b19359f2e802bbdba9bab805c"
+    },
+    {
+      "path": "server\\internal\\scripts\\seed.go",
+      "sha256": "7f637801215802107eb0fa5e1815084ee48b35f9df17d6c62d3ef7935ad8b0d5"
+    },
+    {
+      "path": "server\\internal\\store\\auth_store.go",
+      "sha256": "359e439f8cc703df86520e9b9bb192be4465ef5e989b234ef183821df6b84c09"
+    },
+    {
+      "path": "server\\internal\\store\\feedback.go",
+      "sha256": "87e1bd4793a70a385e53cae1f9af5959143193d682ea5b3b27c29ab55df9e0e5"
+    },
+    {
+      "path": "server\\internal\\store\\overdue.go",
+      "sha256": "adc0cc72f7d32b3f0a683121d1b51fbeb0faf9298cd756ab8011c41ceff33a61"
+    },
+    {
+      "path": "server\\internal\\store\\runtime.go",
+      "sha256": "0a5d9315cd104433abf4fa78ea8a25cb8f8860002400d326d9dda93d22b1baec"
+    },
+    {
+      "path": "server\\internal\\store\\scheduler_repo.go",
+      "sha256": "f5e71c8c1cee64a9de4fbb18ec287e0bf798282190f86915b5b4effba347c14d"
+    },
+    {
+      "path": "server\\internal\\store\\store.go",
+      "sha256": "c81def0e00c8e735d6f346df15b44377e5aae40369ba0904b2f0900455333442"
+    },
+    {
+      "path": "server\\internal\\tools\\registry.go",
+      "sha256": "9ab3b323dc5ae3312adae84a6829f635119a78e6ce3055654babf9b9d55d8ee1"
+    },
+    {
+      "path": "server\\internal\\voiceclone\\voiceclone.go",
+      "sha256": "8583ecc1bd2e13e2b991464cfd283bcf7e2cc07b6550796dc8d763b7c5d3b4e9"
+    },
+    {
+      "path": "server\\internal\\voicecmd\\voicecmd.go",
+      "sha256": "9408563b6d6039c6a6f90137c78043683f0e0d44db70875f428eabc8d2a84bd9"
+    },
+    {
+      "path": "server\\internal\\wordbook\\importparse.go",
+      "sha256": "59ab3371085c317bd04b8fdc56225aa983a6300b923a55ffb5d06f5c45de81cf"
+    },
+    {
+      "path": "server\\internal\\wordbook\\wordbook.go",
+      "sha256": "4a1e796aa5da533086d886904dc3b6a2c84c5016e59ec7854687956151ffdefe"
+    },
+    {
+      "path": "web\\src\\api\\client.ts",
+      "sha256": "20ec747f2692ade236134d29e72d0de06943ff33c297e9a712d8d9a2ca5db88b"
+    },
+    {
+      "path": "web\\src\\App.tsx",
+      "sha256": "291d42f57e1560b10a71fd5be704cef3bd6e044dac74b1e9bcd14058fe072ec1"
+    },
+    {
+      "path": "web\\src\\audio\\caption.ts",
+      "sha256": "22c8886505d1504316a301ba6f32a4ec4600c3221eeeeb1201ec167349c238d6"
+    },
+    {
+      "path": "web\\src\\audio\\local.ts",
+      "sha256": "16213d02ba2a4b9c3ab94b0008a71e12063a92bcc63d8fec8bc994ea929a7006"
+    },
+    {
+      "path": "web\\src\\audio\\playback.ts",
+      "sha256": "d0f4896c5e4760e958076a187922a454650293d9c256cf72b13a5a858ff55e80"
+    },
+    {
+      "path": "web\\src\\audio\\wav.ts",
+      "sha256": "fde111329bcfe7e88786888746abd67d2a24533221d59d9dc4bdfb1eca2c90f1"
+    },
+    {
+      "path": "web\\src\\feedback\\ClarificationReply.tsx",
+      "sha256": "c6375f3b66e92bbfc7d601c354df532c52490183d49ea56fc1b494e5a99f893d"
+    },
+    {
+      "path": "web\\src\\feedback\\FeedbackResults.tsx",
+      "sha256": "fa58efc22620d1546d6af54a054c1d7df5b4476be1e922d03266ba329ed48d9f"
+    },
+    {
+      "path": "web\\src\\feedback\\pending.ts",
+      "sha256": "bb049ccded6cbe9c5f143b4126425596046673932d96210365e6965e67113e9b"
+    },
+    {
+      "path": "web\\src\\feedback\\useFeedback.ts",
+      "sha256": "2ca1cc157524167ac6cdb0cd6739a5e14d2dfbb98fa8a28bcf834f75c85dd3f8"
+    },
+    {
+      "path": "web\\src\\index.css",
+      "sha256": "535c25dd1f338486ab3678832fc698011c8b8d1fe4ffd3d0ef5e33181457cc9f"
+    },
+    {
+      "path": "web\\src\\main.tsx",
+      "sha256": "3dfdadd2b21159cb4c5586b9e9776862e7461cb0c7ba8d9fe1c1cc3fd5910af2"
+    },
+    {
+      "path": "web\\src\\pages\\Admin.tsx",
+      "sha256": "e0b42d41fdb441aebab7d612df0344c64c674cc99e5552e0c8aa14a06b5910cb"
+    },
+    {
+      "path": "web\\src\\pages\\Books.tsx",
+      "sha256": "08e94207def0525d51cdb283a4ce3cbf1090a7dbcfc7c30dad75b74280dbdb2a"
+    },
+    {
+      "path": "web\\src\\pages\\Classroom.tsx",
+      "sha256": "59496faa5085855265b79ba1e78f519d5301edcd1dc4297d49c1b6b18b403bcf"
+    },
+    {
+      "path": "web\\src\\pages\\Dashboard.tsx",
+      "sha256": "df19cda5c17db5ec0ca1539ee240a1950c40aed61a3a7dc13c8082877ea52684"
+    },
+    {
+      "path": "web\\src\\pages\\Login.tsx",
+      "sha256": "7eb2004a723f2e76d4edee512333a18a1cef747fe476922c9b0e8c07e6818b7d"
+    },
+    {
+      "path": "web\\src\\pages\\Placement.tsx",
+      "sha256": "67f8efcad504551ca2f16388919dc120524d8d68494054e826c9b0f31a7a0da5"
+    },
+    {
+      "path": "web\\src\\pages\\Settings.tsx",
+      "sha256": "ef083dba78567237a80390f89e13563fdd441adc622e138147151039466899f0"
+    },
+    {
+      "path": "web\\src\\pages\\Stats.tsx",
+      "sha256": "ed11ed0a8aafc812c54b0946ed1d2cca2febac77ed01dfededd86fb8fa3b96a8"
+    },
+    {
+      "path": "web\\src\\schedule\\clock.ts",
+      "sha256": "77d96e30535358ef30e9d06072850ba7e7ac67a1f1a89d59acd2d5bf92d84bd1"
+    },
+    {
+      "path": "web\\src\\stores\\auth.ts",
+      "sha256": "792ce5a5464425e898147e3e9d517a4cb07ffd90a948b0b21109ab402ed8d456"
+    },
+    {
+      "path": "web\\src\\ws\\client.ts",
+      "sha256": "c208e012dc278ce75e82bd4a9e448c2e125a9845be8b8732b09b5127f9e89f62"
+    },
+    {
+      "path": "web\\src\\ws\\input-readiness.ts",
+      "sha256": "96932625985541a4b470f6060d1cb2e0380c02ca9bcb2bb2d649d84ece134602"
+    }
+  ],
+  "server_sha256": "13ebca11a31692efad58b32fa0f8d330758a816fc397119674deccda19ee35a5",
+  "report": ".test-artifacts\\2026-10-14-real-subtitle-final86\\subtitle-results.json",
+  "log": ".test-artifacts\\2026-10-14-real-subtitle-final86\\subtitle.log",
+  "stats": {
+    "startTime": "2026-10-14T12:59:57.644Z",
+    "duration": 61341.877,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "evidence": {
+    "responses": [
+      {
+        "status": 200,
+        "mime": "audio/wav"
+      }
+    ],
+    "asr": [],
+    "state": {
+      "captions": [
+        {
+          "text": "",
+          "at": 30.799999997019768
+        },
+        {
+          "text": "cat",
+          "at": 1720.1999999955297
+        },
+        {
+          "text": "",
+          "at": 2988.6999999955297
+        },
+        {
+          "text": "cat",
+          "at": 3549.39999999851
+        },
+        {
+          "text": "",
+          "at": 4831.89999999851
+        },
+        {
+          "text": "cat",
+          "at": 5407.19999999553
+        },
+        {
+          "text": "",
+          "at": 6691.39999999851
+        },
+        {
+          "text": "猫是一种常见的家养动物。",
+          "at": 17023.89999999851
+        },
+        {
+          "text": "",
+          "at": 20200
+        }
+      ],
+      "audio": [
+        {
+          "start": 17020.79999999702,
+          "end": 20196.79999999702,
+          "errors": 0
+        }
+      ],
+      "english": [
+        {
+          "text": "cat",
+          "start": 1717.8999999985099,
+          "end": 2985.60000000149,
+          "errors": 0
+        },
+        {
+          "text": "cat",
+          "start": 3546.7999999970198,
+          "end": 4829.5,
+          "errors": 0
+        },
+        {
+          "text": "cat",
+          "start": 5404.89999999851,
+          "end": 6688.10000000149,
+          "errors": 0
+        }
+      ]
+    }
+  },
+  "screenshot": "review/actual-chinese-subtitle-20261014.png",
+  "screenshot_sha256": "ae9e2518efe2edfa515993c47e0b5dea8e33dcfa3f62c06317ea95863eb45704",
+  "limitations": "Real four-segment subtitle/media lifecycle only; no ASR, no judge, no complete-lesson quality claim. Known B full journey failure remains separately recorded."
+}

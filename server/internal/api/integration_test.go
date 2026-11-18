@@ -4,15 +4,19 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
 	"enwords/internal/auth"
 	"enwords/internal/classroom"
+	"enwords/internal/obs"
 	"enwords/internal/scheduler"
 	"enwords/internal/tools"
+	"enwords/internal/voicecmd"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,7 +26,7 @@ import (
 
 type fakeClock struct{ t time.Time }
 
-func (c *fakeClock) Now() time.Time { return c.t }
+func (c *fakeClock) Now() time.Time          { return c.t }
 func (c *fakeClock) Advance(d time.Duration) { c.t = tAdd(c.t, d) }
 
 func tAdd(t time.Time, d time.Duration) time.Time { return t.Add(d) }
@@ -222,7 +226,7 @@ func TestIT03_PlacementFirstLesson(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, lessons, 1)
 	assert.Len(t, lessons[0].BatchWordIDs, 4)
-	assert.True(t, clk.Now().Before(lessons[0].OpenAt), "开放时间在未来")
+	assert.False(t, clk.Now().Before(lessons[0].OpenAt), "first lesson opens immediately")
 
 	// 未到开放时间 enter 拒绝（D1）
 	req = httptest.NewRequest("POST", "/api/v1/classroom/lessons/"+itoa64(lessons[0].ID)+"/enter", nil)
@@ -230,7 +234,7 @@ func TestIT03_PlacementFirstLesson(t *testing.T) {
 	w = httptest.NewRecorder()
 	app.Router().ServeHTTP(w, req)
 	resp := doJSON(t, w)
-	assert.Equal(t, errForbidden, resp.Code, "未开放不可进入")
+	assert.Equal(t, 0, resp.Code, "first lesson is immediately enterable")
 }
 
 // ---- IT-04 课堂全流程（enter→教学→final 完整测试→下课→自动排课）----
@@ -311,7 +315,7 @@ func TestIT04_ClassroomFullFlow(t *testing.T) {
 func TestIT05_VoiceDualChannel(t *testing.T) {
 	app, clk := newTestApp(t)
 	atok, _ := loginGet(t, app, "admin", "adminpw")
-	bid := seedBook(t, app, atok, "v库", "g7", []string{"w1", "w2", "w3", "w4", "w5"})
+	bid := seedBook(t, app, atok, "v库", "g7", []string{"cat", "dog", "owl", "bee", "fox"})
 	_, _ = app.Auth.CreateUser("s5", "pw", "小", auth.RoleStudent)
 	_, uid := loginGet(t, app, "s5", "pw")
 	require.NoError(t, app.EnableBook(uid, bid))
@@ -322,7 +326,7 @@ func TestIT05_VoiceDualChannel(t *testing.T) {
 	require.NoError(t, err)
 
 	// 语音指令"下一个"=点击单词（L1）
-	cmd, _ := room.HandleVoiceText("嗯嗯下一个啊")
+	cmd, _ := room.HandleVoiceText("下一个！")
 	assert.Equal(t, "next", cmd)
 	assert.Equal(t, classroom.PhaseTTSSeg, room.Machine().Phase())
 
@@ -335,8 +339,8 @@ func TestIT05_VoiceDualChannel(t *testing.T) {
 	cmd, _ = room.HandleVoiceText("我读完了")
 	assert.Equal(t, "", cmd)
 	assert.Equal(t, classroom.PhaseRepeating, room.Machine().Phase(), "没读对不推进")
-	// 读对当前词（w1）→ 判读通过 → 下一词（repeatTimes 默认 1）
-	cmd, _ = room.HandleVoiceText("w1")
+	// 读对真实词 cat；不依赖旧判分器将含数字的 w1 截断成 w。
+	cmd, _ = room.HandleVoiceText("cat")
 	assert.Equal(t, "repeat_read", cmd)
 	assert.Equal(t, classroom.PhaseShowWord, room.Machine().Phase())
 
@@ -352,16 +356,171 @@ func TestIT05_VoiceDualChannel(t *testing.T) {
 
 	// 语音作答（测试阶段转写→判分）：教完剩余词到完整测试（新流程：教完全部词才测）
 	cfg := ttsCfg{en: 3, rp: 3}
-	teachOneRoom(room, cfg) // w2
-	teachOneRoom(room, cfg) // w3
-	teachOneRoom(room, cfg) // w4
-	teachOneRoom(room, cfg) // w5 → final 完整测试
+	teachOneRoom(room, cfg) // dog
+	teachOneRoom(room, cfg) // owl
+	teachOneRoom(room, cfg) // bee
+	teachOneRoom(room, cfg) // fox → final 完整测试
 	require.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase())
 	fc := &fakeClient{}
 	room.Join(fc)
 	cmd, _ = room.HandleVoiceText("测试") // 非指令→作答→Mock 判分 correct
 	assert.Equal(t, "", cmd, "非指令文本走作答")
 	assert.True(t, hasFrame(fc.frames, "judge_result"), "语音转写作答判分")
+}
+
+func TestQuizSkipFromAnswerEventUsesSkipTransition(t *testing.T) {
+	app, clk := newTestApp(t)
+	var logs bytes.Buffer
+	app.Log = obs.New(&logs)
+	atok, _ := loginGet(t, app, "admin", "adminpw")
+	bid := seedBook(t, app, atok, "quiz-skip库", "g7", []string{"cat", "dog", "owl", "bee", "fox"})
+	_, _ = app.Auth.CreateUser("quiz-skip-student", "pw", "小", auth.RoleStudent)
+	_, uid := loginGet(t, app, "quiz-skip-student", "pw")
+	require.NoError(t, app.EnableBook(uid, bid))
+	require.NoError(t, app.PlacementSubmit(uid, bid, nil, true))
+	lessons, _ := app.Sched.Lessons(uid, bid)
+	clk.Advance(25 * time.Hour)
+	room, _, err := app.Rooms.Enter(lessons[0].ID, uid)
+	require.NoError(t, err)
+	for i := 0; i < 5; i++ {
+		teachOneRoom(room, ttsCfg{en: 3, rp: 3})
+	}
+	require.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase())
+	item := room.Machine().CurrentItem().QuizItemID
+	before := room.contextLocked()
+	frames := room.HandleClientEvent(ClientEnvelope{Context: before, EventID: "typed-explicit-skip"},
+		classroom.Event{Type: classroom.EvAnswerSubmitted, Text: "我想跳过！"})
+	assert.NotEqual(t, item, room.Machine().CurrentItem().QuizItemID)
+	assert.Equal(t, classroom.JudgmentWrong, room.Machine().Snapshot().Judged[item])
+	assert.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase())
+	assert.False(t, hasFrame(frames, "judge_result"), "explicit skip advances without invoking judgment")
+	late := room.HandleClientEvent(ClientEnvelope{Context: before, EventID: "late-explicit-skip"},
+		classroom.Event{Type: classroom.EvAnswerSubmitted, Text: "跳过"})
+	assert.Equal(t, item, room.Machine().Snapshot().QuizQueue[0], "the original item stays recorded")
+	assert.True(t, hasFrame(late, "event_rejected"), "stale turn must be rejected")
+	assert.Contains(t, logs.String(), `"event":"quiz_skipped"`)
+	assert.NotContains(t, logs.String(), "跳过")
+	voiceItem := room.Machine().CurrentItem().QuizItemID
+	command, _ := room.HandleVoiceText("我想跳过")
+	assert.Equal(t, voicecmd.CmdSkip, command)
+	assert.NotEqual(t, voiceItem, room.Machine().CurrentItem().QuizItemID, "voice skip advances one quiz item")
+
+	// A short confirmation arriving while judgement is already in flight cannot
+	// enqueue a second judge request or alter the current quiz item.
+	room.mu.Lock()
+	require.NoError(t, room.machine.OnEvent(classroom.Event{Type: classroom.EvAnswerSubmitted, Text: "未完成的答案"}))
+	room.machine.DrainActions() // discard the deliberately unserviced initial request
+	room.mu.Unlock()
+	judgingItem := room.Machine().CurrentItem().QuizItemID
+	command, _ = room.HandleVoiceText("不会")
+	assert.Equal(t, "confirmation_ignored", command)
+	assert.Equal(t, classroom.PhaseJudging, room.Machine().Phase())
+	assert.Equal(t, judgingItem, room.Machine().CurrentItem().QuizItemID)
+	assert.Empty(t, room.Machine().DrainActions(), "duplicate confirmation must not queue another judge request")
+}
+
+func TestQuizSkipChecksRawAnswerBeforeSanitizing(t *testing.T) {
+	app, clk := newTestApp(t)
+	var logs bytes.Buffer
+	app.Log = obs.New(&logs)
+	atok, _ := loginGet(t, app, "admin", "adminpw")
+	bid := seedBook(t, app, atok, "quiz-raw-skip", "g7", []string{"cat", "dog", "owl", "bee", "fox"})
+	_, err := app.Auth.CreateUser("quiz-raw-student", "pw", "学生", auth.RoleStudent)
+	require.NoError(t, err)
+	_, uid := loginGet(t, app, "quiz-raw-student", "pw")
+	require.NoError(t, app.EnableBook(uid, bid))
+	require.NoError(t, app.PlacementSubmit(uid, bid, nil, true))
+	lessons, err := app.Sched.Lessons(uid, bid)
+	require.NoError(t, err)
+	clk.Advance(25 * time.Hour)
+	room, _, err := app.Rooms.Enter(lessons[0].ID, uid)
+	require.NoError(t, err)
+	for i := 0; i < 5; i++ {
+		teachOneRoom(room, ttsCfg{en: 3, rp: 3})
+	}
+	require.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase())
+	raw := "我想跳过<不是命令>"
+	require.Equal(t, "我想跳过", sanitizeText(raw), "fixture must reproduce the lossy sanitizer collision")
+	frames := room.HandleClientEvent(ClientEnvelope{Context: room.contextLocked(), EventID: "tagged-not-command"},
+		classroom.Event{Type: classroom.EvAnswerSubmitted, Text: raw})
+	assert.True(t, hasFrame(frames, "event_rejected"))
+	assert.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase())
+	assert.NotContains(t, logs.String(), `"event":"quiz_skipped"`, "the raw tagged answer must not become a skip command")
+	assert.Contains(t, logs.String(), `"reason":"answer_text_changed_by_sanitizer"`)
+
+	for _, input := range []string{"我会了<不是确认>", "我不会<不是确认>"} {
+		command, _, voiceFrames := room.HandleClientVoiceSubmission(ClientEnvelope{Context: room.contextLocked(), EventID: "tagged-voice-" + input}, input)
+		assert.Empty(t, command)
+		assert.True(t, hasFrame(voiceFrames, "event_rejected"), input)
+		assert.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase(), input)
+	}
+}
+
+func TestQuizJudgedLogCorrelatesItemAndTurnWithoutAnswerText(t *testing.T) {
+	app, _, lessonID, room := setupRoom(t)
+	for i := 0; i < 5; i++ {
+		teachOneRoom(room, ttsCfg{en: 3, rp: 3})
+	}
+	require.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase())
+	var logs bytes.Buffer
+	app.Log = obs.New(&logs)
+	item := room.Machine().CurrentItem().QuizItemID
+	turn := room.contextLocked()
+	room.HandleClientEvent(ClientEnvelope{Context: turn, EventID: "audit-answer"},
+		classroom.Event{Type: classroom.EvAnswerSubmitted, Text: "我会了"})
+	var judged, received map[string]any
+	for _, line := range bytes.Split(logs.Bytes(), []byte("\n")) {
+		var event map[string]any
+		if json.Unmarshal(line, &event) == nil {
+			if event["event"] == "event_received" && event["event_id"] == "audit-answer" {
+				received = event
+			}
+			if event["event"] == "quiz_judged" {
+				judged = event
+			}
+		}
+	}
+	require.NotNil(t, judged)
+	require.NotNil(t, received)
+	assert.Equal(t, float64(lessonID), judged["lesson_id"])
+	assert.Equal(t, "lesson-"+itoa64(lessonID), judged["trace_id"])
+	assert.Equal(t, float64(item.WordID), judged["word_id"])
+	assert.Equal(t, float64(item.Seq), judged["quiz_seq"])
+	assert.Equal(t, turn.Epoch, judged["epoch"])
+	assert.Contains(t, judged["turn"], ":judging/")
+	assert.Equal(t, turn.Turn, received["turn"])
+	assert.Equal(t, turn.Epoch, received["epoch"])
+	assert.Equal(t, judged["trace_id"], received["trace_id"])
+	assert.NotContains(t, logs.String(), "我会了")
+}
+
+func TestLongVoiceFeedbackInRepeatPhaseIsNotTreatedAsAnswer(t *testing.T) {
+	_, _, _, room := setupRoom(t)
+	room.HandleVoiceText("下一个")
+	for i := 0; i < 4; i++ {
+		room.HandleEvent(classroom.Event{Type: classroom.EvTTSFinished})
+	}
+	require.Equal(t, classroom.PhaseRepeating, room.Machine().Phase())
+	body := "我要投诉老师讲得不好，例子保留 3.5、A/B 和标点。" + strings.Repeat("这是一段需要完整保留的具体教学意见。", 8)
+	raw := "反馈" + body
+	require.NotEqual(t, strings.TrimSpace(raw), sanitizeText(raw), "fixture must exceed the answer sanitizer limit")
+	command, payload, frames := room.HandleClientVoiceSubmission(ClientEnvelope{Context: room.contextLocked(), EventID: "long-voice-feedback", SubmissionID: "feedback-1"}, raw)
+	assert.Equal(t, "feedback", command)
+	assert.Equal(t, body, payload)
+	assert.False(t, hasFrame(frames, "event_rejected"))
+	assert.Equal(t, classroom.PhaseRepeating, room.Machine().Phase())
+	for i := 0; i < 3; i++ {
+		room.HandleEvent(classroom.Event{Type: classroom.EvRepeatDone})
+	}
+	for i := 1; i < 5; i++ {
+		teachOneRoom(room, ttsCfg{en: 3, rp: 3})
+	}
+	require.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase())
+	command, payload, frames = room.HandleClientVoiceSubmission(ClientEnvelope{Context: room.contextLocked(), EventID: "long-quiz-feedback", SubmissionID: "feedback-2"}, raw)
+	assert.Equal(t, "feedback", command)
+	assert.Equal(t, body, payload)
+	assert.False(t, hasFrame(frames, "event_rejected"))
+	assert.Equal(t, classroom.PhaseWaitAnswer, room.Machine().Phase())
 }
 
 // ---- IT-06 断线重连快照 ----
@@ -462,10 +621,13 @@ func TestIT09_OverdueReplan(t *testing.T) {
 	require.NoError(t, app.PlacementSubmit(uid, bid, nil, true))
 	lessons, _ := app.Sched.Lessons(uid, bid)
 	require.Len(t, lessons, 1)
+	// Move this fixture into the future to exercise overdue handling; product first lessons open immediately.
+	lessons[0].OpenAt = clk.Now().Add(24 * time.Hour)
+	require.NoError(t, app.Sched.SaveLesson(lessons[0]))
 
 	// 未逾期：不动（openAt=8/24 10:00，now 推进到 8/25 09:00 仍 < openAt+24h）
 	clk.Advance(47 * time.Hour)
-	replanned, err := app.Sched.HandleOverdue()
+	replanned, err := app.CronOverdue()
 	require.NoError(t, err)
 	assert.Empty(t, replanned)
 
@@ -477,10 +639,13 @@ func TestIT09_OverdueReplan(t *testing.T) {
 	got, _ := app.Sched.Lesson(lessons[0].ID)
 	assert.Equal(t, scheduler.LessonExpiredStr, got.Status)
 	newL, _ := app.Sched.Lesson(replanned[0])
-	assert.Equal(t, lessons[0].OpenAt.Add(24*time.Hour), newL.OpenAt)
+	nextDay := clk.Now().AddDate(0, 0, 1)
+	expected := time.Date(nextDay.Year(), nextDay.Month(), nextDay.Day(), lessons[0].OpenAt.Hour(), lessons[0].OpenAt.Minute(), 0, 0, lessons[0].OpenAt.Location())
+	assert.Equal(t, expected, newL.OpenAt)
 	ns := app.Notifications(uid)
 	require.NotEmpty(t, ns, "逾期重排通知学生(S-10)")
-	assert.Contains(t, ns[0].Body, "改到")
+	assert.Contains(t, ns[0].Body, "重新安排课程")
+	assert.Contains(t, ns[0].Body, expected.Format("2006-01-02 15:04"))
 }
 
 // ---- IT-10 Agent 越权 ----
@@ -495,7 +660,7 @@ func TestIT10_AgentScopeDenied(t *testing.T) {
 	w := httptest.NewRecorder()
 	app.Router().ServeHTTP(w, req)
 	resp := doJSON(t, w)
-	assert.Equal(t, errForbidden, resp.Code, "teacher 调 config.set 被拒")
+	assert.Equal(t, errForbidden, resp.Code, "teacher scope denied")
 	assert.Contains(t, resp.Msg, "scope")
 
 	// 审计含 denied 记录
@@ -512,7 +677,12 @@ func TestIT10_AgentScopeDenied(t *testing.T) {
 	w = httptest.NewRecorder()
 	app.Router().ServeHTTP(w, req)
 	resp = doJSON(t, w)
-	require.Equal(t, 0, resp.Code, "system-agent 写记忆成功(D-16): "+resp.Msg)
+	require.Equal(t, errForbidden, resp.Code, "external service token has no trusted task")
+	ctx, err := app.newAgentTaskContext(context.Background(), 9, 0, 0, "feedback_submitted", tools.RoleSystemAgent)
+	require.NoError(t, err)
+	_, err = app.callAgentTool(ctx, "memory.append", json.RawMessage(margs))
+	require.NoError(t, err)
+
 }
 
 // ---- IT-11 工具审计链完整（trace 深度贯穿归 GORM 版）----
@@ -530,11 +700,15 @@ func TestIT11_AuditTrail(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+stok)
 	w := httptest.NewRecorder()
 	app.Router().ServeHTTP(w, req)
-	require.Equal(t, 0, doJSON(t, w).Code)
-
-	require.NotEmpty(t, app.ToolAudit.Entries)
-	e := app.ToolAudit.Entries[len(app.ToolAudit.Entries)-1]
-	assert.Equal(t, "system-agent", e.ActorID)
+	require.Equal(t, errForbidden, doJSON(t, w).Code)
+	ctx, err := app.newAgentTaskContext(context.Background(), uid, 0, 0, "feedback_submitted", tools.RoleSystemAgent)
+	require.NoError(t, err)
+	_, err = app.callAgentTool(ctx, "memory.append", map[string]any{"scope": "student_profile", "kind": "obs", "content": "x", "importance": 3})
+	require.NoError(t, err)
+	entries := app.ToolAudit.Snapshot()
+	require.NotEmpty(t, entries)
+	e := entries[len(entries)-1]
+	assert.Equal(t, "system_agent", e.ActorID)
 	assert.Equal(t, tools.RoleSystemAgent, e.ActorRole)
 	assert.Equal(t, "memory.append", e.Tool)
 	assert.True(t, e.OK)

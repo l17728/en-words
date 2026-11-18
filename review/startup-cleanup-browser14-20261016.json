@@ -1,0 +1,62 @@
+{
+  "status": "complete_startup14_passed; original127_pending_same_candidate",
+  "production_sha256": "00fbaba5ce4a2daa39f200021c853727b24a177c4657b6724391db7a96daf63e",
+  "inputs_unchanged": true,
+  "test_inputs": [
+    {
+      "path": "web/e2e/startup-acceptance.spec.ts",
+      "sha256": "056565878bb96a4910e0d14d8516d12ff2a1d7658d415ca315de481854438e9d"
+    },
+    {
+      "path": "web/e2e/startup-owned.ts",
+      "sha256": "864d0b07b4fe6f4d757fa7efb4f14ce11657118fa5496b9f4df4c121bb29468f"
+    },
+    {
+      "path": "web/playwright.startup.config.ts",
+      "sha256": "c0e226d7510cffe8a57a01d9dc6dbeda9a6cb3021ff68f96af0b329e6647e8aa"
+    }
+  ],
+  "binaries": {
+    "startup-cleanup-server-20261016.exe": "9496f4e18cf648541896f187ba43ab057e5691adb5f7eb10d27a021069c28063",
+    "startup-cleanup-process-harness-20261016.exe": "ea5c3401d7d4578d5de55c2dd0ab3ee54ed8f837deb8777150155a12ff4740ff",
+    "startup-cleanup-owned-harness-20261016.exe": "fbab607792146a3e87a1b06e823c1f118983bf0e28df4d9f465e9b29968e38c8",
+    "startup-cleanup-classroom-harness-20261016.exe": "64788d2f58ccb529173e2d307802b2bfc97a6c1d9fe781960140e2196d0c3d41"
+  },
+  "stats": {
+    "startTime": "2026-10-16T02:46:28.071Z",
+    "duration": 219005.899,
+    "expected": 14,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "test_ids": [
+    "7cff55e2261629ec6cba-057f879fbe6b48cad03d:",
+    "7cff55e2261629ec6cba-3902920477cd58ec32ab:",
+    "7cff55e2261629ec6cba-74b17a05fe61d4263c53:",
+    "7cff55e2261629ec6cba-4435a4f6b5855dbbec20:",
+    "7cff55e2261629ec6cba-08a70eabf90ac0e56606:",
+    "7cff55e2261629ec6cba-f60d46257fb63ee2db23:",
+    "7cff55e2261629ec6cba-6e765eb63eb3a588241f:",
+    "7cff55e2261629ec6cba-7cfeb8b47cb0718c8efb:",
+    "7cff55e2261629ec6cba-43164c7e1f8df2da0cdb:",
+    "7cff55e2261629ec6cba-ac546bf93a7a2f67a5f6:",
+    "7cff55e2261629ec6cba-d5adb51a832f9f8d7f75:",
+    "7cff55e2261629ec6cba-df8626ba82690a33107a:",
+    "7cff55e2261629ec6cba-98d8ea3ad70cfbcac905:",
+    "7cff55e2261629ec6cba-00646d20faff39454450:"
+  ],
+  "results": ".test-artifacts\\startup-cleanup14-20261016\\results.json",
+  "results_sha256": "31d6abf021565ae82a92683a4af67a6c6d0aa441dfa7ef1a477effde59c8e9fa",
+  "input_manifest_before": ".test-artifacts\\startup-cleanup14-20261016\\inputs-before.json",
+  "input_manifest_after": ".test-artifacts\\startup-cleanup14-20261016\\inputs-after.json",
+  "run_log": ".test-artifacts\\startup-cleanup14-20261016\\run-r2.log",
+  "scope": "ST09 invokes production ownedRuntimeCleanup.Close with real Router and SQLite in test-only harness, not complete run(); timeout harness releases its controlled worker only after observing production deadline and unclosed pool. Main single-defer assembly reviewed separately.",
+  "prior_attempts": [
+    {
+      "log": ".test-artifacts\\startup-cleanup14-20261016\\run.log",
+      "result": "CLI config path missing due repository-root cwd; zero tests/backends; corrected invocation without product change"
+    }
+  ],
+  "historical_performance": "Old candidate twelve-case and A/B evidence retained separately in review/startup-browser-and-ab-20261016.json; no repeated A/B or claim for cleanup candidate."
+}

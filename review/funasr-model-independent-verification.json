@@ -1,0 +1,6 @@
+{
+  "manifest_sha256": "fdff8dfa7b40b17d2c58c9eb9bb3d82f42bbace3624fc6b67918987eb8e57b67",
+  "files_verified": 21,
+  "bytes": 1989178168,
+  "scope": "LFS SHA against fixed official tree; cached small bytes SHA256 and git blob SHA1; large weights not downloaded"
+}

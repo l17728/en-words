@@ -3,6 +3,7 @@
 package config
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -45,22 +46,28 @@ type Auditor interface {
 
 // EffectiveSnapshot 课堂/调度消费的不可变生效配置（课堂冻结语义：课中持快照不重读）。
 type EffectiveSnapshot struct {
-	WordsPerLesson    int
-	GroupSize         int
-	TtsEnRepeat       int
-	TtsIntervalMs     int
-	RepeatTimes       int
-	QuizOldWords      int
-	TimeoutShowWordS  int
-	TimeoutRepeatS    int
-	TimeoutAnswerS    int
-	SessionTimeoutMin int
-	LessonsPerDay     int
-	OverdueHours      int
-	GraduateThreshold int
-	EncourageEveryN   int
-	GoalMode          string
-	Ladder            []int
+	PlaybackVersion     int
+	SnapshotVersion     int
+	ShowWordLeadMs      int
+	TtsZhRepeat         int
+	TtsZhIntervalMs     int
+	TtsSwitchIntervalMs int
+	WordsPerLesson      int
+	GroupSize           int
+	TtsEnRepeat         int
+	TtsIntervalMs       int
+	RepeatTimes         int
+	QuizOldWords        int
+	TimeoutShowWordS    int
+	TimeoutRepeatS      int
+	TimeoutAnswerS      int
+	SessionTimeoutMin   int
+	LessonsPerDay       int
+	OverdueHours        int
+	GraduateThreshold   int
+	EncourageEveryN     int
+	GoalMode            string
+	Ladder              []int
 }
 
 // 阶梯默认（SDD §6.2）
@@ -86,31 +93,38 @@ type keySpec struct {
 }
 
 var specs = map[string]keySpec{
-	"wordsPerLesson":    {typ: "int", min: 50, max: 100, def: 60},
-	"groupSize":         {typ: "int", min: 5, max: 5, def: 5},
-	"ttsEnRepeat":       {typ: "int", min: 1, max: 5, def: 3},
-	"ttsIntervalMs":     {typ: "int", min: 500, max: 4000, def: 1500},
-	"repeatTimes":       {typ: "int", min: 1, max: 5, def: 1},
-	"quizOldWords":      {typ: "int", min: 0, max: 10, def: 3},
-	"timeoutShowWordS":  {typ: "int", min: 3, max: 30, def: 8},
-	"timeoutRepeatS":    {typ: "int", min: 5, max: 60, def: 10},
-	"timeoutAnswerS":    {typ: "int", min: 10, max: 120, def: 20},
-	"sessionTimeoutMin": {typ: "int", min: 30, max: 120, def: 60},
-	"lessonsPerDay":     {typ: "int", min: 1, max: 2, def: 1},
-	"overdueHours":      {typ: "int", min: 6, max: 72, def: 24},
-	"graduateThreshold": {typ: "int", min: 2, max: 4, def: 2},
-	"encourageEveryN":   {typ: "int", min: 3, max: 20, def: 8},
-	"goalMode":          {typ: "string", def: "longterm", enum: []string{"longterm", "exam_sprint"}, hasEnum: true},
-	"ladder":            {typ: "ladder"},
+	"wordsPerLesson":      {typ: "int", min: 50, max: 100, def: 60},
+	"groupSize":           {typ: "int", min: 5, max: 5, def: 5},
+	"ttsEnRepeat":         {typ: "int", min: 1, max: 5, def: 3},
+	"ttsIntervalMs":       {typ: "int", min: 0, max: 10000, def: 1500},
+	"ttsZhRepeat":         {typ: "int", min: 1, max: 5, def: 1},
+	"ttsZhIntervalMs":     {typ: "int", min: 0, max: 10000, def: 1500},
+	"ttsSwitchIntervalMs": {typ: "int", min: 0, max: 10000, def: 1500},
+	"showWordLeadMs":      {typ: "int", min: 100, max: 2000, def: 250},
+	"repeatTimes":         {typ: "int", min: 1, max: 5, def: 1},
+	"quizOldWords":        {typ: "int", min: 0, max: 10, def: 3},
+	"timeoutShowWordS":    {typ: "int", min: 3, max: 30, def: 8},
+	"timeoutRepeatS":      {typ: "int", min: 5, max: 60, def: 10},
+	"timeoutAnswerS":      {typ: "int", min: 10, max: 120, def: 20},
+	"sessionTimeoutMin":   {typ: "int", min: 30, max: 120, def: 60},
+	"lessonsPerDay":       {typ: "int", min: 1, max: 2, def: 1},
+	"overdueHours":        {typ: "int", min: 6, max: 72, def: 24},
+	"graduateThreshold":   {typ: "int", min: 2, max: 4, def: 2},
+	"encourageEveryN":     {typ: "int", min: 3, max: 20, def: 8},
+	"goalMode":            {typ: "string", def: "longterm", enum: []string{"longterm", "exam_sprint"}, hasEnum: true},
+	"ladder":              {typ: "ladder"},
 }
 
 // Store 配置中心。读走内存原子快照（RWMutex），写在校验/回调/持久化全部成功后才换内存。
 type Store struct {
-	mu        sync.RWMutex
-	persist   Persister
-	audit     Auditor
-	globals   map[string]any            // 显式设置过的全局值
-	overrides map[int64]map[string]any  // 学生覆盖
+	paired          bool
+	mutationHandler MutationHandler
+	mu              sync.RWMutex
+	persist         Persister
+	audit           Auditor
+	globals         map[string]any           // 显式设置过的全局值
+	overrides       map[int64]map[string]any // 学生覆盖
+	revisions       map[int64]map[string]int64
 	// OnLadderChanged 在 ladder 变更持久化前调用（如缩短截断 memory_cards.ladder_step），
 	// 返回错误则整个 Set 中止（R2-AR-02 事务语义）。
 	OnLadderChanged func(newLadder []int) error
@@ -119,12 +133,25 @@ type Store struct {
 func NewStore(p Persister, a Auditor) (*Store, error) {
 	s := &Store{persist: p, audit: a,
 		globals:   map[string]any{},
+		revisions: map[int64]map[string]int64{},
 		overrides: map[int64]map[string]any{},
 	}
 	if p == nil {
 		return s, nil
 	}
-	g, err := p.LoadGlobals()
+	var g map[string]json.RawMessage
+	var o map[int64]map[string]json.RawMessage
+	var err error
+	if atomic, ok := p.(interface {
+		LoadSnapshot() (map[string]json.RawMessage, map[int64]map[string]json.RawMessage, error)
+	}); ok {
+		g, o, err = atomic.LoadSnapshot()
+	} else {
+		g, err = p.LoadGlobals()
+		if err == nil {
+			o, err = p.LoadOverrides()
+		}
+	}
 	if err != nil {
 		return nil, fmt.Errorf("load globals: %w", err)
 	}
@@ -133,10 +160,6 @@ func NewStore(p Persister, a Auditor) (*Store, error) {
 		if ok {
 			s.globals[k] = v
 		} // 越界/损坏数据 → 忽略，回落默认（TestLoadRejectsCorruptPersisted）
-	}
-	o, err := p.LoadOverrides()
-	if err != nil {
-		return nil, fmt.Errorf("load overrides: %w", err)
 	}
 	for sid, m := range o {
 		for k, raw := range m {
@@ -149,6 +172,22 @@ func NewStore(p Persister, a Auditor) (*Store, error) {
 		}
 	}
 	return s, nil
+}
+
+// Reload refreshes the existing service after an atomic database settlement.
+func (s *Store) Reload() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.persist == nil {
+		return nil
+	}
+	n, err := NewStore(s.persist, s.audit)
+	if err != nil {
+		return err
+	}
+	s.globals = n.globals
+	s.overrides = n.overrides
+	return nil
 }
 
 // decodeValidate 将持久化 JSON 解码并校验；非法返回 false。
@@ -335,22 +374,28 @@ func (s *Store) Snapshot(studentID int64) EffectiveSnapshot {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return EffectiveSnapshot{
-		WordsPerLesson:    s.effInt(studentID, "wordsPerLesson"),
-		GroupSize:         s.effInt(studentID, "groupSize"),
-		TtsEnRepeat:       s.effInt(studentID, "ttsEnRepeat"),
-		TtsIntervalMs:     s.effInt(studentID, "ttsIntervalMs"),
-		RepeatTimes:       s.effInt(studentID, "repeatTimes"),
-		QuizOldWords:      s.effInt(studentID, "quizOldWords"),
-		TimeoutShowWordS:  s.effInt(studentID, "timeoutShowWordS"),
-		TimeoutRepeatS:    s.effInt(studentID, "timeoutRepeatS"),
-		TimeoutAnswerS:    s.effInt(studentID, "timeoutAnswerS"),
-		SessionTimeoutMin: s.effInt(studentID, "sessionTimeoutMin"),
-		LessonsPerDay:     s.effInt(studentID, "lessonsPerDay"),
-		OverdueHours:      s.effInt(studentID, "overdueHours"),
-		GraduateThreshold: s.effInt(studentID, "graduateThreshold"),
-		EncourageEveryN:   s.effInt(studentID, "encourageEveryN"),
-		GoalMode:          s.effectiveGoalMode(studentID),
-		Ladder:            s.LadderLocked(studentID),
+		PlaybackVersion:     1,
+		SnapshotVersion:     1,
+		ShowWordLeadMs:      s.effInt(studentID, "showWordLeadMs"),
+		TtsZhRepeat:         s.effInt(studentID, "ttsZhRepeat"),
+		TtsZhIntervalMs:     s.effInt(studentID, "ttsZhIntervalMs"),
+		TtsSwitchIntervalMs: s.effInt(studentID, "ttsSwitchIntervalMs"),
+		WordsPerLesson:      s.effInt(studentID, "wordsPerLesson"),
+		GroupSize:           s.effInt(studentID, "groupSize"),
+		TtsEnRepeat:         s.effInt(studentID, "ttsEnRepeat"),
+		TtsIntervalMs:       s.effInt(studentID, "ttsIntervalMs"),
+		RepeatTimes:         s.effInt(studentID, "repeatTimes"),
+		QuizOldWords:        s.effInt(studentID, "quizOldWords"),
+		TimeoutShowWordS:    s.effInt(studentID, "timeoutShowWordS"),
+		TimeoutRepeatS:      s.effInt(studentID, "timeoutRepeatS"),
+		TimeoutAnswerS:      s.effInt(studentID, "timeoutAnswerS"),
+		SessionTimeoutMin:   s.effInt(studentID, "sessionTimeoutMin"),
+		LessonsPerDay:       s.effInt(studentID, "lessonsPerDay"),
+		OverdueHours:        s.effInt(studentID, "overdueHours"),
+		GraduateThreshold:   s.effInt(studentID, "graduateThreshold"),
+		EncourageEveryN:     s.effInt(studentID, "encourageEveryN"),
+		GoalMode:            s.effectiveGoalMode(studentID),
+		Ladder:              s.LadderLocked(studentID),
 	}
 }
 
@@ -371,11 +416,19 @@ func (s *Store) effInt(studentID int64, key string) int {
 
 // SetGlobal 设置全局默认。管线：校验 → ladder 回调 → 持久化 → 换内存 → 审计（SDD §8.3）。
 func (s *Store) SetGlobal(actor, key string, val any, reason string) error {
+	if s.paired && SensitiveKey(key) {
+		_, err := s.ApplyContext(context.Background(), Mutation{Operation: "set", Actor: actor, Scope: ScopeGlobal, Key: key, Value: val, Reason: reason})
+		return err
+	}
 	return s.set(actor, ScopeGlobal, 0, key, val, reason)
 }
 
 // SetStudent 设置学生覆盖。
 func (s *Store) SetStudent(actor string, studentID int64, key string, val any, reason string) error {
+	if s.paired && SensitiveKey(key) {
+		_, err := s.ApplyContext(context.Background(), Mutation{Operation: "set", Actor: actor, Scope: ScopeStudent, StudentID: studentID, Key: key, Value: val, Reason: reason})
+		return err
+	}
 	return s.set(actor, ScopeStudent, studentID, key, val, reason)
 }
 
@@ -418,11 +471,16 @@ func (s *Store) set(actor string, scope Scope, studentID int64, key string, val 
 		s.audit.ConfigChanged(AuditEntry{Actor: actor, Scope: scope, StudentID: studentID,
 			Key: key, Old: old, New: cv, Reason: reason})
 	}
+	s.bumpRevision(studentID, key)
 	return nil
 }
 
 // DeleteOverride 删除学生覆盖，回落全局（BE-08）。
 func (s *Store) DeleteOverride(actor string, studentID int64, key string) error {
+	if s.paired && SensitiveKey(key) {
+		_, err := s.ApplyContext(context.Background(), Mutation{Operation: "delete_override", Actor: actor, Scope: ScopeStudent, StudentID: studentID, Key: key, Reason: "删除覆盖，回落全局"})
+		return err
+	}
 	if _, ok := specs[key]; !ok {
 		return fmt.Errorf("未知配置键 %q", key)
 	}
@@ -438,6 +496,7 @@ func (s *Store) DeleteOverride(actor string, studentID int64, key string) error 
 		}
 	}
 	delete(s.overrides[studentID], key)
+	s.bumpRevision(studentID, key)
 	if s.audit != nil {
 		s.audit.ConfigChanged(AuditEntry{Actor: actor, Scope: ScopeStudent, StudentID: studentID,
 			Key: key, Old: old, New: nil, Reason: "删除覆盖，回落全局"})

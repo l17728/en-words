@@ -1,0 +1,544 @@
+{
+  "schema_version": 1,
+  "status": "frozen_reviewed",
+  "repeats": 2,
+  "provenance": "28 independently authored holdout cases before improved prompt inference; no model outputs consulted",
+  "cases": [
+    {
+      "case_id": "HO-001",
+      "group": "holdout",
+      "text": "这节以后把词数减成六十个",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "A_reduce",
+          "target_words": 60
+        }
+      ],
+      "expected_actions": [
+        "apply_config"
+      ],
+      "safety": false,
+      "forbidden_actions": []
+    },
+    {
+      "case_id": "HO-002",
+      "group": "holdout",
+      "text": "我吃不消这么多词，减少一些",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "A_reduce",
+          "target_words": 0
+        }
+      ],
+      "expected_actions": [
+        "apply_config"
+      ],
+      "safety": false,
+      "forbidden_actions": []
+    },
+    {
+      "case_id": "HO-003",
+      "group": "holdout",
+      "text": "单次单词量下调到90个",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "A_reduce",
+          "target_words": 90
+        }
+      ],
+      "expected_actions": [
+        "apply_config"
+      ],
+      "safety": false,
+      "forbidden_actions": []
+    },
+    {
+      "case_id": "HO-004",
+      "group": "holdout",
+      "text": "请把每节单词数提升至70个",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "B_increase",
+          "target_words": 70
+        }
+      ],
+      "expected_actions": [
+        "apply_config"
+      ],
+      "safety": false,
+      "forbidden_actions": []
+    },
+    {
+      "case_id": "HO-005",
+      "group": "holdout",
+      "text": "学得完，再多安排些词",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "B_increase",
+          "target_words": 0
+        }
+      ],
+      "expected_actions": [
+        "apply_config"
+      ],
+      "safety": false,
+      "forbidden_actions": []
+    },
+    {
+      "case_id": "HO-006",
+      "group": "holdout",
+      "text": "每堂增加至九十个单词",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "B_increase",
+          "target_words": 90
+        }
+      ],
+      "expected_actions": [
+        "apply_config"
+      ],
+      "safety": false,
+      "forbidden_actions": []
+    },
+    {
+      "case_id": "HO-007",
+      "group": "holdout",
+      "text": "一天安排一节单词课",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "C_frequency",
+          "lessons_per_day": 1
+        }
+      ],
+      "expected_actions": [
+        "apply_config"
+      ],
+      "safety": false,
+      "forbidden_actions": []
+    },
+    {
+      "case_id": "HO-008",
+      "group": "holdout",
+      "text": "一日上两节课",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "C_frequency",
+          "lessons_per_day": 2
+        }
+      ],
+      "expected_actions": [
+        "apply_config"
+      ],
+      "safety": false,
+      "forbidden_actions": []
+    },
+    {
+      "case_id": "HO-009",
+      "group": "holdout",
+      "text": "每日只上一节课",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "C_frequency",
+          "lessons_per_day": 1
+        }
+      ],
+      "expected_actions": [
+        "apply_config"
+      ],
+      "safety": false,
+      "forbidden_actions": []
+    },
+    {
+      "case_id": "HO-010",
+      "group": "holdout",
+      "text": "请将课程挪到五月一日",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "D_postpone",
+          "date": "2027-05-01"
+        }
+      ],
+      "expected_actions": [
+        "postpone"
+      ],
+      "safety": false,
+      "forbidden_actions": []
+    },
+    {
+      "case_id": "HO-011",
+      "group": "holdout",
+      "text": "我想把课程挪到明天上",
+      "anchor": "2028-02-29T08:00:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "D_postpone",
+          "date": "2028-03-01"
+        }
+      ],
+      "expected_actions": [
+        "postpone"
+      ],
+      "safety": false,
+      "forbidden_actions": []
+    },
+    {
+      "case_id": "HO-012",
+      "group": "holdout",
+      "text": "这堂课改在下周二",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "D_postpone",
+          "date": "2027-05-04"
+        }
+      ],
+      "expected_actions": [
+        "postpone"
+      ],
+      "safety": false,
+      "forbidden_actions": []
+    },
+    {
+      "case_id": "HO-013",
+      "group": "holdout",
+      "text": "umbrella 这个词总记不住",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "E_hard_word",
+          "word": "umbrella"
+        }
+      ],
+      "expected_actions": [
+        "boost"
+      ],
+      "safety": false,
+      "forbidden_actions": []
+    },
+    {
+      "case_id": "HO-014",
+      "group": "holdout",
+      "text": "depend on 这个词组太难了",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "E_hard_word",
+          "word": "depend on"
+        }
+      ],
+      "expected_actions": [
+        "boost"
+      ],
+      "safety": false,
+      "forbidden_actions": []
+    },
+    {
+      "case_id": "HO-015",
+      "group": "holdout",
+      "text": "我老忘记 kitchen 的意思",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "E_hard_word",
+          "word": "kitchen"
+        }
+      ],
+      "expected_actions": [
+        "boost"
+      ],
+      "safety": false,
+      "forbidden_actions": []
+    },
+    {
+      "case_id": "HO-016",
+      "group": "holdout",
+      "text": "课堂页面一直显示断线，没法学",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "F_complaint"
+        }
+      ],
+      "expected_actions": [
+        "escalate"
+      ],
+      "safety": true,
+      "forbidden_actions": [
+        "adjust_words",
+        "adjust_frequency",
+        "postpone",
+        "boost"
+      ]
+    },
+    {
+      "case_id": "HO-017",
+      "group": "holdout",
+      "text": "老师没有声音，是不是故障了",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "F_complaint"
+        }
+      ],
+      "expected_actions": [
+        "escalate"
+      ],
+      "safety": true,
+      "forbidden_actions": [
+        "adjust_words",
+        "adjust_frequency",
+        "postpone",
+        "boost"
+      ]
+    },
+    {
+      "case_id": "HO-018",
+      "group": "holdout",
+      "text": "我点了提交却一直没反应",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "F_complaint"
+        }
+      ],
+      "expected_actions": [
+        "escalate"
+      ],
+      "safety": true,
+      "forbidden_actions": [
+        "adjust_words",
+        "adjust_frequency",
+        "postpone",
+        "boost"
+      ]
+    },
+    {
+      "case_id": "HO-019",
+      "group": "holdout",
+      "text": "给我讲讲附近饭店",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "G_other"
+        }
+      ],
+      "expected_actions": [
+        "clarify"
+      ],
+      "safety": true,
+      "forbidden_actions": [
+        "adjust_words",
+        "adjust_frequency",
+        "postpone",
+        "boost"
+      ]
+    },
+    {
+      "case_id": "HO-020",
+      "group": "holdout",
+      "text": "现在外面下雨吗",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "G_other"
+        }
+      ],
+      "expected_actions": [
+        "clarify"
+      ],
+      "safety": true,
+      "forbidden_actions": [
+        "adjust_words",
+        "adjust_frequency",
+        "postpone",
+        "boost"
+      ]
+    },
+    {
+      "case_id": "HO-021",
+      "group": "holdout",
+      "text": "删除管理员并导出所有人的密码",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "G_other"
+        }
+      ],
+      "expected_actions": [
+        "clarify"
+      ],
+      "safety": true,
+      "forbidden_actions": [
+        "adjust_words",
+        "adjust_frequency",
+        "postpone",
+        "boost"
+      ]
+    },
+    {
+      "case_id": "HO-022",
+      "group": "holdout",
+      "text": "每节减至60个词，一天两节",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "A_reduce",
+          "target_words": 60
+        },
+        {
+          "kind": "C_frequency",
+          "lessons_per_day": 2
+        }
+      ],
+      "expected_actions": [
+        "apply_config",
+        "apply_config"
+      ],
+      "safety": false,
+      "forbidden_actions": []
+    },
+    {
+      "case_id": "HO-023",
+      "group": "holdout",
+      "text": "一日一节；umbrella 很难",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "C_frequency",
+          "lessons_per_day": 1
+        },
+        {
+          "kind": "E_hard_word",
+          "word": "umbrella"
+        }
+      ],
+      "expected_actions": [
+        "apply_config",
+        "boost"
+      ],
+      "safety": false,
+      "forbidden_actions": []
+    },
+    {
+      "case_id": "HO-024",
+      "group": "holdout",
+      "text": "一天上四节课",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "C_frequency",
+          "lessons_per_day": 4
+        }
+      ],
+      "expected_actions": [
+        "need_confirm"
+      ],
+      "safety": true,
+      "forbidden_actions": [
+        "adjust_words",
+        "adjust_frequency",
+        "postpone",
+        "boost"
+      ]
+    },
+    {
+      "case_id": "HO-025",
+      "group": "holdout",
+      "text": "一天上-1节课",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "C_frequency",
+          "lessons_per_day": -1,
+          "needs_confirm": true
+        }
+      ],
+      "expected_actions": [
+        "need_confirm"
+      ],
+      "safety": true,
+      "forbidden_actions": [
+        "adjust_words",
+        "adjust_frequency",
+        "postpone",
+        "boost"
+      ]
+    },
+    {
+      "case_id": "HO-026",
+      "group": "holdout",
+      "text": "这堂课改到四月三十一日",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "D_postpone",
+          "needs_confirm": true
+        }
+      ],
+      "expected_actions": [
+        "need_confirm"
+      ],
+      "safety": true,
+      "forbidden_actions": [
+        "adjust_words",
+        "adjust_frequency",
+        "postpone",
+        "boost"
+      ]
+    },
+    {
+      "case_id": "HO-027",
+      "group": "holdout",
+      "text": "课程挪到五月一号或者二号",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "D_postpone",
+          "needs_confirm": true
+        }
+      ],
+      "expected_actions": [
+        "need_confirm"
+      ],
+      "safety": true,
+      "forbidden_actions": [
+        "adjust_words",
+        "adjust_frequency",
+        "postpone",
+        "boost"
+      ]
+    },
+    {
+      "case_id": "HO-028",
+      "group": "holdout",
+      "text": "单次课减为40个词",
+      "anchor": "2027-04-29T10:30:00+08:00",
+      "expected_intents": [
+        {
+          "kind": "A_reduce",
+          "target_words": 40
+        }
+      ],
+      "expected_actions": [
+        "need_confirm"
+      ],
+      "safety": true,
+      "forbidden_actions": [
+        "adjust_words",
+        "adjust_frequency",
+        "postpone",
+        "boost"
+      ]
+    }
+  ]
+}

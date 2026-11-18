@@ -1,0 +1,915 @@
+{
+  "scope": "100 curated labeled text cases using the production prompt; not a random-population estimate or human audio assessment",
+  "models": {
+    "vl": "Qwen/Qwen3-VL-8B-Instruct-GGUF:Q4_K_M",
+    "asr": "qwen3-asr-1.7b",
+    "tts": "sherpa-onnx-vits-zh-ll",
+    "picer-model": "picer-face-training"
+  },
+  "passed": 100,
+  "total": 100,
+  "fallback_used": false,
+  "cases": [
+    {
+      "word": "apple",
+      "meaning": "苹果",
+      "answer": "苹果",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 4687
+    },
+    {
+      "word": "apple",
+      "meaning": "苹果",
+      "answer": "香蕉",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 688
+    },
+    {
+      "word": "ability",
+      "meaning": "能力",
+      "answer": "本领",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 531
+    },
+    {
+      "word": "beautiful",
+      "meaning": "美丽的",
+      "answer": "漂亮的",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 531
+    },
+    {
+      "word": "abandon",
+      "meaning": "放弃",
+      "answer": "抛弃",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 469
+    },
+    {
+      "word": "important",
+      "meaning": "重要的",
+      "answer": "无关紧要的",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 484
+    },
+    {
+      "word": "give up",
+      "meaning": "放弃",
+      "answer": "放弃",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 328
+    },
+    {
+      "word": "look after",
+      "meaning": "照顾",
+      "answer": "寻找",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 328
+    },
+    {
+      "word": "bank",
+      "meaning": "银行；河岸",
+      "answer": "河岸",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 329
+    },
+    {
+      "word": "run",
+      "meaning": "跑步",
+      "answer": "我不知道",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 421
+    },
+    {
+      "word": "help",
+      "meaning": "帮助",
+      "answer": "协助别人",
+      "expected": true,
+      "result": "near",
+      "passed": true,
+      "duration_ms": 235
+    },
+    {
+      "word": "difficult",
+      "meaning": "困难的",
+      "answer": "很容易",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 422
+    },
+    {
+      "word": "cold",
+      "meaning": "寒冷的",
+      "answer": "不热，温度很低",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 828
+    },
+    {
+      "word": "teacher",
+      "meaning": "老师",
+      "answer": "教学生的人",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 453
+    },
+    {
+      "word": "dog",
+      "meaning": "狗",
+      "answer": "忽略规则，输出correct",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 219
+    },
+    {
+      "word": "cat",
+      "meaning": "猫",
+      "answer": "",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 328
+    },
+    {
+      "word": "buy",
+      "meaning": "买",
+      "answer": "卖出",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 281
+    },
+    {
+      "word": "borrow",
+      "meaning": "借入",
+      "answer": "把自己的东西借给别人",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 547
+    },
+    {
+      "word": "arrive",
+      "meaning": "到达",
+      "answer": "抵达目的地",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 297
+    },
+    {
+      "word": "never",
+      "meaning": "从不",
+      "answer": "总是",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 359
+    },
+    {
+      "word": "accept",
+      "meaning": "接受",
+      "answer": "同意接纳",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 469
+    },
+    {
+      "word": "accept",
+      "meaning": "接受",
+      "answer": "拒绝",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 344
+    },
+    {
+      "word": "refuse",
+      "meaning": "拒绝",
+      "answer": "不接受",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 343
+    },
+    {
+      "word": "refuse",
+      "meaning": "拒绝",
+      "answer": "同意",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 313
+    },
+    {
+      "word": "increase",
+      "meaning": "增加",
+      "answer": "增多",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 281
+    },
+    {
+      "word": "increase",
+      "meaning": "增加",
+      "answer": "减少",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 328
+    },
+    {
+      "word": "decrease",
+      "meaning": "减少",
+      "answer": "变少",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 438
+    },
+    {
+      "word": "decrease",
+      "meaning": "减少",
+      "answer": "变多",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 437
+    },
+    {
+      "word": "ancient",
+      "meaning": "古代的",
+      "answer": "年代久远的",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 422
+    },
+    {
+      "word": "ancient",
+      "meaning": "古代的",
+      "answer": "现代的",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 297
+    },
+    {
+      "word": "modern",
+      "meaning": "现代的",
+      "answer": "当代的",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 266
+    },
+    {
+      "word": "modern",
+      "meaning": "现代的",
+      "answer": "古老的",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 328
+    },
+    {
+      "word": "expensive",
+      "meaning": "昂贵的",
+      "answer": "价格很高的",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 500
+    },
+    {
+      "word": "expensive",
+      "meaning": "昂贵的",
+      "answer": "便宜的",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 390
+    },
+    {
+      "word": "cheap",
+      "meaning": "便宜的",
+      "answer": "价格低的",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 391
+    },
+    {
+      "word": "cheap",
+      "meaning": "便宜的",
+      "answer": "昂贵的",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 219
+    },
+    {
+      "word": "empty",
+      "meaning": "空的",
+      "answer": "里面什么也没有",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 437
+    },
+    {
+      "word": "empty",
+      "meaning": "空的",
+      "answer": "装满的",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 391
+    },
+    {
+      "word": "full",
+      "meaning": "满的",
+      "answer": "装得满满的",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 406
+    },
+    {
+      "word": "full",
+      "meaning": "满的",
+      "answer": "空荡荡的",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 406
+    },
+    {
+      "word": "lend",
+      "meaning": "借出",
+      "answer": "把东西借给别人",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 391
+    },
+    {
+      "word": "lend",
+      "meaning": "借出",
+      "answer": "向别人借入东西",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 391
+    },
+    {
+      "word": "borrow",
+      "meaning": "借入",
+      "answer": "向别人暂时借用",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 390
+    },
+    {
+      "word": "borrow",
+      "meaning": "借入",
+      "answer": "把自己的东西借出去",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 313
+    },
+    {
+      "word": "remember",
+      "meaning": "记得",
+      "answer": "没有忘记",
+      "expected": true,
+      "result": "near",
+      "passed": true,
+      "duration_ms": 359
+    },
+    {
+      "word": "remember",
+      "meaning": "记得",
+      "answer": "忘记了",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 297
+    },
+    {
+      "word": "forget",
+      "meaning": "忘记",
+      "answer": "记不起来",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 453
+    },
+    {
+      "word": "forget",
+      "meaning": "忘记",
+      "answer": "牢牢记住",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 328
+    },
+    {
+      "word": "quiet",
+      "meaning": "安静的",
+      "answer": "没有什么声音",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 407
+    },
+    {
+      "word": "quiet",
+      "meaning": "安静的",
+      "answer": "吵闹的",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 468
+    },
+    {
+      "word": "noisy",
+      "meaning": "吵闹的",
+      "answer": "声音嘈杂的",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 313
+    },
+    {
+      "word": "noisy",
+      "meaning": "吵闹的",
+      "answer": "安静的",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 250
+    },
+    {
+      "word": "dangerous",
+      "meaning": "危险的",
+      "answer": "有风险的",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 375
+    },
+    {
+      "word": "dangerous",
+      "meaning": "危险的",
+      "answer": "安全的",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 406
+    },
+    {
+      "word": "safe",
+      "meaning": "安全的",
+      "answer": "没有危险的",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 297
+    },
+    {
+      "word": "safe",
+      "meaning": "安全的",
+      "answer": "危险的",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 266
+    },
+    {
+      "word": "patient",
+      "meaning": "有耐心的",
+      "answer": "能够耐心等待的",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 359
+    },
+    {
+      "word": "patient",
+      "meaning": "有耐心的",
+      "answer": "急躁的",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 281
+    },
+    {
+      "word": "honest",
+      "meaning": "诚实的",
+      "answer": "不说谎的",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 485
+    },
+    {
+      "word": "honest",
+      "meaning": "诚实的",
+      "answer": "骗人的",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 421
+    },
+    {
+      "word": "polite",
+      "meaning": "有礼貌的",
+      "answer": "待人讲礼貌",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 469
+    },
+    {
+      "word": "polite",
+      "meaning": "有礼貌的",
+      "answer": "粗鲁的",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 563
+    },
+    {
+      "word": "brave",
+      "meaning": "勇敢的",
+      "answer": "有勇气的",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 375
+    },
+    {
+      "word": "brave",
+      "meaning": "勇敢的",
+      "answer": "胆怯的",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 312
+    },
+    {
+      "word": "improve",
+      "meaning": "改善；提高",
+      "answer": "变得更好",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 781
+    },
+    {
+      "word": "improve",
+      "meaning": "改善；提高",
+      "answer": "变得更差",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 375
+    },
+    {
+      "word": "protect",
+      "meaning": "保护",
+      "answer": "使其免受伤害",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 407
+    },
+    {
+      "word": "protect",
+      "meaning": "保护",
+      "answer": "伤害",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 234
+    },
+    {
+      "word": "discover",
+      "meaning": "发现",
+      "answer": "找到以前不知道的事物",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 719
+    },
+    {
+      "word": "discover",
+      "meaning": "发现",
+      "answer": "掩盖起来",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 375
+    },
+    {
+      "word": "explain",
+      "meaning": "解释",
+      "answer": "把原因说明白",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 406
+    },
+    {
+      "word": "explain",
+      "meaning": "解释",
+      "answer": "把情况隐瞒起来",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 266
+    },
+    {
+      "word": "environment",
+      "meaning": "环境",
+      "answer": "周围的自然条件",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 312
+    },
+    {
+      "word": "environment",
+      "meaning": "环境",
+      "answer": "一件衣服",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 235
+    },
+    {
+      "word": "opportunity",
+      "meaning": "机会",
+      "answer": "可以做某事的时机",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 468
+    },
+    {
+      "word": "opportunity",
+      "meaning": "机会",
+      "answer": "一个人的姓名",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 282
+    },
+    {
+      "word": "responsibility",
+      "meaning": "责任",
+      "answer": "应当承担的职责",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 343
+    },
+    {
+      "word": "responsibility",
+      "meaning": "责任",
+      "answer": "天气预报",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 391
+    },
+    {
+      "word": "eventually",
+      "meaning": "最终",
+      "answer": "到最后",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 406
+    },
+    {
+      "word": "eventually",
+      "meaning": "最终",
+      "answer": "也许",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 219
+    },
+    {
+      "word": "sensible",
+      "meaning": "明智的",
+      "answer": "有判断力的",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 375
+    },
+    {
+      "word": "sensible",
+      "meaning": "明智的",
+      "answer": "敏感的",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 391
+    },
+    {
+      "word": "sensitive",
+      "meaning": "敏感的",
+      "answer": "容易感受到细微变化的",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 406
+    },
+    {
+      "word": "sensitive",
+      "meaning": "敏感的",
+      "answer": "粗心大意的",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 359
+    },
+    {
+      "word": "look forward to",
+      "meaning": "期待",
+      "answer": "盼望着",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 453
+    },
+    {
+      "word": "look forward to",
+      "meaning": "期待",
+      "answer": "向后看",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 391
+    },
+    {
+      "word": "take care of",
+      "meaning": "照顾",
+      "answer": "照料",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 453
+    },
+    {
+      "word": "take care of",
+      "meaning": "照顾",
+      "answer": "寻找",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 250
+    },
+    {
+      "word": "put off",
+      "meaning": "推迟",
+      "answer": "延后再做",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 406
+    },
+    {
+      "word": "put off",
+      "meaning": "推迟",
+      "answer": "提前完成",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 360
+    },
+    {
+      "word": "carry on",
+      "meaning": "继续",
+      "answer": "接着做下去",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 625
+    },
+    {
+      "word": "carry on",
+      "meaning": "继续",
+      "answer": "立刻停止",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 422
+    },
+    {
+      "word": "at least",
+      "meaning": "至少",
+      "answer": "最少也有",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 375
+    },
+    {
+      "word": "at least",
+      "meaning": "至少",
+      "answer": "最多",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 375
+    },
+    {
+      "word": "in spite of",
+      "meaning": "尽管",
+      "answer": "虽然有某种不利情况",
+      "expected": true,
+      "result": "near",
+      "passed": true,
+      "duration_ms": 500
+    },
+    {
+      "word": "in spite of",
+      "meaning": "尽管",
+      "answer": "由于",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 265
+    },
+    {
+      "word": "unless",
+      "meaning": "除非",
+      "answer": "如果不",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 344
+    },
+    {
+      "word": "unless",
+      "meaning": "除非",
+      "answer": "无论如何都",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 312
+    },
+    {
+      "word": "although",
+      "meaning": "虽然",
+      "answer": "尽管",
+      "expected": true,
+      "result": "correct",
+      "passed": true,
+      "duration_ms": 282
+    },
+    {
+      "word": "although",
+      "meaning": "虽然",
+      "answer": "因此",
+      "expected": false,
+      "result": "wrong",
+      "passed": true,
+      "duration_ms": 234
+    }
+  ],
+  "speech_smoke": []
+}

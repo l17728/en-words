@@ -1,0 +1,106 @@
+{
+  "manifest_sha256": "a3606899159bf3dc9dcfbb217c1ad87aaae54e2dc0d762397847d0ee907017c8",
+  "scope": "synthetic_exploratory_not_human_quality_gate",
+  "expected_requests": 8,
+  "completed_requests": 8,
+  "native_duplex_verified": false,
+  "results": [
+    {
+      "model": "qwen-omni",
+      "case_id": "TTS-ZH-01",
+      "schema": "input_audio_wav",
+      "status": 200,
+      "choices": 1,
+      "finish_reason": "stop",
+      "duration_ms": 1377,
+      "content_chars": 2,
+      "normalized_exact": false,
+      "content_class": "text_or_missing"
+    },
+    {
+      "model": "qwen-omni",
+      "case_id": "TTS-ZH-05",
+      "schema": "input_audio_wav",
+      "status": 200,
+      "choices": 1,
+      "finish_reason": "stop",
+      "duration_ms": 2702,
+      "content_chars": 8,
+      "normalized_exact": true,
+      "content_class": "text_or_missing"
+    },
+    {
+      "model": "qwen-omni",
+      "case_id": "ASR-EN-01",
+      "schema": "input_audio_wav",
+      "status": 200,
+      "choices": 1,
+      "finish_reason": "stop",
+      "duration_ms": 3341,
+      "content_chars": 6,
+      "normalized_exact": true,
+      "content_class": "text_or_missing"
+    },
+    {
+      "model": "qwen-omni",
+      "case_id": "SILENCE-01",
+      "schema": "input_audio_wav",
+      "status": 200,
+      "choices": 1,
+      "finish_reason": "stop",
+      "duration_ms": 2689,
+      "content_chars": 7,
+      "normalized_exact": false,
+      "content_class": "text_or_missing"
+    },
+    {
+      "model": "minicpm-o",
+      "case_id": "TTS-ZH-01",
+      "schema": "input_audio_wav",
+      "status": 200,
+      "choices": 1,
+      "finish_reason": "stop",
+      "duration_ms": 2395,
+      "content_chars": 11,
+      "normalized_exact": false,
+      "content_class": "thinking_markup"
+    },
+    {
+      "model": "minicpm-o",
+      "case_id": "TTS-ZH-05",
+      "schema": "input_audio_wav",
+      "status": 200,
+      "choices": 1,
+      "finish_reason": "stop",
+      "duration_ms": 3765,
+      "content_chars": 0,
+      "normalized_exact": false,
+      "content_class": "empty"
+    },
+    {
+      "model": "minicpm-o",
+      "case_id": "ASR-EN-01",
+      "schema": "input_audio_wav",
+      "status": 200,
+      "choices": 1,
+      "finish_reason": "stop",
+      "duration_ms": 2678,
+      "content_chars": 14,
+      "normalized_exact": false,
+      "content_class": "thinking_markup"
+    },
+    {
+      "model": "minicpm-o",
+      "case_id": "SILENCE-01",
+      "schema": "input_audio_wav",
+      "status": 200,
+      "choices": 1,
+      "finish_reason": "stop",
+      "duration_ms": 2339,
+      "content_chars": 22,
+      "normalized_exact": false,
+      "content_class": "thinking_markup"
+    }
+  ],
+  "raw_public_response_journal": ".test-artifacts/remote-audio-initial/responses.jsonl"
+}

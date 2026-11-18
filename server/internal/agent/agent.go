@@ -1,12 +1,15 @@
 // Package agent 实现双 Agent Mock 运行时（04 §7 / SDD §4）：
 // TeacherAgent = 课堂话术层（快路径伴生；按决策表 T-01..T-20 选槽，
-//   从话术库 seed=lessonId 确定性渲染；预取超时降级模板原文）。
+//
+//	从话术库 seed=lessonId 确定性渲染；预取超时降级模板原文）。
+//
 // SystemAgent = 事务决策表 S-01..S-15（结课评估/反馈处理/记忆读写）。
 // Mock=确定性脚本；接口与真实 LLM 版（智谱 GLM）一致，切换零改码。
 package agent
 
 import (
 	"strings"
+	"time"
 
 	"enwords/internal/classroom"
 	"enwords/internal/config"
@@ -19,14 +22,17 @@ import (
 
 // TeacherInput 课堂事件上下文（SDD §4.2：有界 token）。
 type TeacherInput struct {
-	LessonID    int64
-	StudentName string
-	Event       string            // classroom Ev* / phase_timeout / state_restored
-	Phase       string
-	Word        classroom.Word
-	CorrectLen  int               // 本课已答对数（streak 话术变量）
-	StreakBest  int
-	EncourageN  int               // 自上次鼓励完成的词数
+	LessonID        int64
+	StudentName     string
+	Event           string // classroom Ev* / phase_timeout / state_restored
+	Phase           string
+	Word            classroom.Word
+	CorrectLen      int // 本课已答对数（streak 话术变量）
+	StreakBest      int
+	EncourageN      int // 自上次鼓励完成的词数
+	EncourageEveryN int // 课堂冻结配置，不从运行时配置重读
+	TotalWords      int
+	ReteachCount    int
 }
 
 // Utterance 一句话术。
@@ -51,10 +57,16 @@ func NewTeacherAgent(bank *scripts.Bank) *TeacherAgent {
 }
 
 // Decide 事件 → 话术槽（确定性；无 LLM）。返回 nil 表示该事件无话术。
-func (a *TeacherAgent) Decide(in TeacherInput) *Utterance {
+func (a *TeacherAgent) Decide(in TeacherInput) (u *Utterance) {
+	defer func() {
+		if u != nil && u.Fallback == "" {
+			u.Fallback = map[string]string{"open": "我是叮当老师，我们开始今天的学习。", "transition": "接下来继续学习，一步一步来。", "encourage": "认真作答做得很好，继续加油。", "correct": "没关系，我们再看一遍这个词。", "nudge": "慢慢来，准备好了再试一次。", "closing": "今天的课堂完成了，辛苦啦！课报已经准备好了。"}[u.Category]
+		}
+	}()
 	base := map[string]any{"name": in.StudentName, "word": in.Word.Word, "n": in.CorrectLen}
 	switch in.Event {
 	case "lesson_started":
+		base["n"] = in.TotalWords
 		return &Utterance{Category: "open", Vars: base}
 	case "word_done":
 		// T-04：30% 语气由 seed 决定——Mock 用 lessonId 奇偶模拟确定性交替
@@ -66,19 +78,21 @@ func (a *TeacherAgent) Decide(in TeacherInput) *Utterance {
 		return &Utterance{Category: "transition", Vars: base}
 	case "judged_correct":
 		// 鼓励密度：EncourageEveryN 由调用方传入计数（快路径在每次判对后调）
-		if in.EncourageN >= 8 { // 默认配置；真实链路读 config
+		if in.EncourageEveryN > 0 && in.EncourageN >= in.EncourageEveryN {
 			return &Utterance{Category: "encourage", Vars: merge(base, map[string]any{"n": in.StreakBest})}
 		}
 		return nil
 	case "judged_wrong":
 		return &Utterance{Category: "correct",
-			Vars: merge(base, map[string]any{"meaning": firstMeaning(in.Word), "n": 1})}
+			Vars: merge(base, map[string]any{"meaning": firstMeaning(in.Word), "n": in.ReteachCount})}
 	case "repeat_timeout":
 		return &Utterance{Category: "nudge", Vars: base}
 	case "answer_timeout":
 		return &Utterance{Category: "nudge", Vars: base}
 	case "lesson_end":
-		return &Utterance{Category: "closing", Vars: base}
+		// No comparison with an unknown previous lesson, or unsupported claim that
+		// all words were mastered. This is emitted only after settlement commits.
+		return &Utterance{Category: "closing", Text: "今天的课堂完成了，辛苦啦！课报已经准备好了。", Vars: base}
 	case "state_restored":
 		return &Utterance{Category: "nudge", Vars: base}
 	}
@@ -90,9 +104,13 @@ func (a *TeacherAgent) Render(in TeacherInput, u *Utterance) string {
 	if u == nil {
 		return ""
 	}
+	if u.Text != "" {
+		return u.Text
+	}
 	rng := scripts.NewSeededRNG(in.LessonID)
-	text := a.bank.Render(rng, u.Category, u.Vars, nil)
-	if text == "" {
+	// These openers assume previous results or student difficulty we do not know.
+	text := a.bank.Render(rng, u.Category, u.Vars, map[string]bool{"OP-2": true, "OP-4": true, "OP-5": true, "OP-6": true})
+	if text == "" || len([]rune(text)) > 60 || strings.ContainsAny(text, "{}") {
 		return u.Fallback
 	}
 	return text
@@ -106,27 +124,31 @@ type SystemInput struct {
 	StudentID int64
 	BookID    int64
 	// lesson_finished
-	CorrectRate float64
-	AvgAnswerMs int
+	CorrectRate    float64
+	AvgAnswerMs    int
 	OverdueLessons int
 	// feedback
-	FeedbackText string
-	Now          func() (year, month, day int) // 简化日期注入（测试可控）
+	FeedbackText       string
+	ClarificationReply bool
+	FeedbackAnchor     time.Time
+	ParsedFeedback     *feedback.ParseResult         // Parse once; execution and audit use identical candidates.
+	Now                func() (year, month, day int) // 简化日期注入（测试可控）
 }
 
 // SystemAction 系统动作（工具调用序列的抽象；由装配层映射到具体工具）。
 type SystemAction struct {
-	Kind     string // plan_normal | plan_stall | adjust_words_down | suggest_up_needconfirm |
+	IntentIndex int    // Feedback intent ownership; every dependent action keeps this index.
+	Kind        string // plan_normal | plan_stall | adjust_words_down | suggest_up_needconfirm |
 	//         postpone | boost | escalate | reply_* | memory_append | memory_recall
-	Params   map[string]any
-	ReplyCat string // 非空=需渲染回复话术（scripts 分类）
+	Params    map[string]any
+	ReplyCat  string // 非空=需渲染回复话术（scripts 分类）
 	ReplyVars map[string]any
 }
 
 // SystemAgent Mock 决策表（04 §4 S-01..S-15）。
 type SystemAgent struct {
-	Bank    *scripts.Bank
-	Memory  *memory.Service
+	Bank           *scripts.Bank
+	Memory         *memory.Service
 	feedbackParser *feedback.Parser
 }
 
@@ -146,12 +168,14 @@ func (a *SystemAgent) Decide(in SystemInput) []SystemAction {
 	case "feedback_submitted":
 		return a.decideFeedback(in)
 	case "cron_overdue":
-		if in.OverdueLessons >= 3 {
-			return []SystemAction{{Kind: "suggest_pause", ReplyCat: "feedback_reply",
-				ReplyVars: map[string]any{"name": ""}}}
+		acts := []SystemAction{{Kind: "postpone"}, {Kind: "notify_replan", ReplyCat: "system_notify", ReplyVars: map[string]any{}}}
+		if in.OverdueLessons >= 2 {
+			acts = append(acts, SystemAction{Kind: "reply_care", ReplyCat: "feedback_reply"})
 		}
-		return []SystemAction{{Kind: "postpone"}, {Kind: "notify_replan",
-			ReplyCat: "system_notify", ReplyVars: map[string]any{}}}
+		if in.OverdueLessons >= 3 {
+			acts = append(acts, SystemAction{Kind: "suggest_pause", ReplyCat: "feedback_reply", ReplyVars: map[string]any{"name": ""}})
+		}
+		return acts
 	}
 	return nil
 }
@@ -184,14 +208,27 @@ func (a *SystemAgent) decideFeedback(in SystemInput) []SystemAction {
 	if a.feedbackParser == nil {
 		return []SystemAction{{Kind: "escalate"}}
 	}
-	res := a.feedbackParser.Parse(in.FeedbackText)
+	var res feedback.ParseResult
+	if in.ParsedFeedback != nil {
+		res = *in.ParsedFeedback
+	} else {
+		res = a.feedbackParser.Parse(in.FeedbackText)
+	}
 	plans := a.feedbackParser.Plan(res)
+	if !in.FeedbackAnchor.IsZero() {
+		plans = a.feedbackParser.PlanAt(res, in.FeedbackAnchor)
+	}
 	var acts []SystemAction
-	for _, p := range plans {
+	for index, p := range plans {
+		start := len(acts)
 		switch p.Action {
 		case "apply_config":
-			acts = append(acts, SystemAction{Kind: "adjust_words",
-				Params: map[string]any{"target": p.Intent.TargetWords, "dir": string(p.Intent.Kind)}})
+			if p.Intent.Kind == feedback.IntentFrequency {
+				acts = append(acts, SystemAction{Kind: "adjust_frequency", Params: map[string]any{"target": p.Intent.LessonsPerDay}})
+			} else {
+				acts = append(acts, SystemAction{Kind: "adjust_words",
+					Params: map[string]any{"target": p.Intent.TargetWords, "dir": string(p.Intent.Kind)}})
+			}
 		case "need_confirm":
 			acts = append(acts, SystemAction{Kind: "reply_needconfirm", ReplyCat: "feedback_reply",
 				ReplyVars: map[string]any{"n": p.Intent.TargetWords}})
@@ -214,7 +251,14 @@ func (a *SystemAgent) decideFeedback(in SystemInput) []SystemAction {
 		case "escalate":
 			acts = append(acts, SystemAction{Kind: "escalate"}, SystemAction{Kind: "reply_escalated", ReplyCat: "feedback_reply"})
 		case "clarify":
-			acts = append(acts, SystemAction{Kind: "reply_clarify", ReplyCat: "feedback_reply"})
+			if in.ClarificationReply {
+				acts = append(acts, SystemAction{Kind: "escalate", Params: map[string]any{"clarification": true}}, SystemAction{Kind: "reply_escalated", ReplyCat: "feedback_reply"})
+			} else {
+				acts = append(acts, SystemAction{Kind: "reply_clarify", ReplyCat: "feedback_reply"})
+			}
+		}
+		for i := start; i < len(acts); i++ {
+			acts[i].IntentIndex = index
 		}
 	}
 	return acts

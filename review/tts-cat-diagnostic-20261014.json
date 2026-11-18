@@ -1,0 +1,12 @@
+{
+  "time": "2026-10-14T13:30:15.444321",
+  "endpoint": "http://127.0.0.1:8090/api/tts/speech",
+  "input": "?",
+  "timeout_seconds": 20,
+  "attempts": 1,
+  "status": 200,
+  "bytes_read": 2092,
+  "content_type": "audio/wav",
+  "riff": true,
+  "duration_ms": 10110
+}

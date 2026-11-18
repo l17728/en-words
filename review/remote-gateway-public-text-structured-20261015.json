@@ -1,0 +1,41 @@
+{
+  "scope": "models_and_public_text_only",
+  "native_audio_verified": false,
+  "duplex_verified": false,
+  "results": [
+    {
+      "case": "qwen-omni",
+      "sample": "public_synthetic_text",
+      "stream": false,
+      "status": 200,
+      "choice_count": 1,
+      "finish_reason": "stop",
+      "text_chars": 49,
+      "content_class": "markdown_wrapped",
+      "json_object": false,
+      "duration_ms": 1117
+    },
+    {
+      "case": "minicpm-o",
+      "sample": "public_synthetic_text",
+      "stream": false,
+      "status": 200,
+      "choice_count": 1,
+      "finish_reason": "stop",
+      "text_chars": 630,
+      "content_class": "thinking_markup",
+      "json_object": false,
+      "duration_ms": 2838
+    }
+  ],
+  "connection_document_keyword_presence_only": {
+    "input_audio": false,
+    "audio_url": false,
+    "realtime": false,
+    "response_format": false
+  },
+  "audio_schema_verified": false,
+  "structured_request": true,
+  "max_tokens": 1024,
+  "total_request_deadline_s": 8
+}

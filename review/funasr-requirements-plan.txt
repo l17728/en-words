@@ -1,0 +1,11 @@
+# Official Fun-ASR requirements, pinned direct dependencies for isolated review.
+# This is a resolution input, not a complete hashed installation lock.
+torch==2.9.0+cu128
+torchaudio==2.9.0+cu128
+transformers==4.51.3
+funasr==1.3.26
+zhconv
+whisper_normalizer
+pyopenjtalk-plus
+compute-wer
+openai-whisper

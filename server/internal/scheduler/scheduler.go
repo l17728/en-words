@@ -4,8 +4,11 @@
 package scheduler
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"sort"
+	"sync"
 	"time"
 )
 
@@ -34,8 +37,11 @@ const (
 )
 
 var (
-	ErrNoWords       = errors.New("scheduler: no words to schedule")
+	ErrCardNotFound   = errors.New("scheduler: card not found")
+	ErrLessonNotFound = errors.New("scheduler: lesson not found")
+	ErrNoWords        = errors.New("scheduler: no words to schedule")
 	ErrAlreadyPlanned = errors.New("scheduler: next lesson already scheduled")
+	ErrLessonNotOwned = errors.New("scheduler: lesson not owned by student")
 )
 
 // ---- 领域模型 ----
@@ -46,6 +52,7 @@ type Card struct {
 	Status                    Status
 	LadderStep                int
 	BoostFlag                 bool
+	BoostSequence             int64
 	LastReviewAt              *time.Time
 	NextDueAt                 *time.Time
 }
@@ -57,6 +64,7 @@ type Lesson struct {
 	BookID       int64
 	Status       string // scheduled | expired (课堂态另存)
 	OpenAt       time.Time
+	FinishedAt   *time.Time
 	BatchWordIDs []int64
 }
 
@@ -79,39 +87,49 @@ type Repo interface {
 }
 
 type MemRepo struct {
-	cards       map[[3]int64]*Card
-	lessons     []*Lesson
-	nextLesson  int64
+	mu         sync.Mutex
+	cards      map[[3]int64]*Card
+	lessons    []*Lesson
+	nextLesson int64
+	drafts     map[placementKey][]int64
 }
 
 func NewMemRepo() *MemRepo {
-	return &MemRepo{cards: map[[3]int64]*Card{}}
+	return &MemRepo{cards: map[[3]int64]*Card{}, drafts: map[placementKey][]int64{}}
 }
 
 func cardKey(s, b, w int64) [3]int64 { return [3]int64{s, b, w} }
 
 func (m *MemRepo) CreateCard(c *Card) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	cp := *c
 	m.cards[cardKey(c.StudentID, c.BookID, c.WordID)] = &cp
 	return nil
 }
 
 func (m *MemRepo) GetCard(s, b, w int64) (*Card, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	c, ok := m.cards[cardKey(s, b, w)]
 	if !ok {
-		return nil, errors.New("scheduler: card not found")
+		return nil, ErrCardNotFound
 	}
 	cp := *c
 	return &cp, nil
 }
 
 func (m *MemRepo) SaveCard(c *Card) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	cp := *c
 	m.cards[cardKey(c.StudentID, c.BookID, c.WordID)] = &cp
 	return nil
 }
 
 func (m *MemRepo) ListCards(s, b int64) ([]*Card, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	var out []*Card
 	for _, c := range m.cards {
 		if c.StudentID == s && c.BookID == b {
@@ -124,15 +142,19 @@ func (m *MemRepo) ListCards(s, b int64) ([]*Card, error) {
 }
 
 func (m *MemRepo) Boost(s, b, w int64) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	c, ok := m.cards[cardKey(s, b, w)]
 	if !ok {
-		return errors.New("scheduler: card not found")
+		return ErrCardNotFound
 	}
 	c.BoostFlag = true
 	return nil
 }
 
 func (m *MemRepo) CreateLesson(l *Lesson) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.nextLesson++
 	l.ID = m.nextLesson
 	cp := *l
@@ -142,6 +164,8 @@ func (m *MemRepo) CreateLesson(l *Lesson) error {
 }
 
 func (m *MemRepo) GetLesson(id int64) (*Lesson, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	for _, l := range m.lessons {
 		if l.ID == id {
 			cp := *l
@@ -149,10 +173,12 @@ func (m *MemRepo) GetLesson(id int64) (*Lesson, error) {
 			return &cp, nil
 		}
 	}
-	return nil, errors.New("scheduler: lesson not found")
+	return nil, ErrLessonNotFound
 }
 
 func (m *MemRepo) SaveLesson(l *Lesson) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	for i, e := range m.lessons {
 		if e.ID == l.ID {
 			cp := *l
@@ -161,10 +187,12 @@ func (m *MemRepo) SaveLesson(l *Lesson) error {
 			return nil
 		}
 	}
-	return errors.New("scheduler: lesson not found")
+	return ErrLessonNotFound
 }
 
 func (m *MemRepo) ListLessons(s, b int64) ([]*Lesson, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	var out []*Lesson
 	for _, l := range m.lessons {
 		if l.StudentID == s && l.BookID == b {
@@ -177,6 +205,8 @@ func (m *MemRepo) ListLessons(s, b int64) ([]*Lesson, error) {
 }
 
 func (m *MemRepo) StudentBooks(s int64) ([]int64, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	seen := map[int64]bool{}
 	var out []int64
 	for _, c := range m.cards {
@@ -191,6 +221,8 @@ func (m *MemRepo) StudentBooks(s int64) ([]int64, error) {
 
 // DeleteStudentBook 移除某生某词库的全部记忆卡和课程（取消选库）。
 func (m *MemRepo) DeleteStudentBook(studentID, bookID int64) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	for k := range m.cards {
 		if k[0] == studentID && k[1] == bookID {
 			delete(m.cards, k)
@@ -223,15 +255,21 @@ type LadderSource interface {
 }
 
 type Service struct {
-	repo  Repo
-	cfg   LadderSource
-	clock Clock
+	pairedLive         bool
+	workOwner          *Service
+	settlementMu       sync.Mutex
+	pendingSettlements map[int64]*settlementPlan
+	metaMu             sync.RWMutex
+	repo               Repo
+	cfg                LadderSource
+	clock              Clock
 	// finishedAt 记录每课实际完成时间（内存版；GORM 版存 lessons.finished_at）
 	finishedAt map[int64]time.Time
-	// placementDrafts 摸底草稿（多次完成 FR-C4；GORM 版存 placements 表）
+	// Legacy read fallback for custom repositories; built-in repos own atomic drafts.
 	placementDrafts map[placementKey][]int64
 	// OnPlanned 排课成功钩子（§14 排课日志：api 装配层注入；可为 nil）
-	OnPlanned func(studentID, bookID int64, l *Lesson)
+	OnPlanned        func(studentID, bookID int64, l *Lesson)
+	OnPlacementSaved func(context.Context, int64, int64, int, int)
 }
 
 func NewService(repo Repo, cfg LadderSource, clock Clock) *Service {
@@ -265,6 +303,30 @@ func (s *Service) Lessons(studentID, bookID int64) ([]*Lesson, error) {
 
 // SaveLesson 更新课程行（api 层改状态用）。
 func (s *Service) SaveLesson(l *Lesson) error { return s.repo.SaveLesson(l) }
+
+// StartLessonNow makes a scheduled lesson available immediately. The lesson's
+// cards are reserved at the same timestamp so the next plan is based on the
+// latest persisted progress after settlement.
+func (s *Service) StartLessonNow(studentID, lessonID int64) (*Lesson, error) {
+	l, err := s.repo.GetLesson(lessonID)
+	if err != nil {
+		return nil, err
+	}
+	if l.StudentID != studentID {
+		return nil, ErrLessonNotOwned
+	}
+	if l.Status != LessonScheduledStr {
+		return nil, fmt.Errorf("scheduler: lesson is not scheduled")
+	}
+	l.OpenAt = s.clock.Now()
+	if err := s.repo.SaveLesson(l); err != nil {
+		return nil, err
+	}
+	if err := s.reserveCards(studentID, l.BookID, l.BatchWordIDs, l.OpenAt); err != nil {
+		return nil, err
+	}
+	return l, nil
+}
 
 // StudentBooks 某生已启用词库 ID（Dashboard"我的词库"）。
 func (s *Service) StudentBooks(studentID int64) ([]int64, error) {
@@ -338,38 +400,13 @@ func (s *Service) ResetForReplacement(studentID, bookID int64) error {
 	}
 	return nil
 }
+
 // MarkPlacement 摸底结算：勾选词 mastered，**取消勾选的回退 new**（覆盖语义——
 // 用户定案：重新摸底以最新勾选为准，点错的可取消）。
 // R5-P0 守卫：Learning/Graduated 卡不可被摸底覆盖（教学成果保护）。
-// 草稿保存（FR-C4 分次完成）移至卡片状态全部持久化成功之后（R5：防草稿与实态失同步）。
+// 草稿与实际状态变化同事务提交；未变化卡不写，存储失败不得部分发布。
 func (s *Service) MarkPlacement(studentID, bookID int64, knownWordIDs []int64) error {
-	known := map[int64]bool{}
-	for _, id := range knownWordIDs {
-		known[id] = true
-	}
-	cards, err := s.repo.ListCards(studentID, bookID)
-	if err != nil {
-		return err
-	}
-	for _, c := range cards {
-		switch {
-		case known[c.WordID] && c.Status == StatusNew:
-			c.Status = StatusMastered
-		case !known[c.WordID] && c.Status == StatusMastered:
-			c.Status = StatusNew // 仅 mastered 可回退（摸底产生的状态只有摸底能撤销）
-		}
-		if err := s.repo.SaveCard(c); err != nil {
-			return err
-		}
-	}
-	if dr, ok := s.repo.(draftRepo); ok {
-		if err := dr.SavePlacementDraft(studentID, bookID, knownWordIDs); err != nil {
-			return err
-		}
-		return nil
-	}
-	s.placementDrafts[placementKey{studentID, bookID}] = knownWordIDs
-	return nil
+	return s.MarkPlacementContext(context.Background(), studentID, bookID, knownWordIDs)
 }
 
 // PlacementDraft 读取摸底草稿（已勾选词 ID；无草稿返回 nil）。
@@ -385,7 +422,7 @@ func (s *Service) PlacementDraft(studentID, bookID int64) []int64 {
 
 type placementKey struct{ studentID, bookID int64 }
 
-// 草稿 Repo 扩展接口（可选）：SQLite 版实现（内存版走 map）。
+// 草稿读取兼容接口：SQLite 与 MemRepo 均实现；保存走原子能力接口。
 type draftRepo interface {
 	SavePlacementDraft(studentID, bookID int64, knownIDs []int64) error
 	LoadPlacementDraft(studentID, bookID int64) ([]int64, error)
@@ -408,16 +445,31 @@ func (s *Service) mainlineStep(cards []*Card) int {
 
 // PlanNext 排下一课（SDD §6.3）。OnPlanned 钩子用于 §14 排课日志（api 装配层注入）。
 func (s *Service) PlanNext(studentID, bookID int64) (*Lesson, error) {
-	l, err := s.planNext(studentID, bookID)
+	return s.PlanNextWithPolicy(studentID, bookID, PlanPolicy{})
+}
+
+// PlanNextWithPolicy applies an optional policy to this batch only. Persistence
+// transactions remain the caller's responsibility, as with PlanNext.
+func (s *Service) PlanNextWithPolicy(studentID, bookID int64, policy PlanPolicy) (*Lesson, error) {
+	if err := policy.validate(); err != nil {
+		return nil, err
+	}
+	l, err := s.planNext(studentID, bookID, policy)
 	if err == nil && s.OnPlanned != nil {
 		s.OnPlanned(studentID, bookID, l)
 	}
 	return l, err
 }
 
-func (s *Service) planNext(studentID, bookID int64) (*Lesson, error) {
+func (s *Service) planNext(studentID, bookID int64, policy PlanPolicy) (*Lesson, error) {
+	if s.pairedLive {
+		return nil, fmt.Errorf("configuration_work_required")
+	}
 	now := s.clock.Now()
 	W := s.cfg.Int(studentID, "wordsPerLesson")
+	if W < 50 || W > 100 {
+		return nil, ErrInvalidLessonSize
+	}
 	ladder := s.cfg.Ladder(studentID)
 
 	cards, err := s.repo.ListCards(studentID, bookID)
@@ -427,7 +479,10 @@ func (s *Service) planNext(studentID, bookID int64) (*Lesson, error) {
 
 	// 已有 scheduled 未过期课 → 不重复排（只排下一课 F2）
 	// R5：voided_replacement 是作废课不拦截；其余非 scheduled 状态（finished/expired/voided）同样放行
-	lessons, _ := s.repo.ListLessons(studentID, bookID)
+	lessons, err := s.repo.ListLessons(studentID, bookID)
+	if err != nil {
+		return nil, err
+	}
 	for _, l := range lessons {
 		if l.Status == LessonScheduledStr {
 			return nil, ErrAlreadyPlanned
@@ -463,29 +518,33 @@ func (s *Service) planNext(studentID, bookID int64) (*Lesson, error) {
 	//    顺序：boosted 头部 → due（按到期序）→ new 补足；
 	//    保留性：due 全保留（不足 W 时）；new ≤ max(0.6W, 剩余额度)（首课可全为新词）
 	batch := make([]int64, 0, W)
-	for _, c := range boosted {
-		if len(batch) >= W {
-			break
+	if policy.MaxNewRatio > 0 {
+		batch = policy.batch(W, due, boosted, fresh, cards, lessons)
+	} else {
+		for _, c := range boosted {
+			if len(batch) >= W {
+				break
+			}
+			batch = append(batch, c.WordID)
 		}
-		batch = append(batch, c.WordID)
-	}
-	for _, c := range due {
-		if len(batch) >= W {
-			break
+		for _, c := range due {
+			if len(batch) >= W {
+				break
+			}
+			batch = append(batch, c.WordID)
 		}
-		batch = append(batch, c.WordID)
-	}
-	newLimit := W * 6 / 10
-	if rem := W - len(batch); rem > newLimit {
-		newLimit = rem
-	}
-	newCount := 0
-	for _, c := range fresh {
-		if len(batch) >= W || newCount >= newLimit {
-			break
+		newLimit := W * 6 / 10
+		if rem := W - len(batch); rem > newLimit {
+			newLimit = rem
 		}
-		batch = append(batch, c.WordID)
-		newCount++
+		newCount := 0
+		for _, c := range fresh {
+			if len(batch) >= W || newCount >= newLimit {
+				break
+			}
+			batch = append(batch, c.WordID)
+			newCount++
+		}
 	}
 	if len(batch) == 0 {
 		return nil, ErrNoWords
@@ -499,12 +558,17 @@ func (s *Service) planNext(studentID, bookID int64) (*Lesson, error) {
 		base = now
 		stepDays := time.Duration(interval(ladder, 0)) * 24 * time.Hour
 		openAt := base.Add(stepDays)
+		if policy.ImmediateFirstLesson {
+			openAt = base
+		}
 		l := &Lesson{StudentID: studentID, BookID: bookID, Status: LessonScheduledStr,
 			OpenAt: openAt, BatchWordIDs: batch}
 		if err := s.repo.CreateLesson(l); err != nil {
 			return nil, err
 		}
-		s.reserveCards(studentID, bookID, batch, l.OpenAt)
+		if err := s.reserveCards(studentID, bookID, batch, l.OpenAt); err != nil {
+			return nil, err
+		}
 		return l, nil
 	}
 	step := s.mainlineStep(cards)
@@ -514,23 +578,30 @@ func (s *Service) planNext(studentID, bookID int64) (*Lesson, error) {
 	if err := s.repo.CreateLesson(l); err != nil {
 		return nil, err
 	}
-	s.reserveCards(studentID, bookID, batch, l.OpenAt)
+	if err := s.reserveCards(studentID, bookID, batch, l.OpenAt); err != nil {
+		return nil, err
+	}
 	return l, nil
 }
 
 // ReserveCards 约课到课：NextDueAt=lessonTime（api 装配层 testmode 重拨时复用）。
-func (s *Service) ReserveCards(studentID, bookID int64, batch []int64, at time.Time) {
-	s.reserveCards(studentID, bookID, batch, at)
+func (s *Service) ReserveCards(studentID, bookID int64, batch []int64, at time.Time) error {
+	return s.reserveCards(studentID, bookID, batch, at)
 }
 
-func (s *Service) reserveCards(studentID, bookID int64, batch []int64, at time.Time) {
+func (s *Service) reserveCards(studentID, bookID int64, batch []int64, at time.Time) error {
 	for _, w := range batch {
-		if c, err := s.repo.GetCard(studentID, bookID, w); err == nil {
-			t := at
-			c.NextDueAt = &t
-			_ = s.repo.SaveCard(c)
+		c, err := s.repo.GetCard(studentID, bookID, w)
+		if err != nil {
+			return err
+		}
+		t := at
+		c.NextDueAt = &t
+		if err := s.repo.SaveCard(c); err != nil {
+			return err
 		}
 	}
+	return nil
 }
 
 // lastFinishedAt 最近一次完成课时间。
@@ -539,7 +610,11 @@ func (s *Service) lastFinishedAt(studentID, bookID int64) (time.Time, bool) {
 	found := false
 	lessons, _ := s.repo.ListLessons(studentID, bookID)
 	for _, l := range lessons {
-		if ft, ok := s.finishedAt[l.ID]; ok && (!found || ft.After(latest)) {
+		if l.FinishedAt != nil && (!found || l.FinishedAt.After(latest)) {
+			latest = *l.FinishedAt
+			found = true
+		}
+		if ft, ok := s.finishedTime(l.ID); ok && (!found || ft.After(latest)) {
 			latest = ft
 			found = true
 		}
@@ -551,6 +626,9 @@ func (s *Service) lastFinishedAt(studentID, bookID int64) (time.Time, bool) {
 // 答对≥1 → 视为本次复习成功 step+1（新学课 step 0→0 除外——首课不 +1）；
 // 全错 → step 不变但 LastReviewAt 更新；新词 new → learning。
 func (s *Service) SettleLessonFinished(studentID, bookID int64, correct map[int64]bool, finishedAt time.Time) error {
+	if s.pairedLive {
+		return fmt.Errorf("configuration_work_required")
+	}
 	cards, err := s.repo.ListCards(studentID, bookID)
 	if err != nil {
 		return err
@@ -558,12 +636,12 @@ func (s *Service) SettleLessonFinished(studentID, bookID int64, correct map[int6
 	lessons, _ := s.repo.ListLessons(studentID, bookID)
 	var currentLessonID int64 = -1
 	for _, l := range lessons {
-		if _, done := s.finishedAt[l.ID]; !done && l.Status == LessonScheduledStr {
+		if _, done := s.finishedTime(l.ID); !done && l.Status == LessonScheduledStr {
 			currentLessonID = l.ID
 		}
 	}
 	if currentLessonID != -1 {
-		s.finishedAt[currentLessonID] = finishedAt
+		s.rememberFinished(currentLessonID, finishedAt)
 		// 结课：lesson 置 finished（否则后续排课被"已排课"挡住）
 		if l, err := s.repo.GetLesson(currentLessonID); err == nil {
 			l.Status = LessonFinishedStr
@@ -612,7 +690,8 @@ func (s *Service) SettleLessonFinished(studentID, bookID int64, correct map[int6
 	return nil
 }
 
-// HandleOverdue 逾期巡检（SDD §6.4）：expired + 次日同时段重排 + step/LastReviewAt 不变。
+// HandleOverdue is retained only for legacy repository tests.
+// Deprecated: production callers must use App.RunOverdue's Agent task transaction.
 func (s *Service) HandleOverdue() ([]int64, error) {
 	now := s.clock.Now()
 	// R6-be：逾期阈值按学生级配置（学生覆盖优先于全局；overdueFor 内联缓存）
@@ -685,6 +764,8 @@ func (s *Service) repoLessonsAll() []*Lesson {
 		return nil
 	}
 	if all, ok := s.repo.(*MemRepo); ok {
+		all.mu.Lock()
+		defer all.mu.Unlock()
 		var out []*Lesson
 		for _, l := range all.lessons {
 			cp := *l
@@ -697,6 +778,9 @@ func (s *Service) repoLessonsAll() []*Lesson {
 
 // MaintenanceCheck 维护期抽查（毕业词每 30 天）：答错重置 step=min(5,len-1) 回 learning。
 func (s *Service) MaintenanceCheck(studentID, bookID, wordID int64, correct bool) error {
+	if s.pairedLive {
+		return fmt.Errorf("configuration_work_required")
+	}
 	c, err := s.repo.GetCard(studentID, bookID, wordID)
 	if err != nil {
 		return err
@@ -722,12 +806,19 @@ func (s *Service) MaintenanceCheck(studentID, bookID, wordID int64, correct bool
 
 // TruncateLadderSteps ladder 配置缩短时截断全部 step（R2-AR-02；由 config.OnLadderChanged 触发）。
 func (s *Service) TruncateLadderSteps(newLen int) error {
+	if s.pairedLive || newLen < 1 {
+		return fmt.Errorf("explicit configuration scope required")
+	}
+	if _, ok := s.repo.(*MemRepo); !ok {
+		return fmt.Errorf("explicit configuration scope required")
+	}
 	// 内存版遍历全部卡（GORM 版为 UPDATE ... WHERE）
 	if all, ok := s.repo.(*MemRepo); ok {
-		for k, c := range all.cards {
+		all.mu.Lock()
+		defer all.mu.Unlock()
+		for _, c := range all.cards {
 			if c.LadderStep > newLen-1 {
 				c.LadderStep = newLen - 1
-				_ = all.SaveCardDirect(k, c)
 			}
 		}
 	}
@@ -747,8 +838,7 @@ func (s *Service) PostponeLesson(lessonID int64, to time.Time) error {
 	if err := s.repo.SaveLesson(l); err != nil {
 		return err
 	}
-	s.reserveCards(l.StudentID, l.BookID, l.BatchWordIDs, to)
-	return nil
+	return s.reserveCards(l.StudentID, l.BookID, l.BatchWordIDs, to)
 }
 
 func containsCard(xs []*Card, t *Card) bool {
@@ -762,6 +852,8 @@ func containsCard(xs []*Card, t *Card) bool {
 
 // SaveCardDirect 内存仓库直写（TruncateLadderSteps 用）。
 func (m *MemRepo) SaveCardDirect(k [3]int64, c *Card) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	cp := *c
 	m.cards[k] = &cp
 	return nil

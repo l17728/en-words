@@ -5,8 +5,10 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http/httptest"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -38,6 +40,8 @@ func setupRoom(t *testing.T) (*App, *fakeClock, int64, *Room) {
 
 func TestCov_RoomTimeouts(t *testing.T) {
 	app, clk, lid, room := setupRoom(t)
+	// Timers begin only after a client has received the initial classroom frames.
+	room.Join(&fakeClient{})
 	_ = app
 	// Tick 未到时 → no-op
 	room.Tick()
@@ -84,25 +88,51 @@ func TestCov_WSClientBackpressure(t *testing.T) {
 	defer conn.Close()
 
 	// 找到挂在这房间的 wsClient（通过广播验证）——发送大量事件制造帧
+	// Deliberate stale-context flood; use server-issued context and unique IDs.
+	snapshot, _ := em["snapshot"].(map[string]any)
+	turnContext := snapshot["context"]
 	for i := 0; i < 200; i++ {
-		_ = conn.WriteJSON(Msg{"type": "student_event", "event": "word_clicked"})
-		_ = conn.WriteJSON(Msg{"type": "student_event", "event": "tts_finished"})
+		_ = conn.WriteJSON(Msg{"type": "student_event", "event": "word_clicked", "context": turnContext, "event_id": "flood-click-" + itoa(i)})
+		_ = conn.WriteJSON(Msg{"type": "student_event", "event": "tts_finished", "context": turnContext, "event_id": "flood-tts-" + itoa(i)})
 	}
-	// 不读：writePump 队列（64）必然溢出 → 部分帧丢弃（背压分支命中）
-	// 断言连接仍活着（关键帧不致命）
+	// OS socket buffering makes actual saturation nondeterministic. A saturated
+	// queue must close; if writes drain fast enough heartbeat remains usable.
 	_ = conn.WriteJSON(Msg{"type": "heartbeat"})
 	_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 	var m Msg
 	gotAck := false
-	for i := 0; i < 100 && !gotAck; i++ {
+	closed := false
+	for !gotAck { // Read deadline bounds the full backlog, not an arbitrary frame count.
 		if err := conn.ReadJSON(&m); err != nil {
+			t.Logf("flood read termination: %T %v", err, err)
+			_, closed = err.(*websocket.CloseError)
+			// Windows reports this peer-closed socket as WSAECONNABORTED (10053),
+			// while other platforms commonly report ECONNRESET/10054.
+			closed = closed || errors.Is(err, syscall.ECONNRESET) ||
+				errors.Is(err, syscall.Errno(10053)) || errors.Is(err, syscall.Errno(10054))
 			break
 		}
 		if m["type"] == "heartbeat_ack" {
 			gotAck = true
 		}
 	}
-	assert.True(t, gotAck, "背压后连接与心跳仍可用")
+	require.True(t, gotAck || closed, "flood must retain heartbeat or explicitly close, not hang")
+	_ = conn.Close()
+	// Either outcome must be recoverable using a new ticket for the same lesson.
+	reentered := req2(t, app.Router(), "POST", "/api/v1/classroom/lessons/"+itoa64(lid)+"/enter", mustStuToken(t, app), map[string]any{})
+	require.Equal(t, 0, reentered.Code)
+	data := reentered.Data.(map[string]any)
+	newConn, _, err := websocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(srv.URL, "http")+"/ws/classroom?lessonId="+itoa64(lid)+"&ticket="+data["ticket"].(string), nil)
+	require.NoError(t, err)
+	defer newConn.Close()
+	require.NoError(t, newConn.SetReadDeadline(time.Now().Add(5*time.Second)))
+	var fresh Msg
+	require.NoError(t, newConn.ReadJSON(&fresh))
+	require.Equal(t, "state_snapshot", fresh["type"])
+	ctx := fresh["context"]
+	frames := sendFixtureWS(t, newConn, &ctx, Msg{"type": "student_event", "event": "word_clicked"}, "after-flood-reconnect")
+	require.False(t, hasFrame(frames, "event_rejected"))
+	require.NotEmpty(t, frames)
 }
 
 func mustStuToken(t *testing.T, app *App) string {
@@ -128,12 +158,12 @@ func TestCov_HelpersAndDrop(t *testing.T) {
 	// mustSchema panic 路径
 	assert.Panics(t, func() { mustSchema("{bad") })
 
-	// 错误登录体（非法 JSON → 空 username → bad credentials）
+	// 非法 JSON 必须在认证前拒绝，不得降成空凭据登录。
 	req := httptest.NewRequest("POST", "/api/v1/auth/login", bytes.NewReader([]byte("not-json")))
 	w := httptest.NewRecorder()
 	app.Router().ServeHTTP(w, req)
 	resp := doJSON(t, w)
-	assert.Equal(t, errUnauthorized, resp.Code)
+	assert.Equal(t, 400, resp.Code)
 
 	// 错误 token
 	req = httptest.NewRequest("GET", "/api/v1/me", nil)
@@ -171,6 +201,9 @@ func TestCov_AgentToolErrors(t *testing.T) {
 	cargs2, _ := json.Marshal(map[string]any{"key": "wordsPerLesson", "value": 70, "reason": "cov"})
 	resp = req2(t, app.Router(), "POST", "/api/v1/agent/tools/call", stokAgent,
 		map[string]any{"name": "config.set", "args": json.RawMessage(cargs2)})
+	assert.Equal(t, errForbidden, resp.Code, "student-scoped service cannot write global configuration")
+	resp = req2(t, app.Router(), "POST", "/api/v1/config/set", atok,
+		map[string]any{"scope": "global", "key": "wordsPerLesson", "value": 70, "reason": "cov"})
 	assert.Equal(t, 0, resp.Code, resp.Msg)
 }
 

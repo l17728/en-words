@@ -1,0 +1,17 @@
+{
+  "scope": "diagnostic direct Model Console calls; not product-route/browser acceptance",
+  "source_manifests": {
+    "en": "f010a25a88afb1423aaab959555c24b32813f129c8d9bfc431dc658ffad786f4",
+    "zh": "81eb3c61c4a8c0238aea2078eedb1ccf69ed26e6063d54fe33f852109a9a87d4"
+  },
+  "arms": [
+    "C",
+    "D"
+  ],
+  "background_load": "single-worker mocked browser regression and network-only GGUF download; no other model inference",
+  "model_from_inspected_startup_config": "qwen3-asr-1.7b Q8_0 (not dynamic model identity verification)",
+  "ffmpeg_sha256": "bf8afaf6d8ba94240abbe04293b21ea4fd0469faf4fd5d8bb8228353c79f95e9",
+  "timeout_seconds": 20,
+  "hotwords": false,
+  "prompt": null
+}
