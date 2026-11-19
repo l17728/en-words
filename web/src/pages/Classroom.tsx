@@ -3,7 +3,7 @@ import { clientId } from '../interaction/client-id'
 import { AnswerFlight } from '../interaction/answer-flight'
 import { speechCache } from '../audio/speech-cache'
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Alert, Button, Typography, Spin, Modal, Input, message, Tag } from 'antd'
+import { Alert, Button, Typography, Spin, Modal, Input, message, Tag, Progress } from 'antd'
 import { CheckCircleFilled, CloseCircleFilled } from '@ant-design/icons'
 import type { InputRef } from 'antd'
 import { useParams, useNavigate } from 'react-router-dom'
@@ -98,6 +98,7 @@ export default function ClassroomPage() {
     }
   }, [lessonId, userId, sessionToken])
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
+  const [speechMaterials, setSpeechMaterials] = useState<{ ready: number; total: number; pending: number; failed: number; can_start: boolean } | null>(null)
   const [providers, setProviders] = useState<Capabilities | null>(null)
   const providersRef = useRef<Capabilities | null>(null)
   const localAudioRef = useRef<AbortController | null>(null)
@@ -596,6 +597,23 @@ export default function ClassroomPage() {
     setConnectionError(null)
     ws = new ClassroomWS(Number(lessonId), async () => {
       onlineRef.current = false; revokeInput()
+      // Production classrooms wait for server-side TTS material preparation.
+      // E2E fixtures deliberately bypass this gate and exercise the existing
+      // deterministic speech stub path.
+      if (!new URLSearchParams(window.location.search).has('e2e')) {
+        const ensure = await api.post<any>(`/classroom/lessons/${lessonId}/speech-materials/ensure`)
+        setSpeechMaterials({ ready: ensure.ready || 0, total: ensure.total || 0, pending: ensure.missing || 0, failed: 0, can_start: !!ensure.can_start })
+        for (let attempt = 0; attempt < 180 && !ensure.can_start; attempt++) {
+          await new Promise(resolve => window.setTimeout(resolve, 500))
+          const progress = await api.get<any>(`/classroom/lessons/${lessonId}/speech-materials/progress`)
+          setSpeechMaterials(progress)
+          if (progress.can_start) break
+          if (progress.failed > 0) throw new ApiError('语音素材生成失败，请重试或使用文字模式', 503)
+        }
+        const final = await api.get<any>(`/classroom/lessons/${lessonId}/speech-materials/progress`)
+        setSpeechMaterials(final)
+        if (!final.can_start) throw new ApiError('语音素材尚未准备完成', 503)
+      }
       const r = await api.post<EnterResult>(`/classroom/lessons/${lessonId}/enter`)
       if (!current()) throw new ApiError('Session changed', 401)
       setSnapshot(r.snapshot)
@@ -992,6 +1010,7 @@ export default function ClassroomPage() {
         <Button onClick={() => nav('/dashboard')}>返回课程表</Button>
       </>} />}
       {localStage !== 'idle' && <div role="status" style={{ position: 'fixed', bottom: 92, left: '50%', transform: 'translateX(-50%)', zIndex: 1050, minWidth: 180, padding: '8px 14px', borderRadius: 8, background: 'rgba(15, 23, 42, .88)', color: '#fff', textAlign: 'center', pointerEvents: 'none' }}>{localStage === 'preparing' ? '正在准备麦克风' : localStage === 'recording' ? '正在录音' : '正在识别，请稍候'}</div>}
+      {speechMaterials && !speechMaterials.can_start && <div role="status" aria-label="正在准备语音素材" style={{ position: 'fixed', top: 64, left: '50%', transform: 'translateX(-50%)', zIndex: 1050, width: 'min(560px, calc(100vw - 32px))', padding: '10px 14px', background: '#fff', borderRadius: 8, boxShadow: '0 4px 18px rgba(0,0,0,.12)' }}><div>正在准备课堂语音素材：{speechMaterials.ready}/{speechMaterials.total || '…'}</div><Progress percent={speechMaterials.total ? Math.round(speechMaterials.ready * 100 / speechMaterials.total) : 0} showInfo /></div>}
       {speechError && <Alert type="warning" style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 1100, width: 'min(680px, calc(100vw - 32px))' }} title={speechError} closable onClose={() => setSpeechError('')} />}
       <div style={{ flex: 1, display: 'grid', gridTemplateRows: '170px 72px 56px 72px 48px', alignContent: 'center', justifyItems: 'center', rowGap: 18, padding: 24 }}>
         {!snapshot ? (
