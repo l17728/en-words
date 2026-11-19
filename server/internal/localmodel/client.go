@@ -297,10 +297,15 @@ func (c *Client) Transcribe(ctx context.Context, audio []byte, filename, languag
 	if !c.Has(id, "asr") || len(audio) == 0 || len(audio) > MaxAudio {
 		return "", fmt.Errorf("model console: audio unavailable or invalid")
 	}
+	queueStart := time.Now()
 	if err := c.acquireASR(ctx); err != nil {
+		c.Log.ErrorCtx(ctx, "provider", "model_queue_rejected", map[string]any{"task": "asr", "wait_ms": time.Since(queueStart).Milliseconds(), "reason": "canceled_or_timeout"})
 		return "", fmt.Errorf("model console: ASR queue canceled")
 	}
 	defer c.releaseASR()
+	if waited := time.Since(queueStart).Milliseconds(); waited > 0 {
+		c.Log.InfoCtx(ctx, "provider", "model_queue_acquired", map[string]any{"task": "asr", "wait_ms": waited})
+	}
 	var body bytes.Buffer
 	w := multipart.NewWriter(&body)
 	f, err := w.CreateFormFile("file", filename)
@@ -346,10 +351,15 @@ func (c *Client) Synthesize(ctx context.Context, text, lang string) (audio []byt
 	if (lang != "en" && lang != "zh") || !c.Has(id, "tts") || len([]rune(text)) > 300 || strings.TrimSpace(text) == "" {
 		return nil, fmt.Errorf("model console: unsupported speech request")
 	}
+	queueStart := time.Now()
 	if err := c.acquireTTS(ctx); err != nil {
+		c.Log.ErrorCtx(ctx, "provider", "model_queue_rejected", map[string]any{"task": "tts", "language": lang, "wait_ms": time.Since(queueStart).Milliseconds(), "reason": "canceled_or_timeout"})
 		return nil, fmt.Errorf("model console: TTS queue canceled")
 	}
 	defer c.releaseTTS()
+	if waited := time.Since(queueStart).Milliseconds(); waited > 0 {
+		c.Log.InfoCtx(ctx, "provider", "model_queue_acquired", map[string]any{"task": "tts", "language": lang, "wait_ms": waited})
+	}
 	body, _ := json.Marshal(map[string]any{"model": c.Services[id].Model, "input": text, "voice": "default", "response_format": "wav"})
 	raw, err := c.request(ctx, path, "application/json", bytes.NewReader(body), MaxAudio)
 	if err != nil {
