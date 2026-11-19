@@ -102,6 +102,7 @@ func (a *App) refreshSpeechCache(ctx context.Context, text, lang string) ([]byte
 			_ = os.Remove(asset.FilePath)
 			_ = a.DB.Delete(&asset).Error
 		}
+		_ = a.DB.Model(&store.SpeechMaterialJob{}).Where("speech_text = ? AND language = ? AND status IN ?", text, lang, []string{"pending", "running", "ready", "failed"}).Updates(map[string]any{"status": "canceled", "updated_at": time.Now()}).Error
 	}
 	raw, _, err := a.synthesizeCached(ctx, text, lang)
 	return raw, err
