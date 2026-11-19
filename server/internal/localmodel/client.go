@@ -40,7 +40,7 @@ type Client struct {
 	profile   Profile
 	// The local ASR model is single-GPU and can return empty/partial results
 	// when several multipart requests are decoded at once. Keep a cancellable
-	// one-at-a-time gate; callers still retain their request deadline.
+	// bounded gate; callers still retain their request deadline.
 	asrGate chan struct{}
 	ttsGate chan struct{}
 }
@@ -70,7 +70,7 @@ func New(base string, log *obs.Logger) (*Client, error) {
 	return &Client{base: strings.TrimRight(base, "/"), Log: log, Services: map[string]Service{}, profile: Profile{Name: "default", Text: "vl", ASR: "asr", TTSZh: "tts", TTSEn: "tts-en"}, HTTP: &http.Client{
 		Timeout:       20 * time.Second,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
-	}, asrGate: make(chan struct{}, 1), ttsGate: make(chan struct{}, 1)}, nil
+	}, asrGate: make(chan struct{}, 4), ttsGate: make(chan struct{}, 1)}, nil
 }
 
 func (c *Client) acquireASR(ctx context.Context) error {

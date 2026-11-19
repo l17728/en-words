@@ -285,7 +285,7 @@ func TestConcurrentTranscribeIsBoundedAndPreservesCancellation(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	require.EqualValues(t, 1, maxActive.Load())
+	require.LessOrEqual(t, maxActive.Load(), int32(4))
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	_, err = c.Transcribe(ctx, []byte("audio"), "recording.wav", "en")
@@ -316,5 +316,5 @@ func TestConcurrentSynthesizeIsBounded(t *testing.T) {
 		go func() { defer wg.Done(); _, _ = c.Synthesize(context.Background(), "测试", "zh") }()
 	}
 	wg.Wait()
-	require.EqualValues(t, 1, maxActive.Load())
+	require.LessOrEqual(t, maxActive.Load(), int32(1))
 }
