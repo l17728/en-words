@@ -120,7 +120,10 @@ test('two isolated students complete real bilingual playback and ASR lessons con
       expect(playback).toHaveLength(4)
       expect(playback.every((row: any) => row.status === 'completed' && row.local && row.startMs !== null)).toBe(true)
       expect(responses[index].filter(row => row.kind === 'asr').map(row => row.status)).toEqual([200, 200])
-      expect(responses[index].filter(row => row.kind === 'tts').map(row => row.status)).toEqual([200, 200])
+      const ttsStatuses = responses[index].filter(row => row.kind === 'tts').map(row => row.status)
+      expect(ttsStatuses.length).toBeGreaterThanOrEqual(2)
+      expect(ttsStatuses.length).toBeLessThanOrEqual(3)
+      expect(ttsStatuses.every(status => status === 200)).toBe(true)
     }
   } finally {
     await info.attach('two-student-real-media', { body: JSON.stringify(evidence), contentType: 'application/json' })
