@@ -18,8 +18,9 @@ test.describe('TTS material prewarm', () => {
   test('two concurrent students share one manifest revision', async ({ request }) => {
     const f = await fixture(request, 'tts-share', [{ word: 'cat', meanings: ['猫'] }])
     const firstLesson = await scheduled(request, f)
-    const second = await api(request, '/admin/users', f.admin.token, { username: `fixture-tts-share-b-${Date.now()}`, password, nickname: '第二学生', role: 'student' })
-    const secondLogin = await api(request, '/auth/login', undefined, { username: second.username, password })
+    const secondUsername = `fixture-tts-share-b-${Date.now()}`
+    await api(request, '/admin/users', f.admin.token, { username: secondUsername, password, nickname: '第二学生', role: 'student' })
+    const secondLogin = await api(request, '/auth/login', undefined, { username: secondUsername, password })
     const secondBook = await api(request, '/wordbooks', f.admin.token, { name: `tts-share-b-${Date.now()}`, grade: 'g7' })
     await api(request, `/wordbooks/${secondBook.ID}/import/commit`, f.admin.token, { entries: [{ word: 'cat', meanings: ['猫'] }] })
     await api(request, `/wordbooks/${secondBook.ID}/publish`, f.admin.token, {})
