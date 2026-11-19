@@ -63,9 +63,17 @@ export async function recordLocal(lessonId: string, language: string, signal: Ab
     const recorder = new MediaRecorder(stream)
     const chunks: Blob[] = []
     const audio = await new Promise<Blob>((resolve, reject) => {
-      const cleanup = () => { clearTimeout(timer); if (vadTimer) clearInterval(vadTimer); signal.removeEventListener('abort', abort); void audioContext?.close().catch(() => undefined) }
+      let watchdogTimer: ReturnType<typeof setTimeout> | undefined
+      const cleanup = () => { clearTimeout(timer); if (watchdogTimer) clearTimeout(watchdogTimer); if (vadTimer) clearInterval(vadTimer); signal.removeEventListener('abort', abort); void audioContext?.close().catch(() => undefined) }
       const abort = () => { cleanup(); if (recorder.state !== 'inactive') recorder.stop(); reject(new DOMException('Aborted', 'AbortError')) }
       const timer = setTimeout(() => { if (recorder.state !== 'inactive') recorder.stop() }, maxDurationMs)
+      // MediaRecorder can occasionally miss its stop event when several
+      // AudioContexts are active. Never leave the classroom in RECORDING.
+      watchdogTimer = setTimeout(() => {
+        if (recorder.state === 'inactive') return
+        try { recorder.stop() } catch { abort(); return }
+        setTimeout(() => { if (recorder.state !== 'inactive') abort() }, 750)
+      }, maxDurationMs + 500)
       recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data) }
       recorder.onstart = () => {
         if (recorder.state !== 'recording') return
