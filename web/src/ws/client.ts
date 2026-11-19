@@ -115,7 +115,10 @@ export class ClassroomWS {
         this.handlers.onError?.('课堂暂不可进入，请返回课程表确认当前账号和课程。', false)
         return
       }
-      this.handlers.onError?.('课堂连接暂未恢复，请重试或返回课程表。', true)
+      const message = error instanceof Error && /语音素材|TTS|文字模式/.test(error.message)
+        ? error.message
+        : '课堂连接暂未恢复，请重试或返回课程表。'
+      this.handlers.onError?.(message, true)
       this.scheduleReconnect()
     }
   }

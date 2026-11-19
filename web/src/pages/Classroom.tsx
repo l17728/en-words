@@ -819,7 +819,7 @@ export default function ClassroomPage() {
 
   const phase = snapshot?.phase || 'show_word'
   useEffect(() => {
-    if (snapshot && textOnlyInputRef.current && textOnlyInputRef.current !== inputIdentity(phase, snapshot)) {
+    if (snapshot && textOnlyInputRef.current && textOnlyInputRef.current !== 'pending' && textOnlyInputRef.current !== inputIdentity(phase, snapshot)) {
       textOnlyInputRef.current = ''
       sessionStorage.removeItem(textOnlyStorageKey)
       setTextOnlyMode(false)
@@ -866,7 +866,7 @@ export default function ClassroomPage() {
   }, [phase, snapshot?.paused, cancelTts])
 
   const readyContextKey = inputTurn ? `${inputTurn.epoch}:${inputTurn.turn}:${phase}` : ''
-  const activeTextOnly = !!snapshot && textOnlyInputRef.current === inputIdentity(phase, snapshot)
+  const activeTextOnly = !!snapshot && (textOnlyInputRef.current === 'pending' || textOnlyInputRef.current === inputIdentity(phase, snapshot))
   useEffect(() => {
     if (!inputTurn || !inputGate.current.accepts(contextRef.current, phase, onlineRef.current, inputTurn)) {
       if (inputTurn && (phase === 'repeating' || phase === 'wait_answer')) console.debug('[classroom_asr_gate]', { event: 'not_ready', phase, turn: inputTurn.turn })
@@ -1006,6 +1006,7 @@ export default function ClassroomPage() {
           {asrFailure && <Button loading={resuming} disabled={resuming} onClick={() => void resumeClassroom(true)}>继续并使用文字</Button>}
           {(phase === 'tts_seg' || phase === 'reteach_show') && <Button onClick={() => sendEvent('tts_skip', String(lastTtsSegmentRef.current))}>改用文字，跳过本段</Button>}</>} />}
       {connectionError && <Alert type="error" style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 1100, width: 'min(680px, calc(100vw - 32px))' }} title={connectionError.message} action={<>
+        {/语音素材|TTS/.test(connectionError.message) && <Button onClick={() => { textOnlyInputRef.current = 'pending'; sessionStorage.setItem(textOnlyStorageKey, 'pending'); setTextOnlyMode(true); window.location.reload() }}>使用文字继续</Button>}
         <Button onClick={() => window.location.reload()}>重新连接课堂</Button>
         <Button onClick={() => nav('/dashboard')}>返回课程表</Button>
       </>} />}
