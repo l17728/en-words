@@ -19,9 +19,16 @@ const speechRuleVersion = "speech-v1"
 var speechCacheLocks sync.Map
 
 func (a *App) speechCacheKey(text, lang string) string {
-	serviceID := a.Local.Profile().TTSEn
+	serviceID := "tts-en"
+	model := "default"
 	if lang != "en" {
-		serviceID = a.Local.Profile().TTSZh
+		serviceID = "tts"
+	}
+	if a.Local != nil {
+		serviceID = a.Local.Profile().TTSEn
+		if lang != "en" {
+			serviceID = a.Local.Profile().TTSZh
+		}
 	}
 	if serviceID == "" {
 		serviceID = "tts"
@@ -29,8 +36,12 @@ func (a *App) speechCacheKey(text, lang string) string {
 			serviceID = "tts-en"
 		}
 	}
-	service := a.Local.Services[serviceID]
-	material := strings.Join([]string{lang, text, serviceID, service.Model, "default", speechRuleVersion}, "\x00")
+	if a.Local != nil {
+		if service, ok := a.Local.Services[serviceID]; ok && service.Model != "" {
+			model = service.Model
+		}
+	}
+	material := strings.Join([]string{lang, text, serviceID, model, "default", speechRuleVersion}, "\x00")
 	sum := sha256.Sum256([]byte(material))
 	return hex.EncodeToString(sum[:])
 }

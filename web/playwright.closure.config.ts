@@ -32,7 +32,9 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      command: 'npm run e2e:serve',
+      // Build is a separate CI step; preview must start quickly so the
+      // harness timeout measures the test server rather than bundling time.
+      command: 'npx vite preview --config e2e/vite.closure.config.ts --host 127.0.0.1 --strictPort',
       url: `http://127.0.0.1:${webPort}`,
       reuseExistingServer: false,
       timeout: 180_000,
