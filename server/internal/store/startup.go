@@ -86,7 +86,7 @@ func (s *startupObservation) stage(name, reason string, fn func() error) (err er
 }
 
 func startupModels() []any {
-	return append([]any{&OverdueTask{}, &FeedbackTask{}, &FeedbackIntent{}, &FeedbackTodo{}, &FeedbackNotice{}, &ConfigRevision{}, &RuntimeRecord{}, &DurableMemory{}, &User{}, &WordBook{}, &WordEntry{}, &MemoryCard{}, &Lesson{}, &ClassroomEvent{}, &WsTicket{}, &ConfigGlobal{}, &ConfigOverride{}, &Feedback{}, &Notification{}, &AgentMemory{}, &AuditLog{}, &PlacementDraft{}, &SpeechAsset{}, &ModelProfile{}}, TeacherAnalysisModels()...)
+	return append([]any{&OverdueTask{}, &FeedbackTask{}, &FeedbackIntent{}, &FeedbackTodo{}, &FeedbackNotice{}, &ConfigRevision{}, &RuntimeRecord{}, &DurableMemory{}, &User{}, &WordBook{}, &WordEntry{}, &MemoryCard{}, &Lesson{}, &ClassroomEvent{}, &WsTicket{}, &ConfigGlobal{}, &ConfigOverride{}, &Feedback{}, &Notification{}, &AgentMemory{}, &AuditLog{}, &PlacementDraft{}, &SpeechAsset{}, &ModelProfile{}, &SpeechMaterialJob{}}, TeacherAnalysisModels()...)
 }
 
 func userSchemaCount(db *gorm.DB) (int64, error) {

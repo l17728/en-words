@@ -51,6 +51,7 @@ func (a *App) Router() *gin.Engine {
 	// ---- 学生/管理员共用（需登录）----
 	authed := v.Group("", a.authMW())
 	a.registerProviderRoutes(authed)
+	a.registerSpeechMaterialRoutes(authed)
 	a.registerTeacherAnalysisRoutes(authed)
 	a.registerModelProfileRoutes(authed)
 	a.registerPilotRoutes(authed)
