@@ -1,0 +1,26 @@
+{
+  "cwd": "D:\\en-words",
+  "command": "C:\\Python312\\python.exe -m unittest -v review.test_pilot_runroot_manifest",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.19045-SP0",
+  "PYTHONPATH": "D:\\en-words\\review",
+  "exit_code": 0,
+  "duration_seconds": 1.563,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "67f0bd701082e0cc3d107025669e0cf820d4346d6cfee940aa1a94a3d55aedf7",
+  "file_hashes": {
+    "docs/43-Pilot授权幂等与父进程身份绑定SDD.md": "b586621fc749abd8e609fef211cf83e00b3614c25ea85711998bffec426dc251",
+    "docs/45-pilot-run-root-bootstrap-sdd.md": "c09416a9c6f0070655f7e03192b04630b98e25798f079c94bdee67dc831d2837",
+    "docs/46-pilot-host-logger-queue-sdd.md": "8c821317d515b49596f621ee2a6dbef1e9816fe55b41b24b86c1690d21bd6486",
+    "docs/47-pilot-linux-launcher-identity-handoff-sdd.md": "10674f2b05bb688e0664bbe527bbcf541e5f10a93aa0b18d5dc8dbb9e2e58e99",
+    "docs/50-pilot-runroot-product-orchestration-sdd.md": "339988d3b0971c99b66b41743aeea3fc20b2aab0173952ad423fdd7c583a6d05",
+    "docs/51-pilot-control-ledger-v3-sdd.md": "3e30657afdac5600b07f6d965cd4e91b8a0ee6ed0cc7b821ef9ae2bf45ec8d54",
+    "docs/52-pilot-control-ledger-v3-physical-model-decisions.md": "eac7115e9fb30c0a2eb2b470dadd24bbf2ba0b2b5b69978298bc64f9b5107cd7",
+    "docs/53-pilot-control-ledger-v3-physical-schema-matrix.md": "7313a227a6e67554253249ed266fcfedb59cafa013e464234971a5364f57d1b8",
+    "docs/54-pilot-runroot-stage-a-implementation-delta.md": "c4c0dd80d56df92f265da2a0b9b18bb754267595faf6510c1899398aa2841070",
+    "docs/63-pilot-intent-quota-journal-sdd.md": "f40f3c7f1be7403ce642ac14e31e4c8237ad23698d734a0baff64f7157ee04da",
+    "review/pilot-intent-quota-journal-manifest-20261022.json": "2535c9fc3301045e816769bc247f231d99d798629ad146f6470a38492bf168c0",
+    "review/pilot-runroot-product-orchestration-manifest-20261021.json": "b74735d495ea9c2991393bd153d2a6bae58e60893959868d00ca3039056cdaad",
+    "review/test_pilot_runroot_manifest.py": "0129805aeae5b1b8055c99fe0016aa0db21b638e3224dd0190e055e8c5acb06f"
+  }
+}

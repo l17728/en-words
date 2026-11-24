@@ -1,0 +1,27 @@
+{
+  "review": "atomic-batch-repos-backend-review8-20261017",
+  "date": "2026-10-17",
+  "target": "server/internal/store/atomic_batch_repos_test.go",
+  "references": [
+    "server/internal/store/import_atomic.go",
+    "server/internal/store/placement_atomic.go",
+    "server/internal/store/store.go",
+    "server/internal/wordbook/import_atomic.go"
+  ],
+  "code_modified": false,
+  "tests_run_by_reviewer": false,
+  "verdict": "PASS",
+  "findings": [],
+  "resolved": [
+    "ListEntries now receives its three return values correctly.",
+    "Word and NormKey are asserted separately using the persisted rows.",
+    "CreateCardsIfAbsent now asserts that a valid row preceding nil in one batch is not partially inserted.",
+    "Cancelled MarkPlacementAtomic now asserts that card statuses and PlacementDraft remain unchanged."
+  ],
+  "checks": {
+    "import_semantics_and_compile_signature": "PASS_STATIC_REVIEW",
+    "create_cards_idempotency_and_atomic_nil_rejection": "PASS_STATIC_REVIEW",
+    "placement_scoping_draft_and_cancel_rollback": "PASS_STATIC_REVIEW"
+  },
+  "scope_note": "Tests were not executed during this read-only review."
+}

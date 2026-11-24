@@ -1,0 +1,250 @@
+{
+  "source_unchanged": true,
+  "source_before": "e781c6cd9f373dc1653de53853ed59977a63077de12c740f5f4588a5e96168bc",
+  "source_after": "e781c6cd9f373dc1653de53853ed59977a63077de12c740f5f4588a5e96168bc",
+  "results": [
+    {
+      "name": "linux-amd64-pilotcontrol",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.27.3-extract2-20261022\\go\\bin\\go.exe",
+        "test",
+        "-c",
+        "-tags=pilot_e2e",
+        "-o",
+        "D:\\en-words\\.test-artifacts\\main-pilot-tagged-go1273-20261022\\pilotcontrol-linux-amd64.test",
+        "./internal/pilotcontrol"
+      ],
+      "cwd": "D:\\en-words\\server",
+      "exit": 0,
+      "seconds": 8.823,
+      "env": {
+        "GOROOT": "D:\\en-words\\.test-tools\\go1.27.3-extract2-20261022\\go",
+        "GOOS": "linux",
+        "GOARCH": "amd64",
+        "CGO_ENABLED": "0",
+        "CC": "D:\\en-words\\.test-tools\\llvm-mingw-20261006-ucrt-x86_64\\bin\\x86_64-w64-mingw32-gcc.exe",
+        "GOCACHE": "D:\\en-words\\.test-artifacts\\main-windows-go1273-full-20261022\\cache",
+        "GOMODCACHE": "D:\\en-words\\.test-tools\\gomodcache",
+        "GOTOOLCHAIN": "local",
+        "GOPROXY": "off"
+      }
+    },
+    {
+      "name": "linux-amd64-pilotsupervisor",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.27.3-extract2-20261022\\go\\bin\\go.exe",
+        "test",
+        "-c",
+        "-tags=pilot_e2e",
+        "-o",
+        "D:\\en-words\\.test-artifacts\\main-pilot-tagged-go1273-20261022\\pilotsupervisor-linux-amd64.test",
+        "./internal/pilotsupervisor"
+      ],
+      "cwd": "D:\\en-words\\server",
+      "exit": 0,
+      "seconds": 53.932,
+      "env": {
+        "GOROOT": "D:\\en-words\\.test-tools\\go1.27.3-extract2-20261022\\go",
+        "GOOS": "linux",
+        "GOARCH": "amd64",
+        "CGO_ENABLED": "0",
+        "CC": "D:\\en-words\\.test-tools\\llvm-mingw-20261006-ucrt-x86_64\\bin\\x86_64-w64-mingw32-gcc.exe",
+        "GOCACHE": "D:\\en-words\\.test-artifacts\\main-windows-go1273-full-20261022\\cache",
+        "GOMODCACHE": "D:\\en-words\\.test-tools\\gomodcache",
+        "GOTOOLCHAIN": "local",
+        "GOPROXY": "off"
+      }
+    },
+    {
+      "name": "linux-amd64-vet",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.27.3-extract2-20261022\\go\\bin\\go.exe",
+        "vet",
+        "-tags=pilot_e2e",
+        "./internal/pilotcontrol",
+        "./internal/pilotsupervisor"
+      ],
+      "cwd": "D:\\en-words\\server",
+      "exit": 0,
+      "seconds": 14.021,
+      "env": {
+        "GOROOT": "D:\\en-words\\.test-tools\\go1.27.3-extract2-20261022\\go",
+        "GOOS": "linux",
+        "GOARCH": "amd64",
+        "CGO_ENABLED": "0",
+        "CC": "D:\\en-words\\.test-tools\\llvm-mingw-20261006-ucrt-x86_64\\bin\\x86_64-w64-mingw32-gcc.exe",
+        "GOCACHE": "D:\\en-words\\.test-artifacts\\main-windows-go1273-full-20261022\\cache",
+        "GOMODCACHE": "D:\\en-words\\.test-tools\\gomodcache",
+        "GOTOOLCHAIN": "local",
+        "GOPROXY": "off"
+      }
+    },
+    {
+      "name": "linux-arm64-pilotcontrol",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.27.3-extract2-20261022\\go\\bin\\go.exe",
+        "test",
+        "-c",
+        "-tags=pilot_e2e",
+        "-o",
+        "D:\\en-words\\.test-artifacts\\main-pilot-tagged-go1273-20261022\\pilotcontrol-linux-arm64.test",
+        "./internal/pilotcontrol"
+      ],
+      "cwd": "D:\\en-words\\server",
+      "exit": 0,
+      "seconds": 9.201,
+      "env": {
+        "GOROOT": "D:\\en-words\\.test-tools\\go1.27.3-extract2-20261022\\go",
+        "GOOS": "linux",
+        "GOARCH": "arm64",
+        "CGO_ENABLED": "0",
+        "CC": "D:\\en-words\\.test-tools\\llvm-mingw-20261006-ucrt-x86_64\\bin\\x86_64-w64-mingw32-gcc.exe",
+        "GOCACHE": "D:\\en-words\\.test-artifacts\\main-windows-go1273-full-20261022\\cache",
+        "GOMODCACHE": "D:\\en-words\\.test-tools\\gomodcache",
+        "GOTOOLCHAIN": "local",
+        "GOPROXY": "off"
+      }
+    },
+    {
+      "name": "linux-arm64-pilotsupervisor",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.27.3-extract2-20261022\\go\\bin\\go.exe",
+        "test",
+        "-c",
+        "-tags=pilot_e2e",
+        "-o",
+        "D:\\en-words\\.test-artifacts\\main-pilot-tagged-go1273-20261022\\pilotsupervisor-linux-arm64.test",
+        "./internal/pilotsupervisor"
+      ],
+      "cwd": "D:\\en-words\\server",
+      "exit": 0,
+      "seconds": 49.653,
+      "env": {
+        "GOROOT": "D:\\en-words\\.test-tools\\go1.27.3-extract2-20261022\\go",
+        "GOOS": "linux",
+        "GOARCH": "arm64",
+        "CGO_ENABLED": "0",
+        "CC": "D:\\en-words\\.test-tools\\llvm-mingw-20261006-ucrt-x86_64\\bin\\x86_64-w64-mingw32-gcc.exe",
+        "GOCACHE": "D:\\en-words\\.test-artifacts\\main-windows-go1273-full-20261022\\cache",
+        "GOMODCACHE": "D:\\en-words\\.test-tools\\gomodcache",
+        "GOTOOLCHAIN": "local",
+        "GOPROXY": "off"
+      }
+    },
+    {
+      "name": "linux-arm64-vet",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.27.3-extract2-20261022\\go\\bin\\go.exe",
+        "vet",
+        "-tags=pilot_e2e",
+        "./internal/pilotcontrol",
+        "./internal/pilotsupervisor"
+      ],
+      "cwd": "D:\\en-words\\server",
+      "exit": 0,
+      "seconds": 13.632,
+      "env": {
+        "GOROOT": "D:\\en-words\\.test-tools\\go1.27.3-extract2-20261022\\go",
+        "GOOS": "linux",
+        "GOARCH": "arm64",
+        "CGO_ENABLED": "0",
+        "CC": "D:\\en-words\\.test-tools\\llvm-mingw-20261006-ucrt-x86_64\\bin\\x86_64-w64-mingw32-gcc.exe",
+        "GOCACHE": "D:\\en-words\\.test-artifacts\\main-windows-go1273-full-20261022\\cache",
+        "GOMODCACHE": "D:\\en-words\\.test-tools\\gomodcache",
+        "GOTOOLCHAIN": "local",
+        "GOPROXY": "off"
+      }
+    },
+    {
+      "name": "windows-test",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.27.3-extract2-20261022\\go\\bin\\go.exe",
+        "test",
+        "-p=1",
+        "-count=1",
+        "-json",
+        "-tags=pilot_e2e",
+        "-timeout=180s",
+        "./internal/pilotcontrol",
+        "./internal/pilotsupervisor"
+      ],
+      "cwd": "D:\\en-words\\server",
+      "exit": 0,
+      "seconds": 34.375,
+      "env": {
+        "GOROOT": "D:\\en-words\\.test-tools\\go1.27.3-extract2-20261022\\go",
+        "GOOS": "windows",
+        "GOARCH": "amd64",
+        "CGO_ENABLED": "1",
+        "CC": "D:\\en-words\\.test-tools\\llvm-mingw-20261006-ucrt-x86_64\\bin\\x86_64-w64-mingw32-gcc.exe",
+        "GOCACHE": "D:\\en-words\\.test-artifacts\\main-windows-go1273-full-20261022\\cache",
+        "GOMODCACHE": "D:\\en-words\\.test-tools\\gomodcache",
+        "GOTOOLCHAIN": "local",
+        "GOPROXY": "off"
+      }
+    },
+    {
+      "name": "windows-vet",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.27.3-extract2-20261022\\go\\bin\\go.exe",
+        "vet",
+        "-tags=pilot_e2e",
+        "./internal/pilotcontrol",
+        "./internal/pilotsupervisor"
+      ],
+      "cwd": "D:\\en-words\\server",
+      "exit": 0,
+      "seconds": 15.776,
+      "env": {
+        "GOROOT": "D:\\en-words\\.test-tools\\go1.27.3-extract2-20261022\\go",
+        "GOOS": "windows",
+        "GOARCH": "amd64",
+        "CGO_ENABLED": "1",
+        "CC": "D:\\en-words\\.test-tools\\llvm-mingw-20261006-ucrt-x86_64\\bin\\x86_64-w64-mingw32-gcc.exe",
+        "GOCACHE": "D:\\en-words\\.test-artifacts\\main-windows-go1273-full-20261022\\cache",
+        "GOMODCACHE": "D:\\en-words\\.test-tools\\gomodcache",
+        "GOTOOLCHAIN": "local",
+        "GOPROXY": "off"
+      }
+    }
+  ],
+  "counts": {
+    "enwords/internal/pilotcontrol": {
+      "pass": 23,
+      "top_pass": 23
+    },
+    "enwords/internal/pilotsupervisor": {
+      "pass": 447,
+      "top_pass": 133
+    }
+  },
+  "scope": "Current main worktree, not isolated branch; includes unrelated uncommitted changes",
+  "limits": [
+    "Linux CGO=0 pilotcontrol has no test files and no generated test binary; fail-closed stub only.",
+    "Linux pilotsupervisor test binaries compiled for amd64/arm64, not executed. No native VFS or Linux race/coverage claim."
+  ],
+  "artifacts": {
+    "linux-amd64-pilotcontrol.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "linux-amd64-pilotcontrol.stdout": "94b0ba5e0c25264d0793046ca881e435dfec1cebb37797279ce3e001ca789ba4",
+    "linux-amd64-pilotsupervisor.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "linux-amd64-pilotsupervisor.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "linux-amd64-vet.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "linux-amd64-vet.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "linux-arm64-pilotcontrol.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "linux-arm64-pilotcontrol.stdout": "94b0ba5e0c25264d0793046ca881e435dfec1cebb37797279ce3e001ca789ba4",
+    "linux-arm64-pilotsupervisor.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "linux-arm64-pilotsupervisor.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "linux-arm64-vet.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "linux-arm64-vet.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "pilotsupervisor-linux-amd64.test": "8b596aa1b6325ceed97517e79b430e7b7ce72e1d1e3af462b67f4f2a66785f4e",
+    "pilotsupervisor-linux-arm64.test": "a86230e93c5052eb91a2b9702adf6caf1601f31ce80141b30a6857eefcff4b2e",
+    "results.json": "cb7762eefbef4bc6bb4952ce8d8f651c6420787053e6fe65d4a923108527cc78",
+    "source-after.json": "728bd72306a2bbfa652b5710c091f46dfc8f8c47109968ac28690ab770c9c6bd",
+    "source-before.json": "728bd72306a2bbfa652b5710c091f46dfc8f8c47109968ac28690ab770c9c6bd",
+    "summary.json": "5564d0635b30b6bd9c7c47b4b491f5ec821c2541ab3b32a0eefc03235e683435",
+    "windows-test.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows-test.stdout": "3b5b64f931e7d097942741dd8b67a37d7291a4c7878822b1f43944a2cef97ee8",
+    "windows-vet.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows-vet.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

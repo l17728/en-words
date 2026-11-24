@@ -1,0 +1,5 @@
+{"Time":"2026-10-20T11:04:53.7890424+08:00","Action":"start","Package":"enwords/internal/pilotsupervisor"}
+{"Time":"2026-10-20T11:04:54.2742841+08:00","Action":"output","Package":"enwords/internal/pilotsupervisor","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-20T11:04:54.414457+08:00","Action":"output","Package":"enwords/internal/pilotsupervisor","Output":"PASS\n"}
+{"Time":"2026-10-20T11:04:54.4149696+08:00","Action":"output","Package":"enwords/internal/pilotsupervisor","Output":"ok  \tenwords/internal/pilotsupervisor\t0.625s [no tests to run]\n"}
+{"Time":"2026-10-20T11:04:54.4149863+08:00","Action":"pass","Package":"enwords/internal/pilotsupervisor","Elapsed":0.877}

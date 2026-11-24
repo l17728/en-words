@@ -1,0 +1,8 @@
+# enwords/internal/pilotsupervisor [enwords/internal/pilotsupervisor.test]
+internal\pilotsupervisor\create_registry_test.go:51:18: owner.Complete undefined (type *CreateLease has no field or method Complete)
+internal\pilotsupervisor\create_registry_test.go:58:18: owner.Complete undefined (type *CreateLease has no field or method Complete)
+internal\pilotsupervisor\create_registry_test.go:103:20: lease.Complete undefined (type *CreateLease has no field or method Complete)
+internal\pilotsupervisor\create_registry_test.go:131:18: owner.MarkUncertain undefined (type *CreateLease has no field or method MarkUncertain)
+internal\pilotsupervisor\create_registry_test.go:161:18: owner.Complete undefined (type *CreateLease has no field or method Complete)
+internal\pilotsupervisor\create_registry_test.go:268:18: owner.Complete undefined (type *CreateLease has no field or method Complete)
+internal\pilotsupervisor\create_registry_test.go:271:18: owner.MarkUncertain undefined (type *CreateLease has no field or method MarkUncertain)

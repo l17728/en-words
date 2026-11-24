@@ -1,0 +1,231 @@
+{
+  "source_before": "e781c6cd9f373dc1653de53853ed59977a63077de12c740f5f4588a5e96168bc",
+  "source_after": "e781c6cd9f373dc1653de53853ed59977a63077de12c740f5f4588a5e96168bc",
+  "source_unchanged": true,
+  "go_before": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+  "go_after": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+  "env": {
+    "GOROOT": "/tmp/enwords-pilot-linux-acceptance-20261022/go",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOPATH": "/tmp/enwords-pilot-main-20261022-r4/owned/evidence-r4/gopath",
+    "GOMODCACHE": "/tmp/enwords-pilot-ubuntu-20261022/evidence-r2/modules",
+    "PILOT_FS_TEST_ROOT": "/tmp/enwords-pilot-main-20261022-r4/owned/evidence-r4/fs",
+    "GOCACHE": "/tmp/enwords-pilot-ubuntu-20261022/evidence-r2/cache",
+    "GOTMPDIR": "/tmp/enwords-pilot-main-20261022-r4/owned/evidence-r4/tmp",
+    "TMPDIR": "/tmp/enwords-pilot-main-20261022-r4/owned/evidence-r4/work",
+    "CGO_ENABLED": "1",
+    "CC": "/usr/bin/gcc"
+  },
+  "cwd": "/tmp/enwords-pilot-main-20261022-r4/server",
+  "results": [
+    {
+      "stage": "control-test",
+      "command": [
+        "/tmp/enwords-pilot-linux-acceptance-20261022/go/bin/go",
+        "test",
+        "-count=1",
+        "-json",
+        "-timeout=180s",
+        "./internal/pilotcontrol"
+      ],
+      "exit": 0,
+      "elapsed_s": 34.031714390963316,
+      "stop_reason": null,
+      "disk_before": 1439539200,
+      "disk_min": 1389764608,
+      "disk_after": 1412112384
+    },
+    {
+      "stage": "supervisor-test",
+      "command": [
+        "/tmp/enwords-pilot-linux-acceptance-20261022/go/bin/go",
+        "test",
+        "-count=1",
+        "-json",
+        "-tags=pilot_e2e",
+        "-timeout=180s",
+        "./internal/pilotsupervisor"
+      ],
+      "exit": 0,
+      "elapsed_s": 26.02604154869914,
+      "stop_reason": null,
+      "disk_before": 1412108288,
+      "disk_min": 1388314624,
+      "disk_after": 1416167424
+    },
+    {
+      "stage": "control-race",
+      "command": [
+        "/tmp/enwords-pilot-linux-acceptance-20261022/go/bin/go",
+        "test",
+        "-race",
+        "-count=1",
+        "-json",
+        "-timeout=180s",
+        "./internal/pilotcontrol"
+      ],
+      "exit": 0,
+      "elapsed_s": 36.033568266779184,
+      "stop_reason": null,
+      "disk_before": 1416167424,
+      "disk_min": 1336795136,
+      "disk_after": 1337999360
+    },
+    {
+      "stage": "supervisor-race",
+      "command": [
+        "/tmp/enwords-pilot-linux-acceptance-20261022/go/bin/go",
+        "test",
+        "-race",
+        "-count=1",
+        "-json",
+        "-tags=pilot_e2e",
+        "-timeout=180s",
+        "./internal/pilotsupervisor"
+      ],
+      "exit": 0,
+      "elapsed_s": 80.07612457312644,
+      "stop_reason": null,
+      "disk_before": 1337999360,
+      "disk_min": 1320259584,
+      "disk_after": 1391239168
+    },
+    {
+      "stage": "control-vet",
+      "command": [
+        "/tmp/enwords-pilot-linux-acceptance-20261022/go/bin/go",
+        "vet",
+        "./internal/pilotcontrol"
+      ],
+      "exit": 0,
+      "elapsed_s": 2.0026013925671577,
+      "stop_reason": null,
+      "disk_before": 1391239168,
+      "disk_min": 1391239168,
+      "disk_after": 1391218688
+    },
+    {
+      "stage": "supervisor-vet",
+      "command": [
+        "/tmp/enwords-pilot-linux-acceptance-20261022/go/bin/go",
+        "vet",
+        "-tags=pilot_e2e",
+        "./internal/pilotsupervisor"
+      ],
+      "exit": 0,
+      "elapsed_s": 2.002628045156598,
+      "stop_reason": null,
+      "disk_before": 1391218688,
+      "disk_min": 1391218688,
+      "disk_after": 1391190016
+    }
+  ],
+  "postcheck": {
+    "fixture_sha_after": "a32c7ead5544fef50576989c7655dd4a9d70b9ae21a2358f91824054bf45403d",
+    "fixture_unchanged": true,
+    "free_bytes": 1391058944,
+    "fixture_entries": {
+      "tmp": 0,
+      "work": 0,
+      "fs": 0
+    },
+    "filesystem": "/dev/vda2 ext4",
+    "architecture": "x86_64"
+  },
+  "fixture": {
+    "path": "review/pilot-control-ledger-v3-literal-ddl-draft-20261021.sql",
+    "sha256": "a32c7ead5544fef50576989c7655dd4a9d70b9ae21a2358f91824054bf45403d"
+  },
+  "counts": {
+    "control-test": {
+      "run": 23,
+      "pass": 23,
+      "fail": 0,
+      "skip": 0,
+      "top_pass": 23
+    },
+    "supervisor-test": {
+      "run": 667,
+      "pass": 667,
+      "fail": 0,
+      "skip": 0,
+      "top_pass": 202
+    },
+    "control-race": {
+      "run": 23,
+      "pass": 23,
+      "fail": 0,
+      "skip": 0,
+      "top_pass": 23
+    },
+    "supervisor-race": {
+      "run": 667,
+      "pass": 667,
+      "fail": 0,
+      "skip": 0,
+      "top_pass": 202
+    },
+    "control-vet": {
+      "run": 0,
+      "pass": 0,
+      "fail": 0,
+      "skip": 0,
+      "top_pass": 0
+    },
+    "supervisor-vet": {
+      "run": 0,
+      "pass": 0,
+      "fail": 0,
+      "skip": 0,
+      "top_pass": 0
+    }
+  },
+  "minimum_observed_free_bytes": 1320259584,
+  "status": "PASS_SPECIFIED_NATIVE_PACKAGES",
+  "scope": "Current main worktree snapshot; Linux amd64/ext4, ubuntu UID1000/GID1001; pilotcontrol default CGO and pilotsupervisor pilot_e2e, matching prior r2. Not full Linux repository/coverage/privileged system or separate pilotcontrol VFS candidate suite acceptance.",
+  "artifacts": {
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/control-race.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/control-race.stdout": "58a5bbb6d155b51bd24bb14f512453be1e41c767d96411a10194ccd46a7a4ce9",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/control-test.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/control-test.stdout": "4ce3af0db6f05c919fdb05fe9d6e949eeed36701fe79b8975f06f21cc4e43c99",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/control-vet.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/control-vet.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/driver-exit.json": "bfdedf06596faa2042b0fedd9653ec1023d2e96ed56dc40b607985bc8438c1d5",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/driver.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/driver.stdout": "b4437191a2982d2f02c7fcc6c7dcc3b0496f694359353b975c5d53cefd3cd07d",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/fixture-source.json": "8457a9f2de7c8d4bcfd675d935d3d51f6bf0b4e693da5fb44468e8f9da21c8ea",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/main-source.tar.gz": "7fb094c7d3828010ccba7bf2fe117631bdeb2022e8236258bc13619f2bc3a96b",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/postcheck.json": "9ac392defaabf632b3d45ed4e6a869f12117181e9fa13695047f54477a056b14",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/results.json": "42a535be186e1b7e4769da95ff47b24ea10613ce1de500f1fc8e780d876be3a1",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/setup.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/setup.stdout": "a52e044cf8d5d52d5a744307df451310ccf714a99778dee8dc6feedb3b8f9b47",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/source-after.json": "a2e3ad4bc3235225283666eb5c21ed4928019e0ae92b5648a6bacead78ae7a25",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/source-before.json": "a2e3ad4bc3235225283666eb5c21ed4928019e0ae92b5648a6bacead78ae7a25",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/summary.json": "c0e3bf15d88776ea373ce3d6c0838733a5f36ca3bb182842d063bdb258e07af4",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/supervisor-race.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/supervisor-race.stdout": "95ea183074992c6078be8fba574b0915ca2c037b70dbc7bcdd71ae6f89ab2c0d",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/supervisor-test.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/supervisor-test.stdout": "e04c12877fab9a43c0aa31770ed963f9dc9b5781118bc97ff52960ffa28b7f96",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/supervisor-vet.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/supervisor-vet.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".test-artifacts/pilot-native-main-linux-20261022-r4/upload-source.json": "728bd72306a2bbfa652b5710c091f46dfc8f8c47109968ac28690ab770c9c6bd"
+  },
+  "evidence_self_check": {
+    "six_exit_zero": true,
+    "source_equal": true,
+    "go_equal": true,
+    "fixture_equal": true,
+    "no_failure_or_skip": true,
+    "temporary_fixture_dirs_empty": true,
+    "disk_above_1GiB": true
+  },
+  "go_hash_evidence": {
+    "before": "Runner self-report only; no independent pre-run attachment",
+    "after": "Runner self-report corroborated by later independent sha256sum observation",
+    "independent_postrun_matches": true,
+    "supplemental_artifact": ".test-artifacts/pilot-native-main-linux-20261022-r4/go-independent-postrun-check.json",
+    "supplemental_sha256": "cf7249f1bfe7c3373c3351b9c81ae2b01990ee3097d6dcbdd2ffac5586e41afe",
+    "original_artifact_map_count": 25
+  }
+}

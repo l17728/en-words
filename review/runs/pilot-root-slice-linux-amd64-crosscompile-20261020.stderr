@@ -1,0 +1,4 @@
+# enwords/internal/pilotsupervisor [enwords/internal/pilotsupervisor.test]
+internal\pilotsupervisor\verified_linux_test.go:235:3: declared and not used: baselineCloseCalls
+internal\pilotsupervisor\verified_linux_test.go:331:15: undefined: baselineCloseCalls
+internal\pilotsupervisor\verified_linux_test.go:332:122: undefined: baselineCloseCalls

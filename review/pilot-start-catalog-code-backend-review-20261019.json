@@ -1,0 +1,52 @@
+{
+  "review": "pilot-start-catalog-code-backend-review-20261019",
+  "date": "2026-10-19",
+  "target": [
+    "server/internal/store/pilot_start_catalog.go",
+    "server/internal/store/pilot_start_catalog_test.go"
+  ],
+  "reference": "docs/41-试点课堂Start持久迁移内核SDD.md §109",
+  "read_only": true,
+  "tests_run": false,
+  "verdict": "BLOCKED",
+  "findings": [
+    {
+      "id": "CAT-CODE-1",
+      "severity": "P1",
+      "status": "open",
+      "file": "server/internal/store/pilot_start_catalog.go",
+      "location": "pilotCatalogJournal.Transition max-frame and max-byte checks",
+      "title": "Catalog limit rejection does not poison the journal instance",
+      "evidence": "At max frame count or when the next frame would exceed max bytes, Transition returns errPilotCatalogLimit without setting journal.poisoned. Subsequent Snapshot and other-case transitions remain usable, contrary to §109's global fail-closed limit behavior.",
+      "recommendation": "Poison the journal/supervisor on catalog-wide capacity exhaustion and add tests that subsequent snapshot/transition calls fail closed after either cap is reached."
+    },
+    {
+      "id": "CAT-CODE-2",
+      "severity": "P2",
+      "status": "open",
+      "file": "server/internal/store/pilot_start_catalog_test.go",
+      "location": "Transition fault-injection coverage",
+      "title": "Transition file Sync failure is not directly tested",
+      "evidence": "Sync errors are injected for first-frame creation and startup replay, but not after a normal transition frame has been appended.",
+      "recommendation": "Inject Transition Sync failure; assert error, poison, no same-instance retry, and restart behavior according to complete-valid-frame authority."
+    },
+    {
+      "id": "CAT-CODE-3",
+      "severity": "P2",
+      "status": "open",
+      "file": "server/internal/store/pilot_start_catalog_test.go",
+      "location": "concurrent-generation and canonical-payload tests",
+      "title": "In-memory lock concurrency and framing corruption do not satisfy child-process/canonical JSON acceptance",
+      "evidence": "The generation test uses a fake mutex lock; the platform lock test is sequential on one handle. Current malformed tests focus framing corruption and do not explicitly lock duplicate/unknown/trailing/noncanonical JSON payload behavior.",
+      "recommendation": "Add child-process writers with independently opened verified lock handles and explicit canonical payload negative vectors as required by §109.4."
+    }
+  ],
+  "passed_checks": [
+    "CRC-32C frame encoding/decoding, duplicate-length/trailer validation, canonical re-encode comparison.",
+    "Replay generation continuity, per-case state transitions, and no case-ID reuse.",
+    "Startup replay and file/parent Sync occur while global lock is held.",
+    "First provisioning frame is exclusive-bootstrap supplied, written and synced before parent sync.",
+    "Normal append short-write, seek/stat/write/sync/unlock errors poison the journal."
+  ],
+  "scope_note": "Path, ACL, identity, bootstrap lock, and real supervisor behavior are outside these two files and remain integration gates."
+}

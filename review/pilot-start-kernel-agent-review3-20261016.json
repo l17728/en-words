@@ -1,0 +1,49 @@
+﻿{
+  "review_id": "pilot-start-kernel-agent-review3-20261016",
+  "domain": "ai_agent_teaching_strategy",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "cross_checked_documents": ["docs/04-Agent与话术库设计.md", "server/internal/agent/agent.go", "server/internal/scripts/scripts.go", "server/internal/tools/registry.go"],
+  "review_type": "read_only_design_rereview",
+  "code_modified": false,
+  "tests_run": false,
+  "decision": "block",
+  "summary": "RenderLessonStartT01 和同 task bundle 重试的设计已解决第2轮阻断；失败的 Registry 调用审计 buffer 被丢弃，造成 D-15 审计缺口，仍阻止 Agent 域批准。",
+  "prior_findings": [
+    {"id":"AGENT-START-06","status":"closed_design_contract"},
+    {"id":"AGENT-START-07","status":"closed_for_same_task_coordinator_lifetime"}
+  ],
+  "findings": [
+    {
+      "id":"AGENT-START-08",
+      "priority":"P1",
+      "status":"blocking",
+      "section":"docs/41 §3, §4, §6 audit/log contract",
+      "title":"Failed Registry attempts discard the only task-local audit",
+      "evidence":"tools.Registry.Call invokes auditor for ordinary failure results; SDD says failed/incomplete bundle discards the task-local buffer and terminates without lifecycle commit. Thus say success/show_word denial, budget/schema/handler failure, or panic may have no durable/retrievable audit and no success receipt to link it to, contrary to D-15 action scope/schema/audit boundary.",
+      "required_change":"Define a redacted durable attempt/security audit for incomplete bundles, separate from successful lifecycle receipt linkage; preserve tool/risk/actor-task/trace/stable result class but no raw args/panic/stack. Add failure matrix proving no lifecycle state writes while audit remains queryable and privacy-safe, or specify and validate an equivalent retrieval path."
+    },
+    {
+      "id":"AGENT-START-09",
+      "priority":"P2",
+      "status":"implementation_contract",
+      "section":"docs/41 §3 PilotStartToolBundle and rollback tests",
+      "title":"Bundle lifetime and immutability need executable semantics",
+      "evidence":"Bundle reuse resolves repeat-call budget for same live task, but Go slices/raw JSON are mutable and the SDD does not state whether the bundle survives only one coordinator lifetime or HTTP/process retry.",
+      "required_change":"Define private/deep-copied opaque bundle lifetime. Explicitly limit same-ID rollback re-entry to same task/coordinator after proven rollback; unknown commit stays pending_unknown. Test total Registry calls remains exactly 2 across rollback and no refreshed budget/new task.",
+      "rationale":"This prevents mutating the audited plan or refreshing D-15's per-event tool budget across retries."
+    }
+  ],
+  "checklist": {
+    "T01_render_api_and_boundary":"pass_design",
+    "T01_intro_nickname_and_length":"pass_design",
+    "T01_frozen_bilingual_meanings":"pass_design",
+    "trusted_ordinal_1":"pass_for_isolated_fixture_only",
+    "tool_order_and_D15":"pass_design_except_failed_attempt_audit",
+    "bundle_retry_call_count":"pass_for_same_task_rollback_path",
+    "shared_event_budget":"pass_for_same_task_rollback_path",
+    "test_harness_out_of_product":"pass_design",
+    "real_classroom_pilot_approval":"not_granted"
+  },
+  "tests_run": false,
+  "retest_required": true
+}

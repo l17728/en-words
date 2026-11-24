@@ -1,0 +1,94 @@
+{
+  "review_date": "2026-10-16",
+  "reviewer": "architecture/security/test-contract",
+  "status": "changes_requested",
+  "blocking_findings": 3,
+  "execution": "Read-only source review; no tests, build, discovery or browser execution by reviewer.",
+  "files": [
+    {
+      "path": "review/run_frozen_browser_acceptance.py",
+      "sha256": "5af72509e2a5ae99587c7aa53ff881905b4b7c4bbd209dc8969782c771e94f16"
+    },
+    {
+      "path": "review/test_frozen_browser_acceptance.py",
+      "sha256": "c6d907a15676af21b826ce8f84522396938b088d4c9c57959811df581db63203"
+    },
+    {
+      "path": "web/playwright.frozen.config.ts",
+      "sha256": "b0c2a39d8ad5bb1818e63c24f195c225645d52aab2229239b8490350abed886b"
+    },
+    {
+      "path": "web/e2e/frozen-build.ts",
+      "sha256": "09a57099368090f8de9abc03a3c8a2dd8396d37a0b5686af1d509922e5d9e946"
+    },
+    {
+      "path": "web/tests/frozen-build.test.ts",
+      "sha256": "7e09ac4c4456beeb2392524cf0940c6ce5a6d09a27427a8272d397bba47891f8"
+    },
+    {
+      "path": "review/frozen-browser145-tool-review-20261016.json",
+      "sha256": "885be35f633df09d9928c27b06607be8edf60585358e26619594ca87c3b05427"
+    }
+  ],
+  "verified_contracts": [
+    "13 suites total145; SUB03 prerequisite is excluded from denominator.",
+    "Actual discovery checks spec ID plus project ID uniqueness; six groups each7 and exact42 disjoint union; results require one passed result, retry0, no skip/flaky/unexpected.",
+    "previewOnly requires exactly one exact frontend command; preserves backend config objects and timeouts.",
+    "Build180s; suite900s; no automatic retry; complete dist inventory and source/input/binary comparisons before and after stages.",
+    "Historical binary currently referenced by startup old-database creation only; restored app uses current server.",
+    "Dynamic original feedback config import retains E2E_FEEDBACK_DB setup."
+  ],
+  "findings": [
+    {
+      "id": "F145-A01",
+      "priority": "P1",
+      "file": "review/run_frozen_browser_acceptance.py",
+      "lines": [
+        111,
+        120
+      ],
+      "issue": "Binary provenance is self-recorded, not checked against backend handoff manifest. Any existing historical or diagnostic executable can be supplied as current server and accepted as immutable current candidate.",
+      "required_change": "Require and freeze the approved backend artifact manifest; compare each of four current role hashes and relevant Go source hash before any test/build. Bind historical ST04 binary to its separate approved hash. Alternatively use an explicitly reviewed immutable expected-hash manifest, not hashes calculated only from CLI files.",
+      "regression": "Supply swapped old server/current server or changed harness with otherwise stable files; execution must refuse before starting tests. Correct handoff succeeds."
+    },
+    {
+      "id": "F145-A02",
+      "priority": "P1",
+      "file": "review/run_frozen_browser_acceptance.py",
+      "lines": [
+        86,
+        90,
+        207,
+        209
+      ],
+      "issue": "Failure evidence is not robust to exactly the drift it detects. Deleting/unreading a binary triggers verify failure, then finally sha(path) raises before save, leaving manifest running and losing failure/not-completed evidence. sources/inputs/dist collection can fail similarly. Popen is outside the per-process try, so launch failure lacks process evidence.",
+      "required_change": "Make final evidence collection best-effort per field, recording unknown/error without replacing original failure; always persist failed manifest and not-completed list. Include Popen launch failure in structured process record. Prefer atomic manifest replacement so interruption does not truncate last checkpoint.",
+      "regression": "Inject missing binary during a stage and final inventory failure; final manifest must remain valid JSON, failed, preserve original error/stage, and list unfinished suites. Inject launch failure and verify process record."
+    },
+    {
+      "id": "F145-A03",
+      "priority": "P1",
+      "file": "review/run_frozen_browser_acceptance.py",
+      "lines": [
+        86,
+        90
+      ],
+      "issue": "run_command catches BaseException after launch but only records and rethrows. wait_owned cleans the tree only for TimeoutExpired; KeyboardInterrupt or other wait error can leave owned build/preview/server descendants running. Even timeout tree-kill errors bypass guaranteed follow-up cleanup.",
+      "required_change": "In exception/finally, attempt bounded cleanup of the specific owned process tree when terminal state is not proven; retain original error and separately record cleanup outcome/remaining unknown. Do not operate on unrelated processes.",
+      "regression": "Inject KeyboardInterrupt/non-timeout wait error and tree-kill failure; assert owned cleanup attempted, original error preserved, bounded exit handling and explicit unresolved state."
+    }
+  ],
+  "test_strength": "Current Python6/Node2 cover pure ID validation, dist checks, exact command replacement and ordinary timeout cleanup. They do not cover main orchestration provenance, finalization failures or interrupted-live-child cleanup. The timeout test asserting spawn count1 inside run_command does not prove main never starts preview after build failure; add a main-level mocked sequencing regression.",
+  "limits": [
+    "No claim of actual145 discovery or passing E2E.",
+    "No product-code finding; changes requested concern acceptance runner integrity and resource/evidence handling.",
+    "No change to original SLO, fixture timing gates, COMMIT long-tail status or real voice/Pilot readiness."
+  ],
+  "dependency_integrity_check": {
+    "status": "NOT_VERIFIED",
+    "file": "review/run_frozen_browser_acceptance.py",
+    "details": "inputs() includes package/lock and top-level config, but not web/node_modules contents. tool_versions records only Node/npm version strings and three package.json version values; it does not hash actual executable/dependency code. Editing node_modules/vite/bin/vite.js or a transitive module while preserving package versions/lock will not be detected by current verify(). Node executable content is also not frozen.",
+    "required_resolution": "Before calling this full runtime-input immutability, explicitly freeze/verify the resolved runtime dependencies and executable identities, or obtain a documented narrower provenance contract and report this as an unverified boundary. Avoid silently claiming package-lock proves installed bytes. Coordinate a bounded implementation so repeated verification does not itself distort workload timings.",
+    "regression": "Change an installed runner/build dependency without changing version/lock; chosen integrity check must reject, or the report must explicitly describe the unsupported guarantee."
+  }
+}

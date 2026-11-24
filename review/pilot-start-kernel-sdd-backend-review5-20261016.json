@@ -1,0 +1,27 @@
+﻿{
+  "review_id": "pilot-start-kernel-sdd-backend-review5-20261016",
+  "reviewer_domain": "backend_sqlite_persistence",
+  "reviewed_document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "reviewed_at": "2026-10-16",
+  "mode": "read_only_no_tests",
+  "overall": "BLOCK",
+  "summary": "身份与跨包 Coordinator/Planner 边界仍未达到可编译的具体合同；bundle 在 rollback、unknown commit、跨请求/重启恢复时没有可实现的持有生命周期。",
+  "previous_findings": [
+    {"id":"BE4-1","status":"PARTIAL_BLOCK","evidence":"Exported PilotStartCoordinator/private Store actor direction is added, but auth.Principal is absent in current code and Planner's verified context boundary remains undefined."},
+    {"id":"BE4-2","status":"CLOSED","evidence":"Current TeacherInput is used without a LessonOrdinal extension; server-side ordinal gates the new Agent method."},
+    {"id":"BE4-3","status":"CLOSED","evidence":"schema_version is specified as tool JSON Schema version; pilot-audit-map/v1 is a separate mapping protocol."},
+    {"id":"BE4-4","status":"PARTIAL","evidence":"User.Nickname normalization is specified but auth.User and persistent store.User are distinct current sources."}
+  ],
+  "findings": [
+    {"id":"BE5-1","status":"BLOCK","priority":"P1","title":"auth.Principal does not exist and current Claims is forgeable","recommendation":"Specify a new opaque verified principal returned by token verification, or explicitly accept verified Claims only from trusted middleware and recheck persisted student role/status in Store."},
+    {"id":"BE5-2","status":"BLOCK","priority":"P1","title":"Cross-package verified planning context and task capability flow are undefined","recommendation":"Freeze a compilable Store Coordinator/Planner contract using a minimal read-only opaque planning context and typed bundle; Store must validate principal and reservation before invoking Planner, while API cannot forge actor/task."},
+    {"id":"BE5-3","status":"BLOCK","priority":"P1","title":"Bundle has no defined holder or lifecycle across rollback, unknown commit, request loss and restart","recommendation":"Define generation point, owner, key, single-flight, TTL and crash/unknown behavior; never regenerate while outcome is unknown; post-restart without receipt/bundle must remain unresolved."},
+    {"id":"BE5-4","status":"BLOCK","priority":"P1","title":"Same-bundle re-entry after pending_unknown is not realizable through current request contract","recommendation":"Specify internal coordinator states and restrict retries to a retained opaque bundle after proven rollback; clients cannot submit arbitrary bundle."},
+    {"id":"BE5-5","status":"APPROVE_WITH_CLARIFICATION","priority":"P2","title":"Nickname source and committed replay behavior are ambiguous","recommendation":"Choose persistent store.User.Nickname as source or define synchronization; after current owner authorization, a committed same-command receipt should remain retrievable if the profile nickname later changes."},
+    {"id":"BE5-6","status":"APPROVE_WITH_CLARIFICATION","priority":"P2","title":"Tool execution relative to writer lock is unspecified","recommendation":"Choose before-writer or inside-writer execution and document replay races, transaction duration, and bundle retention semantics."},
+    {"id":"BE5-7","status":"APPROVE_WITH_CLARIFICATION","priority":"P2","title":"Tool schema v1 bytes and strict extra-field enforcement are not frozen","recommendation":"Record exact say/show_word schema representation/hash and identify strict decoder that rejects unknown fields beyond Registry's schema subset."}
+  ],
+  "implementation_authorized": false,
+  "tests_run": false,
+  "code_modified": false
+}

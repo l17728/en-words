@@ -1,0 +1,42 @@
+{
+  "review": "pilot-catalog-sdd-backend-review-20261019",
+  "date": "2026-10-19",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md §109",
+  "references": [
+    "docs/41-试点课堂Start持久迁移内核SDD.md §§42,56,109,114"
+  ],
+  "read_only": true,
+  "tests_run": false,
+  "verdict": "BLOCKED",
+  "findings": [
+    {
+      "id": "CAT-BE-1",
+      "severity": "P1",
+      "status": "open",
+      "location": "§109.1 append/restart rules and §109.3 crash-prefix acceptance, approximately lines 128 and 153",
+      "title": "Recovery cannot distinguish a complete synced frame whose response was lost from an acknowledged frame",
+      "evidence": "The acceptance rule says only acknowledged frame boundaries may load and a complete unacknowledged frame must fail globally. A crash after frame Sync but before response acknowledgement leaves identical bytes to a crash after acknowledgement; an extra durable acknowledgment record has the same crash window.",
+      "recommendation": "Define a complete valid Sync'd frame as the journal linearization point. Restart accepts any complete valid prefix and callers converge by re-reading current case state; short/partial/corrupt frames and truly uncertain chains remain fail-closed. Do not require recovery to infer response delivery."
+    },
+    {
+      "id": "CAT-BE-2",
+      "severity": "P2",
+      "status": "open",
+      "location": "§109.2 transition table, approximately lines 136-147",
+      "title": "Unused ready cases have no legal cleanup transition",
+      "evidence": "A ready case may only transition to open_recovery_required in the table, while cleanup_quarantined is reachable only from open_recovery_required, committed, terminal_failed, or quarantined. Routine cleanup of a successfully provisioned but never-started case is unreachable.",
+      "recommendation": "Define an authorized locked cleanup path from ready, either directly to cleanup_quarantined or via a semantically appropriate quarantine state, then add the transition to allowed/forbidden matrix tests."
+    }
+  ],
+  "implementation_assessment": {
+    "frame_encoding": "IMPLEMENTABLE",
+    "global_generation_and_transition_validation": "IMPLEMENTABLE_AFTER_STATE_FIX",
+    "windows_posix_lock_sync_acl": "IMPLEMENTABLE_WITH_PLATFORM_SPECIFIC_ACCEPTANCE_GATES",
+    "crash_prefix_oracle": "NOT_IMPLEMENTABLE_AS_CURRENTLY_WORDed"
+  },
+  "recommendations": [
+    "Treat successful full-frame Sync as the durable state linearization point.",
+    "Define restart behavior after Sync error when bytes nevertheless form a valid full chain.",
+    "Add an unused-ready cleanup transition and tests."
+  ]
+}

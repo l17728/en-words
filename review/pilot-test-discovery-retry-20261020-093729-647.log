@@ -1,0 +1,15 @@
+﻿# Pilot test discovery retry: BLOCKED
+
+- Command: `python review/pilot_test_discovery.py --manifest review/pilot-pure-contract-manifest.json --target windows/amd64 --artifacts-dir .test-artifacts/pilot-test-discovery-retry-20261020-093729-647`
+- Go executable: `D:\en-words\.test-tools\go\bin\go.EXE` (resolved by the audit tool)
+- Independent run directory retained: `.test-artifacts/pilot-test-discovery-retry-20261020-093729-647`
+- Wrapper exit code: `1` (interrupted after the two-minute observation limit)
+- Result: BLOCKED before manifest suite execution; no missing test names determined.
+
+## Process evidence
+
+The audit reached `go test -tags pilot_e2e -list . ./internal/pilotsupervisor`. Python audit PID 1508 started at 09:37:29; Go PID 17852 started at 09:37:31. After two minutes, Go had produced no list output and remained waiting while helper probes `vet.exe -V=full` (PID 11696) and `link.exe -V=full` (PID 22480) appeared and exited/restarted. The audit was interrupted at the two-minute limit. The run directory is preserved and contains no completed probe or test artifacts.
+
+No source files were changed by this run. No Go test process remains active.
+
+EXIT_CODE=1

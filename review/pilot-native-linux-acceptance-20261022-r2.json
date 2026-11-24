@@ -1,0 +1,187 @@
+{
+  "source_before": "a622c5e6ede3720dc70b5a3aff15c9b24a5fdc5d257ca08d62384d864275e6d3",
+  "source_after": "a622c5e6ede3720dc70b5a3aff15c9b24a5fdc5d257ca08d62384d864275e6d3",
+  "source_unchanged": true,
+  "go_before": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+  "go_after": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+  "env": {
+    "GOROOT": "/tmp/enwords-pilot-linux-acceptance-20261022/go",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "https://proxy.golang.org,direct",
+    "GOPATH": "/tmp/enwords-pilot-ubuntu-20261022/evidence-r2/gopath",
+    "GOMODCACHE": "/tmp/enwords-pilot-ubuntu-20261022/evidence-r2/modules",
+    "PILOT_FS_TEST_ROOT": "/tmp/enwords-pilot-ubuntu-20261022/evidence-r2/fs",
+    "GOCACHE": "/tmp/enwords-pilot-ubuntu-20261022/evidence-r2/cache",
+    "GOTMPDIR": "/tmp/enwords-pilot-ubuntu-20261022/evidence-r2/tmp",
+    "TMPDIR": "/tmp/enwords-pilot-ubuntu-20261022/evidence-r2/work",
+    "CGO_ENABLED": "1",
+    "CC": "/usr/bin/gcc"
+  },
+  "cwd": "/tmp/enwords-pilot-linux-acceptance-20261022/server",
+  "results": [
+    {
+      "stage": "control-test",
+      "command": [
+        "/tmp/enwords-pilot-linux-acceptance-20261022/go/bin/go",
+        "test",
+        "-count=1",
+        "-json",
+        "-timeout=180s",
+        "./internal/pilotcontrol"
+      ],
+      "exit": 0,
+      "elapsed_s": 44.04173135012388,
+      "stop_reason": null,
+      "disk_before": 2361544704,
+      "disk_min": 2167513088,
+      "disk_after": 2236137472
+    },
+    {
+      "stage": "supervisor-test",
+      "command": [
+        "/tmp/enwords-pilot-linux-acceptance-20261022/go/bin/go",
+        "test",
+        "-count=1",
+        "-json",
+        "-tags=pilot_e2e",
+        "-timeout=180s",
+        "./internal/pilotsupervisor"
+      ],
+      "exit": 0,
+      "elapsed_s": 52.04705366678536,
+      "stop_reason": null,
+      "disk_before": 2236133376,
+      "disk_min": 1566871552,
+      "disk_after": 1697603584
+    },
+    {
+      "stage": "control-race",
+      "command": [
+        "/tmp/enwords-pilot-linux-acceptance-20261022/go/bin/go",
+        "test",
+        "-race",
+        "-count=1",
+        "-json",
+        "-timeout=180s",
+        "./internal/pilotcontrol"
+      ],
+      "exit": 0,
+      "elapsed_s": 48.05055179446936,
+      "stop_reason": null,
+      "disk_before": 1697603584,
+      "disk_min": 1469812736,
+      "disk_after": 1607180288
+    },
+    {
+      "stage": "supervisor-race",
+      "command": [
+        "/tmp/enwords-pilot-linux-acceptance-20261022/go/bin/go",
+        "test",
+        "-race",
+        "-count=1",
+        "-json",
+        "-tags=pilot_e2e",
+        "-timeout=180s",
+        "./internal/pilotsupervisor"
+      ],
+      "exit": 0,
+      "elapsed_s": 102.08921287953854,
+      "stop_reason": null,
+      "disk_before": 1607180288,
+      "disk_min": 1322708992,
+      "disk_after": 1493913600
+    },
+    {
+      "stage": "control-vet",
+      "command": [
+        "/tmp/enwords-pilot-linux-acceptance-20261022/go/bin/go",
+        "vet",
+        "./internal/pilotcontrol"
+      ],
+      "exit": 0,
+      "elapsed_s": 2.0026452112942934,
+      "stop_reason": null,
+      "disk_before": 1493913600,
+      "disk_min": 1493913600,
+      "disk_after": 1492828160
+    },
+    {
+      "stage": "supervisor-vet",
+      "command": [
+        "/tmp/enwords-pilot-linux-acceptance-20261022/go/bin/go",
+        "vet",
+        "-tags=pilot_e2e",
+        "./internal/pilotsupervisor"
+      ],
+      "exit": 0,
+      "elapsed_s": 6.006764091551304,
+      "stop_reason": null,
+      "disk_before": 1492828160,
+      "disk_min": 1487400960,
+      "disk_after": 1490644992
+    }
+  ],
+  "counts": {
+    "control-test": {
+      "pass": 23,
+      "top_pass": 23
+    },
+    "supervisor-test": {
+      "pass": 667,
+      "top_pass": 202
+    },
+    "control-race": {
+      "pass": 23,
+      "top_pass": 23
+    },
+    "supervisor-race": {
+      "pass": 667,
+      "top_pass": 202
+    }
+  },
+  "cleanup": {
+    "free_bytes": 1490497536,
+    "remaining_fixture_entries": {
+      "tmp": 0,
+      "work": 0,
+      "fs": 0
+    },
+    "owned_uid": 1000,
+    "owned_gid": 1001
+  },
+  "classification": "PASS_NATIVE_AMD64_EXT4_REQUESTED_PACKAGES",
+  "identity": {
+    "user": "ubuntu",
+    "uid": 1000,
+    "gid": 1001,
+    "filesystem": "/dev/vda2 ext4"
+  },
+  "limits": [
+    "No account/service/cgroup/mount changes; only authorized owned temp tree and source-parent search permission.",
+    "No remote files or caches manually cleaned. Test-created work/fs/tmp fixtures were empty after tests.",
+    "This is native Linux amd64 ext4 package test/race/vet; it is not arm64, XFS, full-server coverage or all candidate callback scenario acceptance.",
+    "Prior root identity r1 failure retained independently."
+  ],
+  "artifact_hashes": {
+    "cleanup-readonly.json": "e7b347b6128b3b929fb4c12dea745ec849ab75f42596795b2f5500865ae8bf72",
+    "control-race.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "control-race.stdout": "8d7d0a5e4c80940e9a9a4b04e722e0d79454fc00a274db3c04697433eb9f56bf",
+    "control-test.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "control-test.stdout": "240304db70125b978749167d1496fa2c6462cfc05991e29adfffad439a611e68",
+    "control-vet.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "control-vet.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driver-exit.json": "bfdedf06596faa2042b0fedd9653ec1023d2e96ed56dc40b607985bc8438c1d5",
+    "driver.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driver.stdout": "b4437191a2982d2f02c7fcc6c7dcc3b0496f694359353b975c5d53cefd3cd07d",
+    "results.json": "3d15ececa10e55e9a55f97e59ab9e90450bab0668dfffac5e63d19cfc40504b4",
+    "source-after.json": "b3ccb954373174bd589f10553938f40d7fbd2cba0b087ff8a90c25fb28eeb4c2",
+    "source-before.json": "b3ccb954373174bd589f10553938f40d7fbd2cba0b087ff8a90c25fb28eeb4c2",
+    "summary.json": "6035a0331f96e2cd26f404acc62b6c5896868a49c7afd939e85896fe6823ddc7",
+    "supervisor-race.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "supervisor-race.stdout": "b8e89b0419b76f8ec344667e6d214a06895af471fe6e370c658f4e89798ea488",
+    "supervisor-test.stderr": "427168c7786be9584e8e1ec29e86bbea6a716ee45596fac6a9431719743cb8e0",
+    "supervisor-test.stdout": "f95e7c7e5e7e6839ad595c8f8991ddaa665486e852d74ff112e4d1e3dcfbe26d",
+    "supervisor-vet.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "supervisor-vet.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

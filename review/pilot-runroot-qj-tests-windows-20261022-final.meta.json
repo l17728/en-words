@@ -1,0 +1,16 @@
+{
+  "cwd": "D:\\en-words",
+  "command": "C:\\Python312\\python.exe -m unittest -v review.test_pilot_runroot_manifest",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.19045-SP0",
+  "PYTHONPATH": "D:\\en-words\\review",
+  "exit_code": 1,
+  "duration_seconds": 3.85,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "367f3e4f53a5ea3c3349dc7d2fc180c636e439e8f6846fca6bcc338501f6b667",
+  "test_sha256": "6243839e0f2606fa9a088e3a783b30fa4a94876611dbdd56aaf1c9d7478a91f1",
+  "manifest_sha256": "815884c1dfc8c59642567d3403398c8e890654c5ae6c1bf754cccb8431f234e4",
+  "qj_manifest_sha256": "1134fb937a5711e87de18e8f8c5acb51c286f9b351193936d85b684812ccbbf7",
+  "docs50_sha256": "7e9b3078097855cf22e58d2018e9d5b719ab0243ab929f580de147951f8dd164",
+  "docs63_sha256": "3cdd8de6a83503c480f61cd48035587ee617626815483d3c30cedc48e760448b"
+}

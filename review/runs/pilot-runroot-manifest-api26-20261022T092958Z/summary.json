@@ -1,0 +1,43 @@
+{
+  "classification": "PYTHON_MANIFEST_REGRESSION_NOT_PILOTQUOTA_GO_PACKAGE",
+  "api26_case_present": true,
+  "api26_case_id": null,
+  "api26_expected_phase_assertion": "not found as a dedicated assertion in test source; product manifest exact content is covered indirectly by manifest source hash pin only",
+  "command": [
+    "C:\\Python312\\python.exe",
+    "-m",
+    "unittest",
+    "-v",
+    "review.test_pilot_runroot_manifest"
+  ],
+  "cwd": "D:\\en-words",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "exit_code": 0,
+  "elapsed_seconds": 0.328,
+  "stdout_bytes": 0,
+  "stderr_bytes": 1931,
+  "tracked_hashes_stable": true,
+  "manifest_source_pins_before": {
+    "count": 35,
+    "matched": 35,
+    "mismatch_count": 0,
+    "mismatches": []
+  },
+  "manifest_source_pins_after": {
+    "count": 35,
+    "matched": 35,
+    "mismatch_count": 0,
+    "mismatches": []
+  },
+  "candidate_execution_invoked": false,
+  "api26_case": {
+    "case_id": "API-26",
+    "actor": "Authenticated student, protected quota-journal fault harness, and restart process",
+    "initial_state": "Durable quota journal has a known valid count; nonce counter and business state are snapshotted.",
+    "named_barrier": "api26.quota_journal_commit_boundary",
+    "action": "Inject service unavailable/corruption and pre-write failures before PERMIT; separately inject PERMIT append/sync/anchor uncertainty and ISSUED append/sync/anchor failures or uncertainty, including crash/restart at each durable boundary. Assert nonce reservations, encryption calls, returned handles, journal bytes, anchor state, and business state independently; reconcile exact evidence before retry.",
+    "oracle": "Before an anchored PERMIT and one-use ticket, any failure returns pilot_unavailable with no nonce reservation, encryption, or handle; an uncertain PERMIT is reconciled before retry and cannot reset rolling usage. After ticket delivery, the nonce may already be durably consumed and encryption may have run once. An ISSUED pre-write/sync/anchor failure or uncertainty still returns no handle and never re-reserves or re-encrypts: exact recovered anchored ISSUED may return only its stored ciphertext for the same immutable tuple; PERMIT-only is burned; an ambiguous boundary stays unavailable. Before nonce reservation only PERMIT journal bytes and its external anchor may change; no business journal/ledger/lease/spawn/root effect occurs.",
+    "status": "BLOCKED_NOT_IMPLEMENTED"
+  },
+  "api26_dedicated_assertion_in_test_source": false
+}

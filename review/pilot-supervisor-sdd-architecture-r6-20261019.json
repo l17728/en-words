@@ -1,0 +1,19 @@
+{
+  "review": "Pilot Supervisor SDD R6 cross-document architecture review",
+  "date": "2026-10-19",
+  "conclusion": "PASS",
+  "blocking": 0,
+  "p1": 0,
+  "p2": 0,
+  "sources": {
+    "docs/41-试点课堂Start持久迁移内核SDD.md": "7890FB542818C77F131CD06D09845120406EB7C1567AF1BDFA83C92FA51D3867",
+    "docs/42-Pilot隔离运行监督器SDD.md": "AEF772E4D71633690E4E3F4C7498837552088D5BD385AF1875DE820E1B9AA447"
+  },
+  "checks": [
+    {"id": "R6-01", "severity": null, "status": "PASS", "topic": "§112 corrections for SQLite identity and HMAC key boundary"},
+    {"id": "R6-02", "severity": null, "status": "PASS", "topic": "Complete exact filesystem object allowlist"},
+    {"id": "R6-03", "severity": null, "status": "PASS", "topic": "Catalog state, capability, lock, and directory-presence mapping against docs/41 §109"},
+    {"id": "R6-04", "severity": null, "status": "PASS", "topic": "Close-state/error-code protocol and FI-CLOSE-01a–g consistency"}
+  ],
+  "non_blocking_clarification": "Consider explicitly denying restricted child SIDs read access to case.key and logs/log.pseudonym.key in docs/42 §2 item 3."
+}

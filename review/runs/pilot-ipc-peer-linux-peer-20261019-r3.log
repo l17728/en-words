@@ -1,0 +1,5 @@
+COMMAND: GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go test -c -count=1 -tags=pilot_e2e ./internal/pilotsupervisor
+GO: go version go1.25.14 windows/amd64
+Host OS: Windows-10-10.0.19045-SP0
+Linux native runner: unavailable; host is Windows.
+Temporary binary removed; bytes=5534003

@@ -1,0 +1,65 @@
+{
+  "review_id": "pilot-start-kernel-sdd-security-review8-20261016",
+  "date": "2026-10-16",
+  "reviewer_domain": "security",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_type": "read-only design review",
+  "compared_against": "review/pilot-start-kernel-sdd-security-review7-20261016.json",
+  "focus": [
+    "closure of round-7 key delivery and HMAC derivation issues",
+    "owner-only case storage controls",
+    "fresh per-case key isolation",
+    "trusted local account and receipt-first integrity boundary",
+    "failed-case access, retention, and cleanup"
+  ],
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "blocked_pending_fresh_per_case_key_requirement",
+  "summary": "The private-runtime-parameter wording is replaced with protected inherited-handle/pipe delivery, and task_hmac/trace_hmac derivation now matches the pre-call tool_started ordering with post-call AuditEntry verification. ACL/mode, threat-boundary, receipt-first, and artifact retention controls are present. The SDD does not explicitly require a fresh independent cryptographically random key per case or prohibit runtime reuse of the fixed golden key.",
+  "round7_dispositions": [
+    {
+      "finding_id": "PSK-SEC7-01",
+      "disposition": "closed",
+      "evidence": "§4 says tool_started derives task_hmac from the Store-verified capability task ID and trace_hmac from Store-generated decision ID, then tool_result compares them to Registry AuditEntry."
+    },
+    {
+      "finding_id": "PSK-SEC7-KEY-DELIVERY",
+      "disposition": "closed",
+      "evidence": "§3 and §6 consistently require a protected inherited handle/anonymous pipe and forbid argv/environment/log/dump delivery."
+    },
+    {
+      "finding_id": "PSK-SEC7-CASE-KEY",
+      "disposition": "open_condition",
+      "evidence": "Case setup creates a key with CREATE_NEW/O_EXCL, but no explicit runtime requirement says the key is fresh, cryptographically random, independent per case, or never copied/reused; the fixed golden key's runtime prohibition is not stated."
+    }
+  ],
+  "findings": [
+    {
+      "finding_id": "PSK-SEC8-01",
+      "severity": "P2",
+      "status": "open_condition",
+      "title": "Fresh independent HMAC key per case is not explicit",
+      "evidence": "§3 requires supervisor-created case key and exclusive atomic creation; §45 defines a fixed golden key. No key entropy/length/uniqueness/non-reuse requirement distinguishes runtime key generation from the test vector.",
+      "risk": "Reused keys permit cross-case correlation of deterministic task_hmac/trace_hmac values and expand the impact of one case's key compromise.",
+      "required_revision": "Require a fresh independent OS-CSPRNG key per case (for example, 32 random bytes), prohibit copying/reusing across case directories, and explicitly mark the fixed golden key as test-only and rejected by runtime harness. Preserve exclusive creation and protected handle delivery."
+    }
+  ],
+  "control_dispositions": {
+    "protected_key_delivery": "closed_in_design; no argv/environment/log/dump",
+    "task_trace_hmac_ordering": "closed_in_design; pre-call Store-derived values cross-checked against post-call AuditEntry",
+    "owner_only_acl_mode_checks": "specified; runtime enforcement not verified",
+    "trusted_local_account_boundary": "explicit; same-account/admin/host compromise excluded",
+    "receipt_first_recovery": "limited to structural consistency within trusted-account boundary",
+    "artifact_access_retention_cleanup": "specified; runtime enforcement not verified",
+    "fresh_independent_key_per_case": "not explicit; open P2"
+  },
+  "remaining_blocker_count": 1,
+  "remaining_conditions": [
+    "Specify fresh independent cryptographically random key generation per case and explicitly prohibit runtime key reuse or use of the fixed golden test key."
+  ],
+  "limitations": [
+    "No tests or runtime validation were run.",
+    "No ACL/mode, key-generation/transfer, build-artifact, database, or recovery path was inspected.",
+    "This review does not approve implementation, production deployment, real student data, or classroom readiness."
+  ]
+}

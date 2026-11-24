@@ -1,0 +1,40 @@
+﻿{
+    "review":  "startup-dual-pool-race-fixture-review",
+    "date":  "2026-10-16",
+    "status":  "passed_for_scoped_fixture_implementation",
+    "source":  "review/startup-dual-pool-race-fixture-adjustment-20261016.md",
+    "source_sha256":  "71123e1632d4fb51bbdff1fbb1ab6fd27b1dbdc6c41be6e3bf9b534aa4c97467",
+    "blockers":  [
+
+                 ],
+    "evidence":  [
+                     {
+                         "lines":  "10-14",
+                         "file":  "review/ladder-integrated-go-acceptance-r3-20261016.logs/targeted-startup.log",
+                         "finding":  "Actual native JSON shows worker1 sqlite_busy in pragmas after open; worker0 canceled in pragmas; neither reached schema_probe. Failure occurs before the intended schema barrier. It does not prove which PRAGMA failed."
+                     },
+                     {
+                         "finding":  "Fresh branch is selected by zero user tables/indexes/triggers/views. Setting journal_mode=WAL alone does not create application schema, so an asserted empty preinitialized-WAL database still exercises fresh schema creation.",
+                         "file":  "server/internal/store/startup.go",
+                         "symbol":  "userSchemaCount / initializeSchema"
+                     }
+                 ],
+    "passed":  [
+                   "Single temporary preparation connection must close before either independent OpenContext pool starts. Check returned WAL mode and zero user schema objects; preparation errors fail rather than bypass or retry.",
+                   "Both real independent workers still run production open/PRAGMA/empty-probe. Only both ready permits release; any earlier failure including BUSY is a failed test.",
+                   "Exactly one successful initializer, allowed post-barrier conflict/BUSY loser, complete independent reference-schema comparison and reopen remain mandatory. Cancellation and unknown errors are not success.",
+                   "No production logic, SQLite settings, retries, timing gates or browser ST06 contract change is authorized. Preserve original r3 failure and use separate new evidence."
+               ],
+    "implementation_checks":  [
+                                  "Explicitly assert each ready event reports fresh=true and schema_object_count=0, or verify this equivalently from captured StageEvent data; do not infer two-empty-observers merely from a stage name.",
+                                  "Preparation cleanup must precede worker launch and temporary-directory removal must remain conditional on all worker/pool cleanup.",
+                                  "Do not claim that WAL preconfiguration eliminates every possible pre-barrier BUSY; if it still occurs, fail immediately with bounded fixed diagnostics."
+                              ],
+    "limitations":  [
+                        "r3 establishes a mismatch between the intended schema-race test target and the stage actually reached, not that the underlying concurrent PRAGMA behavior is harmless or fixed.",
+                        "The adjusted test no longer covers first-time journal-mode transition on a previously uninitialized file. Existing fresh-open/independent-process tests retain their own scope; this scoped green cannot replace proof for that startup boundary.",
+                        "Whole shared schema equality proves final state completeness, not independent rollback of every losing transaction. Keep separate fault rollback evidence.",
+                        "No tests/builds or source edits performed; feasibility and runtime outcome remain to be validated."
+                    ],
+    "decision":  "Design approved for the named schema-race fixture only. Zero blocking design findings; retain the stated evidence and scope limits."
+}

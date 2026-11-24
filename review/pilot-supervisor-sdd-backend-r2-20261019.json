@@ -1,0 +1,39 @@
+{
+  "review": "pilot-supervisor-sdd-backend-r2",
+  "date": "2026-10-19",
+  "document": "docs/42-Pilot隔离运行监督器SDD.md",
+  "document_sha256": "8C74F0B709D2BE92056B357688BA6A18C31E056A80E857245B2A7E74368A9073",
+  "scope": "backend implementability, revision §§7-12, consistency with docs/41 catalog protocol",
+  "mode": "read-only; no long tests",
+  "result": "blocked",
+  "prior_findings": [
+    {"id": "R1-P1-ID-width", "status": "closed", "evidence": "§§2.1 and 7 now require 16-byte/128-bit ID encoded as 32 lowercase hex, matching docs/41 §109.1."},
+    {"id": "R1-P2-lock-deadline", "status": "closed_design", "evidence": "§9 specifies TryLock polling, context/deadline and post-acquisition cancellation/uncertainty semantics."},
+    {"id": "R1-P2-filesystem-adapter", "status": "closed_design", "evidence": "§9 defines verifiedRoot/verifiedDir/verifiedFile/osFileLock and Linux/Windows capability matrix."},
+    {"id": "R1-P2-close-ownership", "status": "closed_design", "evidence": "§§3 and 9 assign shared and per-case resources, leases, close order and partial-close ownership."},
+    {"id": "R1-P2-sqlite-open", "status": "closed_design", "evidence": "§9 specifies glebarez/modernc URI, mode=rw, single connection, forbidden options and trusted-directory limitation."}
+  ],
+  "blocking_findings": 0,
+  "findings": [
+    {
+      "severity": "P2",
+      "section": "docs/42 §§3, 9",
+      "title": "Close method signatures cannot express specified context timeout",
+      "detail": "Both Close APIs are declared without context in §3, while §9 requires context-governed draining, close_pending on timeout and retry by the owner.",
+      "required_action": "Use Close(ctx context.Context) or define a coherent bounded context-free close contract and update both sections."
+    },
+    {
+      "severity": "P2",
+      "section": "docs/42 §§3, 8-10",
+      "title": "Stable error taxonomy is inconsistent across sections",
+      "detail": "Section 3 enumerates five stable errors, while later sections introduce lock_timeout, close_pending, recovery_integrity_error and cleanup_pending.",
+      "required_action": "Define one complete error enum with retryability and poisoning semantics, then reference it throughout."
+    }
+  ],
+  "new_p1": 0,
+  "notes": [
+    "No new conflict found with docs/41 state machine/wire format.",
+    "No long tests run; product code not modified.",
+    "Backend design domain should be re-reviewed after closing the two P2 items; other required review domains remain independent."
+  ]
+}

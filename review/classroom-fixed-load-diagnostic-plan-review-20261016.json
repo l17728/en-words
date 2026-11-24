@@ -1,0 +1,65 @@
+{
+  "review": "classroom-fixed-load-diagnostic-plan-review",
+  "date": "2026-10-16",
+  "mode": "document_only_read_only_no_execution",
+  "source": "review\\classroom-fixed-load-diagnostic-plan-20261016.md",
+  "source_sha256": "9c90303980035fac65a009604608ca8b1d61c63e119e4e44f67b54cd6391378a",
+  "status": "design_pass_with_documentation_adjustments",
+  "blocker": [],
+  "passed": [
+    {
+      "area": "measurement_equivalence",
+      "conclusion": "Real persistent App/Room lock/agentWriteMu/trusted task/registry/audit/GORM transaction plus separately timed real snapshot preserve the relevant transaction path. Frozen repeated effect and state are explicitly a synthetic tool load, not 50 learning opportunities or a full classroom."
+    },
+    {
+      "area": "concurrency_and_synchronization",
+      "conclusion": "Serial workload, no periodic timers/models/network, synchronized observation hooks and explicit sampler shutdown keep the comparison bounded. Plan does not claim concurrent-student latency. Sampler disturbance and maximum/cumulative sampling time are reported."
+    },
+    {
+      "area": "deadline_and_accounting",
+      "conclusion": "Parent 180s wall clock includes initialization and final validation; owned-only termination handles unresponsive COMMIT. Fixed denominator50, started/finished, separate tool commit and snapshot outcome, unknown in-flight and validation_complete prevent false rollback/success claims. Overflow has bounded drain and explicit failure."
+    },
+    {
+      "area": "privacy",
+      "conclusion": "Bounded summaries and function names only; no SQL, audio, text, arguments or file paths. Current-PID counters and owned WAL stat avoid unrelated process data. Raw stacks remain memory-only."
+    },
+    {
+      "area": "interpretation",
+      "conclusion": "Actual pool PRAGMA establishes observed connection settings, not fsync latency or proof of every future physical connection. DBStats pool waits differ from SQLite lock waits; IO includes non-database operations; WAL allocated length is not frame/commit count. Plan explicitly avoids causal overclaim."
+    }
+  ],
+  "needs_adjustment": [
+    {
+      "severity": "documentation",
+      "location": "title and final paragraph",
+      "finding": "Document still says pending review/execution, while review/classroom-fixed-load-diagnostic-result-20261016.md already records a completed unique50-round diagnostic.",
+      "action": "Preserve this plan as the pre-execution baseline and add a dated superseding-result link/status. Do not use this review to authorize another run or silently replace the frozen experiment."
+    },
+    {
+      "severity": "implementation_acceptance_detail",
+      "location": "normal final verification paragraph",
+      "finding": "Row count plus snapshot existence alone cannot establish exact task provenance or final state equivalence.",
+      "action": "Read final evidence against the stronger implemented checks already reported: per-new-audit tool/actor/role/trace and unique trusted task correlation, full final snapshot equality, exact audit baseline increment; explicitly distinguish DB fields from task IDs inferred via trusted logs."
+    },
+    {
+      "severity": "evidence_boundary",
+      "location": "slow-stack interpretation",
+      "finding": "Function-name-only stack evidence may locate a layer but cannot on its own distinguish CPU scheduling delay, filesystem sync, AV interference or SQLite lock/checkpoint root cause.",
+      "action": "Retain as leads only. A fast run or zero slow stacks does not close either historical21.678s or22.594s event, and cannot show both historical events share one physical cause."
+    }
+  ],
+  "historical_tail_evidence_assessment": {
+    "can_support": [
+      "Whether the real narrow persistent tool path exhibits a slow stage during this fixed single run.",
+      "Stage timing and contemporaneous pool/process/WAL observations with explicitly measured sampler overhead.",
+      "Integrity of known committed audit and snapshot effects under the fixed load."
+    ],
+    "cannot_support": [
+      "Absence of rare tail latency from a non-reproduction.",
+      "Production classroom SLO or multi-student concurrency from serial repeated same-state calls.",
+      "Physical fsync/AV/device/checkpoint attribution from aggregate counters alone.",
+      "Equivalence to uninstrumented production binary acceptance."
+    ]
+  },
+  "execution_authorization": "No new execution requested or performed. Existing unique-run result remains separately auditable; this is a retrospective plan-only review, not new runtime verification."
+}

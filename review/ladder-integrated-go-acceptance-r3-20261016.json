@@ -1,0 +1,100 @@
+{
+  "manifest_sha256": "89278ad233bb02adbc36a5b31e466e00962b3a1fd51486de8993381bd4d85764",
+  "candidate_source_sha256": "6b6a78ba3f79107085bb1b0974b8e819eec08836b35f05fcc565d47b5afe45c1",
+  "required_candidate_tests": [
+    "TestLadderAtomicGlobalHonorsStudentOverride",
+    "TestLadderAtomicCardFailureRollsBackConfiguration",
+    "TestLadderAtomicMemoryStudentIsolation",
+    "TestLadderSecondStudentFailureRollsBackFirstStudent",
+    "TestLadderTwoAppsConfigurationWritesRemainSerializable",
+    "TestLadderGoalModesRespectExplicitLadderAndDueTimes",
+    "TestLadderReloadFailureReachesNewRoomAndNextLesson",
+    "TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize",
+    "TestLadderMixedBackendRefusesWithoutChangingNativeCards",
+    "TestLadderCrossAppPlacementFinishUsesCurrentGlobalConfiguration",
+    "TestLadderCommittedRefreshFailureUsesFreshRead",
+    "TestLadderScopeWithoutCardsFailsOnlyWhenEffectiveValueChanges",
+    "TestLadderDeferredCommitFailureLeavesOriginalAndNewConnectionsClean",
+    "TestLadderOwnedScopeObjectsCannotBypassProtection",
+    "TestLadderRawJSONRejectsAmbiguousKeysWithoutWrites",
+    "TestLadderPersistenceAndAuditFailuresRollbackAllEffects",
+    "TestLadderCancellationAndAbsentDeleteHaveNoWrites",
+    "TestLadderEffectiveHTTPStrictTargetAndRole",
+    "TestLadderPairedSchedulerRejectsUncoordinatedConsumers",
+    "TestLadderMemoryWorkingChangesDiscardedTogether",
+    "TestEffectiveViewTracksDerivedGoalAndDeletionFallback",
+    "TestPairedConfigurationWithoutCoordinatorRejectsSensitiveWrites",
+    "TestEffectiveGoalInheritanceMatrix",
+    "TestConfigScopeTempObjectAndReadFailureFailClosed",
+    "TestConfigScopeAbsentAndCanonicalLegacyRemainAvailable"
+  ],
+  "stages": [
+    {
+      "name": "targeted-startup",
+      "exit": 1,
+      "elapsed_seconds": 323.84,
+      "command": [
+        "D:\\en-words\\.test-tools\\go\\bin\\go.exe",
+        "test",
+        "-p=1",
+        "-count=1",
+        "-json",
+        "-race",
+        "-run",
+        "^TestStartup(SQLiteBusyPrimaryCodeClassification|SQLiteBusyErrorRecognizesWrappedDriverError|TwoIndependentPoolsNeverPublishPartialSchema)$",
+        "./internal/store"
+      ],
+      "tests": {
+        "run": 3,
+        "output": 7,
+        "pass": 2,
+        "fail": 1
+      },
+      "top": {
+        "run": 3,
+        "output": 7,
+        "pass": 2,
+        "fail": 1
+      },
+      "failures": [
+        "TestStartupTwoIndependentPoolsNeverPublishPartialSchema",
+        "enwords/internal/store"
+      ],
+      "skips": [],
+      "candidate_missing_passed": [
+        "TestConfigScopeAbsentAndCanonicalLegacyRemainAvailable",
+        "TestConfigScopeTempObjectAndReadFailureFailClosed",
+        "TestEffectiveGoalInheritanceMatrix",
+        "TestEffectiveViewTracksDerivedGoalAndDeletionFallback",
+        "TestLadderAtomicCardFailureRollsBackConfiguration",
+        "TestLadderAtomicGlobalHonorsStudentOverride",
+        "TestLadderAtomicMemoryStudentIsolation",
+        "TestLadderCancellationAndAbsentDeleteHaveNoWrites",
+        "TestLadderCommittedRefreshFailureUsesFreshRead",
+        "TestLadderCrossAppPlacementFinishUsesCurrentGlobalConfiguration",
+        "TestLadderDeferredCommitFailureLeavesOriginalAndNewConnectionsClean",
+        "TestLadderEffectiveHTTPStrictTargetAndRole",
+        "TestLadderGoalModesRespectExplicitLadderAndDueTimes",
+        "TestLadderMemoryWorkingChangesDiscardedTogether",
+        "TestLadderMixedBackendRefusesWithoutChangingNativeCards",
+        "TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize",
+        "TestLadderOwnedScopeObjectsCannotBypassProtection",
+        "TestLadderPairedSchedulerRejectsUncoordinatedConsumers",
+        "TestLadderPersistenceAndAuditFailuresRollbackAllEffects",
+        "TestLadderRawJSONRejectsAmbiguousKeysWithoutWrites",
+        "TestLadderReloadFailureReachesNewRoomAndNextLesson",
+        "TestLadderScopeWithoutCardsFailsOnlyWhenEffectiveValueChanges",
+        "TestLadderSecondStudentFailureRollsBackFirstStudent",
+        "TestLadderTwoAppsConfigurationWritesRemainSerializable",
+        "TestPairedConfigurationWithoutCoordinatorRejectsSensitiveWrites"
+      ]
+    }
+  ],
+  "failure": "RuntimeError: targeted_startup_failed",
+  "manifest_still_matches": true,
+  "candidate_source_unchanged": true,
+  "formal_source_unchanged": true,
+  "scope": "formal integrated Go tree after startup test diagnostic correction; validator changes no source",
+  "startup_temp_dirs_before": [],
+  "startup_temp_dirs_after": []
+}

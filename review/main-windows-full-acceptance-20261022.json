@@ -1,0 +1,82 @@
+{
+  "source_before": "e781c6cd9f373dc1653de53853ed59977a63077de12c740f5f4588a5e96168bc",
+  "source_after": "e781c6cd9f373dc1653de53853ed59977a63077de12c740f5f4588a5e96168bc",
+  "source_unchanged": true,
+  "scope": "Main working tree including unrelated uncommitted fixes; default tags, not isolated Pilot branch",
+  "env": {
+    "GOROOT": "D:\\en-words\\.test-tools\\go1.27.3-extract2-20261022\\go",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "GOCACHE": "D:\\en-words\\.test-artifacts\\main-windows-go1273-full-20261022\\cache",
+    "GOMODCACHE": "D:\\en-words\\.test-tools\\gomodcache",
+    "CGO_ENABLED": "1",
+    "CC": "D:\\en-words\\.test-tools\\llvm-mingw-20261006-ucrt-x86_64\\bin\\x86_64-w64-mingw32-gcc.exe",
+    "GOFLAGS": "-mod=readonly"
+  },
+  "module_cache_note": "Reuse existing populated module cache with GOPROXY=off; fresh empty GOMODCACHE would prohibit dependency resolution. Fresh isolated GOCACHE only.",
+  "results": [
+    {
+      "stage": "test",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.27.3-extract2-20261022\\go\\bin\\go.exe",
+        "test",
+        "-count=1",
+        "./..."
+      ],
+      "cwd": "D:\\en-words\\server",
+      "exit": 0,
+      "seconds": 336.8279999999795
+    },
+    {
+      "stage": "vet",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.27.3-extract2-20261022\\go\\bin\\go.exe",
+        "vet",
+        "./..."
+      ],
+      "cwd": "D:\\en-words\\server",
+      "exit": 0,
+      "seconds": 25.93799999996554
+    }
+  ],
+  "package_pass_lines": [
+    "ok  \tenwords/cmd/judge-eval\t1.691s",
+    "ok  \tenwords/cmd/local-eval\t1.880s",
+    "ok  \tenwords/cmd/server\t5.646s",
+    "ok  \tenwords/internal/agent\t3.849s",
+    "ok  \tenwords/internal/api\t56.486s",
+    "ok  \tenwords/internal/auth\t0.520s",
+    "ok  \tenwords/internal/classroom\t0.459s",
+    "ok  \tenwords/internal/config\t0.506s",
+    "ok  \tenwords/internal/duplex\t0.319s",
+    "ok  \tenwords/internal/feedback\t0.597s",
+    "ok  \tenwords/internal/judge\t0.296s",
+    "ok  \tenwords/internal/llmzhipu\t0.286s",
+    "ok  \tenwords/internal/localmodel\t2.580s",
+    "ok  \tenwords/internal/memory\t1.405s",
+    "ok  \tenwords/internal/obs\t1.104s",
+    "ok  \tenwords/internal/pilotcontrol\t5.352s",
+    "ok  \tenwords/internal/remoteprovider\t0.624s",
+    "ok  \tenwords/internal/scheduler\t0.294s",
+    "ok  \tenwords/internal/scripts\t0.251s",
+    "ok  \tenwords/internal/store\t11.876s",
+    "ok  \tenwords/internal/tools\t0.371s",
+    "ok  \tenwords/internal/voiceclone\t0.415s",
+    "ok  \tenwords/internal/voicecmd\t0.656s",
+    "ok  \tenwords/internal/wordbook\t0.378s"
+  ],
+  "package_count": 24,
+  "coverage": "Not measured: requested command did not use -coverprofile",
+  "test_case_counts": "Not available from nonverbose non-JSON go test output; no extra rerun performed",
+  "hashes": {
+    "results.json": "1452602fa03d8b7177824ebd60201f24d722aff0cf4a95dccc5418c2d3c21b79",
+    "source-after.json": "28f478728759d81166bec2ac86b8afe8cf5d702c6fa4fba17313899e8672ccf1",
+    "source-before.json": "28f478728759d81166bec2ac86b8afe8cf5d702c6fa4fba17313899e8672ccf1",
+    "summary.json": "bad31354dfd7e18cf469833253f3a3a2b32dfa807af40539c602796dcde03d2d",
+    "test.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test.stdout": "814b526c6d96cf209ad3938d5d03a50f4c9cbfdcadde46fd1f73c16cb774b3d8",
+    "vet.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "vet.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

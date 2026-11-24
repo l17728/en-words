@@ -1,0 +1,43 @@
+﻿{
+  "review": "pilot-start-kernel-sdd-backend-review9",
+  "date": "2026-10-16",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "scope": "read-only backend review of BE8 fixes and overall BE6/BE7 closure",
+  "code_modified": false,
+  "docs_modified": false,
+  "tests_run": false,
+  "verdict": "PASS",
+  "implementation_gates_remain": true,
+  "be8_status": {
+    "BE8-1": "CLOSED",
+    "BE8-2": "CLOSED",
+    "BE8-3": "CLOSED"
+  },
+  "be6_status": {
+    "BE6-1": "CLOSED",
+    "BE6-2": "CLOSED",
+    "BE6-3": "CLOSED",
+    "BE6-4": "CLOSED",
+    "BE6-5": "CLOSED_WITH_IMPLEMENTATION_GATE",
+    "BE6-6": "CLOSED",
+    "BE6-7": "CLOSED",
+    "BE6-8": "CLOSED",
+    "BE6-9": "CLOSED",
+    "BE6-10": "CLOSED",
+    "BE6-11": "CLOSED"
+  },
+  "be7_status": {
+    "BE7-1": "CLOSED",
+    "BE7-2": "CLOSED",
+    "BE7-3": "CLOSED",
+    "BE7-4": "CLOSED",
+    "BE7-5": "CLOSED"
+  },
+  "new_findings": [],
+  "implementation_gates": [
+    "Prove typed rollback_proven with the pinned SQLite connection; uncertainty must remain read-only pending_unknown.",
+    "Verify pilot_e2e build-tag package boundaries exclude all harness routes from production server.",
+    "Lock sidecar HMAC canonical vectors, result transitions, and two-attempt ceiling.",
+    "Verify full mixed-lifecycle audit, orphan pilot_marker detection, and frozen outbox payload comparisons."
+  ]
+}

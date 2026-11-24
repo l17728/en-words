@@ -1,0 +1,27 @@
+{
+  "review_id": "pilot-supervisor-sdd-test-r4-20261019",
+  "reviewed_document": "docs/42-Pilot隔离运行监督器SDD.md",
+  "sha256": "4775cf8be9d5d69314b01f542ea318e5218a2cb482e244f578f06192766f9352",
+  "review_type": "read-only test-domain re-review",
+  "date": "2026-10-19",
+  "verdict": "PASS",
+  "open_p1_count": 0,
+  "open_p2_count": 0,
+  "tests_executed": false,
+  "findings": [
+    {"id": "R3-F1", "status": "CLOSED", "severity": "P2", "evidence": "Sections 7-13 split lifecycle fault cuts by resource/member, distinguish syscall errors from forced process termination, record frame/catalog/inventory/identity/error/poison/counter oracles, and define each cleanup and close resource outcome."},
+    {"id": "R3-F2", "status": "CLOSED", "severity": "P2", "evidence": "Per-stage create/write/Sync/identity results use stable errors and restart outcomes; db_open_app and db_open_recovery are separate; close state is classified as closed/still_open/unknown with retry ownership and lock retention."},
+    {"id": "R3-F3", "status": "CLOSED", "severity": "P2", "evidence": "C1-C5 named IPC schedules and bounded concurrency assertions remain present."},
+    {"id": "R3-F4", "status": "CLOSED", "severity": "P2", "evidence": "Native Linux and Windows runner evidence and fail-on-skip requirements remain present."},
+    {"id": "R3-F5", "status": "CLOSED", "severity": "P2", "evidence": "E2E-PILOT-01..07 mapping remains present and supervisor tests remain explicitly insufficient for classroom acceptance."},
+    {"id": "R3-F6", "status": "CLOSED", "severity": "P2", "evidence": "Coverage, adapter, structured observability, trace, and negative-log-scan requirements remain present."},
+    {"id": "R2-N1", "status": "CLOSED", "severity": "P2", "evidence": "Case IDs are consistently 16-byte/128-bit and 32 lowercase hex."},
+    {"id": "R2-N2", "status": "CLOSED", "severity": "P2", "evidence": "SQLite canonical-path-only check and trusted private directory boundary are consistent; no OS handle identity proof is claimed."}
+  ],
+  "new_blocking_findings": [],
+  "note": "Generation zero is only the absent/no-record sentinel; valid persisted catalog records start at one. This is a design review PASS only, not implementation or E2E test evidence.",
+  "files_written": [
+    "review/pilot-supervisor-sdd-test-r4-20261019.md",
+    "review/pilot-supervisor-sdd-test-r4-20261019.json"
+  ]
+}

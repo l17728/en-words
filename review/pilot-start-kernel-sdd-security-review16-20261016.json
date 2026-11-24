@@ -1,0 +1,38 @@
+{
+  "review_id": "pilot-start-kernel-sdd-security-review16-20261016",
+  "date": "2026-10-16",
+  "reviewer_domain": "security",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_type": "read-only design review",
+  "compared_against": "review/pilot-start-kernel-sdd-security-review15-20261016.json",
+  "focus": [
+    "cross-process OS catalog lock",
+    "case lifecycle lock to catalog lock ordering and deadlock risk",
+    "catalog chain reread, generation allocation, append, and Sync atomicity window",
+    "zero-byte cleanup_quarantined failure and restart recovery"
+  ],
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "approved_narrow_test_only_design_under_declared_threat_model",
+  "summary": "The SDD gives a coherent cross-process catalog serialization protocol: under an OS exclusive lock tied to the verified handle, writers reread and validate the chain, allocate the next generation, append one complete frame, Flush+Sync, and only then acknowledge; snapshots use the same lock. The sole nested order is case lifecycle lock then catalog lock, and catalog-lock holders must not acquire/wait for case locks. The bounded critical section excludes DB, deletion, Planner/Registry, and network/model work, so no lock-order cycle is apparent. Cleanup remains fail-closed before durable quarantine; zero-byte failure leaves the valid old chain authoritative for safe restart revalidation/retry, while partial or uncertain tails globally fail closed. No security blocker was found in the written design.",
+  "control_dispositions": {
+    "cross_process_catalog_serialization": "coherent if every catalog reader/writer honors the specified OS lock; runtime primitive not tested",
+    "lock_order_deadlock": "no cycle under case-before-catalog order and prohibition on acquiring case lock while holding catalog lock",
+    "append_atomicity_window": "chain reread, generation allocation, complete-frame append, and Sync are serialized as one critical section; readers use same lock",
+    "zero_byte_cleanup_append_failure": "no deletion; current supervisor fails closed; a fully valid old chain remains authoritative after restart for revalidation/retry",
+    "partial_or_uncertain_append_failure": "global fail closed without rollback to old state",
+    "acceptance_matrix": "covers cross-case parallel append and cleanup failure branches; explicit lock-acquisition-failure and owner-process-death/progress cases recommended"
+  },
+  "remaining_blocker_count": 0,
+  "remaining_conditions": [],
+  "recommendations": [
+    "Add deterministic acceptance coverage for OS lock acquisition failure and process termination while holding the lock.",
+    "Assert no catalog operation proceeds without exclusive ownership, lock recovery after owner exit, and bounded completion under simultaneous contention.",
+    "Fail closed if the filesystem/platform cannot provide the specified cross-process exclusive lock; do not fall back to an in-process mutex."
+  ],
+  "limitations": [
+    "No tests or runtime validation were run.",
+    "No lock primitive, Sync durability, process-crash recovery, contention timing, or catalog fault injection was exercised.",
+    "Approval is limited to the written test-only design under its declared trusted-local-account boundary; it does not establish implementation correctness, production readiness, or classroom readiness."
+  ]
+}

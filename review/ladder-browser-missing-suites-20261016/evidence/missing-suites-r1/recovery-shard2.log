@@ -1,0 +1,321 @@
+[WebServer] (node:22248) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[WebServer] (node:16260) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 21 tests using 1 worker, shard 2 of 2
+
+(node:20908) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 21:51:45 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:51:45 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:51:45 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+  ✓   1 e2e\recovery-regression.spec.ts:310:3 › G09 timeout shows failure and never sends successful playback ACK (33.2s)
+[WebServer] 21:52:18 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:52:18 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:52:19 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:52:29 [vite] ws proxy error:
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 21:52:29 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:52:29 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:52:29 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:52:31 [vite] ws proxy error:
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+  ✓   2 e2e\recovery-regression.spec.ts:332:1 › old recognizer delayed onend cannot restart after reconnect installs a new listener (12.5s)
+[WebServer] 21:52:31 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:52:31 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:52:31 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+  ✓   3 e2e\recovery-regression.spec.ts:361:1 › G09 delayed microphone grant after account change releases tracks without upload (13.6s)
+[WebServer] 21:52:45 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:52:45 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:52:45 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:52:45 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+  ✓   4 e2e\recovery-regression.spec.ts:396:1 › G09 canceled delayed synthesis body cannot create or play late audio (13.4s)
+[WebServer] 21:52:58 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:52:58 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:52:58 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+  ✓   5 e2e\recovery-regression.spec.ts:425:66 › recording conversion bad_decode releases capture and never uploads a stale or invalid result (14.7s)
+[WebServer] 21:53:13 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:53:13 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:53:13 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+  ✓   6 e2e\recovery-regression.spec.ts:425:66 › recording conversion exit releases capture and never uploads a stale or invalid result (15.4s)
+[WebServer] 21:53:28 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:53:28 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:53:29 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:53:29 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+  ✓   7 e2e\recovery-regression.spec.ts:425:66 › recording conversion account_change releases capture and never uploads a stale or invalid result (18.3s)
+[WebServer] 21:53:47 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:53:47 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:53:47 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:53:52 [vite] ws proxy error:
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 21:53:53 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:53:53 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:53:53 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:53:54 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:53:55 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:53:56 [vite] ws proxy error:
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+  ✓   8 e2e\recovery-regression.spec.ts:483:1 › REC09 corrupt persisted snapshot is visible and traced; repaired restart clears the temporary error (9.3s)
+[WebServer] 21:53:56 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:53:56 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:53:56 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+  ✓   9 e2e\recovery-regression.spec.ts:516:1 › REC10 scheduled lesson opens in the idle dashboard when display time reaches its boundary (4.0s)
+[WebServer] 21:54:00 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:54:00 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:54:00 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+  ✓  10 e2e\recovery-regression.spec.ts:552:3 › QTY docs26 original quantity constraints › CH030 wrong model category cannot mutate either student and remains safe after replay and refresh (9.8s)
+[WebServer] 21:54:10 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:54:10 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:54:10 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+  ✓  11 e2e\recovery-regression.spec.ts:586:3 › QTY docs26 original quantity constraints › legal daily frequency plus absolute words and independent relative reduction remain authorized (7.8s)
+[WebServer] 21:54:18 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:54:18 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:54:18 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:54:19 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:54:43 [vite] ws proxy error:
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+  ✓  12 e2e\recovery-regression.spec.ts:606:3 › JDG docs27 verdict provenance › legal model wrong and invalid verdict preserve classroom rules but have distinct lesson trace reasons (25.3s)
+[WebServer] 21:54:43 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:54:43 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:54:43 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:55:11 [vite] ws proxy error:
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+  ✓  13 e2e\recovery-regression.spec.ts:633:6 › JD28 semantic routing rejects target tokens without answer meaning › negation reaches L2 and reteaches; full sentence passes while another student stays isolated (28.4s)
+[WebServer] 21:55:11 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:55:12 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:55:12 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:55:12 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:55:40 [vite] ws proxy error:
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+  ✓  14 e2e\recovery-regression.spec.ts:633:6 › JD28 semantic routing rejects target tokens without answer meaning › instruction reaches L2 and reteaches; full sentence passes while another student stays isolated (28.3s)
+[WebServer] 21:55:40 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:55:40 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:55:40 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+  ✓  15 e2e\recovery-regression.spec.ts:680:1 › SUB01 actual browser start drives bilingual repeated captions, gaps and stale callbacks stay empty (10.4s)
+[WebServer] 21:55:50 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:55:50 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:55:51 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:55:58 [vite] ws proxy error:
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+  ✓  16 e2e\recovery-regression.spec.ts:709:46 › SUB02 platform ended shows captions only on playing and invalidates old attempts (7.7s)
+[WebServer] 21:55:58 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:55:58 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:55:58 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+  ✓  17 e2e\recovery-regression.spec.ts:709:46 › SUB02 platform fallback shows captions only on playing and invalidates old attempts (7.9s)
+[WebServer] 21:56:06 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:56:06 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:56:06 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:56:07 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+  ✓  18 e2e\recovery-regression.spec.ts:755:44 › SUB03 phase snapshot cancels old playback and captions without affecting another student (20.3s)
+[WebServer] 21:56:26 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:56:26 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:56:27 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:56:27 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+  ✓  19 e2e\recovery-regression.spec.ts:755:44 › SUB03 pause snapshot cancels old playback and captions without affecting another student (20.0s)
+[WebServer] 21:56:46 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:56:46 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:56:46 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:56:52 [vite] ws proxy error:
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 21:56:52 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:56:52 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:56:53 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+  ✓  20 e2e\recovery-regression.spec.ts:875:1 › SUB04 disconnect and account replacement clear active captions and reject delayed prior media (9.2s)
+[WebServer] 21:56:55 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:56:55 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:56:56 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:57:07 [vite] ws proxy error:
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 21:57:07 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:57:07 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:57:07 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:57:10 [vite] ws proxy error:
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+  ✓  21 e2e\recovery-regression.spec.ts:900:1 › REC13 externally signal-exited owned backend restarts and restores the student classroom (14.5s)
+
+  Slow test file: e2e\recovery-regression.spec.ts (5.4m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  21 passed (5.7m)

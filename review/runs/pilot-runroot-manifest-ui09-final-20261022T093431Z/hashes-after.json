@@ -1,0 +1,330 @@
+{
+  "tracked": {
+    "review/test_pilot_runroot_manifest.py": {
+      "size": 9126,
+      "sha256": "9eb53a8c11a0992fc9e8852ab591714dbc281e9d35dbc6ba7dd48106544a3f9b"
+    },
+    "review/pilot-intent-quota-journal-manifest-20261022.json": {
+      "size": 40186,
+      "sha256": "021cd164084dca0564bcfc31a556d214336fa7893e6b91062e10b5097f53ce42"
+    },
+    "review/pilot-runroot-product-orchestration-manifest-20261021.json": {
+      "size": 83868,
+      "sha256": "3b88627e11cc16b88502b0d0c3877c04056eec3bb833db71a314183a9f92e26e"
+    },
+    "review/pilot-control-ledger-v3-schema-fault-manifest-20261021.json": {
+      "size": 35903,
+      "sha256": "e36f47dd0eaec3d5aa67a8159bd3f86af25910f1b230f9e0b9fcb2df9f482c25"
+    },
+    "docs/50-pilot-runroot-product-orchestration-sdd.md": {
+      "size": 60046,
+      "sha256": "da58cff40e1dbb892e419bb0c7fe0dc8cf7ea82a259b339cd12f8eaeed4628d0"
+    }
+  },
+  "pins": [
+    {
+      "manifest": "review/pilot-intent-quota-journal-manifest-20261022.json",
+      "path": "docs/43-Pilot\u6388\u6743\u5e42\u7b49\u4e0e\u7236\u8fdb\u7a0b\u8eab\u4efd\u7ed1\u5b9aSDD.md",
+      "expected_sha256": "b586621fc749abd8e609fef211cf83e00b3614c25ea85711998bffec426dc251",
+      "actual_sha256": "b586621fc749abd8e609fef211cf83e00b3614c25ea85711998bffec426dc251",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-intent-quota-journal-manifest-20261022.json",
+      "path": "docs/46-pilot-host-logger-queue-sdd.md",
+      "expected_sha256": "8c821317d515b49596f621ee2a6dbef1e9816fe55b41b24b86c1690d21bd6486",
+      "actual_sha256": "8c821317d515b49596f621ee2a6dbef1e9816fe55b41b24b86c1690d21bd6486",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-intent-quota-journal-manifest-20261022.json",
+      "path": "docs/47-pilot-linux-launcher-identity-handoff-sdd.md",
+      "expected_sha256": "10674f2b05bb688e0664bbe527bbcf541e5f10a93aa0b18d5dc8dbb9e2e58e99",
+      "actual_sha256": "10674f2b05bb688e0664bbe527bbcf541e5f10a93aa0b18d5dc8dbb9e2e58e99",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-intent-quota-journal-manifest-20261022.json",
+      "path": "docs/50-pilot-runroot-product-orchestration-sdd.md",
+      "expected_sha256": "da58cff40e1dbb892e419bb0c7fe0dc8cf7ea82a259b339cd12f8eaeed4628d0",
+      "actual_sha256": "da58cff40e1dbb892e419bb0c7fe0dc8cf7ea82a259b339cd12f8eaeed4628d0",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-intent-quota-journal-manifest-20261022.json",
+      "path": "docs/51-pilot-control-ledger-v3-sdd.md",
+      "expected_sha256": "236af90bc914e325b62367338328bcd769f769f85fcfcbe8972410b0b58c363a",
+      "actual_sha256": "236af90bc914e325b62367338328bcd769f769f85fcfcbe8972410b0b58c363a",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-intent-quota-journal-manifest-20261022.json",
+      "path": "docs/52-pilot-control-ledger-v3-physical-model-decisions.md",
+      "expected_sha256": "eac7115e9fb30c0a2eb2b470dadd24bbf2ba0b2b5b69978298bc64f9b5107cd7",
+      "actual_sha256": "eac7115e9fb30c0a2eb2b470dadd24bbf2ba0b2b5b69978298bc64f9b5107cd7",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-intent-quota-journal-manifest-20261022.json",
+      "path": "docs/53-pilot-control-ledger-v3-physical-schema-matrix.md",
+      "expected_sha256": "a1074766827e010f7247c985c4e957ad3f193b8a38f0503be052fa2aa0ca5dac",
+      "actual_sha256": "a1074766827e010f7247c985c4e957ad3f193b8a38f0503be052fa2aa0ca5dac",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-intent-quota-journal-manifest-20261022.json",
+      "path": "docs/63-pilot-intent-quota-journal-sdd.md",
+      "expected_sha256": "366e726cce3d7715864e48013fc9145047a87338a8f69459915e0a3e909ab6b6",
+      "actual_sha256": "366e726cce3d7715864e48013fc9145047a87338a8f69459915e0a3e909ab6b6",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-intent-quota-journal-manifest-20261022.json",
+      "path": "review/pilot-intent-quota-frame-v1-vectors.json",
+      "expected_sha256": "cc8956d6735dc38728cc5b0cd5a14c034d681c3c4fd6a12b005d6248f46c7d49",
+      "actual_sha256": "cc8956d6735dc38728cc5b0cd5a14c034d681c3c4fd6a12b005d6248f46c7d49",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-intent-quota-journal-manifest-20261022.json",
+      "path": "review/pilot-intent-quota-ipc-v1-vectors.json",
+      "expected_sha256": "b14a863576ccd9ecbbb805bcab45a597c67d0c00733648fb4348a81959e4c31e",
+      "actual_sha256": "b14a863576ccd9ecbbb805bcab45a597c67d0c00733648fb4348a81959e4c31e",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-runroot-product-orchestration-manifest-20261021.json",
+      "path": "docs/41-\u8bd5\u70b9\u8bfe\u5802Start\u6301\u4e45\u8fc1\u79fb\u5185\u6838SDD.md",
+      "expected_sha256": "edccd7b52ace3300912796b69730b7b91d6c47542d959b9471798d173e10be34",
+      "actual_sha256": "edccd7b52ace3300912796b69730b7b91d6c47542d959b9471798d173e10be34",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-runroot-product-orchestration-manifest-20261021.json",
+      "path": "docs/42-Pilot\u9694\u79bb\u8fd0\u884c\u76d1\u7763\u5668SDD.md",
+      "expected_sha256": "1fdfb5fb07176702aa827a0529464d013bce68ef9b3508db590d6a766c70086e",
+      "actual_sha256": "1fdfb5fb07176702aa827a0529464d013bce68ef9b3508db590d6a766c70086e",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-runroot-product-orchestration-manifest-20261021.json",
+      "path": "docs/43-Pilot\u6388\u6743\u5e42\u7b49\u4e0e\u7236\u8fdb\u7a0b\u8eab\u4efd\u7ed1\u5b9aSDD.md",
+      "expected_sha256": "b586621fc749abd8e609fef211cf83e00b3614c25ea85711998bffec426dc251",
+      "actual_sha256": "b586621fc749abd8e609fef211cf83e00b3614c25ea85711998bffec426dc251",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-runroot-product-orchestration-manifest-20261021.json",
+      "path": "docs/44-Pilot\u9a8c\u8bc1\u6839\u4e0e\u6210\u5458\u53e5\u67c4\u5207\u7247SDD.md",
+      "expected_sha256": "284d85b8c0a256a4d5785fb22c2f218ed60ecce7fc811ccfe8b599e86f107e97",
+      "actual_sha256": "284d85b8c0a256a4d5785fb22c2f218ed60ecce7fc811ccfe8b599e86f107e97",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-runroot-product-orchestration-manifest-20261021.json",
+      "path": "docs/45-pilot-run-root-bootstrap-sdd.md",
+      "expected_sha256": "c09416a9c6f0070655f7e03192b04630b98e25798f079c94bdee67dc831d2837",
+      "actual_sha256": "c09416a9c6f0070655f7e03192b04630b98e25798f079c94bdee67dc831d2837",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-runroot-product-orchestration-manifest-20261021.json",
+      "path": "docs/46-pilot-host-logger-queue-sdd.md",
+      "expected_sha256": "8c821317d515b49596f621ee2a6dbef1e9816fe55b41b24b86c1690d21bd6486",
+      "actual_sha256": "8c821317d515b49596f621ee2a6dbef1e9816fe55b41b24b86c1690d21bd6486",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-runroot-product-orchestration-manifest-20261021.json",
+      "path": "docs/47-pilot-linux-launcher-identity-handoff-sdd.md",
+      "expected_sha256": "10674f2b05bb688e0664bbe527bbcf541e5f10a93aa0b18d5dc8dbb9e2e58e99",
+      "actual_sha256": "10674f2b05bb688e0664bbe527bbcf541e5f10a93aa0b18d5dc8dbb9e2e58e99",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-runroot-product-orchestration-manifest-20261021.json",
+      "path": "docs/48-pilot-host-logger-service-lifecycle-sdd.md",
+      "expected_sha256": "37fd96d625bdf3316dc9e7c712c7b3b68494e4d779222a9bd6a6c76e920f8cc4",
+      "actual_sha256": "37fd96d625bdf3316dc9e7c712c7b3b68494e4d779222a9bd6a6c76e920f8cc4",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-runroot-product-orchestration-manifest-20261021.json",
+      "path": "docs/49-pilot-bootstrap-control-ledger-sdd.md",
+      "expected_sha256": "ee3cd80e4f5620e642723d4197585af25ad67a5e8bf0c88565172a12c0038a63",
+      "actual_sha256": "ee3cd80e4f5620e642723d4197585af25ad67a5e8bf0c88565172a12c0038a63",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-runroot-product-orchestration-manifest-20261021.json",
+      "path": "docs/50-pilot-runroot-product-orchestration-sdd.md",
+      "expected_sha256": "da58cff40e1dbb892e419bb0c7fe0dc8cf7ea82a259b339cd12f8eaeed4628d0",
+      "actual_sha256": "da58cff40e1dbb892e419bb0c7fe0dc8cf7ea82a259b339cd12f8eaeed4628d0",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-runroot-product-orchestration-manifest-20261021.json",
+      "path": "docs/51-pilot-control-ledger-v3-sdd.md",
+      "expected_sha256": "236af90bc914e325b62367338328bcd769f769f85fcfcbe8972410b0b58c363a",
+      "actual_sha256": "236af90bc914e325b62367338328bcd769f769f85fcfcbe8972410b0b58c363a",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-runroot-product-orchestration-manifest-20261021.json",
+      "path": "docs/52-pilot-control-ledger-v3-physical-model-decisions.md",
+      "expected_sha256": "eac7115e9fb30c0a2eb2b470dadd24bbf2ba0b2b5b69978298bc64f9b5107cd7",
+      "actual_sha256": "eac7115e9fb30c0a2eb2b470dadd24bbf2ba0b2b5b69978298bc64f9b5107cd7",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-runroot-product-orchestration-manifest-20261021.json",
+      "path": "docs/53-pilot-control-ledger-v3-physical-schema-matrix.md",
+      "expected_sha256": "a1074766827e010f7247c985c4e957ad3f193b8a38f0503be052fa2aa0ca5dac",
+      "actual_sha256": "a1074766827e010f7247c985c4e957ad3f193b8a38f0503be052fa2aa0ca5dac",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-runroot-product-orchestration-manifest-20261021.json",
+      "path": "docs/54-pilot-runroot-stage-a-implementation-delta.md",
+      "expected_sha256": "2a430df671493f0ca4386b46742207a74104f0821b5e63eb0014f4693580e733",
+      "actual_sha256": "2a430df671493f0ca4386b46742207a74104f0821b5e63eb0014f4693580e733",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-runroot-product-orchestration-manifest-20261021.json",
+      "path": "docs/63-pilot-intent-quota-journal-sdd.md",
+      "expected_sha256": "366e726cce3d7715864e48013fc9145047a87338a8f69459915e0a3e909ab6b6",
+      "actual_sha256": "366e726cce3d7715864e48013fc9145047a87338a8f69459915e0a3e909ab6b6",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-runroot-product-orchestration-manifest-20261021.json",
+      "path": "review/pilot-control-ledger-v3-schema-fault-manifest-20261021.json",
+      "expected_sha256": "e36f47dd0eaec3d5aa67a8159bd3f86af25910f1b230f9e0b9fcb2df9f482c25",
+      "actual_sha256": "e36f47dd0eaec3d5aa67a8159bd3f86af25910f1b230f9e0b9fcb2df9f482c25",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-runroot-product-orchestration-manifest-20261021.json",
+      "path": "review/pilot-intent-quota-journal-manifest-20261022.json",
+      "expected_sha256": "021cd164084dca0564bcfc31a556d214336fa7893e6b91062e10b5097f53ce42",
+      "actual_sha256": "021cd164084dca0564bcfc31a556d214336fa7893e6b91062e10b5097f53ce42",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-control-ledger-v3-schema-fault-manifest-20261021.json",
+      "path": "docs/50-pilot-runroot-product-orchestration-sdd.md",
+      "expected_sha256": "da58cff40e1dbb892e419bb0c7fe0dc8cf7ea82a259b339cd12f8eaeed4628d0",
+      "actual_sha256": "da58cff40e1dbb892e419bb0c7fe0dc8cf7ea82a259b339cd12f8eaeed4628d0",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-control-ledger-v3-schema-fault-manifest-20261021.json",
+      "path": "docs/51-pilot-control-ledger-v3-sdd.md",
+      "expected_sha256": "236af90bc914e325b62367338328bcd769f769f85fcfcbe8972410b0b58c363a",
+      "actual_sha256": "236af90bc914e325b62367338328bcd769f769f85fcfcbe8972410b0b58c363a",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-control-ledger-v3-schema-fault-manifest-20261021.json",
+      "path": "docs/52-pilot-control-ledger-v3-physical-model-decisions.md",
+      "expected_sha256": "eac7115e9fb30c0a2eb2b470dadd24bbf2ba0b2b5b69978298bc64f9b5107cd7",
+      "actual_sha256": "eac7115e9fb30c0a2eb2b470dadd24bbf2ba0b2b5b69978298bc64f9b5107cd7",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-control-ledger-v3-schema-fault-manifest-20261021.json",
+      "path": "docs/53-pilot-control-ledger-v3-physical-schema-matrix.md",
+      "expected_sha256": "a1074766827e010f7247c985c4e957ad3f193b8a38f0503be052fa2aa0ca5dac",
+      "actual_sha256": "a1074766827e010f7247c985c4e957ad3f193b8a38f0503be052fa2aa0ca5dac",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-control-ledger-v3-schema-fault-manifest-20261021.json",
+      "path": "docs/54-pilot-runroot-stage-a-implementation-delta.md",
+      "expected_sha256": "2a430df671493f0ca4386b46742207a74104f0821b5e63eb0014f4693580e733",
+      "actual_sha256": "2a430df671493f0ca4386b46742207a74104f0821b5e63eb0014f4693580e733",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-control-ledger-v3-schema-fault-manifest-20261021.json",
+      "path": "docs/62-pilot-vfs-initialization-and-recovery-amendment.md",
+      "expected_sha256": "44333074581018d3a98d0b0cf8aab8edaf53d0c195ea3429bb71a33221e04ed8",
+      "actual_sha256": "44333074581018d3a98d0b0cf8aab8edaf53d0c195ea3429bb71a33221e04ed8",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-control-ledger-v3-schema-fault-manifest-20261021.json",
+      "path": "docs/63-pilot-intent-quota-journal-sdd.md",
+      "expected_sha256": "366e726cce3d7715864e48013fc9145047a87338a8f69459915e0a3e909ab6b6",
+      "actual_sha256": "366e726cce3d7715864e48013fc9145047a87338a8f69459915e0a3e909ab6b6",
+      "exists": true,
+      "match": true
+    },
+    {
+      "manifest": "review/pilot-control-ledger-v3-schema-fault-manifest-20261021.json",
+      "path": "server/internal/pilotcontrol/schema_inventory_v3.json",
+      "expected_sha256": "38173f3c9cddae29e2627505e17058a9a97bab265502cd87d84d78c6fc8af672",
+      "actual_sha256": "38173f3c9cddae29e2627505e17058a9a97bab265502cd87d84d78c6fc8af672",
+      "exists": true,
+      "match": true
+    }
+  ],
+  "product_case_count": 117,
+  "product_case_ids_unique": true,
+  "api26_case": [
+    {
+      "case_id": "API-26",
+      "actor": "Authenticated student, protected quota-journal fault harness, and restart process",
+      "initial_state": "Durable quota journal has a known valid count; nonce counter and business state are snapshotted.",
+      "named_barrier": "api26.quota_journal_commit_boundary",
+      "action": "Inject service unavailable/corruption and pre-write failures before PERMIT; separately inject PERMIT append/sync/anchor uncertainty and ISSUED append/sync/anchor failures or uncertainty, including crash/restart at each durable boundary. Assert nonce reservations, encryption calls, returned handles, journal bytes, anchor state, and business state independently; reconcile exact evidence before retry.",
+      "oracle": "Before an anchored PERMIT and one-use ticket, any failure returns pilot_unavailable with no nonce reservation, encryption, or handle; an uncertain PERMIT is reconciled before retry and cannot reset rolling usage. After ticket delivery, the nonce may already be durably consumed and encryption may have run once. An ISSUED pre-write/sync/anchor failure or uncertainty still returns no handle and never re-reserves or re-encrypts: exact recovered anchored ISSUED may return only its stored ciphertext for the same immutable tuple; PERMIT-only is burned; an ambiguous boundary stays unavailable. Before nonce reservation only PERMIT journal bytes and its external anchor may change; no business journal/ledger/lease/spawn/root effect occurs.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    }
+  ],
+  "ui09_case": [
+    {
+      "case_id": "UI-09",
+      "actor": "Authenticated student browser, quota coordinator fault harness, and launcher",
+      "initial_state": "The student is authenticated, the synthetic fixture is valid, and no intent handle is stored.",
+      "named_barrier": "ui09.issued_anchor_uncertain_before_http_reply",
+      "action": "In the isolated Playwright harness, accept and anchor PERMIT, deliver the one-use ticket, reserve one nonce, and encrypt once. Inject an ISSUED append/sync/anchor uncertainty before the HTTP response; wait for the page to settle, restore the service, then proceed only after a second explicit Start action.",
+      "oracle": "The first activation renders a generic unavailable result and states that no run was created. It exposes, displays, or persists no handle/ciphertext in DOM, URL, localStorage, or sessionStorage; it sends exactly one intent POST and no run POST, polling retry, or automatic second activation. Test-only evidence shows one consumed nonce and at most one encryption for the first request, no handle response, and no business journal/ledger/lease/spawn/root effect. After service recovery, one new explicit Start creates a distinct request and may proceed once; the prior request is never re-encrypted or treated as success. Sensitive-field scans pass. This browser case does not substitute for the API-26 coordinator fault oracle.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-19",
+  "source": "docs/43-Pilot授权幂等与父进程身份绑定SDD.md",
+  "source_sha256": "8e6904d91fcff9cb6bea266ff496d46599bcec73ad18c9c4516bfbb01b58447a",
+  "status": "PASS",
+  "blocking_count": 0,
+  "scope": "Focused follow-up of AUTH-ARCH-01 against sections 2.2, 2.3, 2.4 and the Cleanup outcome matrix; prior limited architecture conclusions carried forward.",
+  "closed": {
+    "id": "AUTH-ARCH-01",
+    "evidence_lines": [55, 72, 199],
+    "conclusion": "The normal IPC cleanup sequence now explicitly rejects first-observed absence as indeterminate without a completed receipt. Absence recovery requires an already-durable initial-present witness for the anchored expected identity and reuses that witness rather than rewriting initial state. The earlier success-no-op branch is removed and the operation table/receipt schema/test oracle agree."
+  },
+  "implementation_reading": [
+    "Treat new execution and recovery as separate branches: absence is permissible only after locating and validating the matching immutable initial-present witness, not by generating a fresh witness.",
+    "Keep the existing owner/generation/principal/anchor checks, resource-lock lifetime, and receipt-before-terminal-CAS acknowledgement order. The correction does not grant cross-principal cleanup or release an unresolved run lease."
+  ],
+  "limitations": [
+    "Requested source SHA was verified. No tests/builds/services/source or specification edits performed.",
+    "PASS covers the reviewed architecture contracts only, not the entire operating-system security implementation or feasibility/acceptance of the required custom SQLite VFS.",
+    "Native fault/recovery, IPC and eventual multi-user classroom acceptance remain unexecuted obligations; no pilot readiness claim."
+  ]
+}

@@ -1,0 +1,4 @@
+COMMAND: go test -count=1 -timeout=240s -tags=pilot_e2e ./internal/pilotsupervisor
+GO: go version go1.25.14 windows/amd64
+OS: Windows-10-10.0.19045-SP0
+ok  	enwords/internal/pilotsupervisor	1.765s

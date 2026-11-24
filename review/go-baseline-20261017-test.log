@@ -1,0 +1,5 @@
+﻿Command: go test ./...
+Working directory: D:\en-words\server
+Result: NOT RUN (exit 127 equivalent)
+PowerShell: go : The term 'go' is not recognized as the name of a cmdlet, function, script file, or executable program.
+Discovery: where.exe go returned no paths; common C:\Go, C:\Program Files\Go, D:\Go, D:\go locations absent.

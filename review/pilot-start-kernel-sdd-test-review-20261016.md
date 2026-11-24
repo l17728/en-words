@@ -1,0 +1,28 @@
+# Pilot `lesson.start` Kernel SDD — Test and Acceptance Review
+
+**Status:** Not approved for implementation yet. This is a read-only contract review of `docs/41-试点课堂Start持久迁移内核SDD.md`, focused on dual-pool idempotency, unknown COMMIT outcomes, started codec/audit/outbox, E2E realism, and logs. No tests were run.
+
+## Findings
+
+1. **P1 — Tx-bound tool audit has no defined persistence shape or decision linkage.** Sections 3–4 require each tool audit to link to the `decision_id`/`command_id`, and the allowlist requires schema version, scope, effect index, and queued status. The existing `store.AuditLog` shape has no decision/command/effect fields; its `Args` field is an unrestricted string. The SDD does not say whether to add a dedicated normalized table, extend/migrate `audit_logs`, or define another atomic record. As written, implementation cannot satisfy both the audit linkage and privacy/size contract unambiguously. **Required:** specify exact table/columns, constraints/FKs, size and JSON schema, and prove the audit row is committed in the same pinned transaction; add write-failure, orphan/mismatch, duplicate-order, and redaction assertions.
+
+2. **P1 — The codec contract and fingerprint canonicalization are deferred too far to review.** Section 4 postpones the complete active-state required/nullable field table until implementation, while the acceptance matrix already requires “合法完整 started” and duplicate-key/noncanonical-number checks. Section 3 says “规范化完整候选” but does not define canonical encoding/version, key ordering, Unicode treatment, number representation, or the exact hash domain. These omissions make independent implementations and golden tests non-deterministic. **Required:** freeze the started codec field table and canonical fingerprint algorithm in this SDD before implementation; include golden byte/fingerprint vectors and mutated-field vectors in Go tests.
+
+3. **P1 — E2E dropped-response scenario does not prove COMMIT happened before the response was lost.** “A creates then Start, lost response” can be satisfied by aborting the browser request before the server commits. `route.fulfill` is correctly forbidden, but a generic transport abort still cannot establish the intended ordering. **Required:** add a harness-only one-shot post-COMMIT/pre-response barrier: observe and verify the committed receipt/checkpoint/outbox, drop the response, then let Playwright query using the same command. Assert one receipt/audit/two outbox effects and unchanged state after retry/reload. Keep production route absence checks separate.
+
+4. **P1 — Unknown-outcome recovery is not covered end to end or across the held-writer race.** The contract distinguishes `pending_unknown`, `receipt_not_observed`, and proven `not_committed`, but the listed tests cover a saved receipt and an injected deferred-COMMIT failure without requiring the full uncertainty branch. They do not force a receipt lookup while the original writer is still unresolved, nor a lookup failure, nor prove a same-ID re-entry converges after the writer settles. **Required:** add deterministic tests for (a) original transaction held while lookup observes no receipt, (b) lookup unavailable, (c) later same-ID/fingerprint re-entry after original commit, and (d) explicit rollback proof before `not_committed`. Assert no new command ID, second effect, or success publication in all ambiguous states.
+
+5. **P2 — Dual-pool idempotency needs deterministic barriers and explicit per-table cardinality.** The matrix says “恰一条 checkpoint/audit/receipt/outbox 序列,” but does not prescribe a barrier ensuring both independent pools race the same immutable command, nor how audit rows and the two ordered effects are counted and correlated. A sequential replay could pass while the cross-pool race remains untested. **Required:** hold pool A inside the transaction, start pool B with the identical command, release A, then assert both return the identical receipt and exactly one checkpoint, one receipt, two ordered outbox rows, and exactly the specified audit rows. Also retain the separate different-command `already_started` case.
+
+6. **P2 — Log event and privacy assertions need an executable allowlist.** The SDD lists fields and three event names but does not define the required event sequence for accepted, replayed, rejected, and unknown outcomes, nor enumerate allowed `outcome`/`reason` values. **Required:** define a compact event/state table and fixed enums; test serialized logs for forbidden student IDs, lesson IDs, command plaintext, candidate payload, prompt/model output, credentials, and arbitrary tool arguments, while proving all events for a retry share the approved trace correlation.
+
+## Satisfied parts
+
+- The design correctly binds same-command replay to a full fingerprint and current authorization, distinguishes `already_started` from replay, and requires one SQLite writer transaction for checkpoint/receipt/audit/outbox.
+- It correctly treats an unobserved receipt as unknown rather than rollback, forbids a new command ID, and says outbox records are queued effects rather than delivered media.
+- The test harness is explicitly isolated from the default server, uses loopback plus temporary storage, and rejects fabricated successful database responses. The E2E is scoped to persistence/UI behavior and explicitly excludes real audio/model acceptance.
+- The log/data minimization intent is sound, but needs the executable schemas and assertions listed above.
+
+## Review disposition
+
+**Do not start implementation from this draft.** Resolve findings 1–4 and update the test vectors/contracts, then request a fresh cross-domain review of the revised SDD. No code or document changes were made by this reviewer.

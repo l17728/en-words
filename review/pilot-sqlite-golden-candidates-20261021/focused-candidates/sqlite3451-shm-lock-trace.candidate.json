@@ -1,0 +1,48 @@
+{
+  "fixture_group": "sqlite3451-shm-lock-trace",
+  "status": "NOT RUN",
+  "run_id": "pilot-vfs-1792547383974165783",
+  "sqlite": {
+    "parent_vfs": "unix",
+    "scope": "host VFS behavior characterization only",
+    "source_id": "2024-01-30 16:01:20 e876e51a0ed5c5b3126f52e532044363a014bc594cfefa87ffb5b82257cc467a",
+    "version": "3.45.1",
+    "version_number": "3045001",
+    "vfs_name": "pilot_vfs_trace_20261021"
+  },
+  "harness_sha256": "0848f1ec227870fee13acb9c6c97af69bdd0e08a1206e0dc5f730dd03bf4f849",
+  "harness_files": {
+    "pilot_golden_manifest_test.go": "a8488f9acbca2cfe9bec79dac5b7391771fc1275c85e7ade19e507e68b8698b1",
+    "pilot_vfs_trace_candidate_test.go": "c562397aa92b500dcd572fa4c71e95debc0e20b048dcd9005401564c8218aead",
+    "pilot_vfs_trace_linux.c": "aeead1475b510f20eadc2fc790f519ad2311a8094dc25c2ab7872052cb7a16d1",
+    "pilot_vfs_trace_linux.go": "5fbfcae17f9c5d2f93de6f106d872cf0ca9b84d8314a51496b3e3c155b324208"
+  },
+  "execution": {
+    "command": "go test -tags=pilot_e2e -run TestPinnedSQLiteRuntimeIdentity|TestPinnedVFSCallbackManifestIntegrityAndNotRunStatus|TestPilotVFSRuntimeCandidateGeneration|TestPilotTraceBufferOverflowSignal -count=1 -timeout=120s -v ./internal/pilotcontrol",
+    "runner_log": "focused-final.log",
+    "go_version": "go1.25.14",
+    "compiler": "gc",
+    "os": "linux",
+    "arch": "amd64",
+    "cgo_enabled": true,
+    "filesystem": "ext4",
+    "temp_root": "\u003cTEST_TEMP_ROOT\u003e"
+  },
+  "scenarios": [
+    {
+      "id": "SHM-LOCAL-LOCK-UNLOCK",
+      "status": "NOT RUN",
+      "reason": "scenario protocol generator is not implemented; no SHM outcome inferred"
+    },
+    {
+      "id": "SHM-CROSS-PROCESS-CONTEND",
+      "status": "NOT RUN",
+      "reason": "scenario protocol generator is not implemented; no SHM outcome inferred"
+    },
+    {
+      "id": "SHM-FINAL-UNMAP-REOPEN",
+      "status": "NOT RUN",
+      "reason": "scenario protocol generator is not implemented; no SHM outcome inferred"
+    }
+  ]
+}

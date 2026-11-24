@@ -1,0 +1,49 @@
+{
+  "fixture_group": "sqlite3451-pager-delete-trace",
+  "status": "NOT RUN",
+  "trace_overflowed": false,
+  "run_id": "pilot-vfs-runtime-candidate-v1",
+  "sqlite": {
+    "parent_vfs": "unix",
+    "scope": "host VFS behavior characterization only",
+    "source_id": "2024-01-30 16:01:20 e876e51a0ed5c5b3126f52e532044363a014bc594cfefa87ffb5b82257cc467a",
+    "version": "3.45.1",
+    "version_number": "3045001",
+    "vfs_name": "pilot_vfs_trace_20261021"
+  },
+  "harness_sha256": "6007847d95987675709aca9a5e2101bafcad23c5ec8a4d14579b969770878375",
+  "harness_files": {
+    "pilot_golden_manifest_test.go": "a8488f9acbca2cfe9bec79dac5b7391771fc1275c85e7ade19e507e68b8698b1",
+    "pilot_vfs_trace_candidate_test.go": "1d266448b28ec81f68b153d3a8b432cab59a1dd840eff9145650d978cddb274f",
+    "pilot_vfs_trace_linux.c": "077cf164c8119f99bd2710df9117020699470acaa466bce1edc163e94c80c6d1",
+    "pilot_vfs_trace_linux.go": "5fbfcae17f9c5d2f93de6f106d872cf0ca9b84d8314a51496b3e3c155b324208"
+  },
+  "execution": {
+    "command": "/tmp/en-words-pilot-acceptance-20261021T064845Z/go/bin/go test -tags=pilot_e2e -run TestPinnedSQLiteRuntimeIdentity|TestPinnedVFSCallbackManifestIntegrityAndNotRunStatus|TestPilotVFSRuntimeCandidateGeneration|TestPilotTraceBufferOverflowSignal -count=1 -timeout=120s -v ./internal/pilotcontrol",
+    "runner_log": "focused.log",
+    "go_version": "go1.25.14",
+    "compiler": "gc",
+    "os": "linux",
+    "arch": "amd64",
+    "cgo_enabled": true,
+    "filesystem": "ext4",
+    "temp_root": "\u003cTEST_TEMP_ROOT\u003e"
+  },
+  "scenarios": [
+    {
+      "id": "PAGER-EMPTY-OBSOLETE-RESERVED",
+      "status": "NOT RUN",
+      "reason": "pager/crash barrier scenario generator is not implemented"
+    },
+    {
+      "id": "PAGER-HOT-ROLLBACK-EXCLUSIVE",
+      "status": "NOT RUN",
+      "reason": "pager/crash barrier scenario generator is not implemented"
+    },
+    {
+      "id": "PAGER-COMMIT-EXCLUSIVE",
+      "status": "NOT RUN",
+      "reason": "pager/crash barrier scenario generator is not implemented"
+    }
+  ]
+}

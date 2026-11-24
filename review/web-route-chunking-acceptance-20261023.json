@@ -1,0 +1,1143 @@
+{
+  "schema": "en-words-route-chunk-acceptance-v1",
+  "measured_at": "2026-10-23T10:12:54.552Z",
+  "build": {
+    "command": "npm run build",
+    "node": "v25.2.1",
+    "vite": "8.2.2",
+    "seconds": 53.763,
+    "source_files": 125,
+    "source_sha256": "861c38a18f0d608f108c5954105f12803b0e725cc87c6ab9ea1cbc776e38553e",
+    "package_lock_sha256": "37bbcd595ef594ef8d6f94b2dcd7761f17fe498fe872869ebfac568fb226b7ca",
+    "verification_scope": "existing_dist_only_fresh_build_blocked",
+    "provenance": "retained prior successful build metadata"
+  },
+  "measurement": {
+    "mode": "explicit_route_manifest_closure",
+    "gzip": "Node zlib.gzipSync(level: 9), one compressed response per JS file, deduplicated closure",
+    "gzip_level": 9,
+    "entry": {
+      "key": "index.html",
+      "file": "assets/index-Da5OcP4J.js"
+    },
+    "routes": {
+      "/login": {
+        "manifest_key": "src/pages/Login.tsx",
+        "initial_dynamic_dependencies": [],
+        "baseline_gzip_bytes": 372348,
+        "reduction_percent": 33.87,
+        "files": [
+          {
+            "path": "assets/Input-CrTmYALy.js",
+            "raw_bytes": 3479,
+            "gzip_bytes": 1763,
+            "sha256": "6b553ed5d0373c6f4cbbe5eecc9203fef099ebff452fc738ef6602e0a2b9f410"
+          },
+          {
+            "path": "assets/PurePanel-CLkkRGbA.js",
+            "raw_bytes": 1194,
+            "gzip_bytes": 726,
+            "sha256": "ce6b37e4a203bdd8078f6651073b9c286e1ef873d0d2030895151951819e8706"
+          },
+          {
+            "path": "assets/SoundOutlined-DBVTWbBC.js",
+            "raw_bytes": 1317,
+            "gzip_bytes": 808,
+            "sha256": "789957eaa20938bc2ad2411a2e8f528bb5088eb7c2ccb712ca0fdb0afa0e0a1d"
+          },
+          {
+            "path": "assets/card-D9S8nKeQ.js",
+            "raw_bytes": 73983,
+            "gzip_bytes": 22759,
+            "sha256": "b73c0f6c27e83e10c52182e5bb909a669bf47606ef43a5c14127ad24387a9bfe"
+          },
+          {
+            "path": "assets/client-D3bsITl2.js",
+            "raw_bytes": 80344,
+            "gzip_bytes": 26386,
+            "sha256": "af0c2411f86949235a118f6f2526fe4e3a07440c1ca6498eea93ce4d2ddb8408"
+          },
+          {
+            "path": "assets/config-provider-B8V9qkvs.js",
+            "raw_bytes": 6531,
+            "gzip_bytes": 2648,
+            "sha256": "4c36cccda926f1a103f6ce411c2970734ec78fafc0dee08607e49ddae4a01d83"
+          },
+          {
+            "path": "assets/form-Bi1kicLx.js",
+            "raw_bytes": 22125,
+            "gzip_bytes": 8516,
+            "sha256": "0de3edb0e177b512c8e4f98bdf7af6745d6b1146bbf4d1a923f58bfff2cc8854"
+          },
+          {
+            "path": "assets/input-DIe2Itsu.js",
+            "raw_bytes": 12006,
+            "gzip_bytes": 5329,
+            "sha256": "fa61ab6756688674b4ab575120b0cde0a17b40f5c894575d52e217cd9e4d37ee"
+          },
+          {
+            "path": "assets/jsx-runtime-JtH8p0hS.js",
+            "raw_bytes": 399792,
+            "gzip_bytes": 130940,
+            "sha256": "ebbfbf5439309528de3f112e26198736dcda174f12498953345c489e34a43786"
+          },
+          {
+            "path": "assets/message-Dn_CDlty.js",
+            "raw_bytes": 25829,
+            "gzip_bytes": 9303,
+            "sha256": "a312752746a0790e77ba323594a714b9173ab5c2c243ae51b23f820a10e97348"
+          },
+          {
+            "path": "assets/rolldown-runtime-CbXtAM7H.js",
+            "raw_bytes": 589,
+            "gzip_bytes": 368,
+            "sha256": "bbf7c5086ae414dc3f33777e3eebf16ea8631325b8bb4690d25091c03567f31a"
+          },
+          {
+            "path": "assets/row-CAc795DN.js",
+            "raw_bytes": 2533,
+            "gzip_bytes": 1315,
+            "sha256": "0d63310c1d6b940e2a0a53cc4100b1b2158a8df9195268ff10e79b6f0ff4afa7"
+          },
+          {
+            "path": "assets/space-D0x1RG45.js",
+            "raw_bytes": 5082,
+            "gzip_bytes": 2083,
+            "sha256": "1246f580e02ca6112b08662c2ac1137457f4bb47ca8ef7a5c9229a103062889e"
+          },
+          {
+            "path": "assets/useBreakpoint-jE3LTu8g.js",
+            "raw_bytes": 1786,
+            "gzip_bytes": 847,
+            "sha256": "22350673cf3f36599e2eef16ebafc6d4c3c177edf7fe9ce4ed86903a19d8bc85"
+          },
+          {
+            "path": "assets/useForm-dBg5bj3k.js",
+            "raw_bytes": 5097,
+            "gzip_bytes": 2266,
+            "sha256": "ab34bde8d4f50a702edb7db7bf91a8b177e11f6f36d0e324468f8496c4b1034b"
+          },
+          {
+            "path": "assets/index-Da5OcP4J.js",
+            "raw_bytes": 80880,
+            "gzip_bytes": 28814,
+            "sha256": "ca578e8b8b311a39cc28c7f877f7f18dae8270bf691588132ef3e6a174cb8dfc"
+          },
+          {
+            "path": "assets/Login-CRDY6Xtb.js",
+            "raw_bytes": 2395,
+            "gzip_bytes": 1346,
+            "sha256": "26d61d3c94e1608b6b8e8797c13f520706fa7d4d2c9f6151dc44f6d6fba33d3c"
+          }
+        ],
+        "raw_bytes": 724962,
+        "gzip_bytes": 246217
+      },
+      "/books": {
+        "manifest_key": "src/pages/Books.tsx",
+        "initial_dynamic_dependencies": [],
+        "baseline_gzip_bytes": 372348,
+        "reduction_percent": 37.44,
+        "files": [
+          {
+            "path": "assets/PurePanel-CLkkRGbA.js",
+            "raw_bytes": 1194,
+            "gzip_bytes": 726,
+            "sha256": "ce6b37e4a203bdd8078f6651073b9c286e1ef873d0d2030895151951819e8706"
+          },
+          {
+            "path": "assets/card-D9S8nKeQ.js",
+            "raw_bytes": 73983,
+            "gzip_bytes": 22759,
+            "sha256": "b73c0f6c27e83e10c52182e5bb909a669bf47606ef43a5c14127ad24387a9bfe"
+          },
+          {
+            "path": "assets/client-D3bsITl2.js",
+            "raw_bytes": 80344,
+            "gzip_bytes": 26386,
+            "sha256": "af0c2411f86949235a118f6f2526fe4e3a07440c1ca6498eea93ce4d2ddb8408"
+          },
+          {
+            "path": "assets/config-provider-B8V9qkvs.js",
+            "raw_bytes": 6531,
+            "gzip_bytes": 2648,
+            "sha256": "4c36cccda926f1a103f6ce411c2970734ec78fafc0dee08607e49ddae4a01d83"
+          },
+          {
+            "path": "assets/exclusive-action-DrwO2h55.js",
+            "raw_bytes": 139,
+            "gzip_bytes": 121,
+            "sha256": "de5fe74813d98ed02b760cac73fea030217e0f9c560d80aa00866a533668af93"
+          },
+          {
+            "path": "assets/jsx-runtime-JtH8p0hS.js",
+            "raw_bytes": 399792,
+            "gzip_bytes": 130940,
+            "sha256": "ebbfbf5439309528de3f112e26198736dcda174f12498953345c489e34a43786"
+          },
+          {
+            "path": "assets/message-Dn_CDlty.js",
+            "raw_bytes": 25829,
+            "gzip_bytes": 9303,
+            "sha256": "a312752746a0790e77ba323594a714b9173ab5c2c243ae51b23f820a10e97348"
+          },
+          {
+            "path": "assets/rolldown-runtime-CbXtAM7H.js",
+            "raw_bytes": 589,
+            "gzip_bytes": 368,
+            "sha256": "bbf7c5086ae414dc3f33777e3eebf16ea8631325b8bb4690d25091c03567f31a"
+          },
+          {
+            "path": "assets/row-CAc795DN.js",
+            "raw_bytes": 2533,
+            "gzip_bytes": 1315,
+            "sha256": "0d63310c1d6b940e2a0a53cc4100b1b2158a8df9195268ff10e79b6f0ff4afa7"
+          },
+          {
+            "path": "assets/spin-jRliaDsO.js",
+            "raw_bytes": 7511,
+            "gzip_bytes": 3103,
+            "sha256": "30b4aaaca7504e50adadb3be4d21abcc12217fdef08f29e61743e09e57a264ee"
+          },
+          {
+            "path": "assets/tag-Dip_ujaY.js",
+            "raw_bytes": 8562,
+            "gzip_bytes": 3357,
+            "sha256": "66fd7f346f5c404a794d4a62be5b2c83e84acae9a7ff96d08fc883dce98d602a"
+          },
+          {
+            "path": "assets/useBreakpoint-jE3LTu8g.js",
+            "raw_bytes": 1786,
+            "gzip_bytes": 847,
+            "sha256": "22350673cf3f36599e2eef16ebafc6d4c3c177edf7fe9ce4ed86903a19d8bc85"
+          },
+          {
+            "path": "assets/index-Da5OcP4J.js",
+            "raw_bytes": 80880,
+            "gzip_bytes": 28814,
+            "sha256": "ca578e8b8b311a39cc28c7f877f7f18dae8270bf691588132ef3e6a174cb8dfc"
+          },
+          {
+            "path": "assets/Books-D-dasRc_.js",
+            "raw_bytes": 4734,
+            "gzip_bytes": 2260,
+            "sha256": "2a5124f5ab4a05e4d9fdbd8a3fd5af124585046bbd4b23ecda4c91289afa6fc2"
+          }
+        ],
+        "raw_bytes": 694407,
+        "gzip_bytes": 232947
+      },
+      "/dashboard": {
+        "manifest_key": "src/pages/Dashboard.tsx",
+        "initial_dynamic_dependencies": [
+          "src/feedback/FeedbackResults.tsx"
+        ],
+        "baseline_gzip_bytes": 372348,
+        "reduction_percent": 35.04,
+        "files": [
+          {
+            "path": "assets/Input-CrTmYALy.js",
+            "raw_bytes": 3479,
+            "gzip_bytes": 1763,
+            "sha256": "6b553ed5d0373c6f4cbbe5eecc9203fef099ebff452fc738ef6602e0a2b9f410"
+          },
+          {
+            "path": "assets/PurePanel-CLkkRGbA.js",
+            "raw_bytes": 1194,
+            "gzip_bytes": 726,
+            "sha256": "ce6b37e4a203bdd8078f6651073b9c286e1ef873d0d2030895151951819e8706"
+          },
+          {
+            "path": "assets/SoundOutlined-DBVTWbBC.js",
+            "raw_bytes": 1317,
+            "gzip_bytes": 808,
+            "sha256": "789957eaa20938bc2ad2411a2e8f528bb5088eb7c2ccb712ca0fdb0afa0e0a1d"
+          },
+          {
+            "path": "assets/card-D9S8nKeQ.js",
+            "raw_bytes": 73983,
+            "gzip_bytes": 22759,
+            "sha256": "b73c0f6c27e83e10c52182e5bb909a669bf47606ef43a5c14127ad24387a9bfe"
+          },
+          {
+            "path": "assets/client-D3bsITl2.js",
+            "raw_bytes": 80344,
+            "gzip_bytes": 26386,
+            "sha256": "af0c2411f86949235a118f6f2526fe4e3a07440c1ca6498eea93ce4d2ddb8408"
+          },
+          {
+            "path": "assets/config-provider-B8V9qkvs.js",
+            "raw_bytes": 6531,
+            "gzip_bytes": 2648,
+            "sha256": "4c36cccda926f1a103f6ce411c2970734ec78fafc0dee08607e49ddae4a01d83"
+          },
+          {
+            "path": "assets/exclusive-action-DrwO2h55.js",
+            "raw_bytes": 139,
+            "gzip_bytes": 121,
+            "sha256": "de5fe74813d98ed02b760cac73fea030217e0f9c560d80aa00866a533668af93"
+          },
+          {
+            "path": "assets/input-DIe2Itsu.js",
+            "raw_bytes": 12006,
+            "gzip_bytes": 5329,
+            "sha256": "fa61ab6756688674b4ab575120b0cde0a17b40f5c894575d52e217cd9e4d37ee"
+          },
+          {
+            "path": "assets/jsx-runtime-JtH8p0hS.js",
+            "raw_bytes": 399792,
+            "gzip_bytes": 130940,
+            "sha256": "ebbfbf5439309528de3f112e26198736dcda174f12498953345c489e34a43786"
+          },
+          {
+            "path": "assets/latest-read-Bhxv4qXL.js",
+            "raw_bytes": 554,
+            "gzip_bytes": 316,
+            "sha256": "e7ee76385a86bec8922c0a47d6c12b6fb4be19063e2337542cda7fc961a2bec3"
+          },
+          {
+            "path": "assets/message-Dn_CDlty.js",
+            "raw_bytes": 25829,
+            "gzip_bytes": 9303,
+            "sha256": "a312752746a0790e77ba323594a714b9173ab5c2c243ae51b23f820a10e97348"
+          },
+          {
+            "path": "assets/rolldown-runtime-CbXtAM7H.js",
+            "raw_bytes": 589,
+            "gzip_bytes": 368,
+            "sha256": "bbf7c5086ae414dc3f33777e3eebf16ea8631325b8bb4690d25091c03567f31a"
+          },
+          {
+            "path": "assets/space-D0x1RG45.js",
+            "raw_bytes": 5082,
+            "gzip_bytes": 2083,
+            "sha256": "1246f580e02ca6112b08662c2ac1137457f4bb47ca8ef7a5c9229a103062889e"
+          },
+          {
+            "path": "assets/useFeedback-1O9ZZSOJ.js",
+            "raw_bytes": 3965,
+            "gzip_bytes": 1787,
+            "sha256": "d6ba6c13a7efbc23ce987c740c2d86b7eda774a601c8e066546975796aad25e3"
+          },
+          {
+            "path": "assets/index-Da5OcP4J.js",
+            "raw_bytes": 80880,
+            "gzip_bytes": 28814,
+            "sha256": "ca578e8b8b311a39cc28c7f877f7f18dae8270bf691588132ef3e6a174cb8dfc"
+          },
+          {
+            "path": "assets/FeedbackResults-DTyXKGiO.js",
+            "raw_bytes": 3655,
+            "gzip_bytes": 1816,
+            "sha256": "b010b198b710c0be334d311f25f6c253ba15473f613e70f15300ab6e4fff90c4"
+          },
+          {
+            "path": "assets/Dashboard-G-MF64o6.js",
+            "raw_bytes": 14822,
+            "gzip_bytes": 5898,
+            "sha256": "3d4995358a7d7ecbc406f2d071863b890b8f3d4d63d867be836b40419043c3ae"
+          }
+        ],
+        "raw_bytes": 714161,
+        "gzip_bytes": 241865
+      },
+      "/placement/:bookId": {
+        "manifest_key": "src/pages/Placement.tsx",
+        "initial_dynamic_dependencies": [],
+        "baseline_gzip_bytes": 372348,
+        "reduction_percent": 44.44,
+        "files": [
+          {
+            "path": "assets/PurePanel-CLkkRGbA.js",
+            "raw_bytes": 1194,
+            "gzip_bytes": 726,
+            "sha256": "ce6b37e4a203bdd8078f6651073b9c286e1ef873d0d2030895151951819e8706"
+          },
+          {
+            "path": "assets/answer-flight-CJWva0IZ.js",
+            "raw_bytes": 338,
+            "gzip_bytes": 208,
+            "sha256": "242644c33f0894448db0959cde1ba99afb182d8892528fa6d29e71b8e51a6eb6"
+          },
+          {
+            "path": "assets/client-D3bsITl2.js",
+            "raw_bytes": 80344,
+            "gzip_bytes": 26386,
+            "sha256": "af0c2411f86949235a118f6f2526fe4e3a07440c1ca6498eea93ce4d2ddb8408"
+          },
+          {
+            "path": "assets/config-provider-B8V9qkvs.js",
+            "raw_bytes": 6531,
+            "gzip_bytes": 2648,
+            "sha256": "4c36cccda926f1a103f6ce411c2970734ec78fafc0dee08607e49ddae4a01d83"
+          },
+          {
+            "path": "assets/jsx-runtime-JtH8p0hS.js",
+            "raw_bytes": 399792,
+            "gzip_bytes": 130940,
+            "sha256": "ebbfbf5439309528de3f112e26198736dcda174f12498953345c489e34a43786"
+          },
+          {
+            "path": "assets/message-Dn_CDlty.js",
+            "raw_bytes": 25829,
+            "gzip_bytes": 9303,
+            "sha256": "a312752746a0790e77ba323594a714b9173ab5c2c243ae51b23f820a10e97348"
+          },
+          {
+            "path": "assets/rolldown-runtime-CbXtAM7H.js",
+            "raw_bytes": 589,
+            "gzip_bytes": 368,
+            "sha256": "bbf7c5086ae414dc3f33777e3eebf16ea8631325b8bb4690d25091c03567f31a"
+          },
+          {
+            "path": "assets/index-Da5OcP4J.js",
+            "raw_bytes": 80880,
+            "gzip_bytes": 28814,
+            "sha256": "ca578e8b8b311a39cc28c7f877f7f18dae8270bf691588132ef3e6a174cb8dfc"
+          },
+          {
+            "path": "assets/Placement-Cgdrbxoa.js",
+            "raw_bytes": 18575,
+            "gzip_bytes": 7494,
+            "sha256": "da786d17d61cda7a35c3d91669026bb858280a4201e8350ee43493487cf16b97"
+          }
+        ],
+        "raw_bytes": 614072,
+        "gzip_bytes": 206887
+      },
+      "/classroom/:lessonId": {
+        "manifest_key": "src/pages/Classroom.tsx",
+        "initial_dynamic_dependencies": [],
+        "baseline_gzip_bytes": 372348,
+        "reduction_percent": 37.9,
+        "files": [
+          {
+            "path": "assets/Input-CrTmYALy.js",
+            "raw_bytes": 3479,
+            "gzip_bytes": 1763,
+            "sha256": "6b553ed5d0373c6f4cbbe5eecc9203fef099ebff452fc738ef6602e0a2b9f410"
+          },
+          {
+            "path": "assets/PurePanel-CLkkRGbA.js",
+            "raw_bytes": 1194,
+            "gzip_bytes": 726,
+            "sha256": "ce6b37e4a203bdd8078f6651073b9c286e1ef873d0d2030895151951819e8706"
+          },
+          {
+            "path": "assets/answer-flight-CJWva0IZ.js",
+            "raw_bytes": 338,
+            "gzip_bytes": 208,
+            "sha256": "242644c33f0894448db0959cde1ba99afb182d8892528fa6d29e71b8e51a6eb6"
+          },
+          {
+            "path": "assets/client-D3bsITl2.js",
+            "raw_bytes": 80344,
+            "gzip_bytes": 26386,
+            "sha256": "af0c2411f86949235a118f6f2526fe4e3a07440c1ca6498eea93ce4d2ddb8408"
+          },
+          {
+            "path": "assets/config-provider-B8V9qkvs.js",
+            "raw_bytes": 6531,
+            "gzip_bytes": 2648,
+            "sha256": "4c36cccda926f1a103f6ce411c2970734ec78fafc0dee08607e49ddae4a01d83"
+          },
+          {
+            "path": "assets/input-DIe2Itsu.js",
+            "raw_bytes": 12006,
+            "gzip_bytes": 5329,
+            "sha256": "fa61ab6756688674b4ab575120b0cde0a17b40f5c894575d52e217cd9e4d37ee"
+          },
+          {
+            "path": "assets/jsx-runtime-JtH8p0hS.js",
+            "raw_bytes": 399792,
+            "gzip_bytes": 130940,
+            "sha256": "ebbfbf5439309528de3f112e26198736dcda174f12498953345c489e34a43786"
+          },
+          {
+            "path": "assets/message-Dn_CDlty.js",
+            "raw_bytes": 25829,
+            "gzip_bytes": 9303,
+            "sha256": "a312752746a0790e77ba323594a714b9173ab5c2c243ae51b23f820a10e97348"
+          },
+          {
+            "path": "assets/rolldown-runtime-CbXtAM7H.js",
+            "raw_bytes": 589,
+            "gzip_bytes": 368,
+            "sha256": "bbf7c5086ae414dc3f33777e3eebf16ea8631325b8bb4690d25091c03567f31a"
+          },
+          {
+            "path": "assets/space-D0x1RG45.js",
+            "raw_bytes": 5082,
+            "gzip_bytes": 2083,
+            "sha256": "1246f580e02ca6112b08662c2ac1137457f4bb47ca8ef7a5c9229a103062889e"
+          },
+          {
+            "path": "assets/spin-jRliaDsO.js",
+            "raw_bytes": 7511,
+            "gzip_bytes": 3103,
+            "sha256": "30b4aaaca7504e50adadb3be4d21abcc12217fdef08f29e61743e09e57a264ee"
+          },
+          {
+            "path": "assets/tag-Dip_ujaY.js",
+            "raw_bytes": 8562,
+            "gzip_bytes": 3357,
+            "sha256": "66fd7f346f5c404a794d4a62be5b2c83e84acae9a7ff96d08fc883dce98d602a"
+          },
+          {
+            "path": "assets/useFeedback-1O9ZZSOJ.js",
+            "raw_bytes": 3965,
+            "gzip_bytes": 1787,
+            "sha256": "d6ba6c13a7efbc23ce987c740c2d86b7eda774a601c8e066546975796aad25e3"
+          },
+          {
+            "path": "assets/index-Da5OcP4J.js",
+            "raw_bytes": 80880,
+            "gzip_bytes": 28814,
+            "sha256": "ca578e8b8b311a39cc28c7f877f7f18dae8270bf691588132ef3e6a174cb8dfc"
+          },
+          {
+            "path": "assets/FeedbackResults-DTyXKGiO.js",
+            "raw_bytes": 3655,
+            "gzip_bytes": 1816,
+            "sha256": "b010b198b710c0be334d311f25f6c253ba15473f613e70f15300ab6e4fff90c4"
+          },
+          {
+            "path": "assets/Classroom-yNlTKsnS.js",
+            "raw_bytes": 34958,
+            "gzip_bytes": 12585,
+            "sha256": "fe3b6375955c507280967d1541a4a0cbea566fe5e0638f456795851cb7d9fc95"
+          }
+        ],
+        "raw_bytes": 674715,
+        "gzip_bytes": 231216
+      },
+      "/classroom/:lessonId/voice-preflight": {
+        "manifest_key": "src/pages/VoicePreflight.tsx",
+        "initial_dynamic_dependencies": [],
+        "baseline_gzip_bytes": 372348,
+        "reduction_percent": 41.3,
+        "files": [
+          {
+            "path": "assets/PurePanel-CLkkRGbA.js",
+            "raw_bytes": 1194,
+            "gzip_bytes": 726,
+            "sha256": "ce6b37e4a203bdd8078f6651073b9c286e1ef873d0d2030895151951819e8706"
+          },
+          {
+            "path": "assets/card-D9S8nKeQ.js",
+            "raw_bytes": 73983,
+            "gzip_bytes": 22759,
+            "sha256": "b73c0f6c27e83e10c52182e5bb909a669bf47606ef43a5c14127ad24387a9bfe"
+          },
+          {
+            "path": "assets/client-D3bsITl2.js",
+            "raw_bytes": 80344,
+            "gzip_bytes": 26386,
+            "sha256": "af0c2411f86949235a118f6f2526fe4e3a07440c1ca6498eea93ce4d2ddb8408"
+          },
+          {
+            "path": "assets/config-provider-B8V9qkvs.js",
+            "raw_bytes": 6531,
+            "gzip_bytes": 2648,
+            "sha256": "4c36cccda926f1a103f6ce411c2970734ec78fafc0dee08607e49ddae4a01d83"
+          },
+          {
+            "path": "assets/jsx-runtime-JtH8p0hS.js",
+            "raw_bytes": 399792,
+            "gzip_bytes": 130940,
+            "sha256": "ebbfbf5439309528de3f112e26198736dcda174f12498953345c489e34a43786"
+          },
+          {
+            "path": "assets/rolldown-runtime-CbXtAM7H.js",
+            "raw_bytes": 589,
+            "gzip_bytes": 368,
+            "sha256": "bbf7c5086ae414dc3f33777e3eebf16ea8631325b8bb4690d25091c03567f31a"
+          },
+          {
+            "path": "assets/space-D0x1RG45.js",
+            "raw_bytes": 5082,
+            "gzip_bytes": 2083,
+            "sha256": "1246f580e02ca6112b08662c2ac1137457f4bb47ca8ef7a5c9229a103062889e"
+          },
+          {
+            "path": "assets/index-Da5OcP4J.js",
+            "raw_bytes": 80880,
+            "gzip_bytes": 28814,
+            "sha256": "ca578e8b8b311a39cc28c7f877f7f18dae8270bf691588132ef3e6a174cb8dfc"
+          },
+          {
+            "path": "assets/VoicePreflight-CZNC3GaZ.js",
+            "raw_bytes": 8777,
+            "gzip_bytes": 3857,
+            "sha256": "ff47e8067404d6e184b7067d058880a581b7dfe0c49aada3208898274c5d91c8"
+          }
+        ],
+        "raw_bytes": 657172,
+        "gzip_bytes": 218581
+      },
+      "/stats": {
+        "manifest_key": "src/pages/Stats.tsx",
+        "initial_dynamic_dependencies": [],
+        "baseline_gzip_bytes": 372348,
+        "reduction_percent": 15,
+        "files": [
+          {
+            "path": "assets/DownOutlined-OdVUJ3ZO.js",
+            "raw_bytes": 841,
+            "gzip_bytes": 578,
+            "sha256": "6c5c522ca65aa0e94be65430134910df83e97cc7d8f3cc6fbb1566d9c36367d1"
+          },
+          {
+            "path": "assets/Input-CrTmYALy.js",
+            "raw_bytes": 3479,
+            "gzip_bytes": 1763,
+            "sha256": "6b553ed5d0373c6f4cbbe5eecc9203fef099ebff452fc738ef6602e0a2b9f410"
+          },
+          {
+            "path": "assets/PurePanel-CLkkRGbA.js",
+            "raw_bytes": 1194,
+            "gzip_bytes": 726,
+            "sha256": "ce6b37e4a203bdd8078f6651073b9c286e1ef873d0d2030895151951819e8706"
+          },
+          {
+            "path": "assets/card-D9S8nKeQ.js",
+            "raw_bytes": 73983,
+            "gzip_bytes": 22759,
+            "sha256": "b73c0f6c27e83e10c52182e5bb909a669bf47606ef43a5c14127ad24387a9bfe"
+          },
+          {
+            "path": "assets/client-D3bsITl2.js",
+            "raw_bytes": 80344,
+            "gzip_bytes": 26386,
+            "sha256": "af0c2411f86949235a118f6f2526fe4e3a07440c1ca6498eea93ce4d2ddb8408"
+          },
+          {
+            "path": "assets/config-provider-B8V9qkvs.js",
+            "raw_bytes": 6531,
+            "gzip_bytes": 2648,
+            "sha256": "4c36cccda926f1a103f6ce411c2970734ec78fafc0dee08607e49ddae4a01d83"
+          },
+          {
+            "path": "assets/jsx-runtime-JtH8p0hS.js",
+            "raw_bytes": 399792,
+            "gzip_bytes": 130940,
+            "sha256": "ebbfbf5439309528de3f112e26198736dcda174f12498953345c489e34a43786"
+          },
+          {
+            "path": "assets/pagination-pvboH8QL.js",
+            "raw_bytes": 98453,
+            "gzip_bytes": 31460,
+            "sha256": "983a2b86e90396b9062ec1deb438c3e970dd8ffde151206dd0d1f393e070c968"
+          },
+          {
+            "path": "assets/rolldown-runtime-CbXtAM7H.js",
+            "raw_bytes": 589,
+            "gzip_bytes": 368,
+            "sha256": "bbf7c5086ae414dc3f33777e3eebf16ea8631325b8bb4690d25091c03567f31a"
+          },
+          {
+            "path": "assets/space-D0x1RG45.js",
+            "raw_bytes": 5082,
+            "gzip_bytes": 2083,
+            "sha256": "1246f580e02ca6112b08662c2ac1137457f4bb47ca8ef7a5c9229a103062889e"
+          },
+          {
+            "path": "assets/spin-jRliaDsO.js",
+            "raw_bytes": 7511,
+            "gzip_bytes": 3103,
+            "sha256": "30b4aaaca7504e50adadb3be4d21abcc12217fdef08f29e61743e09e57a264ee"
+          },
+          {
+            "path": "assets/useBreakpoint-jE3LTu8g.js",
+            "raw_bytes": 1786,
+            "gzip_bytes": 847,
+            "sha256": "22350673cf3f36599e2eef16ebafc6d4c3c177edf7fe9ce4ed86903a19d8bc85"
+          },
+          {
+            "path": "assets/useForm-dBg5bj3k.js",
+            "raw_bytes": 5097,
+            "gzip_bytes": 2266,
+            "sha256": "ab34bde8d4f50a702edb7db7bf91a8b177e11f6f36d0e324468f8496c4b1034b"
+          },
+          {
+            "path": "assets/index-Da5OcP4J.js",
+            "raw_bytes": 80880,
+            "gzip_bytes": 28814,
+            "sha256": "ca578e8b8b311a39cc28c7f877f7f18dae8270bf691588132ef3e6a174cb8dfc"
+          },
+          {
+            "path": "assets/Stats-gs2ggVnO.js",
+            "raw_bytes": 201327,
+            "gzip_bytes": 61763,
+            "sha256": "f2260824370c3be556a14333d7700a85414fab90008bef56cdbffc8e77728445"
+          }
+        ],
+        "raw_bytes": 966889,
+        "gzip_bytes": 316504
+      },
+      "/admin": {
+        "manifest_key": "src/pages/Admin.tsx",
+        "initial_dynamic_dependencies": [],
+        "baseline_gzip_bytes": 372348,
+        "reduction_percent": 22.76,
+        "files": [
+          {
+            "path": "assets/DownOutlined-OdVUJ3ZO.js",
+            "raw_bytes": 841,
+            "gzip_bytes": 578,
+            "sha256": "6c5c522ca65aa0e94be65430134910df83e97cc7d8f3cc6fbb1566d9c36367d1"
+          },
+          {
+            "path": "assets/Input-CrTmYALy.js",
+            "raw_bytes": 3479,
+            "gzip_bytes": 1763,
+            "sha256": "6b553ed5d0373c6f4cbbe5eecc9203fef099ebff452fc738ef6602e0a2b9f410"
+          },
+          {
+            "path": "assets/PurePanel-CLkkRGbA.js",
+            "raw_bytes": 1194,
+            "gzip_bytes": 726,
+            "sha256": "ce6b37e4a203bdd8078f6651073b9c286e1ef873d0d2030895151951819e8706"
+          },
+          {
+            "path": "assets/card-D9S8nKeQ.js",
+            "raw_bytes": 73983,
+            "gzip_bytes": 22759,
+            "sha256": "b73c0f6c27e83e10c52182e5bb909a669bf47606ef43a5c14127ad24387a9bfe"
+          },
+          {
+            "path": "assets/client-D3bsITl2.js",
+            "raw_bytes": 80344,
+            "gzip_bytes": 26386,
+            "sha256": "af0c2411f86949235a118f6f2526fe4e3a07440c1ca6498eea93ce4d2ddb8408"
+          },
+          {
+            "path": "assets/config-provider-B8V9qkvs.js",
+            "raw_bytes": 6531,
+            "gzip_bytes": 2648,
+            "sha256": "4c36cccda926f1a103f6ce411c2970734ec78fafc0dee08607e49ddae4a01d83"
+          },
+          {
+            "path": "assets/exclusive-action-DrwO2h55.js",
+            "raw_bytes": 139,
+            "gzip_bytes": 121,
+            "sha256": "de5fe74813d98ed02b760cac73fea030217e0f9c560d80aa00866a533668af93"
+          },
+          {
+            "path": "assets/form-Bi1kicLx.js",
+            "raw_bytes": 22125,
+            "gzip_bytes": 8516,
+            "sha256": "0de3edb0e177b512c8e4f98bdf7af6745d6b1146bbf4d1a923f58bfff2cc8854"
+          },
+          {
+            "path": "assets/input-DIe2Itsu.js",
+            "raw_bytes": 12006,
+            "gzip_bytes": 5329,
+            "sha256": "fa61ab6756688674b4ab575120b0cde0a17b40f5c894575d52e217cd9e4d37ee"
+          },
+          {
+            "path": "assets/jsx-runtime-JtH8p0hS.js",
+            "raw_bytes": 399792,
+            "gzip_bytes": 130940,
+            "sha256": "ebbfbf5439309528de3f112e26198736dcda174f12498953345c489e34a43786"
+          },
+          {
+            "path": "assets/latest-read-Bhxv4qXL.js",
+            "raw_bytes": 554,
+            "gzip_bytes": 316,
+            "sha256": "e7ee76385a86bec8922c0a47d6c12b6fb4be19063e2337542cda7fc961a2bec3"
+          },
+          {
+            "path": "assets/message-Dn_CDlty.js",
+            "raw_bytes": 25829,
+            "gzip_bytes": 9303,
+            "sha256": "a312752746a0790e77ba323594a714b9173ab5c2c243ae51b23f820a10e97348"
+          },
+          {
+            "path": "assets/pagination-pvboH8QL.js",
+            "raw_bytes": 98453,
+            "gzip_bytes": 31460,
+            "sha256": "983a2b86e90396b9062ec1deb438c3e970dd8ffde151206dd0d1f393e070c968"
+          },
+          {
+            "path": "assets/rolldown-runtime-CbXtAM7H.js",
+            "raw_bytes": 589,
+            "gzip_bytes": 368,
+            "sha256": "bbf7c5086ae414dc3f33777e3eebf16ea8631325b8bb4690d25091c03567f31a"
+          },
+          {
+            "path": "assets/row-CAc795DN.js",
+            "raw_bytes": 2533,
+            "gzip_bytes": 1315,
+            "sha256": "0d63310c1d6b940e2a0a53cc4100b1b2158a8df9195268ff10e79b6f0ff4afa7"
+          },
+          {
+            "path": "assets/space-D0x1RG45.js",
+            "raw_bytes": 5082,
+            "gzip_bytes": 2083,
+            "sha256": "1246f580e02ca6112b08662c2ac1137457f4bb47ca8ef7a5c9229a103062889e"
+          },
+          {
+            "path": "assets/spin-jRliaDsO.js",
+            "raw_bytes": 7511,
+            "gzip_bytes": 3103,
+            "sha256": "30b4aaaca7504e50adadb3be4d21abcc12217fdef08f29e61743e09e57a264ee"
+          },
+          {
+            "path": "assets/useBreakpoint-jE3LTu8g.js",
+            "raw_bytes": 1786,
+            "gzip_bytes": 847,
+            "sha256": "22350673cf3f36599e2eef16ebafc6d4c3c177edf7fe9ce4ed86903a19d8bc85"
+          },
+          {
+            "path": "assets/useForm-dBg5bj3k.js",
+            "raw_bytes": 5097,
+            "gzip_bytes": 2266,
+            "sha256": "ab34bde8d4f50a702edb7db7bf91a8b177e11f6f36d0e324468f8496c4b1034b"
+          },
+          {
+            "path": "assets/index-Da5OcP4J.js",
+            "raw_bytes": 80880,
+            "gzip_bytes": 28814,
+            "sha256": "ca578e8b8b311a39cc28c7f877f7f18dae8270bf691588132ef3e6a174cb8dfc"
+          },
+          {
+            "path": "assets/Admin-BIaHHpAj.js",
+            "raw_bytes": 21266,
+            "gzip_bytes": 7958,
+            "sha256": "dd9fb4017422866ae616ae40c81506d2d4fdc0bd4ef6a94b5bfb4b1fa70d08da"
+          }
+        ],
+        "raw_bytes": 850014,
+        "gzip_bytes": 287599
+      },
+      "/settings": {
+        "manifest_key": "src/pages/Settings.tsx",
+        "initial_dynamic_dependencies": [],
+        "baseline_gzip_bytes": 372348,
+        "reduction_percent": 32.87,
+        "files": [
+          {
+            "path": "assets/DownOutlined-OdVUJ3ZO.js",
+            "raw_bytes": 841,
+            "gzip_bytes": 578,
+            "sha256": "6c5c522ca65aa0e94be65430134910df83e97cc7d8f3cc6fbb1566d9c36367d1"
+          },
+          {
+            "path": "assets/PurePanel-CLkkRGbA.js",
+            "raw_bytes": 1194,
+            "gzip_bytes": 726,
+            "sha256": "ce6b37e4a203bdd8078f6651073b9c286e1ef873d0d2030895151951819e8706"
+          },
+          {
+            "path": "assets/card-D9S8nKeQ.js",
+            "raw_bytes": 73983,
+            "gzip_bytes": 22759,
+            "sha256": "b73c0f6c27e83e10c52182e5bb909a669bf47606ef43a5c14127ad24387a9bfe"
+          },
+          {
+            "path": "assets/client-D3bsITl2.js",
+            "raw_bytes": 80344,
+            "gzip_bytes": 26386,
+            "sha256": "af0c2411f86949235a118f6f2526fe4e3a07440c1ca6498eea93ce4d2ddb8408"
+          },
+          {
+            "path": "assets/config-provider-B8V9qkvs.js",
+            "raw_bytes": 6531,
+            "gzip_bytes": 2648,
+            "sha256": "4c36cccda926f1a103f6ce411c2970734ec78fafc0dee08607e49ddae4a01d83"
+          },
+          {
+            "path": "assets/form-Bi1kicLx.js",
+            "raw_bytes": 22125,
+            "gzip_bytes": 8516,
+            "sha256": "0de3edb0e177b512c8e4f98bdf7af6745d6b1146bbf4d1a923f58bfff2cc8854"
+          },
+          {
+            "path": "assets/jsx-runtime-JtH8p0hS.js",
+            "raw_bytes": 399792,
+            "gzip_bytes": 130940,
+            "sha256": "ebbfbf5439309528de3f112e26198736dcda174f12498953345c489e34a43786"
+          },
+          {
+            "path": "assets/message-Dn_CDlty.js",
+            "raw_bytes": 25829,
+            "gzip_bytes": 9303,
+            "sha256": "a312752746a0790e77ba323594a714b9173ab5c2c243ae51b23f820a10e97348"
+          },
+          {
+            "path": "assets/rolldown-runtime-CbXtAM7H.js",
+            "raw_bytes": 589,
+            "gzip_bytes": 368,
+            "sha256": "bbf7c5086ae414dc3f33777e3eebf16ea8631325b8bb4690d25091c03567f31a"
+          },
+          {
+            "path": "assets/row-CAc795DN.js",
+            "raw_bytes": 2533,
+            "gzip_bytes": 1315,
+            "sha256": "0d63310c1d6b940e2a0a53cc4100b1b2158a8df9195268ff10e79b6f0ff4afa7"
+          },
+          {
+            "path": "assets/space-D0x1RG45.js",
+            "raw_bytes": 5082,
+            "gzip_bytes": 2083,
+            "sha256": "1246f580e02ca6112b08662c2ac1137457f4bb47ca8ef7a5c9229a103062889e"
+          },
+          {
+            "path": "assets/spin-jRliaDsO.js",
+            "raw_bytes": 7511,
+            "gzip_bytes": 3103,
+            "sha256": "30b4aaaca7504e50adadb3be4d21abcc12217fdef08f29e61743e09e57a264ee"
+          },
+          {
+            "path": "assets/useBreakpoint-jE3LTu8g.js",
+            "raw_bytes": 1786,
+            "gzip_bytes": 847,
+            "sha256": "22350673cf3f36599e2eef16ebafc6d4c3c177edf7fe9ce4ed86903a19d8bc85"
+          },
+          {
+            "path": "assets/useForm-dBg5bj3k.js",
+            "raw_bytes": 5097,
+            "gzip_bytes": 2266,
+            "sha256": "ab34bde8d4f50a702edb7db7bf91a8b177e11f6f36d0e324468f8496c4b1034b"
+          },
+          {
+            "path": "assets/index-Da5OcP4J.js",
+            "raw_bytes": 80880,
+            "gzip_bytes": 28814,
+            "sha256": "ca578e8b8b311a39cc28c7f877f7f18dae8270bf691588132ef3e6a174cb8dfc"
+          },
+          {
+            "path": "assets/Settings-ux91WxuL.js",
+            "raw_bytes": 24615,
+            "gzip_bytes": 9291,
+            "sha256": "8ab8c39a7ea72422f2f4a71b528381fe89595172d64092d57eb78733f341a8f6"
+          }
+        ],
+        "raw_bytes": 738732,
+        "gzip_bytes": 249943
+      }
+    },
+    "javascript_chunks": [
+      {
+        "manifest_key": "_DownOutlined-OdVUJ3ZO.js",
+        "path": "assets/DownOutlined-OdVUJ3ZO.js",
+        "raw_bytes": 841,
+        "sha256": "6c5c522ca65aa0e94be65430134910df83e97cc7d8f3cc6fbb1566d9c36367d1"
+      },
+      {
+        "manifest_key": "_Input-CrTmYALy.js",
+        "path": "assets/Input-CrTmYALy.js",
+        "raw_bytes": 3479,
+        "sha256": "6b553ed5d0373c6f4cbbe5eecc9203fef099ebff452fc738ef6602e0a2b9f410"
+      },
+      {
+        "manifest_key": "_PurePanel-CLkkRGbA.js",
+        "path": "assets/PurePanel-CLkkRGbA.js",
+        "raw_bytes": 1194,
+        "sha256": "ce6b37e4a203bdd8078f6651073b9c286e1ef873d0d2030895151951819e8706"
+      },
+      {
+        "manifest_key": "_SoundOutlined-DBVTWbBC.js",
+        "path": "assets/SoundOutlined-DBVTWbBC.js",
+        "raw_bytes": 1317,
+        "sha256": "789957eaa20938bc2ad2411a2e8f528bb5088eb7c2ccb712ca0fdb0afa0e0a1d"
+      },
+      {
+        "manifest_key": "_answer-flight-CJWva0IZ.js",
+        "path": "assets/answer-flight-CJWva0IZ.js",
+        "raw_bytes": 338,
+        "sha256": "242644c33f0894448db0959cde1ba99afb182d8892528fa6d29e71b8e51a6eb6"
+      },
+      {
+        "manifest_key": "_card-D9S8nKeQ.js",
+        "path": "assets/card-D9S8nKeQ.js",
+        "raw_bytes": 73983,
+        "sha256": "b73c0f6c27e83e10c52182e5bb909a669bf47606ef43a5c14127ad24387a9bfe"
+      },
+      {
+        "manifest_key": "_client-D3bsITl2.js",
+        "path": "assets/client-D3bsITl2.js",
+        "raw_bytes": 80344,
+        "sha256": "af0c2411f86949235a118f6f2526fe4e3a07440c1ca6498eea93ce4d2ddb8408"
+      },
+      {
+        "manifest_key": "_config-provider-B8V9qkvs.js",
+        "path": "assets/config-provider-B8V9qkvs.js",
+        "raw_bytes": 6531,
+        "sha256": "4c36cccda926f1a103f6ce411c2970734ec78fafc0dee08607e49ddae4a01d83"
+      },
+      {
+        "manifest_key": "_exclusive-action-DrwO2h55.js",
+        "path": "assets/exclusive-action-DrwO2h55.js",
+        "raw_bytes": 139,
+        "sha256": "de5fe74813d98ed02b760cac73fea030217e0f9c560d80aa00866a533668af93"
+      },
+      {
+        "manifest_key": "_form-Bi1kicLx.js",
+        "path": "assets/form-Bi1kicLx.js",
+        "raw_bytes": 22125,
+        "sha256": "0de3edb0e177b512c8e4f98bdf7af6745d6b1146bbf4d1a923f58bfff2cc8854"
+      },
+      {
+        "manifest_key": "_input-DIe2Itsu.js",
+        "path": "assets/input-DIe2Itsu.js",
+        "raw_bytes": 12006,
+        "sha256": "fa61ab6756688674b4ab575120b0cde0a17b40f5c894575d52e217cd9e4d37ee"
+      },
+      {
+        "manifest_key": "_jsx-runtime-JtH8p0hS.js",
+        "path": "assets/jsx-runtime-JtH8p0hS.js",
+        "raw_bytes": 399792,
+        "sha256": "ebbfbf5439309528de3f112e26198736dcda174f12498953345c489e34a43786"
+      },
+      {
+        "manifest_key": "_latest-read-Bhxv4qXL.js",
+        "path": "assets/latest-read-Bhxv4qXL.js",
+        "raw_bytes": 554,
+        "sha256": "e7ee76385a86bec8922c0a47d6c12b6fb4be19063e2337542cda7fc961a2bec3"
+      },
+      {
+        "manifest_key": "_message-Dn_CDlty.js",
+        "path": "assets/message-Dn_CDlty.js",
+        "raw_bytes": 25829,
+        "sha256": "a312752746a0790e77ba323594a714b9173ab5c2c243ae51b23f820a10e97348"
+      },
+      {
+        "manifest_key": "_pagination-pvboH8QL.js",
+        "path": "assets/pagination-pvboH8QL.js",
+        "raw_bytes": 98453,
+        "sha256": "983a2b86e90396b9062ec1deb438c3e970dd8ffde151206dd0d1f393e070c968"
+      },
+      {
+        "manifest_key": "_rolldown-runtime-CbXtAM7H.js",
+        "path": "assets/rolldown-runtime-CbXtAM7H.js",
+        "raw_bytes": 589,
+        "sha256": "bbf7c5086ae414dc3f33777e3eebf16ea8631325b8bb4690d25091c03567f31a"
+      },
+      {
+        "manifest_key": "_row-CAc795DN.js",
+        "path": "assets/row-CAc795DN.js",
+        "raw_bytes": 2533,
+        "sha256": "0d63310c1d6b940e2a0a53cc4100b1b2158a8df9195268ff10e79b6f0ff4afa7"
+      },
+      {
+        "manifest_key": "_space-D0x1RG45.js",
+        "path": "assets/space-D0x1RG45.js",
+        "raw_bytes": 5082,
+        "sha256": "1246f580e02ca6112b08662c2ac1137457f4bb47ca8ef7a5c9229a103062889e"
+      },
+      {
+        "manifest_key": "_spin-jRliaDsO.js",
+        "path": "assets/spin-jRliaDsO.js",
+        "raw_bytes": 7511,
+        "sha256": "30b4aaaca7504e50adadb3be4d21abcc12217fdef08f29e61743e09e57a264ee"
+      },
+      {
+        "manifest_key": "_tag-Dip_ujaY.js",
+        "path": "assets/tag-Dip_ujaY.js",
+        "raw_bytes": 8562,
+        "sha256": "66fd7f346f5c404a794d4a62be5b2c83e84acae9a7ff96d08fc883dce98d602a"
+      },
+      {
+        "manifest_key": "_useBreakpoint-jE3LTu8g.js",
+        "path": "assets/useBreakpoint-jE3LTu8g.js",
+        "raw_bytes": 1786,
+        "sha256": "22350673cf3f36599e2eef16ebafc6d4c3c177edf7fe9ce4ed86903a19d8bc85"
+      },
+      {
+        "manifest_key": "_useFeedback-1O9ZZSOJ.js",
+        "path": "assets/useFeedback-1O9ZZSOJ.js",
+        "raw_bytes": 3965,
+        "sha256": "d6ba6c13a7efbc23ce987c740c2d86b7eda774a601c8e066546975796aad25e3"
+      },
+      {
+        "manifest_key": "_useForm-dBg5bj3k.js",
+        "path": "assets/useForm-dBg5bj3k.js",
+        "raw_bytes": 5097,
+        "sha256": "ab34bde8d4f50a702edb7db7bf91a8b177e11f6f36d0e324468f8496c4b1034b"
+      },
+      {
+        "manifest_key": "index.html",
+        "path": "assets/index-Da5OcP4J.js",
+        "raw_bytes": 80880,
+        "sha256": "ca578e8b8b311a39cc28c7f877f7f18dae8270bf691588132ef3e6a174cb8dfc"
+      },
+      {
+        "manifest_key": "src/feedback/FeedbackResults.tsx",
+        "path": "assets/FeedbackResults-DTyXKGiO.js",
+        "raw_bytes": 3655,
+        "sha256": "b010b198b710c0be334d311f25f6c253ba15473f613e70f15300ab6e4fff90c4"
+      },
+      {
+        "manifest_key": "src/pages/Admin.tsx",
+        "path": "assets/Admin-BIaHHpAj.js",
+        "raw_bytes": 21266,
+        "sha256": "dd9fb4017422866ae616ae40c81506d2d4fdc0bd4ef6a94b5bfb4b1fa70d08da"
+      },
+      {
+        "manifest_key": "src/pages/Books.tsx",
+        "path": "assets/Books-D-dasRc_.js",
+        "raw_bytes": 4734,
+        "sha256": "2a5124f5ab4a05e4d9fdbd8a3fd5af124585046bbd4b23ecda4c91289afa6fc2"
+      },
+      {
+        "manifest_key": "src/pages/Classroom.tsx",
+        "path": "assets/Classroom-yNlTKsnS.js",
+        "raw_bytes": 34958,
+        "sha256": "fe3b6375955c507280967d1541a4a0cbea566fe5e0638f456795851cb7d9fc95"
+      },
+      {
+        "manifest_key": "src/pages/Dashboard.tsx",
+        "path": "assets/Dashboard-G-MF64o6.js",
+        "raw_bytes": 14822,
+        "sha256": "3d4995358a7d7ecbc406f2d071863b890b8f3d4d63d867be836b40419043c3ae"
+      },
+      {
+        "manifest_key": "src/pages/Login.tsx",
+        "path": "assets/Login-CRDY6Xtb.js",
+        "raw_bytes": 2395,
+        "sha256": "26d61d3c94e1608b6b8e8797c13f520706fa7d4d2c9f6151dc44f6d6fba33d3c"
+      },
+      {
+        "manifest_key": "src/pages/Placement.tsx",
+        "path": "assets/Placement-Cgdrbxoa.js",
+        "raw_bytes": 18575,
+        "sha256": "da786d17d61cda7a35c3d91669026bb858280a4201e8350ee43493487cf16b97"
+      },
+      {
+        "manifest_key": "src/pages/Settings.tsx",
+        "path": "assets/Settings-ux91WxuL.js",
+        "raw_bytes": 24615,
+        "sha256": "8ab8c39a7ea72422f2f4a71b528381fe89595172d64092d57eb78733f341a8f6"
+      },
+      {
+        "manifest_key": "src/pages/Stats.tsx",
+        "path": "assets/Stats-gs2ggVnO.js",
+        "raw_bytes": 201327,
+        "sha256": "f2260824370c3be556a14333d7700a85414fab90008bef56cdbffc8e77728445"
+      },
+      {
+        "manifest_key": "src/pages/VoicePreflight.tsx",
+        "path": "assets/VoicePreflight-CZNC3GaZ.js",
+        "raw_bytes": 8777,
+        "sha256": "ff47e8067404d6e184b7067d058880a581b7dfe0c49aada3208898274c5d91c8"
+      }
+    ]
+  },
+  "result": "PASS",
+  "violations": [],
+  "final_build_attempt": {
+    "command": "npm run build",
+    "exit_code": 1,
+    "elapsed_seconds": 580.4983862,
+    "termination": "owned_process_tree_terminated_after_abnormally_slow_tsc_by_parent_instruction",
+    "vite_started": false,
+    "status": "aborted"
+  },
+  "checker_source": {
+    "source_files": 125,
+    "source_sha256": "25de4907763c0be81a66470133e938272ddeb53a62f897b587121a2909219517",
+    "provenance": "current sources at checker execution, not proof of a new successful build"
+  }
+}

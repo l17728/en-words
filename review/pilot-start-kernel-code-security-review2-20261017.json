@@ -1,0 +1,80 @@
+{
+  "review_id": "pilot-start-kernel-code-security-review2-20261017",
+  "date": "2026-10-17",
+  "reviewer_domain": "security",
+  "target": [
+    "docs/41-试点课堂Start持久迁移内核SDD.md §108",
+    "server/internal/store/pilot_start_sidecar.go"
+  ],
+  "review_type": "read-only design disposition and source review",
+  "compared_against": "review/pilot-start-kernel-code-security-review-20261017.json",
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "blocked_pending_supervisor_integration_restart_rule_and_result_class_validator_fix",
+  "summary": "§108 now closes the principal capacity finding at the policy level: in-memory degraded is insufficient; durable catalog quarantine is required before releasing the case lock; catalog failure is global fail-closed; startup checks quarantine before DB/sidecar open; quarantined cases cannot accept new commands or reset the chain. It also correctly requires tool_started without tool_result to recover pending_unknown. Implementation remains blocked because no supervisor/catalog implementation is present in the reviewed store source, Windows ACL and directory durability are still explicit integration gates, and the path-based helper does not consume an OpenVerified handle. New residuals: the crash/restart behavior after catalog quarantine persistence fails is unspecified, and the current validator allows terminal_failed to carry reserved commit_unknown/rollback_proven result classes in some phases.",
+  "prior_finding_dispositions": [
+    {
+      "finding_id": "PSK-SC-108-01",
+      "disposition": "closed_in_sdd_policy_only",
+      "evidence": "docs/41 §108:114 explicitly rejects in-memory degraded as authorization state, requires durable catalog quarantine before lifecycle-lock release, global fail-closed on catalog write/Sync failure, and startup quarantine validation before DB/sidecar open. No catalog/supervisor implementation was found in server/internal/store; the helper remains memory-only at lines 189-192."
+    },
+    {
+      "finding_id": "PSK-SC-108-02",
+      "disposition": "open_implementation_integration_gate",
+      "evidence": "pilot_start_sidecar.go lines 94-115 performs Lstat then a separate pathname OpenFile and post-open type/mode check, without verified-handle input/file-ID comparison."
+    },
+    {
+      "finding_id": "PSK-SC-108-03",
+      "disposition": "open_mandatory_windows_integration_gate",
+      "evidence": "§108:114 marks Windows ACL verification outstanding; pilotSidecarModePrivate returns true on Windows at lines 136-140."
+    },
+    {
+      "finding_id": "PSK-SC-108-04",
+      "disposition": "open_mandatory_windows_integration_gate",
+      "evidence": "§108:114 marks Windows parent-directory durability outstanding; syncPilotSidecarParent is a Windows no-op at lines 143-155."
+    },
+    {
+      "finding_id": "PSK-SC-108-05",
+      "disposition": "caller_contract_remains_unenforced_by_api",
+      "evidence": "§108:114 restricts creation to supervisor-verified new cases, but createPilotStartSidecar still accepts only path/key at lines 80-88."
+    },
+    {
+      "finding_id": "PSK-SC-108-tool-start-unknown",
+      "disposition": "policy_closed_code_partially_mismatched",
+      "evidence": "§108:116 requires pending_unknown without tool_result; nextPilotStartPhase excludes phases 3/5 from terminal_failed (lines 366-377,392-396). However validatePilotStartEvent at lines 327-329 permits terminal_failed with result_class commit_unknown or rollback_proven."
+    }
+  ],
+  "findings": [
+    {
+      "finding_id": "PSK-SC-108-R2-01",
+      "severity": "P1",
+      "status": "blocking",
+      "title": "Crash after failed durable quarantine write has no restart disposition",
+      "evidence": "§108:114 requires global fail-closed and lock retention while alive if catalog write/Sync fails, but startup only checks persisted quarantine state. A zero-byte failed catalog append can leave the old valid chain with no quarantine marker, so restart cannot infer that the capacity-triggered quarantine attempt failed.",
+      "required_action": "Define a durable independent recovery marker or conservative startup/manual-review rule for this uncertain condition; add crash/restart acceptance proving the case cannot reopen as healthy after quarantine persistence failed.",
+      "disposition": "block_until_policy_and_acceptance_defined"
+    },
+    {
+      "finding_id": "PSK-SC-108-R2-02",
+      "severity": "P1",
+      "status": "blocking",
+      "title": "terminal_failed accepts reserved commit_unknown/rollback_proven result classes",
+      "evidence": "pilot_start_sidecar.go:327-329 checks valid result class and excludes only ok for terminal_failed. Its transition function permits terminal_failed in phases 1,2,4,6,7,13,14 at lines 392-393, so reserved result classes can pass before their matching event transitions.",
+      "required_action": "Explicitly reject result_class commit_unknown and rollback_proven for terminal_failed; only matching event types may carry them, with negative event validation cases.",
+      "disposition": "block_until_validator_conforms_to_sdd"
+    }
+  ],
+  "remaining_blocker_count": 2,
+  "remaining_conditions": [
+    "Implement catalog-backed quarantine, startup pre-open authorization, and coordinator restart integration.",
+    "Define crash/restart behavior after quarantine append/Sync failure with no durable marker.",
+    "Implement OpenVerified identity/link checks and new-case-only create authorization in the supervisor caller path.",
+    "Complete Windows DACL and parent-directory durability integration.",
+    "Reject reserved result classes on terminal_failed in code."
+  ],
+  "limitations": [
+    "No tests or runtime validation were run.",
+    "No supervisor, catalog, filesystem, ACL, durability, path-race, or restart behavior was executed.",
+    "The reviewed sidecar helper is pilot_e2e build-tagged; no claim is made about production-route reachability."
+  ]
+}

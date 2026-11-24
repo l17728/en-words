@@ -1,0 +1,6 @@
+go_version=go version go1.25.14 linux/amd64
+uname=Linux VM-0-10-ubuntu 5.15.0-171-generic #181-Ubuntu SMP Fri Feb 6 22:44:50 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+filesystem=/dev/vda2 ext4
+runner=uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)
+workspace=<TEST_TEMP_ROOT>
+archive_sha256=e717e8c3ad4dca9a45655c680198d056be6e6f2cb1380a177d846efe369e3113

@@ -1,0 +1,45 @@
+{
+  "review": "pilot-start-kernel-code-backend-review4-20261017",
+  "date": "2026-10-17",
+  "target": [
+    "server/internal/agent/pilot_start.go",
+    "server/internal/agent/pilot_start_test.go",
+    "server/internal/scripts/pilot_exact.go",
+    "server/internal/store/pilot_start_sidecar.go",
+    "server/internal/store/pilot_start_sidecar_test.go"
+  ],
+  "reference": "docs/41-试点课堂Start持久迁移内核SDD.md §§24,44-46,94,108",
+  "code_modified": false,
+  "tests_run_by_reviewer": false,
+  "validation_evidence": "Existing final validation summary records pilot-tag agent/scripts/store and production test/vet success; no tests were run during this review.",
+  "scope_note": "Coordinator/HTTP harness, cross-process OS lifecycle lock, OpenVerified, Windows ACL/directory durability, and cleanup remain integration gates.",
+  "verdict": "BLOCK",
+  "findings": [
+    {
+      "id": "BE-CODE-R4-1",
+      "severity": "P1",
+      "status": "open",
+      "file": "server/internal/store/pilot_start_sidecar.go",
+      "lines": "340-341, 391",
+      "title": "terminal_failed can encode unknown outcomes and close an unresolved tool_started",
+      "evidence": "terminal_failed accepts any allowlisted non-ok result class, including commit_unknown and rollback_proven. The transition table also permits terminal_failed from phases 3 and 5, where a durable tool_started has no durable tool_result. Docs/41 requires missing tool_result and commit unknown to remain pending_unknown; converting either to terminal_failed risks a false not_committed recovery classification.",
+      "recommendation": "Restrict terminal_failed to an explicit phase/result-class matrix; reject direct terminalization from tool_started/no-result phases and reject commit_unknown/rollback_proven as terminal_failed result classes. Add Append/reopen negative and positive chain tests proving unresolved outcomes cannot recover as not_committed."
+    }
+  ],
+  "resolved": [
+    "BE-CODE-R3-1: zero-byte write, partial write, file Sync, and parent-directory Sync fault injection tests are present.",
+    "Non-ok tool_result now enters a terminal-only phase and prevents the following tool from starting.",
+    "BE-CODE-1..4 findings from earlier reviews remain closed in the reviewed code."
+  ],
+  "integration_gates": [
+    "Cross-process per-case lifecycle lock and catalog reauthorization.",
+    "OpenVerified handles and Windows ACL/parent-directory durability.",
+    "Coordinator/HTTP harness, receipt-first recovery, and supervisor cleanup behavior."
+  ],
+  "checks": {
+    "write_and_sync_failure_injection": "PASS_AT_FILE_LAYER",
+    "non_ok_tool_result_stops_next_tool": "PASS_TRANSITION_UNIT_COVERAGE",
+    "terminal_failure_outcome_mapping": "BLOCK_P1",
+    "cross_process_lock_and_verified_open": "NOT_YET_INTEGRATED"
+  }
+}

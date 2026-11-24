@@ -1,0 +1,257 @@
+{
+  "review": "ladder-atomic-candidate-review3",
+  "date": "2026-10-16",
+  "mode": "read_only_no_tests_or_compile",
+  "status": "browser_execution_blocked_pending_fixture_and_consumer_repairs",
+  "candidate": ".test-tools\\ladder-implementation-20261016",
+  "hash_verification": {
+    "count": 33,
+    "all_match": true,
+    "changed_since_review2": [
+      "web/e2e/ladder-config.spec.ts"
+    ],
+    "manifest_sha256": "de790ee3a2bf84a7e7ec8b2fd41ff4f5d5b7a072cae8ea27f2b961dbd597ed84",
+    "files": [
+      {
+        "path": "server/internal/api/agenttools.go",
+        "sha256": "14531080b368cb82f4541891043257b24bd81d6e21a3761e43b81f03e6e94519",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/api/agenttransaction.go",
+        "sha256": "9bfa3164b42a036bee111dd8bdbf74b6ae129ae0b92fd9a2f66a4ea38336c1a9",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/api/app.go",
+        "sha256": "f075e9e48ccd7e44a4aac1a008ce2df62699d41c1d8e95fc994393dde3ab4afe",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/api/configmutation.go",
+        "sha256": "eb2b40f0d6d62c69e09a662f2291808704adecf25a3ffa6b400800aa9b97e79a",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/api/configroutes.go",
+        "sha256": "7ff8073e2b3b7500208bb599afe5c4a5efed43c573432ba239848e8a24a4f78c",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/api/extra.go",
+        "sha256": "f16eb367ad6327a0a59e1e41bd4a4eb1bff4f771229f0cb182e2473ce33b4113",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/api/feedbackexecution.go",
+        "sha256": "7b9d3fb1440a715e8c0227be8710c52a148551b8f2d412f62050acd982219cc0",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/api/feedbackstorage.go",
+        "sha256": "6e0063fc3e2543d8c8b970e8910c9a1660790100259272f46ee74ae523843458",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/api/hub.go",
+        "sha256": "3239252fb4496cc8a7d8ba86b3df8b7400a3eb723b1d589f193fa991403fef42",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/api/ladder_atomic_regression_test.go",
+        "sha256": "627e2655b88269fd7fd7f34672281711e73cae875bf326d28fa0f7275b83c5e9",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/api/ladder_concurrency_regression_test.go",
+        "sha256": "7b0a0820a40e6ea68ce8ceec075278bee5fd3f02ba69b8d44ecd996d030572f9",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/api/ladder_consumer_regression_test.go",
+        "sha256": "72c5e817178b7624defb252152bec5a7e3ba287846cad999e21841d1b672c6a2",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/api/ladder_failure_regression_test.go",
+        "sha256": "45a72a5ea71b43f2189639fd2eaf542ee92b4901bb1ca401186dbd8d0d07814b",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/api/ladder_review_regression_test.go",
+        "sha256": "d707459173c8641fe7825ff4be0ddf8e339f7049349c9813a1f725235cfd8173",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/api/ladder_routes_regression_test.go",
+        "sha256": "8c37d01a4e5ee815b4d9512a8fa256c60a0afcf93ae965f17c1a20f3666e3bb6",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/api/ladder_work_boundary_test.go",
+        "sha256": "65785968d81d0723563cdbfe457a7301b6ae9e6448475e05e150024f5d2a99fe",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/api/lessonexecution.go",
+        "sha256": "47fbeded9137aab5613fee190c8f961f66cbd9c235a1ca002b8d1dab4fd1a690",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/api/router.go",
+        "sha256": "cd7d21458a7f61ab339962db0fc5b2d0453733242afe96157982aa808cf2e990",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/config/config.go",
+        "sha256": "d53bad3696efcab84ec65171e5577fbe97afa099c75cd4f22e1c33985a188ef6",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/config/effective_view_test.go",
+        "sha256": "dd13c949327b8ad4877ba3a8ad5914808183479b72cceb31bb7c7c315fc3ade9",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/config/mutation.go",
+        "sha256": "56b4998f81c7485a0d474cf16af96f3d8b2985b50dd324d6d438473c1d8d1a1b",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/scheduler/ladder_scope.go",
+        "sha256": "d0c132d925e17a81848a9ae456942dc3f4bd37add65b330d8bf757fd126a0bb3",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/scheduler/scheduler.go",
+        "sha256": "65f14d1241f85cd71ef7fe98a8159519ab39fe79560c3654dafe5f3805f5081b",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/scheduler/settlement.go",
+        "sha256": "63c5c79ef1f6d2e4c4f9e9f5757de7458c30da386c1f15fe447fac64a56e966d",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/store/config_atomic.go",
+        "sha256": "c68f47a7227252805fe77c4791bb29bb38d37d36fe7530f396e1dae03f498d17",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "server/internal/store/config_atomic_regression_test.go",
+        "sha256": "d24100494cec40904baecf1ccc98134f254ae9f338a11f51a82610d6a95ec011",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "web/e2e/ladder-config.spec.ts",
+        "sha256": "72e5964345c41390a91f4b185b8c04189f03b813b34df60aa97869414a184171",
+        "manifest_match": true,
+        "unchanged_since_review2": false
+      },
+      {
+        "path": "web/playwright.ladder.config.ts",
+        "sha256": "ddd64090f95f42aa2daee113fccc65e81e5e3bee6a6fb0520bc34e4c665764eb",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "web/src/api/client.ts",
+        "sha256": "7a6eb344cc2449136e1f0bf435f44cf8b55ddd61f73021345c4e2db1e6e4d387",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "web/src/components/LadderSettings.tsx",
+        "sha256": "1338e5a86d740936fa728a837f8f8e3a734be39fa44e6373be067e7e35d58291",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "web/src/interaction/config-reconciliation.ts",
+        "sha256": "9b23a515a03b90584320d1efecf205337567fbfb9af2cd52ff7323f0bbb1546d",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "web/src/pages/Admin.tsx",
+        "sha256": "118c22adf4204f64a864bee54c602e1aa7eaec56857100804d737a954f51509d",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      },
+      {
+        "path": "web/tests/config-reconciliation.test.ts",
+        "sha256": "43dab403c98b63eb88ab5462f62209326176edee05f9011496e320b31c0bfc58",
+        "manifest_match": true,
+        "unchanged_since_review2": true
+      }
+    ]
+  },
+  "production_blocking": [],
+  "verified_repairs": [
+    "All normal Python fixture operations now have 10000ms timeout, SIGKILL, windowsHide and error/signal/status assertions; SQLite connections use 3s lock timeout. A separate timeout-contract probe is authored, not executed.",
+    "Second student has a distinct real browser login and real enable/placement/REST classroom Enter. Card rows are read from owned SQLite and compared across administrator mutations and restart. Prior DTO-only coverage is materially strengthened.",
+    "Peer page is closed in finally; previous unknown-delivery scenarios and manual recovery assertions remain."
+  ],
+  "scope_limits": [
+    "Peer browser stays on Dashboard. REST Enter creates/restores room but does not activate delivery; hub.go Tick explicitly skips deliveryReady=false. Stable phase equality is therefore dormant-room isolation, not simultaneous live classroom progress.",
+    "Student A has no scheduled/card consumer action added. Reading effective configuration after restart proves persistence/readback, not the next lesson or card due computation using changed ladder.",
+    "No test execution is inferred from authored timeout probe or updated assertions."
+  ],
+  "required_before_browser_acceptance": [
+    {
+      "id": "LAD-AR3-T01",
+      "severity": "P2",
+      "file": "web/e2e/ladder-config.spec.ts",
+      "line": 129,
+      "finding": "Injected trigger cleanup remains success-path only; finally closes only peer page. Failure after CREATE skips DROP.",
+      "required_change": "Wrap injection assertions in inner try/finally and remove only this owned trigger in finally after successful creation. Keep cleanup bounded and preserve primary assertion error if cleanup also fails."
+    },
+    {
+      "id": "LAD-AR3-T02",
+      "severity": "P2",
+      "file": "web/e2e/ladder-config.spec.ts",
+      "line": 115,
+      "finding": "Post-restart A verification remains effective-config UI readback; no actual learner/card/scheduling consumer verifies the modified ladder. B stronger assertions cover dormant-room/card invariance, not a progressing classroom.",
+      "required_change": "Before rerunning: administer changed ladder for A, restart owned server, then have A actually enter and complete the controlled-media lesson via real learner UI. Assert persisted ladder_step and next_due_at plus next lesson scheduling reflect new effective ladder; distinguish an existing Room frozen configuration from a newly created/restarted consumer rather than assuming config edits replace current teaching snapshot. Activate B delivery through real classroom UI and verify teacher classroom active, then verify admin mutation does not alter B cards. Allow legitimate B phase progress; do not compare a live room phase unchanged across arbitrary delays. Retain owned DB read-only evidence and independent login contexts."
+    }
+  ],
+  "browser_window_opinion": "Do not execute the revised browser journey yet: parent requires the real A consumer/restart and activated B classroom paths plus finally trigger cleanup before rerun. Production code review remains zero new blockers; isolated Go window is unaffected.",
+  "line_evidence": {
+    "9": "const result = spawnSync('python', ['-c', script, ...args], { encoding: 'utf8', timeout: 10_000, killSignal: 'SIGKILL', windowsHide: true })",
+    "16": "const timedOut = spawnSync('python', ['-c', 'import time; time.sleep(60)'], { timeout: 100, killSignal: 'SIGKILL', windowsHide: true })",
+    "29": "const peerProgress = async () => {",
+    "106": "const otherAfter = await api(request, `/config/effective?studentId=${secondID}`, first.admin.token, undefined, 'GET')",
+    "107": "expect(otherAfter).toEqual(otherBefore)",
+    "110": "await server.restart()",
+    "122": "sql(\"CREATE TRIGGER ladder_browser_failure BEFORE INSERT ON config_overrides BEGIN SELECT RAISE(ABORT,'fixture'); END\")",
+    "131": "sql('DROP TRIGGER ladder_browser_failure')",
+    "136": "await expect(peerPage).toHaveURL(/\\/dashboard$/)",
+    "137": "} finally { await peerPage.close() }"
+  }
+}

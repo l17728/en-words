@@ -1,0 +1,200 @@
+(node:19924) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[api_request_failed] {
+  module: 'api',
+  event: 'request_failed',
+  method: 'GET',
+  path: '/slow',
+  request_id: 'fixture-diagnostic-id',
+  server_trace_id: undefined,
+  trace_id: 'tr-fixture-diagnostic-id',
+  reason: 'request_timeout',
+  duration_ms: 25
+}
+✔ IX05 deadline covers fetch (30.1588ms)
+[api_request_failed] {
+  module: 'api',
+  event: 'request_failed',
+  method: 'GET',
+  path: '/slow',
+  request_id: 'fixture-diagnostic-id',
+  server_trace_id: undefined,
+  trace_id: 'tr-fixture-diagnostic-id',
+  reason: 'request_timeout',
+  duration_ms: 31
+}
+[api_request_failed] {
+  module: 'api',
+  event: 'request_failed',
+  method: 'POST',
+  path: '/write',
+  request_id: 'fixture-diagnostic-id',
+  server_trace_id: undefined,
+  trace_id: 'tr-fixture-diagnostic-id',
+  reason: 'request_canceled',
+  duration_ms: 4
+}
+[api_request_failed] {
+  module: 'api',
+  event: 'request_failed',
+  method: 'GET',
+  path: '/broken',
+  request_id: 'fixture-diagnostic-id',
+  server_trace_id: undefined,
+  trace_id: 'tr-fixture-diagnostic-id',
+  reason: 'network_error',
+  duration_ms: 0
+}
+[api_request_failed] {
+  module: 'api',
+  event: 'request_failed',
+  method: 'POST',
+  path: '/write',
+  request_id: 'fixture-diagnostic-id',
+  server_trace_id: undefined,
+  trace_id: 'tr-fixture-diagnostic-id',
+  reason: 'invalid_response',
+  duration_ms: 0
+}
+[api_request_failed] {
+  module: 'api',
+  event: 'request_failed',
+  method: 'GET',
+  path: '/private',
+  request_id: 'fixture-diagnostic-id',
+  server_trace_id: undefined,
+  trace_id: 'tr-fixture-diagnostic-id',
+  reason: 'session_changed',
+  duration_ms: 0
+}
+[api_request_failed] {
+  module: 'api',
+  event: 'request_failed',
+  method: 'GET',
+  path: '/private',
+  request_id: 'fixture-diagnostic-id',
+  server_trace_id: undefined,
+  trace_id: 'tr-fixture-diagnostic-id',
+  reason: 'application_rejected',
+  duration_ms: 0
+}
+✔ IX05 deadline covers body (32.2178ms)
+✔ IX05 explicit cancel and network/invalid responses are stable and do not expose bodies (8.8781ms)
+✔ IX05 late old 401 cannot clear replacement session; current 401 still clears (7.3896ms)
+✔ IX05 request failure logs only fixed reason and query-free path (72.575ms)
+✔ IX05 diagnostic ID remains available on ordinary HTTP without randomUUID (1.6481ms)
+✔ WAV is PCM16 mono 16000 Hz with little-endian RIFF lengths and clipped samples (4.7733ms)
+✔ stereo is averaged before quantization, preserving cancellation and headroom (8.9953ms)
+✔ invalid sample rate, channel geometry, empty or nonfinite samples are rejected (2.6646ms)
+✔ cancellation after compressed body read prevents decoder construction (6.9513ms)
+✔ identity changes while decoding reject the decoded result instead of encoding/uploading it (18.3439ms)
+✔ caption stays empty while loading and repeats identical text with separate leases (4.1835ms)
+✔ snapshot and phase changes share the same playback cancellation boundary (0.4998ms)
+✔ old start/end and reset cannot restore old text or clear a new attempt (0.3947ms)
+✔ caption invalidates its lease before synchronous cleanup reentry and isolates instances (0.4911ms)
+✔ Audio loading/play resolution never announces speech; only playing does, ended cleans callbacks (1.4158ms)
+✔ aborted Audio rejects and retained callbacks cannot announce late speech (3.1058ms)
+✔ Audio observer exceptions and changed identity fail without successful completion (1.049ms)
+✔ Audio error cleans its observer and rejects (0.581ms)
+✔ Audio timeout clears observers and never resolves successfully (2.2807ms)
+✔ falsy playback rejections and observer throws are still failures (2.6355ms)
+✔ ordinary HTTP crypto without randomUUID produces unique RFC4122 version4 IDs (68.4373ms)
+✔ secure-context native UUID remains supported (1.9246ms)
+✔ throwing native UUID falls back securely and missing secure generators fails closed (1.744ms)
+✔ unknown delivery remains locked across other targets and reconciles revisions plus values (2.3536ms)
+✔ successful local completion waits; only newer valid business progress clears (4.1972ms)
+✔ old callbacks cannot clear a newer waiting generation; lifecycle clear invalidates it (0.791ms)
+✔ invalid context or sequence never creates or completes a wait; real phase progress does (0.8528ms)
+✔ observer logs only real transitions with bounded fixed summaries and never raw identity text (2.8572ms)
+✔ observer exceptions cannot prevent waiting cleanup or successful progress (0.6361ms)
+✔ requested capability is never substituted for false or missing effective settings (6.6769ms)
+✔ PCM resampling is independent of input callback boundaries and keeps 20ms frames (36.1774ms)
+✔ 20ms short sound survives candidate window and endpoint retains 200ms tail (3.9829ms)
+✔ continuous sound hard limit explicitly overflows rather than submitting truncated answer (17.3415ms)
+✔ lease cancellation revokes before reentrant callback and isolates a new generation (0.9596ms)
+✔ late microphone permission after stop closes tracks without publishing capabilities (1.9683ms)
+✔ separated short impulses do not accumulate into a continuous 100ms candidate (4.7927ms)
+✔ restarting capture closes prior resources and processorerror closes the current generation (4.6216ms)
+✔ authorization loss plus initialization rejection releases resources; capability callback can synchronously stop (1.8565ms)
+✔ worklet batches 80ms and bounds stalled consumer to two seconds with explicit overflow (11.9852ms)
+✔ one operation spans network completion and the confirmation dialog (3.0666ms)
+✔ rejected work releases the lock without repeating the write (10.9789ms)
+✔ frozen preview replaces exactly one frontend command and preserves all backend limits (3.5985ms)
+✔ frozen build verifies current-run provenance, inputs, exact dist and index dependencies (52.3141ms)
+✔ closed transport before onclose rejects classroom input but preserves independent control fallback (7.9317ms)
+✔ snapshot and online alone cannot authorize input; business action can (1.0428ms)
+✔ same business turn replay preserves draft and capture identity (1.1994ms)
+✔ same word new turn or room needs a new draft and rejects old capture (0.5566ms)
+✔ close or phase invalidation preserves draft but invalidates callbacks even after same-turn regrant (0.5106ms)
+✔ repeat authority does not authorize typed quiz answers or a different phase (0.3992ms)
+✔ IX01 save freezes selected IDs, rejects synchronous duplicate and navigates only after persistence (8.4415ms)
+✔ IX02 failed save never navigates and releases retry lock (2.0792ms)
+✔ IX03 read generations reject stale parsing and preserve explicit loading/error/empty distinctions (1.8543ms)
+✔ IX04 uncertain feedback preserves exact original ID and body; definitive rejection releases editing (0.8343ms)
+✔ IX11 a synchronous answer flight rejects duplicate sends and only matching failure releases it (0.8499ms)
+✔ IX11 keyboard activation only accepts Enter and Space (1.8886ms)
+✔ media header and body hangs finish at the same overall deadline and abort transport (33.8736ms)
+✔ caller cancellation before start or while reading body does not produce a result or retry (2.1385ms)
+✔ successful media request releases cancellation listener and preserves actual errors (1.3193ms)
+✔ timeout observability contains only fixed metadata and a sanitized classroom trace (8.4193ms)
+✔ already signal-exited owned process does not await a past exit event (9.418ms)
+✔ failed stop still closes stream and platform and preserves failure (6.1823ms)
+✔ real owned Node child can be stopped repeatedly after signal termination (70.093ms)
+✔ failed stop detaches and drains late stdout before ending the log destination (6.3444ms)
+(node:18524) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ recording label starts only on actual onstart; transcription begins after tracks are stopped (81.8649ms)
+✔ canceled capture never announces a late recording or transcription stage (3.067ms)
+✔ lesson display gate is open at equality and past, closed for future and invalid clocks (2.6215ms)
+✔ schedule clock refreshes on tick and focus, and only visible visibility changes (3.4056ms)
+✔ schedule clock cleanup removes timers and listeners and rejects an already queued callback (0.5707ms)
+✔ unmounting one clock subscriber does not cancel another page subscription (0.6745ms)
+✔ only malformed schema fixtures disable connection reuse (3.9642ms)
+✔ malformed schema requests finish on separate real sockets and diagnostics contain no payload (172.5953ms)
+✔ three repeats reuse successful WAV but play and finish every segment (18.3615ms)
+✔ scope changes and explicit clear revoke late loads before playback or caching (4.342ms)
+✔ abort after loading or during playback never becomes a cache success (10.7268ms)
+✔ transport errors and invalid WAV are not cached; playback failure evicts a hit (2.2902ms)
+✔ LRU obeys byte and item caps; hits do not extend TTL (6.6451ms)
+✔ complete WAV validation rejects truncation, MIME mismatch and corrupt block alignment (2.0614ms)
+✔ cache hit still checks current identity and concurrent eviction cannot exceed the byte cap (1.7895ms)
+✔ temporary enter failure is visible, remains retryable and opens after a refreshed ticket (76.1577ms)
+✔ authentication and foreign lesson failures are terminal and never authorize again (4.0605ms)
+[ws_liveness] {
+  module: 'ws',
+  event: 'heartbeat_timeout',
+  trace_id: 'lesson-1',
+  lesson_id: 1,
+  timeout_ms: 10000
+}
+[ws_liveness] {
+  module: 'ws',
+  event: 'heartbeat_timeout',
+  trace_id: 'lesson-1',
+  lesson_id: 1,
+  timeout_ms: 10000
+}
+[ws_liveness] {
+  module: 'ws',
+  event: 'heartbeat_timeout',
+  trace_id: 'lesson-1',
+  lesson_id: 1,
+  timeout_ms: 10000
+}
+[ws_liveness] {
+  module: 'ws',
+  event: 'send_failed',
+  trace_id: 'lesson-1',
+  lesson_id: 1
+}
+✔ missing ACK marks offline and refreshes ticket without waiting for close callback (45.4994ms)
+✔ duplicate ACK cannot defer heartbeat and old socket ACK cannot cancel new deadline (2.3772ms)
+✔ send exceptions fail closed, notify once and explicit close cancels reconnection (1.2623ms)
+ℹ tests 84
+ℹ suites 0
+ℹ pass 84
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3341.1182

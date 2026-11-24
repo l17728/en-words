@@ -1,0 +1,6 @@
+Linux x86_64
+go version go1.27.3 linux/amd64
+uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)
+/dev/vda2 ext4
+GOCACHE=/var/tmp/enwords-pilot-coverage/gocache
+PILOT_FS_TEST_ROOT=/tmp/pilot-fs-runroot-repeat

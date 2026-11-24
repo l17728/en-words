@@ -1,0 +1,1064 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\source\\web\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--config",
+      "playwright.recovery.config.ts",
+      "--fully-parallel",
+      "--workers=1",
+      "--shard=1/2"
+    ],
+    "configFile": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\source\\web\\playwright.recovery.config.ts",
+    "rootDir": "D:/en-words/review/ladder-browser-missing-suites-20261016/source/web/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/en-words/review/ladder-browser-missing-suites-20261016/source/web/.test-artifacts/closure-1792158388021-2860/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "D:/en-words/review/ladder-browser-missing-suites-20261016/source/web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "recovery-regression.spec.ts"
+        ],
+        "timeout": 180000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\source\\web\\.test-artifacts\\closure-1792158388021-2860\\results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": {
+      "current": 1,
+      "total": 2
+    },
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "recovery-regression.spec.ts",
+      "file": "recovery-regression.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "REC12 automatic recognition waits for business readiness and rejects prior-turn callbacks",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 15517,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T13:46:42.261Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTY5NTJdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU4NDAyMTU3LTE3OTQ4XFxicm93c2VyXFxyZWNvdmVyeS1yZWdyZXNzaW9uLVJFQzEyLS1mMGU5Yy1lamVjdHMtcHJpb3ItdHVybi1jYWxsYmFja3NcXHJlY292ZXJ5LmRiIiwibW9kZWwiOnsicGVuZGluZyI6MCwiY2FuY2VsZWQiOjAsImZlZWRiYWNrQ2FsbHMiOjAsImp1ZGdlQ2FsbHMiOjB9LCJleGl0cyI6W3sicGlkIjoxNjk1MiwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "35ea996143c87e645b34-3b055731872edb2e868c",
+          "file": "recovery-regression.spec.ts",
+          "line": 7,
+          "column": 1
+        },
+        {
+          "title": "REC11 business question readiness blocks early and blank answers and preserves replayed drafts",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 14514,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T13:46:58.101Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMjAyNjAsMTM0MjhdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU4NDAyMTU3LTE3OTQ4XFxicm93c2VyXFxyZWNvdmVyeS1yZWdyZXNzaW9uLVJFQzExLS0xY2Y1NS1kLXByZXNlcnZlcy1yZXBsYXllZC1kcmFmdHNcXHJlY292ZXJ5LmRiIiwibW9kZWwiOnsicGVuZGluZyI6MCwiY2FuY2VsZWQiOjAsImZlZWRiYWNrQ2FsbHMiOjAsImp1ZGdlQ2FsbHMiOjB9LCJleGl0cyI6W3sicGlkIjoyMDI2MCwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn0seyJwaWQiOjEzNDI4LCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "35ea996143c87e645b34-ad87ab1531516af338cd",
+          "file": "recovery-regression.spec.ts",
+          "line": 56,
+          "column": 1
+        },
+        {
+          "title": "terminal enter 403 has actionable error, no endless retry",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5635,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T13:47:21.580Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMjExNjRdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU4NDAyMTU3LTE3OTQ4XFxicm93c2VyXFxyZWNvdmVyeS1yZWdyZXNzaW9uLXRlcm1pbi02NWRmNC1hYmxlLWVycm9yLW5vLWVuZGxlc3MtcmV0cnlcXHJlY292ZXJ5LmRiIiwibW9kZWwiOnsicGVuZGluZyI6MCwiY2FuY2VsZWQiOjAsImZlZWRiYWNrQ2FsbHMiOjAsImp1ZGdlQ2FsbHMiOjB9LCJleGl0cyI6W3sicGlkIjoyMTE2NCwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "35ea996143c87e645b34-1441ca2d57dceae87b9c",
+          "file": "recovery-regression.spec.ts",
+          "line": 118,
+          "column": 32
+        },
+        {
+          "title": "terminal enter 404 has actionable error, no endless retry",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5085,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T13:47:27.250Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTU3OTJdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU4NDAyMTU3LTE3OTQ4XFxicm93c2VyXFxyZWNvdmVyeS1yZWdyZXNzaW9uLXRlcm1pbi05MDUzYi1hYmxlLWVycm9yLW5vLWVuZGxlc3MtcmV0cnlcXHJlY292ZXJ5LmRiIiwibW9kZWwiOnsicGVuZGluZyI6MCwiY2FuY2VsZWQiOjAsImZlZWRiYWNrQ2FsbHMiOjAsImp1ZGdlQ2FsbHMiOjB9LCJleGl0cyI6W3sicGlkIjoxNTc5MiwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "35ea996143c87e645b34-c8e819704df38a718f21",
+          "file": "recovery-regression.spec.ts",
+          "line": 118,
+          "column": 32
+        },
+        {
+          "title": "teacher effect error protocol exposes recovery without pretending playback succeeded",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6903,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T13:47:32.367Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTc5ODBdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU4NDAyMTU3LTE3OTQ4XFxicm93c2VyXFxyZWNvdmVyeS1yZWdyZXNzaW9uLXRlYWNoZS04ZTcwMy1ldGVuZGluZy1wbGF5YmFjay1zdWNjZWVkZWRcXHJlY292ZXJ5LmRiIiwibW9kZWwiOnsicGVuZGluZyI6MCwiY2FuY2VsZWQiOjAsImZlZWRiYWNrQ2FsbHMiOjAsImp1ZGdlQ2FsbHMiOjB9LCJleGl0cyI6W3sicGlkIjoxNzk4MCwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "35ea996143c87e645b34-8f2191af31627b8e04dd",
+          "file": "recovery-regression.spec.ts",
+          "line": 131,
+          "column": 1
+        },
+        {
+          "title": "T3 startup scheduler replaces an overdue lesson once and rejects the retired classroom",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7558,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T13:47:39.302Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTA3MjgsOTE3MiwxNTQxMl0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1icm93c2VyLW1pc3Npbmctc3VpdGVzLTIwMjYxMDE2XFxzb3VyY2VcXHdlYlxcLnRlc3QtYXJ0aWZhY3RzXFxjbG9zdXJlLTE3OTIxNTg0MDIxNTctMTc5NDhcXGJyb3dzZXJcXHJlY292ZXJ5LXJlZ3Jlc3Npb24tVDMtc3RhLWY1MDU5LWplY3RzLXRoZS1yZXRpcmVkLWNsYXNzcm9vbVxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjEwNzI4LCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifSx7InBpZCI6OTE3MiwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn0seyJwaWQiOjE1NDEyLCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "35ea996143c87e645b34-0c463353dc8513dd91e6",
+          "file": "recovery-regression.spec.ts",
+          "line": 154,
+          "column": 1
+        },
+        {
+          "title": "REC01 real restart during teaching refreshes ticket, cancels old media, resumes same segment",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13843,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T13:48:42.315Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMjU2NCwyMTU4OF0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1icm93c2VyLW1pc3Npbmctc3VpdGVzLTIwMjYxMDE2XFxzb3VyY2VcXHdlYlxcLnRlc3QtYXJ0aWZhY3RzXFxjbG9zdXJlLTE3OTIxNTg0MDIxNTctMTc5NDhcXGJyb3dzZXJcXHJlY292ZXJ5LXJlZ3Jlc3Npb24tUkVDMDEtLTExZGJiLS1tZWRpYS1yZXN1bWVzLXNhbWUtc2VnbWVudFxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjI1NjQsImV4aXRDb2RlIjpudWxsLCJzaWduYWxDb2RlIjoiU0lHVEVSTSJ9LHsicGlkIjoyMTU4OCwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "35ea996143c87e645b34-0acf4234424cd69c7a1d",
+          "file": "recovery-regression.spec.ts",
+          "line": 229,
+          "column": 1
+        },
+        {
+          "title": "REC02 repeating and wait_answer survive real restart without a fabricated answer",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 26919,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T13:48:56.187Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTg0MjgsMTY3ODAsMTk5NTYsNTE5Nl0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1icm93c2VyLW1pc3Npbmctc3VpdGVzLTIwMjYxMDE2XFxzb3VyY2VcXHdlYlxcLnRlc3QtYXJ0aWZhY3RzXFxjbG9zdXJlLTE3OTIxNTg0MDIxNTctMTc5NDhcXGJyb3dzZXJcXHJlY292ZXJ5LXJlZ3Jlc3Npb24tUkVDMDItLTQ1YmVkLXdpdGhvdXQtYS1mYWJyaWNhdGVkLWFuc3dlclxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjE4NDI4LCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifSx7InBpZCI6MTY3ODAsImV4aXRDb2RlIjpudWxsLCJzaWduYWxDb2RlIjoiU0lHVEVSTSJ9LHsicGlkIjoxOTk1NiwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn0seyJwaWQiOjUxOTYsImV4aXRDb2RlIjpudWxsLCJzaWduYWxDb2RlIjoiU0lHVEVSTSJ9XX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "35ea996143c87e645b34-e63053db13a8056e40e8",
+          "file": "recovery-regression.spec.ts",
+          "line": 256,
+          "column": 1
+        },
+        {
+          "title": "REC04 two students and administrator stay isolated while one network disconnects",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 24384,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T13:49:23.143Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTQ5MTZdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU4NDAyMTU3LTE3OTQ4XFxicm93c2VyXFxyZWNvdmVyeS1yZWdyZXNzaW9uLVJFQzA0LS1jMmQyYS1pbGUtb25lLW5ldHdvcmstZGlzY29ubmVjdHNcXHJlY292ZXJ5LmRiIiwibW9kZWwiOnsicGVuZGluZyI6MCwiY2FuY2VsZWQiOjAsImZlZWRiYWNrQ2FsbHMiOjAsImp1ZGdlQ2FsbHMiOjB9LCJleGl0cyI6W3sicGlkIjoxNDkxNiwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "35ea996143c87e645b34-e27a80093de726d23c60",
+          "file": "recovery-regression.spec.ts",
+          "line": 277,
+          "column": 1
+        },
+        {
+          "title": "G09 no_voice shows failure and never sends successful playback ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 33348,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T13:49:47.571Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTU2MjBdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU4NDAyMTU3LTE3OTQ4XFxicm93c2VyXFxyZWNvdmVyeS1yZWdyZXNzaW9uLUcwOS1uby0wMjA4My1uZHMtc3VjY2Vzc2Z1bC1wbGF5YmFjay1BQ0tcXHJlY292ZXJ5LmRiIiwibW9kZWwiOnsicGVuZGluZyI6MCwiY2FuY2VsZWQiOjAsImZlZWRiYWNrQ2FsbHMiOjAsImp1ZGdlQ2FsbHMiOjB9LCJleGl0cyI6W3sicGlkIjoxNTYyMCwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "35ea996143c87e645b34-2aa9df3de5f3d995a14a",
+          "file": "recovery-regression.spec.ts",
+          "line": 310,
+          "column": 3
+        },
+        {
+          "title": "G09 error shows failure and never sends successful playback ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 32337,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T13:50:20.957Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMjIwNzJdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU4NDAyMTU3LTE3OTQ4XFxicm93c2VyXFxyZWNvdmVyeS1yZWdyZXNzaW9uLUcwOS1lci01MWMzZi1uZHMtc3VjY2Vzc2Z1bC1wbGF5YmFjay1BQ0tcXHJlY292ZXJ5LmRiIiwibW9kZWwiOnsicGVuZGluZyI6MCwiY2FuY2VsZWQiOjAsImZlZWRiYWNrQ2FsbHMiOjAsImp1ZGdlQ2FsbHMiOjB9LCJleGl0cyI6W3sicGlkIjoyMjA3MiwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "35ea996143c87e645b34-6a40327a36a0903cd77c",
+          "file": "recovery-regression.spec.ts",
+          "line": 310,
+          "column": 3
+        },
+        {
+          "title": "G09 throw shows failure and never sends successful playback ACK",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 32352,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T13:50:53.326Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbNDkzNl0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1icm93c2VyLW1pc3Npbmctc3VpdGVzLTIwMjYxMDE2XFxzb3VyY2VcXHdlYlxcLnRlc3QtYXJ0aWZhY3RzXFxjbG9zdXJlLTE3OTIxNTg0MDIxNTctMTc5NDhcXGJyb3dzZXJcXHJlY292ZXJ5LXJlZ3Jlc3Npb24tRzA5LXRoLWQ1ZjBkLW5kcy1zdWNjZXNzZnVsLXBsYXliYWNrLUFDS1xccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjQ5MzYsImV4aXRDb2RlIjpudWxsLCJzaWduYWxDb2RlIjoiU0lHVEVSTSJ9XX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "35ea996143c87e645b34-92707c4417157d7bf31d",
+          "file": "recovery-regression.spec.ts",
+          "line": 310,
+          "column": 3
+        }
+      ],
+      "suites": [
+        {
+          "title": "invalid model schema missing",
+          "file": "recovery-regression.spec.ts",
+          "line": 100,
+          "column": 48,
+          "specs": [
+            {
+              "title": "rejects malformed model intent and visibly applies the original 50-word rule fallback",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4447,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-16T13:47:12.645Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "model-platform-transport",
+                          "contentType": "application/json",
+                          "body": "W3siZXZlbnQiOiJjb25uZWN0Iiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo3Mzd9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjc0MX0seyJldmVudCI6ImVuZCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6NzQyfSx7ImV2ZW50IjoiY2xvc2UiLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjc0Mn0seyJldmVudCI6ImNvbm5lY3QiLCJzb2NrZXQiOjIsImVsYXBzZWRfbXMiOjc0M30seyJldmVudCI6ImVuZCIsInNvY2tldCI6MiwiZWxhcHNlZF9tcyI6NzQ1fSx7ImV2ZW50IjoiZmluaXNoIiwic29ja2V0IjoyLCJlbGFwc2VkX21zIjo3NDV9LHsiZXZlbnQiOiJjbG9zZSIsInNvY2tldCI6MiwiZWxhcHNlZF9tcyI6NzQ1fSx7ImV2ZW50IjoiY29ubmVjdCIsInNvY2tldCI6MywiZWxhcHNlZF9tcyI6MzgxM30seyJldmVudCI6ImVuZCIsInNvY2tldCI6MywiZWxhcHNlZF9tcyI6MzgxNX0seyJldmVudCI6ImZpbmlzaCIsInNvY2tldCI6MywiZWxhcHNlZF9tcyI6MzgxNX0seyJldmVudCI6ImNsb3NlIiwic29ja2V0IjozLCJlbGFwc2VkX21zIjozODE2fV0="
+                        },
+                        {
+                          "name": "owned-process-evidence",
+                          "contentType": "application/json",
+                          "body": "eyJwaWRzIjpbMzAwMF0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1icm93c2VyLW1pc3Npbmctc3VpdGVzLTIwMjYxMDE2XFxzb3VyY2VcXHdlYlxcLnRlc3QtYXJ0aWZhY3RzXFxjbG9zdXJlLTE3OTIxNTg0MDIxNTctMTc5NDhcXGJyb3dzZXJcXHJlY292ZXJ5LXJlZ3Jlc3Npb24taW52YWxpLTJjMGU1LWdpbmFsLTUwLXdvcmQtcnVsZS1mYWxsYmFja1xccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MSwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjMwMDAsImV4aXRDb2RlIjpudWxsLCJzaWduYWxDb2RlIjoiU0lHVEVSTSJ9XX0="
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "35ea996143c87e645b34-153bb25c4674d1e1499f",
+              "file": "recovery-regression.spec.ts",
+              "line": 102,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "invalid model schema null",
+          "file": "recovery-regression.spec.ts",
+          "line": 100,
+          "column": 48,
+          "specs": [
+            {
+              "title": "rejects malformed model intent and visibly applies the original 50-word rule fallback",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4420,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-16T13:47:17.126Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "model-platform-transport",
+                          "contentType": "application/json",
+                          "body": "W3siZXZlbnQiOiJjb25uZWN0Iiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo4MDV9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjgwNn0seyJldmVudCI6ImVuZCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6ODA3fSx7ImV2ZW50IjoiY2xvc2UiLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjgwN30seyJldmVudCI6ImNvbm5lY3QiLCJzb2NrZXQiOjIsImVsYXBzZWRfbXMiOjgwOH0seyJldmVudCI6ImVuZCIsInNvY2tldCI6MiwiZWxhcHNlZF9tcyI6ODA4fSx7ImV2ZW50IjoiZmluaXNoIiwic29ja2V0IjoyLCJlbGFwc2VkX21zIjo4MDh9LHsiZXZlbnQiOiJjbG9zZSIsInNvY2tldCI6MiwiZWxhcHNlZF9tcyI6ODA5fSx7ImV2ZW50IjoiY29ubmVjdCIsInNvY2tldCI6MywiZWxhcHNlZF9tcyI6Mzk0Mn0seyJldmVudCI6ImVuZCIsInNvY2tldCI6MywiZWxhcHNlZF9tcyI6Mzk0M30seyJldmVudCI6ImZpbmlzaCIsInNvY2tldCI6MywiZWxhcHNlZF9tcyI6Mzk0M30seyJldmVudCI6ImNsb3NlIiwic29ja2V0IjozLCJlbGFwc2VkX21zIjozOTQ0fV0="
+                        },
+                        {
+                          "name": "owned-process-evidence",
+                          "contentType": "application/json",
+                          "body": "eyJwaWRzIjpbMTgxOTJdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU4NDAyMTU3LTE3OTQ4XFxicm93c2VyXFxyZWNvdmVyeS1yZWdyZXNzaW9uLWludmFsaS02ZDljZi1naW5hbC01MC13b3JkLXJ1bGUtZmFsbGJhY2tcXHJlY292ZXJ5LmRiIiwibW9kZWwiOnsicGVuZGluZyI6MCwiY2FuY2VsZWQiOjAsImZlZWRiYWNrQ2FsbHMiOjEsImp1ZGdlQ2FsbHMiOjB9LCJleGl0cyI6W3sicGlkIjoxODE5MiwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "35ea996143c87e645b34-bc00f792a0e55907a3f9",
+              "file": "recovery-regression.spec.ts",
+              "line": 102,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "REC05 controlled L2 provider latency",
+          "file": "recovery-regression.spec.ts",
+          "line": 178,
+          "column": 6,
+          "specs": [
+            {
+              "title": "model cannot override unsafe original input 每天0次",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4786,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-16T13:47:46.896Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "model-platform-transport",
+                          "contentType": "application/json",
+                          "body": "W3siZXZlbnQiOiJjb25uZWN0Iiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo2ODh9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjY5Mn0seyJldmVudCI6ImVuZCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6NjkyfSx7ImV2ZW50IjoiZW5kIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo2OTZ9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjY5Nn0seyJldmVudCI6ImVuZCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6NDAyOX0seyJldmVudCI6ImZpbmlzaCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6NDAyOX0seyJldmVudCI6ImVycm9yIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo0NzcxLCJyZWFzb24iOiJFQ09OTlJFU0VUIn0seyJldmVudCI6ImNsb3NlIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo0NzcxfV0="
+                        },
+                        {
+                          "name": "owned-process-evidence",
+                          "contentType": "application/json",
+                          "body": "eyJwaWRzIjpbMTI5ODBdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU4NDAyMTU3LTE3OTQ4XFxicm93c2VyXFxyZWNvdmVyeS1yZWdyZXNzaW9uLVJFQzA1LS1iNDAzMC0tdW5zYWZlLW9yaWdpbmFsLWlucHV0Leavj+WkqTDmrKFcXHJlY292ZXJ5LmRiIiwibW9kZWwiOnsicGVuZGluZyI6MCwiY2FuY2VsZWQiOjAsImZlZWRiYWNrQ2FsbHMiOjEsImp1ZGdlQ2FsbHMiOjB9LCJleGl0cyI6W3sicGlkIjoxMjk4MCwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "35ea996143c87e645b34-07f1e1e0e4222e3e2cc0",
+              "file": "recovery-regression.spec.ts",
+              "line": 180,
+              "column": 119
+            },
+            {
+              "title": "model cannot override unsafe original input 课程挪到五月一号或者二号",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5905,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-16T13:47:51.718Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "model-platform-transport",
+                          "contentType": "application/json",
+                          "body": "W3siZXZlbnQiOiJjb25uZWN0Iiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo5NDh9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjk0OX0seyJldmVudCI6ImVuZCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6OTQ5fSx7ImV2ZW50IjoiZW5kIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo5NTF9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjk1MX0seyJldmVudCI6ImVuZCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6NTE4MH0seyJldmVudCI6ImZpbmlzaCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6NTE4MH0seyJldmVudCI6ImVycm9yIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo1ODkwLCJyZWFzb24iOiJFQ09OTlJFU0VUIn0seyJldmVudCI6ImNsb3NlIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo1ODkwfV0="
+                        },
+                        {
+                          "name": "owned-process-evidence",
+                          "contentType": "application/json",
+                          "body": "eyJwaWRzIjpbMjEyMjhdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU4NDAyMTU3LTE3OTQ4XFxicm93c2VyXFxyZWNvdmVyeS1yZWdyZXNzaW9uLVJFQzA1LS0zMTM5ZC1vcmlnaW5hbC1pbnB1dC3or77nqIvmjKrliLDkupTmnIjkuIDlj7fmiJbogIXkuozlj7dcXHJlY292ZXJ5LmRiIiwibW9kZWwiOnsicGVuZGluZyI6MCwiY2FuY2VsZWQiOjAsImZlZWRiYWNrQ2FsbHMiOjEsImp1ZGdlQ2FsbHMiOjB9LCJleGl0cyI6W3sicGlkIjoyMTIyOCwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "35ea996143c87e645b34-38e3cc6f4b5bfc70f95f",
+              "file": "recovery-regression.spec.ts",
+              "line": 180,
+              "column": 119
+            },
+            {
+              "title": "model cannot override unsafe original input 课程改期到五月一号，或者二号",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5922,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-16T13:47:57.654Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "model-platform-transport",
+                          "contentType": "application/json",
+                          "body": "W3siZXZlbnQiOiJjb25uZWN0Iiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjoxMDY4fSx7ImV2ZW50IjoiZmluaXNoIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjoxMDY5fSx7ImV2ZW50IjoiZW5kIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjoxMDY5fSx7ImV2ZW50IjoiZW5kIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjoxMDcyfSx7ImV2ZW50IjoiZmluaXNoIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjoxMDcyfSx7ImV2ZW50IjoiZW5kIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo1MjQ4fSx7ImV2ZW50IjoiZmluaXNoIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo1MjQ4fSx7ImV2ZW50IjoiZXJyb3IiLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjU5MTAsInJlYXNvbiI6IkVDT05OUkVTRVQifSx7ImV2ZW50IjoiY2xvc2UiLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjU5MTB9XQ=="
+                        },
+                        {
+                          "name": "owned-process-evidence",
+                          "contentType": "application/json",
+                          "body": "eyJwaWRzIjpbMjEyODRdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU4NDAyMTU3LTE3OTQ4XFxicm93c2VyXFxyZWNvdmVyeS1yZWdyZXNzaW9uLVJFQzA1LS0yMjI5Mi1pZ2luYWwtaW5wdXQt6K++56iL5pS55pyf5Yiw5LqU5pyI5LiA5Y+377yM5oiW6ICF5LqM5Y+3XFxyZWNvdmVyeS5kYiIsIm1vZGVsIjp7InBlbmRpbmciOjAsImNhbmNlbGVkIjowLCJmZWVkYmFja0NhbGxzIjoxLCJqdWRnZUNhbGxzIjowfSwiZXhpdHMiOlt7InBpZCI6MjEyODQsImV4aXRDb2RlIjpudWxsLCJzaWduYWxDb2RlIjoiU0lHVEVSTSJ9XX0="
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "35ea996143c87e645b34-b95ad09029194566f6a7",
+              "file": "recovery-regression.spec.ts",
+              "line": 180,
+              "column": 119
+            },
+            {
+              "title": "model cannot override unsafe original input 课程改期到五月一号；或者二号",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5611,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-16T13:48:03.603Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "model-platform-transport",
+                          "contentType": "application/json",
+                          "body": "W3siZXZlbnQiOiJjb25uZWN0Iiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo1NTh9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjU1OX0seyJldmVudCI6ImVuZCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6NTU5fSx7ImV2ZW50IjoiZW5kIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo1NjB9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjU2MH0seyJldmVudCI6ImVuZCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6NDk4MH0seyJldmVudCI6ImZpbmlzaCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6NDk4MH0seyJldmVudCI6ImVycm9yIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo1NTkwLCJyZWFzb24iOiJFQ09OTlJFU0VUIn0seyJldmVudCI6ImNsb3NlIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo1NTkwfV0="
+                        },
+                        {
+                          "name": "owned-process-evidence",
+                          "contentType": "application/json",
+                          "body": "eyJwaWRzIjpbMjI1MjRdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU4NDAyMTU3LTE3OTQ4XFxicm93c2VyXFxyZWNvdmVyeS1yZWdyZXNzaW9uLVJFQzA1LS1kZmE0My1pZ2luYWwtaW5wdXQt6K++56iL5pS55pyf5Yiw5LqU5pyI5LiA5Y+377yb5oiW6ICF5LqM5Y+3XFxyZWNvdmVyeS5kYiIsIm1vZGVsIjp7InBlbmRpbmciOjAsImNhbmNlbGVkIjowLCJmZWVkYmFja0NhbGxzIjoxLCJqdWRnZUNhbGxzIjowfSwiZXhpdHMiOlt7InBpZCI6MjI1MjQsImV4aXRDb2RlIjpudWxsLCJzaWduYWxDb2RlIjoiU0lHVEVSTSJ9XX0="
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "35ea996143c87e645b34-23b1bfca992e50d0402b",
+              "file": "recovery-regression.spec.ts",
+              "line": 180,
+              "column": 119
+            },
+            {
+              "title": "model cannot override unsafe original input 2027-02-30请假",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5696,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-16T13:48:09.252Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "model-platform-transport",
+                          "contentType": "application/json",
+                          "body": "W3siZXZlbnQiOiJjb25uZWN0Iiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo1ODR9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjU4NX0seyJldmVudCI6ImVuZCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6NTg1fSx7ImV2ZW50IjoiZW5kIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo1ODd9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjU4N30seyJldmVudCI6ImVuZCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6NDUyMH0seyJldmVudCI6ImZpbmlzaCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6NDUyMH0seyJldmVudCI6ImVycm9yIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo1NjgxLCJyZWFzb24iOiJFQ09OTlJFU0VUIn0seyJldmVudCI6ImNsb3NlIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo1NjgyfV0="
+                        },
+                        {
+                          "name": "owned-process-evidence",
+                          "contentType": "application/json",
+                          "body": "eyJwaWRzIjpbMTc0MjhdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU4NDAyMTU3LTE3OTQ4XFxicm93c2VyXFxyZWNvdmVyeS1yZWdyZXNzaW9uLVJFQzA1LS01OWVjMS1vcmlnaW5hbC1pbnB1dC0yMDI3LTAyLTMw6K+35YGHXFxyZWNvdmVyeS5kYiIsIm1vZGVsIjp7InBlbmRpbmciOjAsImNhbmNlbGVkIjowLCJmZWVkYmFja0NhbGxzIjoxLCJqdWRnZUNhbGxzIjowfSwiZXhpdHMiOlt7InBpZCI6MTc0MjgsImV4aXRDb2RlIjpudWxsLCJzaWduYWxDb2RlIjoiU0lHVEVSTSJ9XX0="
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "35ea996143c87e645b34-79b2f71fd0fa40867c35",
+              "file": "recovery-regression.spec.ts",
+              "line": 180,
+              "column": 119
+            },
+            {
+              "title": "model cannot override unsafe original input 课程改到2027-05-01",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5584,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-16T13:48:14.986Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "model-platform-transport",
+                          "contentType": "application/json",
+                          "body": "W3siZXZlbnQiOiJjb25uZWN0Iiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo2NzJ9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjY3Mn0seyJldmVudCI6ImVuZCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6NjcyfSx7ImV2ZW50IjoiZW5kIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo2NzR9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjY3NH0seyJldmVudCI6ImVuZCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6NDU3OX0seyJldmVudCI6ImZpbmlzaCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6NDU3OX0seyJldmVudCI6ImVycm9yIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo1NTU1LCJyZWFzb24iOiJFQ09OTlJFU0VUIn0seyJldmVudCI6ImNsb3NlIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo1NTU2fV0="
+                        },
+                        {
+                          "name": "owned-process-evidence",
+                          "contentType": "application/json",
+                          "body": "eyJwaWRzIjpbMzc2XSwiZGIiOiJEOlxcZW4td29yZHNcXHJldmlld1xcbGFkZGVyLWJyb3dzZXItbWlzc2luZy1zdWl0ZXMtMjAyNjEwMTZcXHNvdXJjZVxcd2ViXFwudGVzdC1hcnRpZmFjdHNcXGNsb3N1cmUtMTc5MjE1ODQwMjE1Ny0xNzk0OFxcYnJvd3NlclxccmVjb3ZlcnktcmVncmVzc2lvbi1SRUMwNS0tZWVlMGEtaWdpbmFsLWlucHV0Leivvueoi+aUueWIsDIwMjctMDUtMDFcXHJlY292ZXJ5LmRiIiwibW9kZWwiOnsicGVuZGluZyI6MCwiY2FuY2VsZWQiOjAsImZlZWRiYWNrQ2FsbHMiOjEsImp1ZGdlQ2FsbHMiOjB9LCJleGl0cyI6W3sicGlkIjozNzYsImV4aXRDb2RlIjpudWxsLCJzaWduYWxDb2RlIjoiU0lHVEVSTSJ9XX0="
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "35ea996143c87e645b34-04a7195326c2bd67c1ce",
+              "file": "recovery-regression.spec.ts",
+              "line": 180,
+              "column": 119
+            },
+            {
+              "title": "slow judging does not lock another classroom; actual restart reopens unanswered question",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 21677,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-16T13:48:20.602Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "model-platform-transport",
+                          "contentType": "application/json",
+                          "body": "W3siZXZlbnQiOiJjb25uZWN0Iiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjoxMDU5fSx7ImV2ZW50IjoiZmluaXNoIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjoxMDYwfSx7ImV2ZW50IjoiZW5kIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjoxMDYwfSx7ImV2ZW50IjoiZW5kIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjoxMDYzfSx7ImV2ZW50IjoiZmluaXNoIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjoxMDYzfSx7ImV2ZW50IjoiY2xvc2UiLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjcwNjd9LHsiZXZlbnQiOiJjb25uZWN0Iiwic29ja2V0IjoyLCJlbGFwc2VkX21zIjoxNzM4Nn0seyJldmVudCI6ImVuZCIsInNvY2tldCI6MiwiZWxhcHNlZF9tcyI6MTczOTF9LHsiZXZlbnQiOiJlcnJvciIsInNvY2tldCI6MiwiZWxhcHNlZF9tcyI6MTg2MjksInJlYXNvbiI6IkVDT05OUkVTRVQifSx7ImV2ZW50IjoiY2xvc2UiLCJzb2NrZXQiOjIsImVsYXBzZWRfbXMiOjE4NjMwfSx7ImV2ZW50IjoiY29ubmVjdCIsInNvY2tldCI6MywiZWxhcHNlZF9tcyI6MTkyMjd9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjMsImVsYXBzZWRfbXMiOjE5MjI5fSx7ImV2ZW50IjoiZW5kIiwic29ja2V0IjozLCJlbGFwc2VkX21zIjoxOTIyOX0seyJldmVudCI6ImVuZCIsInNvY2tldCI6MywiZWxhcHNlZF9tcyI6MTkyMzB9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjMsImVsYXBzZWRfbXMiOjE5MjMwfSx7ImV2ZW50IjoiZXJyb3IiLCJzb2NrZXQiOjMsImVsYXBzZWRfbXMiOjIxNjU5LCJyZWFzb24iOiJFQ09OTlJFU0VUIn0seyJldmVudCI6ImNsb3NlIiwic29ja2V0IjozLCJlbGFwc2VkX21zIjoyMTY1OX1d"
+                        },
+                        {
+                          "name": "owned-process-evidence",
+                          "contentType": "application/json",
+                          "body": "eyJwaWRzIjpbMTU5NTYsMjEzMTZdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU4NDAyMTU3LTE3OTQ4XFxicm93c2VyXFxyZWNvdmVyeS1yZWdyZXNzaW9uLVJFQzA1LS02NjUxYy1yZW9wZW5zLXVuYW5zd2VyZWQtcXVlc3Rpb25cXHJlY292ZXJ5LmRiIiwibW9kZWwiOnsicGVuZGluZyI6MSwiY2FuY2VsZWQiOjEsImZlZWRiYWNrQ2FsbHMiOjAsImp1ZGdlQ2FsbHMiOjB9LCJleGl0cyI6W3sicGlkIjoxNTk1NiwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn0seyJwaWQiOjIxMzE2LCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "35ea996143c87e645b34-051a495086e349acd9f2",
+              "file": "recovery-regression.spec.ts",
+              "line": 200,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-16T13:46:28.064Z",
+    "duration": 301444.17100000003,
+    "expected": 21,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

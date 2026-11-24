@@ -1,0 +1,5 @@
+Command: go test -race -tags pilot_e2e ./internal/store -run PilotCatalog -count=1
+GOCACHE=D:\en-words\.test-tools\gocache
+GOMODCACHE=D:\en-words\.test-tools\gomodcache
+
+go: -race requires cgo; enable cgo by setting CGO_ENABLED=1

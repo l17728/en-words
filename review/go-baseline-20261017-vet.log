@@ -1,0 +1,4 @@
+﻿Command: go vet ./...
+Working directory: D:\en-words\server
+Result: NOT RUN (exit 127 equivalent)
+Reason: Go toolchain unavailable; `go version` and `where.exe go` confirmed no executable in PATH or checked common install paths.

@@ -1,0 +1,57 @@
+test_browser_mutations_require_bearer_and_trusted_origin (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_browser_mutations_require_bearer_and_trusted_origin) ... ok
+test_close_tuple_conflict_separates_http_and_internal_fault_entry (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_close_tuple_conflict_separates_http_and_internal_fault_entry) ... ok
+test_each_quota_dimension_has_an_isolated_case (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_each_quota_dimension_has_an_isolated_case) ... ok
+test_every_product_case_remains_design_only (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_every_product_case_remains_design_only) ... ok
+test_intent_mint_limits_are_server_side_and_fail_closed (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_intent_mint_limits_are_server_side_and_fail_closed) ... ok
+test_manifest_binds_exact_existing_design_sources (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_manifest_binds_exact_existing_design_sources) ... ok
+test_manifest_matches_full_documented_case_inventory (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_manifest_matches_full_documented_case_inventory) ... ok
+test_nonce_contention_barrier_has_single_owner_and_observed_waiters (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_nonce_contention_barrier_has_single_owner_and_observed_waiters) ... FAIL
+test_route_authentication_denials_are_separate_cases (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_route_authentication_denials_are_separate_cases) ... ok
+test_schema_fault_prerequisite_count_and_hash_are_current (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_schema_fault_prerequisite_count_and_hash_are_current) ... ok
+test_directory_leaf_symlink_is_rejected_without_touching_target (review.test_pilot_vfs_candidate_runner.ArtifactPermissionTests.test_directory_leaf_symlink_is_rejected_without_touching_target) ... skipped 'evidence permission checks use POSIX file modes'
+test_non_regular_entries_fail_closed_without_chmod_following_symlink (review.test_pilot_vfs_candidate_runner.ArtifactPermissionTests.test_non_regular_entries_fail_closed_without_chmod_following_symlink) ... skipped 'evidence permission checks use POSIX file modes'
+test_nonregular_entries_and_hardlinks_are_rejected (review.test_pilot_vfs_candidate_runner.ArtifactPermissionTests.test_nonregular_entries_and_hardlinks_are_rejected) ... skipped 'evidence permission checks use POSIX file modes'
+test_control_and_publication_faults_fail_closed_without_proposals (review.test_pilot_vfs_candidate_runner.CandidateFailureE2E.test_control_and_publication_faults_fail_closed_without_proposals) ... skipped 'set PILOT_VFS_TEST_REAL_GO/STRACE/SERVER_DIR to run Linux candidate failure E2E'
+test_peer_close_is_ambiguous_and_fails_closed (review.test_pilot_vfs_candidate_runner.CandidateFailureE2E.test_peer_close_is_ambiguous_and_fails_closed) ... skipped 'set PILOT_VFS_TEST_REAL_GO/STRACE/SERVER_DIR to run Linux candidate failure E2E'
+test_all_modes_select_the_right_test_and_keep_proposals_isolated (review.test_pilot_vfs_candidate_runner.CandidateRunnerE2E.test_all_modes_select_the_right_test_and_keep_proposals_isolated) ... skipped 'the runner orchestrates Linux strace'
+test_artifact_path_rejects_checkout_alias_and_symlink_ancestor (review.test_pilot_vfs_candidate_runner.CandidateRunnerE2E.test_artifact_path_rejects_checkout_alias_and_symlink_ancestor) ... skipped 'the runner orchestrates Linux strace'
+test_runner_binds_unique_run_stdout_stderr_and_lock_trace (review.test_pilot_vfs_candidate_runner.CandidateRunnerE2E.test_runner_binds_unique_run_stdout_stderr_and_lock_trace) ... skipped 'the runner orchestrates Linux strace'
+test_runner_fails_closed_if_artifact_directory_leaf_is_replaced (review.test_pilot_vfs_candidate_runner.CandidateRunnerE2E.test_runner_fails_closed_if_artifact_directory_leaf_is_replaced) ... skipped 'the runner orchestrates Linux strace'
+test_runner_fails_closed_on_symlink_injected_by_test_process (review.test_pilot_vfs_candidate_runner.CandidateRunnerE2E.test_runner_fails_closed_on_symlink_injected_by_test_process) ... skipped 'the runner orchestrates Linux strace'
+test_requires_lock_command_and_complete_range (review.test_pilot_vfs_candidate_runner.LockTraceValidationTests.test_requires_lock_command_and_complete_range) ... ok
+test_audit_archives_failure_and_partial_phase_evidence (review.test_pilot_test_discovery.ManifestTests.test_audit_archives_failure_and_partial_phase_evidence) ... ok
+test_empty_children_require_explicit_parent_only_declaration (review.test_pilot_test_discovery.ManifestTests.test_empty_children_require_explicit_parent_only_declaration) ... ok
+test_interrupted_parent_marks_remaining_tests_not_run (review.test_pilot_test_discovery.ManifestTests.test_interrupted_parent_marks_remaining_tests_not_run) ... ok
+test_interrupted_probe_stops_audit_before_next_command (review.test_pilot_test_discovery.ManifestTests.test_interrupted_probe_stops_audit_before_next_command) ... ok
+test_native_audit_refuses_cross_compilation_before_running_tests (review.test_pilot_test_discovery.ManifestTests.test_native_audit_refuses_cross_compilation_before_running_tests) ... ok
+test_parent_only_suite_must_be_explicit (review.test_pilot_test_discovery.ManifestTests.test_parent_only_suite_must_be_explicit) ... ok
+test_rejects_duplicate_json_keys (review.test_pilot_test_discovery.ManifestTests.test_rejects_duplicate_json_keys) ... ok
+test_rejects_empty_required_suite (review.test_pilot_test_discovery.ManifestTests.test_rejects_empty_required_suite) ... ok
+test_rejects_stale_source_sdd_hash (review.test_pilot_test_discovery.ManifestTests.test_rejects_stale_source_sdd_hash) ... ok
+test_timeout_terminates_child_and_returns_partial_evidence (review.test_pilot_test_discovery.ProcessRunnerTests.test_timeout_terminates_child_and_returns_partial_evidence) ... ok
+test_windows_tree_cleanup_failure_is_bounded_and_reported (review.test_pilot_test_discovery.ProcessRunnerTests.test_windows_tree_cleanup_failure_is_bounded_and_reported) ... ok
+test_duplicate_action_test_or_package_key_fails_closed (review.test_pilot_test_discovery.ValidateEventsTests.test_duplicate_action_test_or_package_key_fails_closed) ... ok
+test_malformed_json_fails_closed (review.test_pilot_test_discovery.ValidateEventsTests.test_malformed_json_fails_closed) ... ok
+test_missing_subtest_fails_even_when_parent_passes (review.test_pilot_test_discovery.ValidateEventsTests.test_missing_subtest_fails_even_when_parent_passes) ... ok
+test_nonzero_exit_fails_even_if_json_claims_pass (review.test_pilot_test_discovery.ValidateEventsTests.test_nonzero_exit_fails_even_if_json_claims_pass) ... ok
+test_out_of_order_parent_or_package_events_fail (review.test_pilot_test_discovery.ValidateEventsTests.test_out_of_order_parent_or_package_events_fail) ... ok
+test_package_failure_plus_pass_fails (review.test_pilot_test_discovery.ValidateEventsTests.test_package_failure_plus_pass_fails) ... ok
+test_package_mismatch_fails (review.test_pilot_test_discovery.ValidateEventsTests.test_package_mismatch_fails) ... ok
+test_parent_fail_plus_pass_conflict_fails (review.test_pilot_test_discovery.ValidateEventsTests.test_parent_fail_plus_pass_conflict_fails) ... ok
+test_parent_skip_fails (review.test_pilot_test_discovery.ValidateEventsTests.test_parent_skip_fails) ... ok
+test_requires_exact_parent_and_every_subtest_to_pass (review.test_pilot_test_discovery.ValidateEventsTests.test_requires_exact_parent_and_every_subtest_to_pass) ... ok
+test_skipped_subtest_fails (review.test_pilot_test_discovery.ValidateEventsTests.test_skipped_subtest_fails) ... ok
+test_subtest_without_terminal_fails (review.test_pilot_test_discovery.ValidateEventsTests.test_subtest_without_terminal_fails) ... ok
+
+======================================================================
+FAIL: test_nonce_contention_barrier_has_single_owner_and_observed_waiters (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_nonce_contention_barrier_has_single_owner_and_observed_waiters)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\en-words\review\test_pilot_runroot_manifest.py", line 102, in test_nonce_contention_barrier_has_single_owner_and_observed_waiters
+    self.assertIn("rather than sleep or timing inference", case["action"])
+AssertionError: 'rather than sleep or timing inference' not found in 'Launch 32 valid intent-mint requests from 32 separately authenticated principals sharing the same active key. Exactly one reservation owner pauses after reading the counter while holding the per-key mutex. The harness observes every other request attempt that mutex before releasing the owner, using explicit lock-attempt signals rather than sleep/timing inference. Also inject crash after counter fsync before response, external-keyring rollback, corruption/missing keyring, issuance-cap exhaustion, key rotation, noncanonical base64url, malformed version/tag, altered AAD, unsupported purpose, zero-width IDs, and expiry just below/at/above 86,400 seconds.'
+
+----------------------------------------------------------------------
+Ran 44 tests in 0.561s
+
+FAILED (failures=1, skipped=10)

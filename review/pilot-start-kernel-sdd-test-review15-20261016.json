@@ -1,0 +1,39 @@
+﻿{
+  "review": "pilot-start-kernel-sdd-test-review15",
+  "date": "2026-10-16",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "domain": "storage security and test design",
+  "verdict": "BLOCK",
+  "tests_run": false,
+  "review14_finding": {
+    "topic": "catalog HMAC/key contract",
+    "status": "CLOSED",
+    "evidence": "§93 now requires malformed catalog format rejection only; no catalog HMAC assertion remains."
+  },
+  "findings": [
+    {
+      "id": "P2-1",
+      "severity": "P2",
+      "status": "open",
+      "title": "Path-open SQLite connection is not demonstrably bound to OpenVerified file handle",
+      "sections": [42, 93],
+      "evidence": "SQLite opens a canonical path, then a hook compares PRAGMA database_list path and OS file ID. The spec does not establish that this ID comes from SQLite's opened OS file object; path stat can describe a different current directory entry. The test also demands the replaced DB is never accessed, although the driver may open/read it before the hook.",
+      "required_change": "Use a VFS that consumes the verified handle and exposes the open object's identity, or narrow the guarantee to rejection before application SQL/receipt query and specify the exact observable race test."
+    },
+    {
+      "id": "P2-2",
+      "severity": "P2",
+      "status": "open",
+      "title": "Catalog file-ID expectation is not defined across required atomic replacement",
+      "sections": [42, 93],
+      "evidence": "The catalog must atomically replace its file and fail closed on file-ID changes, but the expected identity anchor and legitimate update/restart rule are unspecified. The test cannot distinguish the expected replacement inode from unauthorized substitution.",
+      "required_change": "Specify how expected catalog identity is durably anchored/updated across atomic replacement and restart; test an allowed replacement and an unauthorized replacement, with only the latter global-failing before any case DB open."
+    }
+  ],
+  "reviewed_areas": {
+    "catalog_global_fail_closed": "PASS_WITH_IDENTITY_AMBIGUITY",
+    "quarantine_tombstone_lifecycle": "PASS",
+    "CSRF_loopback_matrix": "PASS",
+    "OpenVerified_SQLite_identity": "TEST_CONTRACT_GAP"
+  }
+}

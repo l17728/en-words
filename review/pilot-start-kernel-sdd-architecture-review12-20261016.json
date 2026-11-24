@@ -1,0 +1,29 @@
+﻿{
+  "review": "pilot-start-kernel-sdd-architecture-review12",
+  "date": "2026-10-16",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "comparison": "architecture-review11 PASS baseline",
+  "domain": "architecture",
+  "verdict": "BLOCK",
+  "tests_run": false,
+  "prior_architecture_gate": "isolated_test_only_start_slice",
+  "confirmed_unchanged": [
+    "Store/API dependency direction and pilot_e2e production isolation",
+    "Planner and Registry execution outside SQLite writer transaction",
+    "writer revalidation and atomic audit/checkpoint/receipt/outbox commit",
+    "authorized read-only receipt replay and COMMIT-unknown semantics",
+    "trusted-supervisor filesystem threat-model boundary"
+  ],
+  "findings": [
+    {
+      "id": "P2-1",
+      "severity": "P2",
+      "status": "open",
+      "title": "Global catalog generation append is not serialized across case IDs",
+      "sections": [42, 82, 93],
+      "evidence": "§42 defines a single monotonic-generation append-only catalog; locks mentioned are per-case lifecycle or sidecar locks. The SDD does not serialize generation allocation, full record append, and Sync across concurrent case create/cleanup operations. Tests cover interleaved sidecar appends but not concurrent catalog transitions.",
+      "required_change": "Define a catalog-wide append lock/atomic generation allocator over generation read, complete frame append, and Flush+Sync; test concurrent transitions for two different cases followed by restart and contiguous-chain/state verification."
+    }
+  ],
+  "remaining_blockers": 1
+}

@@ -1,0 +1,28 @@
+{
+  "review_id": "pilot-supervisor-crossdoc-test-r6-20261019",
+  "reviewed_documents": {
+    "docs/41-试点课堂Start持久迁移内核SDD.md": "7890fb542818c77f131cd06d09845120406eb7c1567af1bdfa83c92fa51d3867",
+    "docs/42-Pilot隔离运行监督器SDD.md": "aef772e4d71633690e4e3f4c7498837552088d5bd385af1875de820e1b9aa447"
+  },
+  "review_type": "read-only cross-document test specification review",
+  "date": "2026-10-19",
+  "verdict": "PASS",
+  "open_p1_count": 0,
+  "open_p2_count": 0,
+  "tests_executed": false,
+  "checks": [
+    {"area": "close_adapter_tuple", "status": "PASS", "evidence": "Exactly three valid tuples are specified; invalid tuples, including closed plus error, map to unknown/ErrInvalidCloseOutcome and restart_required."},
+    {"area": "close_failure_and_restart_matrix", "status": "PASS", "evidence": "Each handle class has explicit close progression, retry ownership, unknown-state child termination, OS lock recovery, and zero-new-work behavior."},
+    {"area": "database_counters", "status": "PASS", "evidence": "db_open_rw, db_open_ro_recovery, and db_application_sql are defined, including path-mismatch counts and permitted recovery queries."},
+    {"area": "state_matrix_and_file_operations", "status": "PASS", "evidence": "Bootstrap/case-lock exceptions, per-state capability restrictions, fixed-member inventory, verified handle operations, cleanup order, and ID inventory are explicit."},
+    {"area": "fault_and_boundary_cases", "status": "PASS", "evidence": "Per-member create/write/Sync/identity and cleanup outcomes, zero/complete/partial catalog frames, size/count/payload boundaries, generations and golden vectors are specified."},
+    {"area": "cross_process_and_e2e", "status": "PASS", "evidence": "C1-C5 and docs/41 writer/reader/crash/recovery schedules plus docs/42 E2E-PILOT-01..07 provide deterministic process and future browser mappings."},
+    {"area": "docs41_section112_alignment", "status": "PASS", "evidence": "SQLite path-only verification and supervisor-held HMAC key match the correction in docs/41 §112."},
+    {"area": "inherited_platform_coverage_logging", "status": "PASS", "evidence": "Native Linux/Windows gates, coverage thresholds, trace/log schema and sensitive-data scans remain present."}
+  ],
+  "files_written": [
+    "review/pilot-supervisor-crossdoc-test-r6-20261019.md",
+    "review/pilot-supervisor-crossdoc-test-r6-20261019.json"
+  ],
+  "limitations": "Review is of design text only. No implementation or E2E tests were executed."
+}

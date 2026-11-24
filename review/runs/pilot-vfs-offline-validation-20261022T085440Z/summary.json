@@ -1,0 +1,43 @@
+{
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "manifest_status": "DRAFT_NOT_AUTHORIZED",
+  "manifest_entry_count": 74,
+  "before_match_count": 74,
+  "after_match_count": 74,
+  "snapshot_integrity_pass": true,
+  "tests": [
+    {
+      "name": "runroot-manifest",
+      "command": [
+        "C:\\Python312\\python.exe",
+        "-m",
+        "unittest",
+        "-v",
+        "review.test_pilot_runroot_manifest"
+      ],
+      "cwd": "D:\\en-words",
+      "PYTHONPATH": null,
+      "exit_code": 0,
+      "elapsed_seconds": 0.313,
+      "stdout_bytes": 0,
+      "stderr_bytes": 1931
+    },
+    {
+      "name": "vfs-candidate-runner-tests",
+      "command": [
+        "C:\\Python312\\python.exe",
+        "-m",
+        "unittest",
+        "-v",
+        "review.test_pilot_vfs_candidate_runner"
+      ],
+      "cwd": "D:\\en-words",
+      "PYTHONPATH": "review",
+      "exit_code": 0,
+      "elapsed_seconds": 0.343,
+      "stdout_bytes": 0,
+      "stderr_bytes": 2753
+    }
+  ],
+  "candidate_execution_invoked": false
+}

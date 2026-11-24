@@ -1,0 +1,268 @@
+{
+  "manifest_sha256": "89278ad233bb02adbc36a5b31e466e00962b3a1fd51486de8993381bd4d85764",
+  "candidate_source_sha256": "8ce85324965bc4f7fe756c0e6f990ce0329f84d40e68087d135652808eeffd1b",
+  "required_candidate_tests": [
+    "TestLadderAtomicGlobalHonorsStudentOverride",
+    "TestLadderAtomicCardFailureRollsBackConfiguration",
+    "TestLadderAtomicMemoryStudentIsolation",
+    "TestLadderSecondStudentFailureRollsBackFirstStudent",
+    "TestLadderTwoAppsConfigurationWritesRemainSerializable",
+    "TestLadderGoalModesRespectExplicitLadderAndDueTimes",
+    "TestLadderReloadFailureReachesNewRoomAndNextLesson",
+    "TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize",
+    "TestLadderMixedBackendRefusesWithoutChangingNativeCards",
+    "TestLadderCrossAppPlacementFinishUsesCurrentGlobalConfiguration",
+    "TestLadderCommittedRefreshFailureUsesFreshRead",
+    "TestLadderScopeWithoutCardsFailsOnlyWhenEffectiveValueChanges",
+    "TestLadderDeferredCommitFailureLeavesOriginalAndNewConnectionsClean",
+    "TestLadderOwnedScopeObjectsCannotBypassProtection",
+    "TestLadderRawJSONRejectsAmbiguousKeysWithoutWrites",
+    "TestLadderPersistenceAndAuditFailuresRollbackAllEffects",
+    "TestLadderCancellationAndAbsentDeleteHaveNoWrites",
+    "TestLadderEffectiveHTTPStrictTargetAndRole",
+    "TestLadderPairedSchedulerRejectsUncoordinatedConsumers",
+    "TestLadderMemoryWorkingChangesDiscardedTogether",
+    "TestEffectiveViewTracksDerivedGoalAndDeletionFallback",
+    "TestPairedConfigurationWithoutCoordinatorRejectsSensitiveWrites",
+    "TestEffectiveGoalInheritanceMatrix",
+    "TestConfigScopeTempObjectAndReadFailureFailClosed",
+    "TestConfigScopeAbsentAndCanonicalLegacyRemainAvailable"
+  ],
+  "stages": [
+    {
+      "name": "targeted",
+      "exit": 0,
+      "elapsed_seconds": 96.11,
+      "command": [
+        "D:\\en-words\\.test-tools\\go\\bin\\go.exe",
+        "test",
+        "-p=1",
+        "-count=1",
+        "-json",
+        "-run",
+        "Test.*Ladder|^TestLadderAtomicGlobalHonorsStudentOverride$|^TestLadderAtomicCardFailureRollsBackConfiguration$|^TestLadderAtomicMemoryStudentIsolation$|^TestLadderSecondStudentFailureRollsBackFirstStudent$|^TestLadderTwoAppsConfigurationWritesRemainSerializable$|^TestLadderGoalModesRespectExplicitLadderAndDueTimes$|^TestLadderReloadFailureReachesNewRoomAndNextLesson$|^TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize$|^TestLadderMixedBackendRefusesWithoutChangingNativeCards$|^TestLadderCrossAppPlacementFinishUsesCurrentGlobalConfiguration$|^TestLadderCommittedRefreshFailureUsesFreshRead$|^TestLadderScopeWithoutCardsFailsOnlyWhenEffectiveValueChanges$|^TestLadderDeferredCommitFailureLeavesOriginalAndNewConnectionsClean$|^TestLadderOwnedScopeObjectsCannotBypassProtection$|^TestLadderRawJSONRejectsAmbiguousKeysWithoutWrites$|^TestLadderPersistenceAndAuditFailuresRollbackAllEffects$|^TestLadderCancellationAndAbsentDeleteHaveNoWrites$|^TestLadderEffectiveHTTPStrictTargetAndRole$|^TestLadderPairedSchedulerRejectsUncoordinatedConsumers$|^TestLadderMemoryWorkingChangesDiscardedTogether$|^TestEffectiveViewTracksDerivedGoalAndDeletionFallback$|^TestPairedConfigurationWithoutCoordinatorRejectsSensitiveWrites$|^TestEffectiveGoalInheritanceMatrix$|^TestConfigScopeTempObjectAndReadFailureFailClosed$|^TestConfigScopeAbsentAndCanonicalLegacyRemainAvailable$",
+        "./..."
+      ],
+      "tests": {
+        "run": 39,
+        "output": 78,
+        "pass": 39
+      },
+      "top": {
+        "run": 31,
+        "output": 62,
+        "pass": 31
+      },
+      "failures": [],
+      "skips": [],
+      "candidate_missing_passed": []
+    },
+    {
+      "name": "coverage",
+      "exit": 0,
+      "elapsed_seconds": 161.14,
+      "command": [
+        "D:\\en-words\\.test-tools\\go\\bin\\go.exe",
+        "test",
+        "-p=1",
+        "-count=1",
+        "-json",
+        "-coverpkg=./internal/...",
+        "-coverprofile=D:\\en-words\\review\\ladder-integrated-go-acceptance-20261016.logs\\coverage.out",
+        "./..."
+      ],
+      "tests": {
+        "run": 1515,
+        "output": 3089,
+        "pass": 1506,
+        "skip": 9,
+        "pause": 4,
+        "cont": 4
+      },
+      "top": {
+        "run": 604,
+        "output": 1218,
+        "pass": 595,
+        "skip": 9
+      },
+      "failures": [],
+      "skips": [
+        "TestOptInProductionFB001Diagnostic",
+        "TestStartupCleanupHarness",
+        "TestBrowserOverdueHarness",
+        "TestOptInIndependentASRThroughOwnedProductRoute",
+        "TestChatReal",
+        "TestChatJSONReal",
+        "TestChatRefuseLongInput",
+        "TestOptInLocalSpeechQuality",
+        "TestStartupFailureHarness"
+      ],
+      "candidate_missing_passed": []
+    },
+    {
+      "name": "vet",
+      "exit": 0,
+      "elapsed_seconds": 9.64,
+      "command": [
+        "D:\\en-words\\.test-tools\\go\\bin\\go.exe",
+        "vet",
+        "-p=1",
+        "./..."
+      ]
+    },
+    {
+      "name": "race",
+      "exit": 1,
+      "elapsed_seconds": 399.76,
+      "command": [
+        "D:\\en-words\\.test-tools\\go\\bin\\go.exe",
+        "test",
+        "-p=1",
+        "-count=1",
+        "-json",
+        "-race",
+        "./..."
+      ],
+      "tests": {
+        "run": 1515,
+        "output": 3091,
+        "pass": 1505,
+        "skip": 9,
+        "pause": 4,
+        "cont": 4,
+        "fail": 1
+      },
+      "top": {
+        "run": 604,
+        "output": 1220,
+        "pass": 594,
+        "skip": 9,
+        "fail": 1
+      },
+      "failures": [
+        "TestStartupTwoIndependentPoolsNeverPublishPartialSchema",
+        "enwords/internal/store"
+      ],
+      "skips": [
+        "TestOptInProductionFB001Diagnostic",
+        "TestStartupCleanupHarness",
+        "TestBrowserOverdueHarness",
+        "TestOptInIndependentASRThroughOwnedProductRoute",
+        "TestChatReal",
+        "TestChatJSONReal",
+        "TestChatRefuseLongInput",
+        "TestOptInLocalSpeechQuality",
+        "TestStartupFailureHarness"
+      ],
+      "candidate_missing_passed": []
+    }
+  ],
+  "coverage": {
+    "enwords/internal/agent": {
+      "hit": 151,
+      "total": 155,
+      "percent": 97.42
+    },
+    "enwords/internal/api": {
+      "hit": 3520,
+      "total": 4333,
+      "percent": 81.24
+    },
+    "enwords/internal/auth": {
+      "hit": 143,
+      "total": 159,
+      "percent": 89.94
+    },
+    "enwords/internal/classroom": {
+      "hit": 467,
+      "total": 506,
+      "percent": 92.29
+    },
+    "enwords/internal/config": {
+      "hit": 331,
+      "total": 363,
+      "percent": 91.18
+    },
+    "enwords/internal/duplex": {
+      "hit": 163,
+      "total": 167,
+      "percent": 97.6
+    },
+    "enwords/internal/feedback": {
+      "hit": 417,
+      "total": 440,
+      "percent": 94.77
+    },
+    "enwords/internal/judge": {
+      "hit": 159,
+      "total": 161,
+      "percent": 98.76
+    },
+    "enwords/internal/llmzhipu": {
+      "hit": 41,
+      "total": 41,
+      "percent": 100.0
+    },
+    "enwords/internal/localmodel": {
+      "hit": 152,
+      "total": 168,
+      "percent": 90.48
+    },
+    "enwords/internal/memory": {
+      "hit": 135,
+      "total": 145,
+      "percent": 93.1
+    },
+    "enwords/internal/obs": {
+      "hit": 50,
+      "total": 54,
+      "percent": 92.59
+    },
+    "enwords/internal/remoteprovider": {
+      "hit": 145,
+      "total": 150,
+      "percent": 96.67
+    },
+    "enwords/internal/scheduler": {
+      "hit": 689,
+      "total": 762,
+      "percent": 90.42
+    },
+    "enwords/internal/scripts": {
+      "hit": 108,
+      "total": 115,
+      "percent": 93.91
+    },
+    "enwords/internal/store": {
+      "hit": 1497,
+      "total": 1783,
+      "percent": 83.96
+    },
+    "enwords/internal/tools": {
+      "hit": 150,
+      "total": 160,
+      "percent": 93.75
+    },
+    "enwords/internal/voiceclone": {
+      "hit": 53,
+      "total": 56,
+      "percent": 94.64
+    },
+    "enwords/internal/voicecmd": {
+      "hit": 50,
+      "total": 52,
+      "percent": 96.15
+    },
+    "enwords/internal/wordbook": {
+      "hit": 282,
+      "total": 306,
+      "percent": 92.16
+    }
+  },
+  "coverage_gate_failures": [],
+  "failure": "RuntimeError: race_failed",
+  "manifest_still_matches": true,
+  "candidate_source_unchanged": true,
+  "formal_source_unchanged": true,
+  "scope": "formal integrated Go tree; no source changes by validator"
+}

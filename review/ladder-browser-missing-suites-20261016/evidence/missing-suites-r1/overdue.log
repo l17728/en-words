@@ -1,0 +1,23 @@
+[WebServer] (node:10008) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[WebServer] (node:18664) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:4828) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 21:43:13 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 21:43:13 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+  ✓  1 e2e\overdue-live.spec.ts:6:1 › REC08 live overdue retirement closes only the retired student socket while process and another classroom stay alive (17.0s)
+
+  1 passed (34.4s)

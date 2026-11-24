@@ -1,0 +1,237 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\source\\web\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--config",
+      "playwright.repeat.config.ts"
+    ],
+    "configFile": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\source\\web\\playwright.repeat.config.ts",
+    "rootDir": "D:/en-words/review/ladder-browser-missing-suites-20261016/source/web/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/en-words/review/ladder-browser-missing-suites-20261016/source/web/.test-artifacts/closure-1792159443344-19284/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "D:/en-words/review/ladder-browser-missing-suites-20261016/source/web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "repeat-contract.spec.ts"
+        ],
+        "timeout": 180000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\source\\web\\.test-artifacts\\closure-1792159443344-19284\\results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "repeat-contract.spec.ts",
+      "file": "repeat-contract.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "RP01 repeated target alone advances; meaning and wrong word never invoke L2; quiz and another student remain correct",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 25847,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T14:04:18.967Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "repeat-route-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJsZXNzb25JZCI6MSwib3RoZXJMZXNzb25JZCI6MiwicHJvdmlkZXJDYWxscyI6MCwicmVwZWF0cyI6W3sibGV2ZWwiOiJpbmZvIiwidHMiOiIyMDI2LTEwLTE2VDIyOjA0OjQxLjY4OSswODAwIiwibXNnIjoicmVwZWF0X2V2YWx1YXRlZCIsIm1vZHVsZSI6ImNsYXNzcm9vbSIsImV2ZW50IjoicmVwZWF0X2V2YWx1YXRlZCIsInRyYWNlX2lkIjoibGVzc29uLTEiLCJsZXNzb25faWQiOjEsIndvcmRfaWQiOjEsInB1cnBvc2UiOiJyZXBlYXQiLCJzb3VyY2UiOiJ0YXJnZXRfbWF0Y2giLCJyZXN1bHQiOiJub19tYXRjaCIsImR1cmF0aW9uX21zIjowfSx7ImxldmVsIjoiaW5mbyIsInRzIjoiMjAyNi0xMC0xNlQyMjowNDo0MS43NjgrMDgwMCIsIm1zZyI6InJlcGVhdF9ldmFsdWF0ZWQiLCJtb2R1bGUiOiJjbGFzc3Jvb20iLCJldmVudCI6InJlcGVhdF9ldmFsdWF0ZWQiLCJ0cmFjZV9pZCI6Imxlc3Nvbi0xIiwiZHVyYXRpb25fbXMiOjAsImxlc3Nvbl9pZCI6MSwid29yZF9pZCI6MSwicHVycG9zZSI6InJlcGVhdCIsInNvdXJjZSI6InRhcmdldF9tYXRjaCIsInJlc3VsdCI6Im5vX21hdGNoIn0seyJsZXZlbCI6ImluZm8iLCJ0cyI6IjIwMjYtMTAtMTZUMjI6MDQ6NDEuODY5KzA4MDAiLCJtc2ciOiJyZXBlYXRfZXZhbHVhdGVkIiwibW9kdWxlIjoiY2xhc3Nyb29tIiwiZXZlbnQiOiJyZXBlYXRfZXZhbHVhdGVkIiwidHJhY2VfaWQiOiJsZXNzb24tMSIsImxlc3Nvbl9pZCI6MSwid29yZF9pZCI6MSwicHVycG9zZSI6InJlcGVhdCIsInNvdXJjZSI6InRhcmdldF9tYXRjaCIsInJlc3VsdCI6Im5vX21hdGNoIiwiZHVyYXRpb25fbXMiOjB9LHsibGV2ZWwiOiJpbmZvIiwidHMiOiIyMDI2LTEwLTE2VDIyOjA0OjQzLjc4MSswODAwIiwibXNnIjoicmVwZWF0X2V2YWx1YXRlZCIsIm1vZHVsZSI6ImNsYXNzcm9vbSIsImV2ZW50IjoicmVwZWF0X2V2YWx1YXRlZCIsInRyYWNlX2lkIjoibGVzc29uLTEiLCJsZXNzb25faWQiOjEsIndvcmRfaWQiOjEsInB1cnBvc2UiOiJyZXBlYXQiLCJzb3VyY2UiOiJ0YXJnZXRfbWF0Y2giLCJyZXN1bHQiOiJtYXRjaGVkIiwiZHVyYXRpb25fbXMiOjB9XSwiZGVjaXNpb25zIjpbeyJsZXZlbCI6ImluZm8iLCJ0cyI6IjIwMjYtMTAtMTZUMjI6MDQ6NDQuMTUzKzA4MDAiLCJtc2ciOiJqdWRnZV9kZWNpc2lvbiIsIm1vZHVsZSI6Imp1ZGdlIiwiZXZlbnQiOiJqdWRnZV9kZWNpc2lvbiIsInRyYWNlX2lkIjoibGVzc29uLTEiLCJzb3VyY2UiOiJsMSIsInJlYXNvbiI6Im1hdGNoIiwicmVzdWx0IjoiY29ycmVjdCJ9XX0="
+                    },
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W3siZXZlbnQiOiJjb25uZWN0Iiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo0NjB9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjQ2NH0seyJldmVudCI6ImVuZCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6NDY1fSx7ImV2ZW50IjoiZW5kIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo0Njd9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjQ2N30seyJldmVudCI6ImNsb3NlIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo2NDc5fV0="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMjA1MTJdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU5NDU4ODgwLTI5MDRcXGJyb3dzZXJcXHJlcGVhdC1jb250cmFjdC1SUDAxLXJlcGVhLTk4ZGQ5LXRoZXItc3R1ZGVudC1yZW1haW4tY29ycmVjdFxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjIwNTEyLCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8d0111c44aa423cce2c0-67824cdf500923a127c5",
+          "file": "repeat-contract.spec.ts",
+          "line": 27,
+          "column": 1
+        },
+        {
+          "title": "RP02 negated and questioned controls never skip; an exact skip advances only its owner",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 15200,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T14:04:45.059Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "exact-control-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJsZXNzb25JZCI6MSwib3RoZXJMZXNzb25JZCI6MiwicHJvdmlkZXJDYWxscyI6MCwiY29tbWFuZHMiOlsiIiwiIiwiIiwiIiwiIiwiIiwic2tpcCJdLCJyZXBlYXRzIjpbeyJsZXZlbCI6ImluZm8iLCJ0cyI6IjIwMjYtMTAtMTZUMjI6MDQ6NTcuMjk0KzA4MDAiLCJtc2ciOiJyZXBlYXRfZXZhbHVhdGVkIiwibW9kdWxlIjoiY2xhc3Nyb29tIiwiZXZlbnQiOiJyZXBlYXRfZXZhbHVhdGVkIiwidHJhY2VfaWQiOiJsZXNzb24tMSIsInJlc3VsdCI6Im5vX21hdGNoIiwiZHVyYXRpb25fbXMiOjAsImxlc3Nvbl9pZCI6MSwid29yZF9pZCI6MSwicHVycG9zZSI6InJlcGVhdCIsInNvdXJjZSI6InRhcmdldF9tYXRjaCJ9LHsibGV2ZWwiOiJpbmZvIiwidHMiOiIyMDI2LTEwLTE2VDIyOjA0OjU3LjM2NCswODAwIiwibXNnIjoicmVwZWF0X2V2YWx1YXRlZCIsIm1vZHVsZSI6ImNsYXNzcm9vbSIsImV2ZW50IjoicmVwZWF0X2V2YWx1YXRlZCIsInRyYWNlX2lkIjoibGVzc29uLTEiLCJ3b3JkX2lkIjoxLCJwdXJwb3NlIjoicmVwZWF0Iiwic291cmNlIjoidGFyZ2V0X21hdGNoIiwicmVzdWx0Ijoibm9fbWF0Y2giLCJkdXJhdGlvbl9tcyI6MCwibGVzc29uX2lkIjoxfSx7ImxldmVsIjoiaW5mbyIsInRzIjoiMjAyNi0xMC0xNlQyMjowNDo1Ny40MzArMDgwMCIsIm1zZyI6InJlcGVhdF9ldmFsdWF0ZWQiLCJtb2R1bGUiOiJjbGFzc3Jvb20iLCJldmVudCI6InJlcGVhdF9ldmFsdWF0ZWQiLCJ0cmFjZV9pZCI6Imxlc3Nvbi0xIiwibGVzc29uX2lkIjoxLCJ3b3JkX2lkIjoxLCJwdXJwb3NlIjoicmVwZWF0Iiwic291cmNlIjoidGFyZ2V0X21hdGNoIiwicmVzdWx0Ijoibm9fbWF0Y2giLCJkdXJhdGlvbl9tcyI6MH0seyJsZXZlbCI6ImluZm8iLCJ0cyI6IjIwMjYtMTAtMTZUMjI6MDQ6NTcuNTA5KzA4MDAiLCJtc2ciOiJyZXBlYXRfZXZhbHVhdGVkIiwibW9kdWxlIjoiY2xhc3Nyb29tIiwiZXZlbnQiOiJyZXBlYXRfZXZhbHVhdGVkIiwidHJhY2VfaWQiOiJsZXNzb24tMSIsInNvdXJjZSI6InRhcmdldF9tYXRjaCIsInJlc3VsdCI6Im5vX21hdGNoIiwiZHVyYXRpb25fbXMiOjAsImxlc3Nvbl9pZCI6MSwid29yZF9pZCI6MSwicHVycG9zZSI6InJlcGVhdCJ9LHsibGV2ZWwiOiJpbmZvIiwidHMiOiIyMDI2LTEwLTE2VDIyOjA0OjU3LjU3NSswODAwIiwibXNnIjoicmVwZWF0X2V2YWx1YXRlZCIsIm1vZHVsZSI6ImNsYXNzcm9vbSIsImV2ZW50IjoicmVwZWF0X2V2YWx1YXRlZCIsInRyYWNlX2lkIjoibGVzc29uLTEiLCJsZXNzb25faWQiOjEsIndvcmRfaWQiOjEsInB1cnBvc2UiOiJyZXBlYXQiLCJzb3VyY2UiOiJ0YXJnZXRfbWF0Y2giLCJyZXN1bHQiOiJub19tYXRjaCIsImR1cmF0aW9uX21zIjowfSx7ImxldmVsIjoiaW5mbyIsInRzIjoiMjAyNi0xMC0xNlQyMjowNDo1Ny42NDYrMDgwMCIsIm1zZyI6InJlcGVhdF9ldmFsdWF0ZWQiLCJtb2R1bGUiOiJjbGFzc3Jvb20iLCJldmVudCI6InJlcGVhdF9ldmFsdWF0ZWQiLCJ0cmFjZV9pZCI6Imxlc3Nvbi0xIiwicmVzdWx0Ijoibm9fbWF0Y2giLCJkdXJhdGlvbl9tcyI6MCwibGVzc29uX2lkIjoxLCJ3b3JkX2lkIjoxLCJwdXJwb3NlIjoicmVwZWF0Iiwic291cmNlIjoidGFyZ2V0X21hdGNoIn1dLCJjb250cm9scyI6W3sibGV2ZWwiOiJpbmZvIiwidHMiOiIyMDI2LTEwLTE2VDIyOjA0OjU3LjI5NCswODAwIiwibXNnIjoicmVwZWF0X2V2YWx1YXRlZCIsIm1vZHVsZSI6ImNsYXNzcm9vbSIsImV2ZW50IjoicmVwZWF0X2V2YWx1YXRlZCIsInRyYWNlX2lkIjoibGVzc29uLTEiLCJyZXN1bHQiOiJub19tYXRjaCIsImR1cmF0aW9uX21zIjowLCJsZXNzb25faWQiOjEsIndvcmRfaWQiOjEsInB1cnBvc2UiOiJyZXBlYXQiLCJzb3VyY2UiOiJ0YXJnZXRfbWF0Y2gifSx7ImxldmVsIjoiaW5mbyIsInRzIjoiMjAyNi0xMC0xNlQyMjowNDo1Ny4zNjQrMDgwMCIsIm1zZyI6InJlcGVhdF9ldmFsdWF0ZWQiLCJtb2R1bGUiOiJjbGFzc3Jvb20iLCJldmVudCI6InJlcGVhdF9ldmFsdWF0ZWQiLCJ0cmFjZV9pZCI6Imxlc3Nvbi0xIiwid29yZF9pZCI6MSwicHVycG9zZSI6InJlcGVhdCIsInNvdXJjZSI6InRhcmdldF9tYXRjaCIsInJlc3VsdCI6Im5vX21hdGNoIiwiZHVyYXRpb25fbXMiOjAsImxlc3Nvbl9pZCI6MX0seyJsZXZlbCI6ImluZm8iLCJ0cyI6IjIwMjYtMTAtMTZUMjI6MDQ6NTcuNDMwKzA4MDAiLCJtc2ciOiJyZXBlYXRfZXZhbHVhdGVkIiwibW9kdWxlIjoiY2xhc3Nyb29tIiwiZXZlbnQiOiJyZXBlYXRfZXZhbHVhdGVkIiwidHJhY2VfaWQiOiJsZXNzb24tMSIsImxlc3Nvbl9pZCI6MSwid29yZF9pZCI6MSwicHVycG9zZSI6InJlcGVhdCIsInNvdXJjZSI6InRhcmdldF9tYXRjaCIsInJlc3VsdCI6Im5vX21hdGNoIiwiZHVyYXRpb25fbXMiOjB9LHsibGV2ZWwiOiJpbmZvIiwidHMiOiIyMDI2LTEwLTE2VDIyOjA0OjU3LjUwOSswODAwIiwibXNnIjoicmVwZWF0X2V2YWx1YXRlZCIsIm1vZHVsZSI6ImNsYXNzcm9vbSIsImV2ZW50IjoicmVwZWF0X2V2YWx1YXRlZCIsInRyYWNlX2lkIjoibGVzc29uLTEiLCJzb3VyY2UiOiJ0YXJnZXRfbWF0Y2giLCJyZXN1bHQiOiJub19tYXRjaCIsImR1cmF0aW9uX21zIjowLCJsZXNzb25faWQiOjEsIndvcmRfaWQiOjEsInB1cnBvc2UiOiJyZXBlYXQifSx7ImxldmVsIjoiaW5mbyIsInRzIjoiMjAyNi0xMC0xNlQyMjowNDo1Ny41NzUrMDgwMCIsIm1zZyI6InJlcGVhdF9ldmFsdWF0ZWQiLCJtb2R1bGUiOiJjbGFzc3Jvb20iLCJldmVudCI6InJlcGVhdF9ldmFsdWF0ZWQiLCJ0cmFjZV9pZCI6Imxlc3Nvbi0xIiwibGVzc29uX2lkIjoxLCJ3b3JkX2lkIjoxLCJwdXJwb3NlIjoicmVwZWF0Iiwic291cmNlIjoidGFyZ2V0X21hdGNoIiwicmVzdWx0Ijoibm9fbWF0Y2giLCJkdXJhdGlvbl9tcyI6MH0seyJsZXZlbCI6ImluZm8iLCJ0cyI6IjIwMjYtMTAtMTZUMjI6MDQ6NTcuNjQ2KzA4MDAiLCJtc2ciOiJyZXBlYXRfZXZhbHVhdGVkIiwibW9kdWxlIjoiY2xhc3Nyb29tIiwiZXZlbnQiOiJyZXBlYXRfZXZhbHVhdGVkIiwidHJhY2VfaWQiOiJsZXNzb24tMSIsInJlc3VsdCI6Im5vX21hdGNoIiwiZHVyYXRpb25fbXMiOjAsImxlc3Nvbl9pZCI6MSwid29yZF9pZCI6MSwicHVycG9zZSI6InJlcGVhdCIsInNvdXJjZSI6InRhcmdldF9tYXRjaCJ9XX0="
+                    },
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W3siZXZlbnQiOiJjb25uZWN0Iiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo1NzB9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjU3MX0seyJldmVudCI6ImVuZCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6NTcxfSx7ImV2ZW50IjoiZW5kIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo1NzN9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjU3M30seyJldmVudCI6ImNsb3NlIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo2NTc2fV0="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTY5MjBdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU5NDU4ODgwLTI5MDRcXGJyb3dzZXJcXHJlcGVhdC1jb250cmFjdC1SUDAyLW5lZ2F0LTgwMmMyLWtpcC1hZHZhbmNlcy1vbmx5LWl0cy1vd25lclxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjE2OTIwLCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8d0111c44aa423cce2c0-5a3db3134c3366f4176a",
+          "file": "repeat-contract.spec.ts",
+          "line": 77,
+          "column": 1
+        },
+        {
+          "title": "RP03 Unicode targets and internal apostrophes accept whole words; unsupported targets require explicit skip",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 37183,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T14:05:00.296Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "unicode-repeat-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJsZXNzb25JZCI6MSwiaW1wb3J0ZWRJZHMiOlsxLDIsMyw0XSwicmVzdWx0cyI6WyJub19tYXRjaCIsIm1hdGNoZWQiLCJub19tYXRjaCIsIm1hdGNoZWQiLCJtYXRjaGVkIiwidW5zdXBwb3J0ZWRfdGFyZ2V0Il0sInJlcGVhdHMiOlt7ImxldmVsIjoiaW5mbyIsInRzIjoiMjAyNi0xMC0xNlQyMjowNToxMy41OTkrMDgwMCIsIm1zZyI6InJlcGVhdF9ldmFsdWF0ZWQiLCJtb2R1bGUiOiJjbGFzc3Jvb20iLCJldmVudCI6InJlcGVhdF9ldmFsdWF0ZWQiLCJ0cmFjZV9pZCI6Imxlc3Nvbi0xIiwibGVzc29uX2lkIjoxLCJ3b3JkX2lkIjoxLCJwdXJwb3NlIjoicmVwZWF0Iiwic291cmNlIjoidGFyZ2V0X21hdGNoIiwicmVzdWx0Ijoibm9fbWF0Y2giLCJkdXJhdGlvbl9tcyI6MH0seyJsZXZlbCI6ImluZm8iLCJ0cyI6IjIwMjYtMTAtMTZUMjI6MDU6MTMuNjQ2KzA4MDAiLCJtc2ciOiJyZXBlYXRfZXZhbHVhdGVkIiwibW9kdWxlIjoiY2xhc3Nyb29tIiwiZXZlbnQiOiJyZXBlYXRfZXZhbHVhdGVkIiwidHJhY2VfaWQiOiJsZXNzb24tMSIsImxlc3Nvbl9pZCI6MSwid29yZF9pZCI6MSwicHVycG9zZSI6InJlcGVhdCIsInNvdXJjZSI6InRhcmdldF9tYXRjaCIsInJlc3VsdCI6Im1hdGNoZWQiLCJkdXJhdGlvbl9tcyI6MH0seyJsZXZlbCI6ImluZm8iLCJ0cyI6IjIwMjYtMTAtMTZUMjI6MDU6MjEuNTAyKzA4MDAiLCJtc2ciOiJyZXBlYXRfZXZhbHVhdGVkIiwibW9kdWxlIjoiY2xhc3Nyb29tIiwiZXZlbnQiOiJyZXBlYXRfZXZhbHVhdGVkIiwidHJhY2VfaWQiOiJsZXNzb24tMSIsImxlc3Nvbl9pZCI6MSwid29yZF9pZCI6MiwicHVycG9zZSI6InJlcGVhdCIsInNvdXJjZSI6InRhcmdldF9tYXRjaCIsInJlc3VsdCI6Im5vX21hdGNoIiwiZHVyYXRpb25fbXMiOjB9LHsibGV2ZWwiOiJpbmZvIiwidHMiOiIyMDI2LTEwLTE2VDIyOjA1OjIxLjU2NSswODAwIiwibXNnIjoicmVwZWF0X2V2YWx1YXRlZCIsIm1vZHVsZSI6ImNsYXNzcm9vbSIsImV2ZW50IjoicmVwZWF0X2V2YWx1YXRlZCIsInRyYWNlX2lkIjoibGVzc29uLTEiLCJkdXJhdGlvbl9tcyI6MCwibGVzc29uX2lkIjoxLCJ3b3JkX2lkIjoyLCJwdXJwb3NlIjoicmVwZWF0Iiwic291cmNlIjoidGFyZ2V0X21hdGNoIiwicmVzdWx0IjoibWF0Y2hlZCJ9LHsibGV2ZWwiOiJpbmZvIiwidHMiOiIyMDI2LTEwLTE2VDIyOjA1OjI4LjYyMSswODAwIiwibXNnIjoicmVwZWF0X2V2YWx1YXRlZCIsIm1vZHVsZSI6ImNsYXNzcm9vbSIsImV2ZW50IjoicmVwZWF0X2V2YWx1YXRlZCIsInRyYWNlX2lkIjoibGVzc29uLTEiLCJkdXJhdGlvbl9tcyI6MCwibGVzc29uX2lkIjoxLCJ3b3JkX2lkIjozLCJwdXJwb3NlIjoicmVwZWF0Iiwic291cmNlIjoidGFyZ2V0X21hdGNoIiwicmVzdWx0IjoibWF0Y2hlZCJ9LHsibGV2ZWwiOiJpbmZvIiwidHMiOiIyMDI2LTEwLTE2VDIyOjA1OjM2LjQ0MCswODAwIiwibXNnIjoicmVwZWF0X2V2YWx1YXRlZCIsIm1vZHVsZSI6ImNsYXNzcm9vbSIsImV2ZW50IjoicmVwZWF0X2V2YWx1YXRlZCIsInRyYWNlX2lkIjoibGVzc29uLTEiLCJyZXN1bHQiOiJ1bnN1cHBvcnRlZF90YXJnZXQiLCJkdXJhdGlvbl9tcyI6MCwibGVzc29uX2lkIjoxLCJ3b3JkX2lkIjo0LCJwdXJwb3NlIjoicmVwZWF0Iiwic291cmNlIjoidGFyZ2V0X21hdGNoIn1dLCJwcm92aWRlckNhbGxzIjowfQ=="
+                    },
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W3siZXZlbnQiOiJjb25uZWN0Iiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo1OTV9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjU5N30seyJldmVudCI6ImVuZCIsInNvY2tldCI6MSwiZWxhcHNlZF9tcyI6NTk3fSx7ImV2ZW50IjoiZW5kIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo1OTl9LHsiZXZlbnQiOiJmaW5pc2giLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjYwMH0seyJldmVudCI6ImNsb3NlIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjo2NjA0fV0="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMjAwNjRdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU5NDU4ODgwLTI5MDRcXGJyb3dzZXJcXHJlcGVhdC1jb250cmFjdC1SUDAzLVVuaWNvLWViNzg0LXJnZXRzLXJlcXVpcmUtZXhwbGljaXQtc2tpcFxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjIwMDY0LCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8d0111c44aa423cce2c0-94c53d96f65b707aa515",
+          "file": "repeat-contract.spec.ts",
+          "line": 123,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-16T14:04:03.385Z",
+    "duration": 94929.693,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

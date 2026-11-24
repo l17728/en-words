@@ -1,0 +1,1 @@
+CWD=D:\en-words\server\nARGV=['C:\\Users\\Administrator\\AppData\\Local\\en-words-tools\\go1250-full\\go\\bin\\go.exe', 'vet', '-tags=pilot_e2e', './...']\nEXIT_CODE=0\n===== STDOUT (raw bytes) =====\n\n===== STDERR (raw bytes) =====\n\n===== END LOG =====\n

@@ -1,0 +1,267 @@
+{"Time":"2026-10-16T19:26:29.5669736+08:00","Action":"start","Package":"enwords/cmd/judge-eval"}
+{"Time":"2026-10-16T19:26:30.5862257+08:00","Action":"output","Package":"enwords/cmd/judge-eval","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T19:26:30.586758+08:00","Action":"output","Package":"enwords/cmd/judge-eval","Output":"PASS\n"}
+{"Time":"2026-10-16T19:26:30.5902797+08:00","Action":"output","Package":"enwords/cmd/judge-eval","Output":"ok  \tenwords/cmd/judge-eval\t1.023s [no tests to run]\n"}
+{"Time":"2026-10-16T19:26:30.5902797+08:00","Action":"pass","Package":"enwords/cmd/judge-eval","Elapsed":1.023}
+{"Time":"2026-10-16T19:26:32.8252689+08:00","Action":"start","Package":"enwords/cmd/local-eval"}
+{"Time":"2026-10-16T19:26:33.9416987+08:00","Action":"output","Package":"enwords/cmd/local-eval","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T19:26:33.9422066+08:00","Action":"output","Package":"enwords/cmd/local-eval","Output":"PASS\n"}
+{"Time":"2026-10-16T19:26:33.9471551+08:00","Action":"output","Package":"enwords/cmd/local-eval","Output":"ok  \tenwords/cmd/local-eval\t1.121s [no tests to run]\n"}
+{"Time":"2026-10-16T19:26:33.9471551+08:00","Action":"pass","Package":"enwords/cmd/local-eval","Elapsed":1.1219999999999999}
+{"Time":"2026-10-16T19:26:44.6136661+08:00","Action":"start","Package":"enwords/cmd/server"}
+{"Time":"2026-10-16T19:26:47.1659489+08:00","Action":"output","Package":"enwords/cmd/server","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T19:26:47.1659489+08:00","Action":"output","Package":"enwords/cmd/server","Output":"PASS\n"}
+{"Time":"2026-10-16T19:26:47.2051205+08:00","Action":"output","Package":"enwords/cmd/server","Output":"ok  \tenwords/cmd/server\t2.591s [no tests to run]\n"}
+{"Time":"2026-10-16T19:26:47.2051205+08:00","Action":"pass","Package":"enwords/cmd/server","Elapsed":2.591}
+{"Time":"2026-10-16T19:26:48.4489124+08:00","Action":"start","Package":"enwords/internal/agent"}
+{"Time":"2026-10-16T19:26:49.3969347+08:00","Action":"output","Package":"enwords/internal/agent","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T19:26:49.3969347+08:00","Action":"output","Package":"enwords/internal/agent","Output":"PASS\n"}
+{"Time":"2026-10-16T19:26:49.4004987+08:00","Action":"output","Package":"enwords/internal/agent","Output":"ok  \tenwords/internal/agent\t0.951s [no tests to run]\n"}
+{"Time":"2026-10-16T19:26:49.4004987+08:00","Action":"pass","Package":"enwords/internal/agent","Elapsed":0.952}
+{"Time":"2026-10-16T19:26:57.6122962+08:00","Action":"start","Package":"enwords/internal/api"}
+{"Time":"2026-10-16T19:27:04.0864631+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderAtomicGlobalHonorsStudentOverride"}
+{"Time":"2026-10-16T19:27:04.0864631+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderAtomicGlobalHonorsStudentOverride","Output":"=== RUN   TestLadderAtomicGlobalHonorsStudentOverride\n"}
+{"Time":"2026-10-16T19:27:04.2693798+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderAtomicGlobalHonorsStudentOverride","Output":"--- PASS: TestLadderAtomicGlobalHonorsStudentOverride (0.18s)\n"}
+{"Time":"2026-10-16T19:27:04.2693798+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderAtomicGlobalHonorsStudentOverride","Elapsed":0.18}
+{"Time":"2026-10-16T19:27:04.2693798+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderAtomicCardFailureRollsBackConfiguration"}
+{"Time":"2026-10-16T19:27:04.2693798+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderAtomicCardFailureRollsBackConfiguration","Output":"=== RUN   TestLadderAtomicCardFailureRollsBackConfiguration\n"}
+{"Time":"2026-10-16T19:27:04.3578315+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderAtomicCardFailureRollsBackConfiguration","Output":"--- PASS: TestLadderAtomicCardFailureRollsBackConfiguration (0.09s)\n"}
+{"Time":"2026-10-16T19:27:04.3578315+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderAtomicCardFailureRollsBackConfiguration","Elapsed":0.09}
+{"Time":"2026-10-16T19:27:04.3578315+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderAtomicMemoryStudentIsolation"}
+{"Time":"2026-10-16T19:27:04.3578315+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderAtomicMemoryStudentIsolation","Output":"=== RUN   TestLadderAtomicMemoryStudentIsolation\n"}
+{"Time":"2026-10-16T19:27:04.360828+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderAtomicMemoryStudentIsolation","Output":"--- PASS: TestLadderAtomicMemoryStudentIsolation (0.00s)\n"}
+{"Time":"2026-10-16T19:27:04.360828+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderAtomicMemoryStudentIsolation","Elapsed":0}
+{"Time":"2026-10-16T19:27:04.360828+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderSecondStudentFailureRollsBackFirstStudent"}
+{"Time":"2026-10-16T19:27:04.360828+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderSecondStudentFailureRollsBackFirstStudent","Output":"=== RUN   TestLadderSecondStudentFailureRollsBackFirstStudent\n"}
+{"Time":"2026-10-16T19:27:04.4765719+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderSecondStudentFailureRollsBackFirstStudent","Output":"--- PASS: TestLadderSecondStudentFailureRollsBackFirstStudent (0.12s)\n"}
+{"Time":"2026-10-16T19:27:04.4765719+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderSecondStudentFailureRollsBackFirstStudent","Elapsed":0.12}
+{"Time":"2026-10-16T19:27:04.4770787+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderTwoAppsConfigurationWritesRemainSerializable"}
+{"Time":"2026-10-16T19:27:04.4770787+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderTwoAppsConfigurationWritesRemainSerializable","Output":"=== RUN   TestLadderTwoAppsConfigurationWritesRemainSerializable\n"}
+{"Time":"2026-10-16T19:27:04.6387535+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderTwoAppsConfigurationWritesRemainSerializable","Output":"--- PASS: TestLadderTwoAppsConfigurationWritesRemainSerializable (0.16s)\n"}
+{"Time":"2026-10-16T19:27:04.639272+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderTwoAppsConfigurationWritesRemainSerializable","Elapsed":0.16}
+{"Time":"2026-10-16T19:27:04.639272+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderGoalModesRespectExplicitLadderAndDueTimes"}
+{"Time":"2026-10-16T19:27:04.639272+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderGoalModesRespectExplicitLadderAndDueTimes","Output":"=== RUN   TestLadderGoalModesRespectExplicitLadderAndDueTimes\n"}
+{"Time":"2026-10-16T19:27:04.7692341+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderGoalModesRespectExplicitLadderAndDueTimes","Output":"--- PASS: TestLadderGoalModesRespectExplicitLadderAndDueTimes (0.13s)\n"}
+{"Time":"2026-10-16T19:27:04.7692341+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderGoalModesRespectExplicitLadderAndDueTimes","Elapsed":0.13}
+{"Time":"2026-10-16T19:27:04.7692341+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderReloadFailureReachesNewRoomAndNextLesson"}
+{"Time":"2026-10-16T19:27:04.7692341+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderReloadFailureReachesNewRoomAndNextLesson","Output":"=== RUN   TestLadderReloadFailureReachesNewRoomAndNextLesson\n"}
+{"Time":"2026-10-16T19:27:05.0518083+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderReloadFailureReachesNewRoomAndNextLesson","Output":"--- PASS: TestLadderReloadFailureReachesNewRoomAndNextLesson (0.28s)\n"}
+{"Time":"2026-10-16T19:27:05.0518083+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderReloadFailureReachesNewRoomAndNextLesson","Elapsed":0.28}
+{"Time":"2026-10-16T19:27:05.0518083+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize"}
+{"Time":"2026-10-16T19:27:05.0528109+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize","Output":"=== RUN   TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize\n"}
+{"Time":"2026-10-16T19:27:05.0528109+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize/race"}
+{"Time":"2026-10-16T19:27:05.0528109+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize/race","Output":"=== RUN   TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize/race\n"}
+{"Time":"2026-10-16T19:27:05.0647235+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize/race","Output":"--- PASS: TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize/race (0.01s)\n"}
+{"Time":"2026-10-16T19:27:05.0647235+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize/race","Elapsed":0.01}
+{"Time":"2026-10-16T19:27:05.0647235+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize/config_first"}
+{"Time":"2026-10-16T19:27:05.0647235+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize/config_first","Output":"=== RUN   TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize/config_first\n"}
+{"Time":"2026-10-16T19:27:05.0671093+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize/config_first","Output":"--- PASS: TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize/config_first (0.00s)\n"}
+{"Time":"2026-10-16T19:27:05.0671093+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize/config_first","Elapsed":0}
+{"Time":"2026-10-16T19:27:05.0671093+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize/settlement_first"}
+{"Time":"2026-10-16T19:27:05.0671093+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize/settlement_first","Output":"=== RUN   TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize/settlement_first\n"}
+{"Time":"2026-10-16T19:27:05.0692202+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize/settlement_first","Output":"--- PASS: TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize/settlement_first (0.00s)\n"}
+{"Time":"2026-10-16T19:27:05.0692202+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize/settlement_first","Elapsed":0}
+{"Time":"2026-10-16T19:27:05.0692202+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize","Output":"--- PASS: TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize (0.02s)\n"}
+{"Time":"2026-10-16T19:27:05.0692202+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderOldRoomRemainsFrozenWhileMemoryCompletionAndConfigSerialize","Elapsed":0.02}
+{"Time":"2026-10-16T19:27:05.0692202+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderMixedBackendRefusesWithoutChangingNativeCards"}
+{"Time":"2026-10-16T19:27:05.0692202+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderMixedBackendRefusesWithoutChangingNativeCards","Output":"=== RUN   TestLadderMixedBackendRefusesWithoutChangingNativeCards\n"}
+{"Time":"2026-10-16T19:27:05.2716829+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderMixedBackendRefusesWithoutChangingNativeCards","Output":"--- PASS: TestLadderMixedBackendRefusesWithoutChangingNativeCards (0.20s)\n"}
+{"Time":"2026-10-16T19:27:05.2716829+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderMixedBackendRefusesWithoutChangingNativeCards","Elapsed":0.2}
+{"Time":"2026-10-16T19:27:05.2716829+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderCrossAppPlacementFinishUsesCurrentGlobalConfiguration"}
+{"Time":"2026-10-16T19:27:05.2716829+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderCrossAppPlacementFinishUsesCurrentGlobalConfiguration","Output":"=== RUN   TestLadderCrossAppPlacementFinishUsesCurrentGlobalConfiguration\n"}
+{"Time":"2026-10-16T19:27:05.8213356+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderCrossAppPlacementFinishUsesCurrentGlobalConfiguration","Output":"--- PASS: TestLadderCrossAppPlacementFinishUsesCurrentGlobalConfiguration (0.52s)\n"}
+{"Time":"2026-10-16T19:27:05.8213356+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderCrossAppPlacementFinishUsesCurrentGlobalConfiguration","Elapsed":0.52}
+{"Time":"2026-10-16T19:27:05.8213356+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderCommittedRefreshFailureUsesFreshRead"}
+{"Time":"2026-10-16T19:27:05.8213356+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderCommittedRefreshFailureUsesFreshRead","Output":"=== RUN   TestLadderCommittedRefreshFailureUsesFreshRead\n"}
+{"Time":"2026-10-16T19:27:06.6179671+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderCommittedRefreshFailureUsesFreshRead","Output":"--- PASS: TestLadderCommittedRefreshFailureUsesFreshRead (0.83s)\n"}
+{"Time":"2026-10-16T19:27:06.6179671+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderCommittedRefreshFailureUsesFreshRead","Elapsed":0.83}
+{"Time":"2026-10-16T19:27:06.6366167+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderScopeWithoutCardsFailsOnlyWhenEffectiveValueChanges"}
+{"Time":"2026-10-16T19:27:06.6366167+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderScopeWithoutCardsFailsOnlyWhenEffectiveValueChanges","Output":"=== RUN   TestLadderScopeWithoutCardsFailsOnlyWhenEffectiveValueChanges\n"}
+{"Time":"2026-10-16T19:27:07.8243968+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderScopeWithoutCardsFailsOnlyWhenEffectiveValueChanges","Output":"--- PASS: TestLadderScopeWithoutCardsFailsOnlyWhenEffectiveValueChanges (1.17s)\n"}
+{"Time":"2026-10-16T19:27:07.8243968+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderScopeWithoutCardsFailsOnlyWhenEffectiveValueChanges","Elapsed":1.17}
+{"Time":"2026-10-16T19:27:07.8243968+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderDeferredCommitFailureLeavesOriginalAndNewConnectionsClean"}
+{"Time":"2026-10-16T19:27:07.8243968+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderDeferredCommitFailureLeavesOriginalAndNewConnectionsClean","Output":"=== RUN   TestLadderDeferredCommitFailureLeavesOriginalAndNewConnectionsClean\n"}
+{"Time":"2026-10-16T19:27:08.8730834+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderDeferredCommitFailureLeavesOriginalAndNewConnectionsClean","Output":"--- PASS: TestLadderDeferredCommitFailureLeavesOriginalAndNewConnectionsClean (1.06s)\n"}
+{"Time":"2026-10-16T19:27:08.8730834+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderDeferredCommitFailureLeavesOriginalAndNewConnectionsClean","Elapsed":1.06}
+{"Time":"2026-10-16T19:27:08.875097+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderOwnedScopeObjectsCannotBypassProtection"}
+{"Time":"2026-10-16T19:27:08.875097+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderOwnedScopeObjectsCannotBypassProtection","Output":"=== RUN   TestLadderOwnedScopeObjectsCannotBypassProtection\n"}
+{"Time":"2026-10-16T19:27:08.875097+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderOwnedScopeObjectsCannotBypassProtection/CREATE_TABLE_CLASSROOM_SCOPE_RESERVATIONS(student_id_INTEGER,_mode_TEXT,_schema_version_INTEGER,_reserved_at_INTEGER)"}
+{"Time":"2026-10-16T19:27:08.875097+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderOwnedScopeObjectsCannotBypassProtection/CREATE_TABLE_CLASSROOM_SCOPE_RESERVATIONS(student_id_INTEGER,_mode_TEXT,_schema_version_INTEGER,_reserved_at_INTEGER)","Output":"=== RUN   TestLadderOwnedScopeObjectsCannotBypassProtection/CREATE_TABLE_CLASSROOM_SCOPE_RESERVATIONS(student_id_INTEGER,_mode_TEXT,_schema_version_INTEGER,_reserved_at_INTEGER)\n"}
+{"Time":"2026-10-16T19:27:09.8791237+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderOwnedScopeObjectsCannotBypassProtection/CREATE_TABLE_CLASSROOM_SCOPE_RESERVATIONS(student_id_INTEGER,_mode_TEXT,_schema_version_INTEGER,_reserved_at_INTEGER)","Output":"--- PASS: TestLadderOwnedScopeObjectsCannotBypassProtection/CREATE_TABLE_CLASSROOM_SCOPE_RESERVATIONS(student_id_INTEGER,_mode_TEXT,_schema_version_INTEGER,_reserved_at_INTEGER) (1.01s)\n"}
+{"Time":"2026-10-16T19:27:09.8791237+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderOwnedScopeObjectsCannotBypassProtection/CREATE_TABLE_CLASSROOM_SCOPE_RESERVATIONS(student_id_INTEGER,_mode_TEXT,_schema_version_INTEGER,_reserved_at_INTEGER)","Elapsed":1.01}
+{"Time":"2026-10-16T19:27:09.8791237+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderOwnedScopeObjectsCannotBypassProtection/CREATE_VIEW_classroom_scope_reservations_AS_SELECT_1_AS_student_id,_'legacy'_AS_mode,_2_AS_schema_version,_0_AS_reserved_at"}
+{"Time":"2026-10-16T19:27:09.8791237+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderOwnedScopeObjectsCannotBypassProtection/CREATE_VIEW_classroom_scope_reservations_AS_SELECT_1_AS_student_id,_'legacy'_AS_mode,_2_AS_schema_version,_0_AS_reserved_at","Output":"=== RUN   TestLadderOwnedScopeObjectsCannotBypassProtection/CREATE_VIEW_classroom_scope_reservations_AS_SELECT_1_AS_student_id,_'legacy'_AS_mode,_2_AS_schema_version,_0_AS_reserved_at\n"}
+{"Time":"2026-10-16T19:27:10.3607649+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderOwnedScopeObjectsCannotBypassProtection/CREATE_VIEW_classroom_scope_reservations_AS_SELECT_1_AS_student_id,_'legacy'_AS_mode,_2_AS_schema_version,_0_AS_reserved_at","Output":"--- PASS: TestLadderOwnedScopeObjectsCannotBypassProtection/CREATE_VIEW_classroom_scope_reservations_AS_SELECT_1_AS_student_id,_'legacy'_AS_mode,_2_AS_schema_version,_0_AS_reserved_at (0.48s)\n"}
+{"Time":"2026-10-16T19:27:10.3612806+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderOwnedScopeObjectsCannotBypassProtection/CREATE_VIEW_classroom_scope_reservations_AS_SELECT_1_AS_student_id,_'legacy'_AS_mode,_2_AS_schema_version,_0_AS_reserved_at","Elapsed":0.48}
+{"Time":"2026-10-16T19:27:10.3612806+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderOwnedScopeObjectsCannotBypassProtection/CREATE_TABLE_classroom_scope_reservations(student_id_INTEGER)"}
+{"Time":"2026-10-16T19:27:10.3612806+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderOwnedScopeObjectsCannotBypassProtection/CREATE_TABLE_classroom_scope_reservations(student_id_INTEGER)","Output":"=== RUN   TestLadderOwnedScopeObjectsCannotBypassProtection/CREATE_TABLE_classroom_scope_reservations(student_id_INTEGER)\n"}
+{"Time":"2026-10-16T19:27:10.7084915+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderOwnedScopeObjectsCannotBypassProtection/CREATE_TABLE_classroom_scope_reservations(student_id_INTEGER)","Output":"--- PASS: TestLadderOwnedScopeObjectsCannotBypassProtection/CREATE_TABLE_classroom_scope_reservations(student_id_INTEGER) (0.35s)\n"}
+{"Time":"2026-10-16T19:27:10.7084915+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderOwnedScopeObjectsCannotBypassProtection/CREATE_TABLE_classroom_scope_reservations(student_id_INTEGER)","Elapsed":0.35}
+{"Time":"2026-10-16T19:27:10.7084915+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderOwnedScopeObjectsCannotBypassProtection","Output":"--- PASS: TestLadderOwnedScopeObjectsCannotBypassProtection (1.84s)\n"}
+{"Time":"2026-10-16T19:27:10.7084915+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderOwnedScopeObjectsCannotBypassProtection","Elapsed":1.84}
+{"Time":"2026-10-16T19:27:10.7084915+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderRawJSONRejectsAmbiguousKeysWithoutWrites"}
+{"Time":"2026-10-16T19:27:10.7084915+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderRawJSONRejectsAmbiguousKeysWithoutWrites","Output":"=== RUN   TestLadderRawJSONRejectsAmbiguousKeysWithoutWrites\n"}
+{"Time":"2026-10-16T19:27:10.9749265+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderRawJSONRejectsAmbiguousKeysWithoutWrites","Output":"--- PASS: TestLadderRawJSONRejectsAmbiguousKeysWithoutWrites (0.27s)\n"}
+{"Time":"2026-10-16T19:27:10.9759226+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderRawJSONRejectsAmbiguousKeysWithoutWrites","Elapsed":0.27}
+{"Time":"2026-10-16T19:27:10.9759226+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderPersistenceAndAuditFailuresRollbackAllEffects"}
+{"Time":"2026-10-16T19:27:10.9759226+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderPersistenceAndAuditFailuresRollbackAllEffects","Output":"=== RUN   TestLadderPersistenceAndAuditFailuresRollbackAllEffects\n"}
+{"Time":"2026-10-16T19:27:10.9759226+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderPersistenceAndAuditFailuresRollbackAllEffects/config_globals"}
+{"Time":"2026-10-16T19:27:10.9759226+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderPersistenceAndAuditFailuresRollbackAllEffects/config_globals","Output":"=== RUN   TestLadderPersistenceAndAuditFailuresRollbackAllEffects/config_globals\n"}
+{"Time":"2026-10-16T19:27:11.1290391+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderPersistenceAndAuditFailuresRollbackAllEffects/config_globals","Output":"--- PASS: TestLadderPersistenceAndAuditFailuresRollbackAllEffects/config_globals (0.15s)\n"}
+{"Time":"2026-10-16T19:27:11.1290391+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderPersistenceAndAuditFailuresRollbackAllEffects/config_globals","Elapsed":0.15}
+{"Time":"2026-10-16T19:27:11.1290391+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderPersistenceAndAuditFailuresRollbackAllEffects/audit_logs"}
+{"Time":"2026-10-16T19:27:11.1290391+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderPersistenceAndAuditFailuresRollbackAllEffects/audit_logs","Output":"=== RUN   TestLadderPersistenceAndAuditFailuresRollbackAllEffects/audit_logs\n"}
+{"Time":"2026-10-16T19:27:11.3777764+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderPersistenceAndAuditFailuresRollbackAllEffects/audit_logs","Output":"--- PASS: TestLadderPersistenceAndAuditFailuresRollbackAllEffects/audit_logs (0.25s)\n"}
+{"Time":"2026-10-16T19:27:11.3777764+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderPersistenceAndAuditFailuresRollbackAllEffects/audit_logs","Elapsed":0.25}
+{"Time":"2026-10-16T19:27:11.3777764+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderPersistenceAndAuditFailuresRollbackAllEffects","Output":"--- PASS: TestLadderPersistenceAndAuditFailuresRollbackAllEffects (0.40s)\n"}
+{"Time":"2026-10-16T19:27:11.3777764+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderPersistenceAndAuditFailuresRollbackAllEffects","Elapsed":0.4}
+{"Time":"2026-10-16T19:27:11.3788058+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderCancellationAndAbsentDeleteHaveNoWrites"}
+{"Time":"2026-10-16T19:27:11.3788058+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderCancellationAndAbsentDeleteHaveNoWrites","Output":"=== RUN   TestLadderCancellationAndAbsentDeleteHaveNoWrites\n"}
+{"Time":"2026-10-16T19:27:11.5283964+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderCancellationAndAbsentDeleteHaveNoWrites","Output":"--- PASS: TestLadderCancellationAndAbsentDeleteHaveNoWrites (0.15s)\n"}
+{"Time":"2026-10-16T19:27:11.5283964+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderCancellationAndAbsentDeleteHaveNoWrites","Elapsed":0.15}
+{"Time":"2026-10-16T19:27:11.5283964+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderEffectiveHTTPStrictTargetAndRole"}
+{"Time":"2026-10-16T19:27:11.5283964+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderEffectiveHTTPStrictTargetAndRole","Output":"=== RUN   TestLadderEffectiveHTTPStrictTargetAndRole\n"}
+{"Time":"2026-10-16T19:27:11.531274+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderEffectiveHTTPStrictTargetAndRole","Output":"--- PASS: TestLadderEffectiveHTTPStrictTargetAndRole (0.00s)\n"}
+{"Time":"2026-10-16T19:27:11.531274+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderEffectiveHTTPStrictTargetAndRole","Elapsed":0}
+{"Time":"2026-10-16T19:27:11.531274+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderPairedSchedulerRejectsUncoordinatedConsumers"}
+{"Time":"2026-10-16T19:27:11.5318014+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderPairedSchedulerRejectsUncoordinatedConsumers","Output":"=== RUN   TestLadderPairedSchedulerRejectsUncoordinatedConsumers\n"}
+{"Time":"2026-10-16T19:27:11.5436546+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderPairedSchedulerRejectsUncoordinatedConsumers","Output":"--- PASS: TestLadderPairedSchedulerRejectsUncoordinatedConsumers (0.00s)\n"}
+{"Time":"2026-10-16T19:27:11.5436546+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderPairedSchedulerRejectsUncoordinatedConsumers","Elapsed":0}
+{"Time":"2026-10-16T19:27:11.5436546+08:00","Action":"run","Package":"enwords/internal/api","Test":"TestLadderMemoryWorkingChangesDiscardedTogether"}
+{"Time":"2026-10-16T19:27:11.5436546+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderMemoryWorkingChangesDiscardedTogether","Output":"=== RUN   TestLadderMemoryWorkingChangesDiscardedTogether\n"}
+{"Time":"2026-10-16T19:27:11.5436546+08:00","Action":"output","Package":"enwords/internal/api","Test":"TestLadderMemoryWorkingChangesDiscardedTogether","Output":"--- PASS: TestLadderMemoryWorkingChangesDiscardedTogether (0.00s)\n"}
+{"Time":"2026-10-16T19:27:11.5436546+08:00","Action":"pass","Package":"enwords/internal/api","Test":"TestLadderMemoryWorkingChangesDiscardedTogether","Elapsed":0}
+{"Time":"2026-10-16T19:27:11.6873162+08:00","Action":"output","Package":"enwords/internal/api","Output":"PASS\n"}
+{"Time":"2026-10-16T19:27:11.701858+08:00","Action":"output","Package":"enwords/internal/api","Output":"ok  \tenwords/internal/api\t14.090s\n"}
+{"Time":"2026-10-16T19:27:11.701858+08:00","Action":"pass","Package":"enwords/internal/api","Elapsed":14.09}
+{"Time":"2026-10-16T19:27:12.722605+08:00","Action":"start","Package":"enwords/internal/auth"}
+{"Time":"2026-10-16T19:27:14.0626488+08:00","Action":"output","Package":"enwords/internal/auth","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T19:27:14.0626488+08:00","Action":"output","Package":"enwords/internal/auth","Output":"PASS\n"}
+{"Time":"2026-10-16T19:27:14.0683725+08:00","Action":"output","Package":"enwords/internal/auth","Output":"ok  \tenwords/internal/auth\t1.346s [no tests to run]\n"}
+{"Time":"2026-10-16T19:27:14.0683725+08:00","Action":"pass","Package":"enwords/internal/auth","Elapsed":1.346}
+{"Time":"2026-10-16T19:27:15.4201864+08:00","Action":"start","Package":"enwords/internal/classroom"}
+{"Time":"2026-10-16T19:27:16.2979485+08:00","Action":"output","Package":"enwords/internal/classroom","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T19:27:16.2979485+08:00","Action":"output","Package":"enwords/internal/classroom","Output":"PASS\n"}
+{"Time":"2026-10-16T19:27:16.302126+08:00","Action":"output","Package":"enwords/internal/classroom","Output":"ok  \tenwords/internal/classroom\t0.882s [no tests to run]\n"}
+{"Time":"2026-10-16T19:27:16.302126+08:00","Action":"pass","Package":"enwords/internal/classroom","Elapsed":0.882}
+{"Time":"2026-10-16T19:27:17.9825153+08:00","Action":"start","Package":"enwords/internal/config"}
+{"Time":"2026-10-16T19:27:20.2897257+08:00","Action":"run","Package":"enwords/internal/config","Test":"TestLadderValidation"}
+{"Time":"2026-10-16T19:27:20.2897257+08:00","Action":"output","Package":"enwords/internal/config","Test":"TestLadderValidation","Output":"=== RUN   TestLadderValidation\n"}
+{"Time":"2026-10-16T19:27:20.2902681+08:00","Action":"output","Package":"enwords/internal/config","Test":"TestLadderValidation","Output":"--- PASS: TestLadderValidation (0.00s)\n"}
+{"Time":"2026-10-16T19:27:20.2902681+08:00","Action":"pass","Package":"enwords/internal/config","Test":"TestLadderValidation","Elapsed":0}
+{"Time":"2026-10-16T19:27:20.2902681+08:00","Action":"run","Package":"enwords/internal/config","Test":"TestGoalModeLadder"}
+{"Time":"2026-10-16T19:27:20.2902681+08:00","Action":"output","Package":"enwords/internal/config","Test":"TestGoalModeLadder","Output":"=== RUN   TestGoalModeLadder\n"}
+{"Time":"2026-10-16T19:27:20.2902681+08:00","Action":"output","Package":"enwords/internal/config","Test":"TestGoalModeLadder","Output":"--- PASS: TestGoalModeLadder (0.00s)\n"}
+{"Time":"2026-10-16T19:27:20.2902681+08:00","Action":"pass","Package":"enwords/internal/config","Test":"TestGoalModeLadder","Elapsed":0}
+{"Time":"2026-10-16T19:27:20.2902681+08:00","Action":"run","Package":"enwords/internal/config","Test":"TestLadderShortenHook"}
+{"Time":"2026-10-16T19:27:20.2902681+08:00","Action":"output","Package":"enwords/internal/config","Test":"TestLadderShortenHook","Output":"=== RUN   TestLadderShortenHook\n"}
+{"Time":"2026-10-16T19:27:20.2902681+08:00","Action":"output","Package":"enwords/internal/config","Test":"TestLadderShortenHook","Output":"--- PASS: TestLadderShortenHook (0.00s)\n"}
+{"Time":"2026-10-16T19:27:20.2902681+08:00","Action":"pass","Package":"enwords/internal/config","Test":"TestLadderShortenHook","Elapsed":0}
+{"Time":"2026-10-16T19:27:20.2940188+08:00","Action":"run","Package":"enwords/internal/config","Test":"TestSprintLadderPerStudent"}
+{"Time":"2026-10-16T19:27:20.2940188+08:00","Action":"output","Package":"enwords/internal/config","Test":"TestSprintLadderPerStudent","Output":"=== RUN   TestSprintLadderPerStudent\n"}
+{"Time":"2026-10-16T19:27:20.2940188+08:00","Action":"output","Package":"enwords/internal/config","Test":"TestSprintLadderPerStudent","Output":"--- PASS: TestSprintLadderPerStudent (0.00s)\n"}
+{"Time":"2026-10-16T19:27:20.2940188+08:00","Action":"pass","Package":"enwords/internal/config","Test":"TestSprintLadderPerStudent","Elapsed":0}
+{"Time":"2026-10-16T19:27:20.2945576+08:00","Action":"run","Package":"enwords/internal/config","Test":"TestEffectiveViewTracksDerivedGoalAndDeletionFallback"}
+{"Time":"2026-10-16T19:27:20.2945576+08:00","Action":"output","Package":"enwords/internal/config","Test":"TestEffectiveViewTracksDerivedGoalAndDeletionFallback","Output":"=== RUN   TestEffectiveViewTracksDerivedGoalAndDeletionFallback\n"}
+{"Time":"2026-10-16T19:27:20.2945576+08:00","Action":"output","Package":"enwords/internal/config","Test":"TestEffectiveViewTracksDerivedGoalAndDeletionFallback","Output":"--- PASS: TestEffectiveViewTracksDerivedGoalAndDeletionFallback (0.00s)\n"}
+{"Time":"2026-10-16T19:27:20.2945576+08:00","Action":"pass","Package":"enwords/internal/config","Test":"TestEffectiveViewTracksDerivedGoalAndDeletionFallback","Elapsed":0}
+{"Time":"2026-10-16T19:27:20.2945576+08:00","Action":"run","Package":"enwords/internal/config","Test":"TestPairedConfigurationWithoutCoordinatorRejectsSensitiveWrites"}
+{"Time":"2026-10-16T19:27:20.2951094+08:00","Action":"output","Package":"enwords/internal/config","Test":"TestPairedConfigurationWithoutCoordinatorRejectsSensitiveWrites","Output":"=== RUN   TestPairedConfigurationWithoutCoordinatorRejectsSensitiveWrites\n"}
+{"Time":"2026-10-16T19:27:20.2951094+08:00","Action":"output","Package":"enwords/internal/config","Test":"TestPairedConfigurationWithoutCoordinatorRejectsSensitiveWrites","Output":"--- PASS: TestPairedConfigurationWithoutCoordinatorRejectsSensitiveWrites (0.00s)\n"}
+{"Time":"2026-10-16T19:27:20.2951094+08:00","Action":"pass","Package":"enwords/internal/config","Test":"TestPairedConfigurationWithoutCoordinatorRejectsSensitiveWrites","Elapsed":0}
+{"Time":"2026-10-16T19:27:20.2956476+08:00","Action":"run","Package":"enwords/internal/config","Test":"TestEffectiveGoalInheritanceMatrix"}
+{"Time":"2026-10-16T19:27:20.2956476+08:00","Action":"output","Package":"enwords/internal/config","Test":"TestEffectiveGoalInheritanceMatrix","Output":"=== RUN   TestEffectiveGoalInheritanceMatrix\n"}
+{"Time":"2026-10-16T19:27:20.2956476+08:00","Action":"output","Package":"enwords/internal/config","Test":"TestEffectiveGoalInheritanceMatrix","Output":"--- PASS: TestEffectiveGoalInheritanceMatrix (0.00s)\n"}
+{"Time":"2026-10-16T19:27:20.2956476+08:00","Action":"pass","Package":"enwords/internal/config","Test":"TestEffectiveGoalInheritanceMatrix","Elapsed":0}
+{"Time":"2026-10-16T19:27:20.2977952+08:00","Action":"output","Package":"enwords/internal/config","Output":"PASS\n"}
+{"Time":"2026-10-16T19:27:20.322868+08:00","Action":"output","Package":"enwords/internal/config","Output":"ok  \tenwords/internal/config\t2.340s\n"}
+{"Time":"2026-10-16T19:27:20.322868+08:00","Action":"pass","Package":"enwords/internal/config","Elapsed":2.34}
+{"Time":"2026-10-16T19:27:21.1903214+08:00","Action":"start","Package":"enwords/internal/duplex"}
+{"Time":"2026-10-16T19:27:21.9318777+08:00","Action":"output","Package":"enwords/internal/duplex","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T19:27:21.9318777+08:00","Action":"output","Package":"enwords/internal/duplex","Output":"PASS\n"}
+{"Time":"2026-10-16T19:27:21.9372368+08:00","Action":"output","Package":"enwords/internal/duplex","Output":"ok  \tenwords/internal/duplex\t0.747s [no tests to run]\n"}
+{"Time":"2026-10-16T19:27:21.9372368+08:00","Action":"pass","Package":"enwords/internal/duplex","Elapsed":0.747}
+{"Time":"2026-10-16T19:27:22.6975561+08:00","Action":"start","Package":"enwords/internal/feedback"}
+{"Time":"2026-10-16T19:27:23.618613+08:00","Action":"output","Package":"enwords/internal/feedback","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T19:27:23.618613+08:00","Action":"output","Package":"enwords/internal/feedback","Output":"PASS\n"}
+{"Time":"2026-10-16T19:27:23.6224435+08:00","Action":"output","Package":"enwords/internal/feedback","Output":"ok  \tenwords/internal/feedback\t0.925s [no tests to run]\n"}
+{"Time":"2026-10-16T19:27:23.6224435+08:00","Action":"pass","Package":"enwords/internal/feedback","Elapsed":0.925}
+{"Time":"2026-10-16T19:27:24.3329993+08:00","Action":"start","Package":"enwords/internal/judge"}
+{"Time":"2026-10-16T19:27:25.1726101+08:00","Action":"output","Package":"enwords/internal/judge","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T19:27:25.1726101+08:00","Action":"output","Package":"enwords/internal/judge","Output":"PASS\n"}
+{"Time":"2026-10-16T19:27:25.1794917+08:00","Action":"output","Package":"enwords/internal/judge","Output":"ok  \tenwords/internal/judge\t0.846s [no tests to run]\n"}
+{"Time":"2026-10-16T19:27:25.1794917+08:00","Action":"pass","Package":"enwords/internal/judge","Elapsed":0.846}
+{"Time":"2026-10-16T19:27:26.0001873+08:00","Action":"start","Package":"enwords/internal/llmzhipu"}
+{"Time":"2026-10-16T19:27:27.0190043+08:00","Action":"output","Package":"enwords/internal/llmzhipu","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T19:27:27.0190043+08:00","Action":"output","Package":"enwords/internal/llmzhipu","Output":"PASS\n"}
+{"Time":"2026-10-16T19:27:27.0256013+08:00","Action":"output","Package":"enwords/internal/llmzhipu","Output":"ok  \tenwords/internal/llmzhipu\t1.025s [no tests to run]\n"}
+{"Time":"2026-10-16T19:27:27.0256013+08:00","Action":"pass","Package":"enwords/internal/llmzhipu","Elapsed":1.025}
+{"Time":"2026-10-16T19:27:28.0332617+08:00","Action":"start","Package":"enwords/internal/localmodel"}
+{"Time":"2026-10-16T19:27:29.1791185+08:00","Action":"output","Package":"enwords/internal/localmodel","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T19:27:29.1792784+08:00","Action":"output","Package":"enwords/internal/localmodel","Output":"PASS\n"}
+{"Time":"2026-10-16T19:27:29.1830035+08:00","Action":"output","Package":"enwords/internal/localmodel","Output":"ok  \tenwords/internal/localmodel\t1.150s [no tests to run]\n"}
+{"Time":"2026-10-16T19:27:29.1830035+08:00","Action":"pass","Package":"enwords/internal/localmodel","Elapsed":1.15}
+{"Time":"2026-10-16T19:27:30.5930046+08:00","Action":"start","Package":"enwords/internal/memory"}
+{"Time":"2026-10-16T19:27:31.6780183+08:00","Action":"output","Package":"enwords/internal/memory","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T19:27:31.6780183+08:00","Action":"output","Package":"enwords/internal/memory","Output":"PASS\n"}
+{"Time":"2026-10-16T19:27:31.6828544+08:00","Action":"output","Package":"enwords/internal/memory","Output":"ok  \tenwords/internal/memory\t1.090s [no tests to run]\n"}
+{"Time":"2026-10-16T19:27:31.6828544+08:00","Action":"pass","Package":"enwords/internal/memory","Elapsed":1.09}
+{"Time":"2026-10-16T19:27:32.4729487+08:00","Action":"start","Package":"enwords/internal/obs"}
+{"Time":"2026-10-16T19:27:33.2728755+08:00","Action":"output","Package":"enwords/internal/obs","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T19:27:33.2728755+08:00","Action":"output","Package":"enwords/internal/obs","Output":"PASS\n"}
+{"Time":"2026-10-16T19:27:33.2778756+08:00","Action":"output","Package":"enwords/internal/obs","Output":"ok  \tenwords/internal/obs\t0.805s [no tests to run]\n"}
+{"Time":"2026-10-16T19:27:33.2778756+08:00","Action":"pass","Package":"enwords/internal/obs","Elapsed":0.805}
+{"Time":"2026-10-16T19:27:34.3124279+08:00","Action":"start","Package":"enwords/internal/remoteprovider"}
+{"Time":"2026-10-16T19:27:35.4087874+08:00","Action":"output","Package":"enwords/internal/remoteprovider","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T19:27:35.4087874+08:00","Action":"output","Package":"enwords/internal/remoteprovider","Output":"PASS\n"}
+{"Time":"2026-10-16T19:27:35.4120866+08:00","Action":"output","Package":"enwords/internal/remoteprovider","Output":"ok  \tenwords/internal/remoteprovider\t1.100s [no tests to run]\n"}
+{"Time":"2026-10-16T19:27:35.4120866+08:00","Action":"pass","Package":"enwords/internal/remoteprovider","Elapsed":1.1}
+{"Time":"2026-10-16T19:27:36.5525717+08:00","Action":"start","Package":"enwords/internal/scheduler"}
+{"Time":"2026-10-16T19:27:37.4658639+08:00","Action":"run","Package":"enwords/internal/scheduler","Test":"TestEqualIntervalLadderAndStepAdvance"}
+{"Time":"2026-10-16T19:27:37.4658639+08:00","Action":"output","Package":"enwords/internal/scheduler","Test":"TestEqualIntervalLadderAndStepAdvance","Output":"=== RUN   TestEqualIntervalLadderAndStepAdvance\n"}
+{"Time":"2026-10-16T19:27:37.4663701+08:00","Action":"output","Package":"enwords/internal/scheduler","Test":"TestEqualIntervalLadderAndStepAdvance","Output":"--- PASS: TestEqualIntervalLadderAndStepAdvance (0.00s)\n"}
+{"Time":"2026-10-16T19:27:37.4663701+08:00","Action":"pass","Package":"enwords/internal/scheduler","Test":"TestEqualIntervalLadderAndStepAdvance","Elapsed":0}
+{"Time":"2026-10-16T19:27:37.4698334+08:00","Action":"run","Package":"enwords/internal/scheduler","Test":"TestLadderShortenTruncate"}
+{"Time":"2026-10-16T19:27:37.4698334+08:00","Action":"output","Package":"enwords/internal/scheduler","Test":"TestLadderShortenTruncate","Output":"=== RUN   TestLadderShortenTruncate\n"}
+{"Time":"2026-10-16T19:27:37.4698334+08:00","Action":"output","Package":"enwords/internal/scheduler","Test":"TestLadderShortenTruncate","Output":"--- PASS: TestLadderShortenTruncate (0.00s)\n"}
+{"Time":"2026-10-16T19:27:37.4698334+08:00","Action":"pass","Package":"enwords/internal/scheduler","Test":"TestLadderShortenTruncate","Elapsed":0}
+{"Time":"2026-10-16T19:27:37.4762179+08:00","Action":"output","Package":"enwords/internal/scheduler","Output":"PASS\n"}
+{"Time":"2026-10-16T19:27:37.481144+08:00","Action":"output","Package":"enwords/internal/scheduler","Output":"ok  \tenwords/internal/scheduler\t0.929s\n"}
+{"Time":"2026-10-16T19:27:37.481144+08:00","Action":"pass","Package":"enwords/internal/scheduler","Elapsed":0.929}
+{"Time":"2026-10-16T19:27:38.2150614+08:00","Action":"start","Package":"enwords/internal/scripts"}
+{"Time":"2026-10-16T19:27:38.9189771+08:00","Action":"output","Package":"enwords/internal/scripts","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T19:27:38.9189771+08:00","Action":"output","Package":"enwords/internal/scripts","Output":"PASS\n"}
+{"Time":"2026-10-16T19:27:38.9230584+08:00","Action":"output","Package":"enwords/internal/scripts","Output":"ok  \tenwords/internal/scripts\t0.708s [no tests to run]\n"}
+{"Time":"2026-10-16T19:27:38.9230584+08:00","Action":"pass","Package":"enwords/internal/scripts","Elapsed":0.708}
+{"Time":"2026-10-16T19:27:45.3109436+08:00","Action":"start","Package":"enwords/internal/store"}
+{"Time":"2026-10-16T19:27:49.0404431+08:00","Action":"run","Package":"enwords/internal/store","Test":"TestConfigScopeTempObjectAndReadFailureFailClosed"}
+{"Time":"2026-10-16T19:27:49.0404431+08:00","Action":"output","Package":"enwords/internal/store","Test":"TestConfigScopeTempObjectAndReadFailureFailClosed","Output":"=== RUN   TestConfigScopeTempObjectAndReadFailureFailClosed\n"}
+{"Time":"2026-10-16T19:27:49.2550504+08:00","Action":"output","Package":"enwords/internal/store","Test":"TestConfigScopeTempObjectAndReadFailureFailClosed","Output":"--- PASS: TestConfigScopeTempObjectAndReadFailureFailClosed (0.22s)\n"}
+{"Time":"2026-10-16T19:27:49.2550504+08:00","Action":"pass","Package":"enwords/internal/store","Test":"TestConfigScopeTempObjectAndReadFailureFailClosed","Elapsed":0.22}
+{"Time":"2026-10-16T19:27:49.2582524+08:00","Action":"run","Package":"enwords/internal/store","Test":"TestConfigScopeAbsentAndCanonicalLegacyRemainAvailable"}
+{"Time":"2026-10-16T19:27:49.2582524+08:00","Action":"output","Package":"enwords/internal/store","Test":"TestConfigScopeAbsentAndCanonicalLegacyRemainAvailable","Output":"=== RUN   TestConfigScopeAbsentAndCanonicalLegacyRemainAvailable\n"}
+{"Time":"2026-10-16T19:27:49.3135712+08:00","Action":"output","Package":"enwords/internal/store","Test":"TestConfigScopeAbsentAndCanonicalLegacyRemainAvailable","Output":"--- PASS: TestConfigScopeAbsentAndCanonicalLegacyRemainAvailable (0.05s)\n"}
+{"Time":"2026-10-16T19:27:49.3135712+08:00","Action":"pass","Package":"enwords/internal/store","Test":"TestConfigScopeAbsentAndCanonicalLegacyRemainAvailable","Elapsed":0.05}
+{"Time":"2026-10-16T19:27:49.6372732+08:00","Action":"output","Package":"enwords/internal/store","Output":"PASS\n"}
+{"Time":"2026-10-16T19:27:49.6478875+08:00","Action":"output","Package":"enwords/internal/store","Output":"ok  \tenwords/internal/store\t4.337s\n"}
+{"Time":"2026-10-16T19:27:49.6478875+08:00","Action":"pass","Package":"enwords/internal/store","Elapsed":4.337}
+{"Time":"2026-10-16T19:27:51.0837488+08:00","Action":"start","Package":"enwords/internal/tools"}
+{"Time":"2026-10-16T19:27:53.2704685+08:00","Action":"output","Package":"enwords/internal/tools","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T19:27:53.2704685+08:00","Action":"output","Package":"enwords/internal/tools","Output":"PASS\n"}
+{"Time":"2026-10-16T19:27:53.2898436+08:00","Action":"output","Package":"enwords/internal/tools","Output":"ok  \tenwords/internal/tools\t2.206s [no tests to run]\n"}
+{"Time":"2026-10-16T19:27:53.2898436+08:00","Action":"pass","Package":"enwords/internal/tools","Elapsed":2.206}
+{"Time":"2026-10-16T19:27:54.9749884+08:00","Action":"start","Package":"enwords/internal/voiceclone"}
+{"Time":"2026-10-16T19:27:56.7744767+08:00","Action":"output","Package":"enwords/internal/voiceclone","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T19:27:56.7754727+08:00","Action":"output","Package":"enwords/internal/voiceclone","Output":"PASS\n"}
+{"Time":"2026-10-16T19:27:56.7918288+08:00","Action":"output","Package":"enwords/internal/voiceclone","Output":"ok  \tenwords/internal/voiceclone\t1.817s [no tests to run]\n"}
+{"Time":"2026-10-16T19:27:56.7918288+08:00","Action":"pass","Package":"enwords/internal/voiceclone","Elapsed":1.817}
+{"Time":"2026-10-16T19:27:57.6044745+08:00","Action":"start","Package":"enwords/internal/voicecmd"}
+{"Time":"2026-10-16T19:27:58.5885775+08:00","Action":"output","Package":"enwords/internal/voicecmd","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T19:27:58.5885775+08:00","Action":"output","Package":"enwords/internal/voicecmd","Output":"PASS\n"}
+{"Time":"2026-10-16T19:27:58.5941666+08:00","Action":"output","Package":"enwords/internal/voicecmd","Output":"ok  \tenwords/internal/voicecmd\t0.990s [no tests to run]\n"}
+{"Time":"2026-10-16T19:27:58.5941666+08:00","Action":"pass","Package":"enwords/internal/voicecmd","Elapsed":0.99}
+{"Time":"2026-10-16T19:27:59.4287132+08:00","Action":"start","Package":"enwords/internal/wordbook"}
+{"Time":"2026-10-16T19:28:00.3066804+08:00","Action":"output","Package":"enwords/internal/wordbook","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-16T19:28:00.3066804+08:00","Action":"output","Package":"enwords/internal/wordbook","Output":"PASS\n"}
+{"Time":"2026-10-16T19:28:00.3137214+08:00","Action":"output","Package":"enwords/internal/wordbook","Output":"ok  \tenwords/internal/wordbook\t0.885s [no tests to run]\n"}
+{"Time":"2026-10-16T19:28:00.3137214+08:00","Action":"pass","Package":"enwords/internal/wordbook","Elapsed":0.885}

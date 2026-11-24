@@ -1,0 +1,19 @@
+Command: go test -tags pilot_e2e ./internal/store -run PilotCatalog -count=1
+GOCACHE=D:\en-words\.test-tools\gocache
+GOMODCACHE=D:\en-words\.test-tools\gomodcache
+
+--- FAIL: TestPilotCatalogFrameGoldenAndStrictDecode (0.00s)
+    pilot_start_catalog_test.go:51: decode = ({SchemaVersion:1 Generation:1 CaseID:00112233445566778899aabbccddeeff State:provisioning}, 119, <nil>), want ({SchemaVersion:1 Generation:1 CaseID:00112233445566778899aabbccddeeff State:provisioning}, 123, nil)
+--- FAIL: TestPilotCatalogFrameRejectsEveryTruncationAndCorruption (0.00s)
+    pilot_start_catalog_test.go:59: prefix length 119 accepted: <nil>
+--- FAIL: TestPilotCatalogReplayTransitionsAndInterleavedCases (0.00s)
+    pilot_start_catalog_test.go:94: replay = 0 records, pilot catalog integrity error; want 10
+--- FAIL: TestPilotCatalogReplayFrameCountLimit (0.37s)
+    pilot_start_catalog_test.go:180: max frame replay = 0 records, pilot catalog integrity error
+--- FAIL: TestPilotCatalogCreateAndStartupSyncBeforeAuthorization (0.03s)
+    pilot_start_catalog_test.go:299: open = (<nil>, pilot catalog integrity error)
+--- FAIL: TestPilotCatalogTransitionRejectsAndAdvancesUnderGlobalLock (0.01s)
+    pilot_start_catalog_test.go:316: illegal transition = pilot catalog integrity error
+FAIL
+FAIL	enwords/internal/store	3.573s
+FAIL

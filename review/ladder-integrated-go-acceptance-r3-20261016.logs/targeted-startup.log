@@ -1,0 +1,17 @@
+{"Time":"2026-10-16T20:47:49.267219+08:00","Action":"start","Package":"enwords/internal/store"}
+{"Time":"2026-10-16T20:47:49.5525474+08:00","Action":"run","Package":"enwords/internal/store","Test":"TestStartupSQLiteBusyPrimaryCodeClassification"}
+{"Time":"2026-10-16T20:47:49.5533098+08:00","Action":"output","Package":"enwords/internal/store","Test":"TestStartupSQLiteBusyPrimaryCodeClassification","Output":"=== RUN   TestStartupSQLiteBusyPrimaryCodeClassification\n"}
+{"Time":"2026-10-16T20:47:49.6122458+08:00","Action":"output","Package":"enwords/internal/store","Test":"TestStartupSQLiteBusyPrimaryCodeClassification","Output":"--- PASS: TestStartupSQLiteBusyPrimaryCodeClassification (0.00s)\n"}
+{"Time":"2026-10-16T20:47:49.6127844+08:00","Action":"pass","Package":"enwords/internal/store","Test":"TestStartupSQLiteBusyPrimaryCodeClassification","Elapsed":0}
+{"Time":"2026-10-16T20:47:49.6127844+08:00","Action":"run","Package":"enwords/internal/store","Test":"TestStartupSQLiteBusyErrorRecognizesWrappedDriverError"}
+{"Time":"2026-10-16T20:47:49.6127844+08:00","Action":"output","Package":"enwords/internal/store","Test":"TestStartupSQLiteBusyErrorRecognizesWrappedDriverError","Output":"=== RUN   TestStartupSQLiteBusyErrorRecognizesWrappedDriverError\n"}
+{"Time":"2026-10-16T20:47:49.6127844+08:00","Action":"output","Package":"enwords/internal/store","Test":"TestStartupSQLiteBusyErrorRecognizesWrappedDriverError","Output":"--- PASS: TestStartupSQLiteBusyErrorRecognizesWrappedDriverError (0.03s)\n"}
+{"Time":"2026-10-16T20:47:49.6127844+08:00","Action":"pass","Package":"enwords/internal/store","Test":"TestStartupSQLiteBusyErrorRecognizesWrappedDriverError","Elapsed":0.03}
+{"Time":"2026-10-16T20:47:49.6133047+08:00","Action":"run","Package":"enwords/internal/store","Test":"TestStartupTwoIndependentPoolsNeverPublishPartialSchema"}
+{"Time":"2026-10-16T20:47:49.6133047+08:00","Action":"output","Package":"enwords/internal/store","Test":"TestStartupTwoIndependentPoolsNeverPublishPartialSchema","Output":"=== RUN   TestStartupTwoIndependentPoolsNeverPublishPartialSchema\n"}
+{"Time":"2026-10-16T20:47:49.6133047+08:00","Action":"output","Package":"enwords/internal/store","Test":"TestStartupTwoIndependentPoolsNeverPublishPartialSchema","Output":"    startup_matrix_test.go:648: startup race did not complete: ready=worker_returned_before_ready result= worker0=canceled stages=open:startup_stage_started::0ms,open:startup_stage_completed::4ms,pragmas:startup_stage_started::0ms,pragmas:startup_stage_failed:canceled:13ms overflow=false worker1=sqlite_busy stages=open:startup_stage_started::0ms,open:startup_stage_completed::4ms,pragmas:startup_stage_started::0ms,pragmas:startup_stage_failed:pragma_failed:2ms overflow=false\n"}
+{"Time":"2026-10-16T20:47:49.6138361+08:00","Action":"output","Package":"enwords/internal/store","Test":"TestStartupTwoIndependentPoolsNeverPublishPartialSchema","Output":"--- FAIL: TestStartupTwoIndependentPoolsNeverPublishPartialSchema (0.02s)\n"}
+{"Time":"2026-10-16T20:47:49.6138361+08:00","Action":"fail","Package":"enwords/internal/store","Test":"TestStartupTwoIndependentPoolsNeverPublishPartialSchema","Elapsed":0.02}
+{"Time":"2026-10-16T20:47:49.6138361+08:00","Action":"output","Package":"enwords/internal/store","Output":"FAIL\n"}
+{"Time":"2026-10-16T20:47:49.6277496+08:00","Action":"output","Package":"enwords/internal/store","Output":"FAIL\tenwords/internal/store\t0.354s\n"}
+{"Time":"2026-10-16T20:47:49.6277496+08:00","Action":"fail","Package":"enwords/internal/store","Elapsed":0.385}

@@ -1,0 +1,36 @@
+{
+  "review": "pilot-supervisor-sdd-security-r2",
+  "date": "2026-10-19",
+  "document": "docs/42-Pilot隔离运行监督器SDD.md",
+  "document_sha256": "ADE1BCAF7E2E883534B58FE4E6AB0BB1079140F50B16175BBC10580C38EA3DA1",
+  "scope": ["§2-§12", "R1 findings SEC-SUP-01 through SEC-SUP-08"],
+  "mode": "read-only design review; no code review; no tests run",
+  "verdict": "PASS",
+  "blocking_p1_count": 0,
+  "r1_status": {
+    "SEC-SUP-01": "closed: NO_XDEV and opened-handle mount-ID checks",
+    "SEC-SUP-02": "closed: permanent named lock objects, identities, allowlist and state inventory",
+    "SEC-SUP-03": "closed: SQLite path-only identity boundary explicitly accepted under stated threat model",
+    "SEC-SUP-04": "closed: case HMAC key remains in Supervisor; child requests narrow MAC operation",
+    "SEC-SUP-05": "closed: all catalog state reads are lock-protected",
+    "SEC-SUP-06": "closed in design: handle-relative traversal/deletion; platform tests remain required",
+    "SEC-SUP-07": "closed: exact SQLite sidecar member allowlist",
+    "SEC-SUP-08": "closed: separate protected log pseudonym key and ACL"
+  },
+  "r2_followup_status": {
+    "SEC-SUP-R2-01": "closed: mount ID is checked on opened handles",
+    "SEC-SUP-R2-02": "closed: per-state lock/directory inventory reconciliation is specified",
+    "SEC-SUP-R2-03": "closed: POSIX and Windows root ancestors are handle-pinned",
+    "SEC-SUP-R2-04": "closed: cleanup resume defines absent-directory crash recovery before deleted tombstone"
+  },
+  "findings": [],
+  "closed_in_r2": [
+    {"id":"SEC-SUP-R2-04","severity":"P2","clauses":["§7.63","§8.78","§10.113-§10.114"],"closure":"Absent-directory cleanup path revalidates absence under pinned case root, Syncs parent, and only then appends deleted tombstone; no directory recreation."}
+  ],
+  "limitations": [
+    "No tests executed",
+    "No code reviewed",
+    "Platform-specific Windows/Linux behavior still requires real runner evidence",
+    "No approval for production integration or real classroom pilot"
+  ]
+}

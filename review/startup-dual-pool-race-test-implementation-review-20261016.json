@@ -1,0 +1,45 @@
+﻿{
+    "review":  "startup-dual-pool-race-test-implementation",
+    "date":  "2026-10-16",
+    "status":  "passed_for_targeted_execution_with_coverage_gap",
+    "mode":  "read_only_no_tests_build_or_source_changes",
+    "source":  "server/internal/store/startup_matrix_test.go",
+    "sha256":  "25769d544fc476df362a5060055247f57400981d1de28f27fac9b39e418003d9",
+    "blockers":  [
+
+                 ],
+    "passed":  [
+                   {
+                       "detail":  "Actual glebarez/go-sqlite concrete Error via errors.As; positive primary-family mask includes517, rejects LOCKED/constraint/zero/negative. Cancellation classified before BUSY; arbitrary Code interface and error text rejected.",
+                       "lines":  "84-106,478-491,640-643"
+                   },
+                   {
+                       "detail":  "Per-worker stage summaries mutex protected, capped64 with overflow; fixed StageEvent fields and numeric duration only. No driver error text, SQL or paths in new loser diagnostics. Worker closes every nonnil returned DB before sending one buffered terminal result.",
+                       "lines":  "426-472"
+                   },
+                   {
+                       "detail":  "Both ready events required before normal release. Normal path does not cancel the competition. Separate20s ready/result deadlines and10s cleanup; early failure releases then cancels. Incomplete join or close prevents directory deletion.",
+                       "lines":  "510-620"
+                   },
+                   {
+                       "detail":  "Only one successful initializer; losing outcome restricted to conflict/BUSY. Winner and reopen compare complete normalized sqlite_master rows with independent expected schema. Recovery pool closed before directory deletion, including nonnil DB plus error.",
+                       "lines":  "629-678"
+                   }
+               ],
+    "required_before_complete_acceptance":  [
+                                                {
+                                                    "detail":  "New unit test exercises numeric classification and lookalike negatives, but not a real typed driver BUSY error or wrapped typed error. Thus the critical errors.As wiring lacks a deterministic positive regression; the dual-pool test may take the sentinel branch and never cover it.",
+                                                    "lines":  "98-106",
+                                                    "recommendation":  "Add a controlled real two-connection SQLite BUSY fixture and wrapped-error assertion, plus cancellation/nil negatives. Do not construct private driver fields with unsafe or weaken to an arbitrary Code interface. This can accompany targeted validation; existing implementation is statically correct.",
+                                                    "id":  "SR-TEST-01",
+                                                    "severity":  "P3"
+                                                }
+                                            ],
+    "limitations":  [
+                        "Worker terminal receipt proves pool Close completed, not a formal goroutine WaitGroup join; no resource work follows the terminal send. On timeout cleanup_incomplete honestly retains owned directory.",
+                        "Failed OpenContext may return nil DB after its own cleanup; this test cannot independently observe every internal Close outcome. Separate startup failure/pool-close tests remain part of the evidence.",
+                        "Final shared schema equality is not standalone proof of each losing transaction rollback. Retain the separate schema/trigger/index/commit failure rollback matrix.",
+                        "No tests executed; historical loser category and original startup failure root cause remain unproven."
+                    ],
+    "decision":  "No blocking implementation defect found in this scoped change. Targeted execution may proceed; close the deterministic typed-error regression gap before declaring the full test-contract acceptance complete."
+}

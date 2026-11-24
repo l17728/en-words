@@ -1,0 +1,68 @@
+{
+  "review": "ladder-integrated-doc-review",
+  "date": "2026-10-16",
+  "mode": "read_only_no_tests",
+  "status": "passed",
+  "files": [
+    {
+      "path": "docs\\00-README.md",
+      "sha256": "cd9daf7c02959f9e643f88f6aaed9b24dc9588454f6f78c25aab72191d31a927"
+    },
+    {
+      "path": "docs\\02-SDD.md",
+      "sha256": "52858fadd36062e6982f8ef2b6742ee3a2ae02d33efa6e26f238edc334da0088"
+    },
+    {
+      "path": "docs\\03-测试用例.md",
+      "sha256": "6a9a8b1ff811dafdeee8798afbbaee1045b01248845e6705d13bdb621073e9b3"
+    },
+    {
+      "path": "docs\\40-有效复习梯度原子协调器.md",
+      "sha256": "72dabea602451032245819c45f97a70e24297cd108553e9e3d5f03c791b5a629"
+    },
+    {
+      "path": "review/ladder-atomic-coordinator-design-20261016.md",
+      "sha256": "120d8c53f1e6375603d0f43ffca525d179be8bc129e3254c1848045efe2cd417"
+    },
+    {
+      "path": "review/ladder-effective-scope-gap-spec-20261016.md",
+      "sha256": "de65bc042789532009306b9d051f5fc2770db059bf019bedbd18b859aec1de94"
+    }
+  ],
+  "blocking": [],
+  "general_findings": [],
+  "passed": [
+    "docs02 effective student-scope clamp and preservation of non-step/due fields corrected.",
+    "docs03 R2-02 no longer promises all-card clamping.",
+    "docs40 correctly separates frozen Room teaching configuration from fresh scheduling/settlement and unknown-delivery reconciliation.",
+    "Writer-first atomic config/revision/card/audit work, memory coordination, mixed-backend refusal and fixed log event names agree with implementation.",
+    "Headers distinguish isolated success from pending formal integrated regression."
+  ],
+  "limits": [
+    "No production defect is asserted by these documentation findings.",
+    "No files modified except this independent report; no tests/build/services run."
+  ],
+  "closed_findings": [
+    {
+      "id": "LAD-DOC-01",
+      "result": "Latest docs40 uses actual snake_case wire fields and committed/refresh_pending booleans."
+    },
+    {
+      "id": "LAD-DOC-02",
+      "result": "Latest docs40 states all config routes Admin-only and describes effective DTO, inheritance and both global/student revisions."
+    },
+    {
+      "id": "LAD-DOC-03",
+      "result": "Closed by final document-only follow-up."
+    },
+    {
+      "id": "LAD-DOC-04",
+      "result": "Closed by final document-only follow-up."
+    },
+    {
+      "id": "LAD-DOC-05",
+      "result": "Closed by final document-only follow-up."
+    }
+  ],
+  "final_followup": "Read latest docs40 and both design/spec final status paragraphs: four method/path combinations correct; top-level JSON ambiguity rules separated from supported value canonicalization; historical pending statements explicitly labeled and linked to current status."
+}

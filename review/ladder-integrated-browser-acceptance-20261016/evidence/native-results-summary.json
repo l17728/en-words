@@ -1,0 +1,90 @@
+﻿[
+    {
+        "at":  "19:56:51",
+        "run":  "closure-1792151706041-5888",
+        "tests":  9,
+        "passed":  9,
+        "skipped":  0,
+        "unexpected":  0,
+        "flaky":  0,
+        "duration_s":  105.0,
+        "errorCount":  0
+    },
+    {
+        "at":  "19:58:26",
+        "run":  "closure-1792151813255-16104",
+        "tests":  9,
+        "passed":  9,
+        "skipped":  0,
+        "unexpected":  0,
+        "flaky":  0,
+        "duration_s":  93.4,
+        "errorCount":  0
+    },
+    {
+        "at":  "19:59:36",
+        "run":  "closure-1792151907930-21740",
+        "tests":  6,
+        "passed":  6,
+        "skipped":  0,
+        "unexpected":  0,
+        "flaky":  0,
+        "duration_s":  68.2,
+        "errorCount":  0
+    },
+    {
+        "at":  "20:00:39",
+        "run":  "closure-1792151978001-6960",
+        "tests":  4,
+        "passed":  4,
+        "skipped":  0,
+        "unexpected":  0,
+        "flaky":  0,
+        "duration_s":  61.2,
+        "errorCount":  0
+    },
+    {
+        "at":  "20:01:18",
+        "run":  "closure-1792152040617-22308",
+        "tests":  7,
+        "passed":  7,
+        "skipped":  0,
+        "unexpected":  0,
+        "flaky":  0,
+        "duration_s":  38.2,
+        "errorCount":  0
+    },
+    {
+        "at":  "20:05:01",
+        "run":  "closure-1792152080395-15256",
+        "tests":  26,
+        "passed":  26,
+        "skipped":  0,
+        "unexpected":  0,
+        "flaky":  0,
+        "duration_s":  220.8,
+        "errorCount":  0
+    },
+    {
+        "at":  "20:06:30",
+        "run":  "closure-1792152302608-16796",
+        "tests":  1,
+        "passed":  1,
+        "skipped":  0,
+        "unexpected":  0,
+        "flaky":  0,
+        "duration_s":  88.3,
+        "errorCount":  0
+    },
+    {
+        "at":  "20:10:34",
+        "run":  "closure-1792152392300-20312",
+        "tests":  30,
+        "passed":  29,
+        "skipped":  0,
+        "unexpected":  1,
+        "flaky":  0,
+        "duration_s":  241.7,
+        "errorCount":  0
+    }
+]

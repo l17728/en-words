@@ -1,0 +1,63 @@
+
+Running 30 tests using 1 worker
+
+  ✓   1 e2e\interaction-boundaries.spec.ts:14:1 › IX05 ordinary HTTP without randomUUID supports login feedback and classroom answers (14.0s)
+  ✓   2 e2e\interaction-boundaries.spec.ts:25:1 › IX11 closed report never reopens from a late response and a fresh report can be read (11.3s)
+  ✓   3 e2e\interaction-boundaries.spec.ts:34:1 › IX12 administrator refresh rejects an older initial wordbook response (3.3s)
+  ✓   4 e2e\interaction-boundaries.spec.ts:42:75 › IX07 slow semantic judge › heartbeat remains responsive while judgment is pending and leaving cancels the owned model request (11.8s)
+  ✓   5 e2e\interaction-boundaries.spec.ts:50:1 › IX08 large wordbook enters a classroom without affecting another student (7.3s)
+  ✘   6 e2e\interaction-boundaries.spec.ts:57:85 › IX10 finished-room persistence › finished timeout sweep performs zero writes and completed report remains readable (20ms)
+  ✓   7 e2e\interaction-boundaries.spec.ts:64:1 › IX06 failed synthesis is not cached and changing students cannot reuse prior classroom media (11.4s)
+  ✓   8 e2e\interaction-boundaries.spec.ts:75:1 › IX11 recording status follows actual start then conversion and late callbacks cannot revive it after exit (10.1s)
+  ✓   9 e2e\interaction-boundaries.spec.ts:89:1 › IX01 changing placement book abandons the old pending save without locking the new book (3.9s)
+  ✓  10 e2e\interaction-boundaries.spec.ts:100:1 › P02 cold login exposes an enabled form and records its measured delivery cost (5.5s)
+  ✓  11 e2e\interaction-import.spec.ts:36:1 › IX14 real 1000-word import selection and repeated selection preserve learned cards with another classroom active (35.3s)
+  ✓  12 e2e\interaction-import.spec.ts:52:43 › IX14 import storage failure rolls back earlier chunks and user can retry manually (15.3s)
+  ✓  13 e2e\interaction-import.spec.ts:52:43 › IX14 enable storage failure rolls back earlier chunks and user can retry manually (16.0s)
+  ✓  14 e2e\interaction-import.spec.ts:69:1 › IX15 placement draft storage failure rolls back cards and keeps the user selection for manual recovery (4.6s)
+  ✓  15 e2e\interaction-regression.spec.ts:6:1 › IX06 repeated Chinese reuses successful media while playing and captioning every segment (6.8s)
+  ✓  16 e2e\interaction-regression.spec.ts:33:47 › IX01 placement save success stays on page until confirmed (3.0s)
+  ✓  17 e2e\interaction-regression.spec.ts:33:47 › IX01 placement save failure stays on page until confirmed (2.9s)
+  ✓  18 e2e\interaction-regression.spec.ts:54:1 › IX03 dashboard does not call a pending or failed course list empty (2.7s)
+  ✓  19 e2e\interaction-regression.spec.ts:67:1 › IX04 pending feedback freezes the original draft and does not clear a later edit (3.7s)
+  ✓  20 e2e\interaction-regression.spec.ts:77:1 › IX05 a stalled response body expires visibly and retry reads real statistics (2.5s)
+  ✓  21 e2e\interaction-regression.spec.ts:88:1 › IX11 answer immediately becomes pending and blocks repeated click and Enter before server frames (9.9s)
+  ✓  22 e2e\interaction-regression.spec.ts:103:1 › IX09 missing heartbeat ACK makes the classroom offline then reconnects without replaying an answer (10.4s)
+  ✓  23 e2e\interaction-regression.spec.ts:113:1 › IX05 media body deadline visibly fails without pretending playback or ACK success (5.5s)
+  ✓  24 e2e\interaction-regression.spec.ts:134:1 › IX12 books failure retries and concurrent choices stay locked through confirmation (4.2s)
+  ✓  25 e2e\interaction-regression.spec.ts:143:1 › IX12 administrator pending action freezes inputs and shows only that operation busy (3.1s)
+  ✓  26 e2e\interaction-regression.spec.ts:153:1 › IX11 placement keyboard selection persists and a failed notification can be retried (4.1s)
+  ✓  27 e2e\interaction-regression.spec.ts:161:1 › IX13 oversized login is rejected visibly and legitimate credentials still work (2.5s)
+  ✓  28 e2e\interaction-regression.spec.ts:166:1 › IX12 deleting a book after a lost response queries the result without repeating the mutation (4.4s)
+  ✓  29 e2e\interaction-regression.spec.ts:173:1 › IX12 leaving a delete confirmation destroys its authority without sending DELETE (3.0s)
+  ✓  30 e2e\interaction-regression.spec.ts:179:1 › IX12 administrator late completion after leaving cannot refresh or toast the next page (3.2s)
+
+
+  1) e2e\interaction-boundaries.spec.ts:57:85 › IX10 finished-room persistence › finished timeout sweep performs zero writes and completed report remains readable 
+
+    Error: E2E_SERVER_BINARY is required for owned-process restart acceptance
+
+       at recovery-server.ts:17
+
+      15 |   server: [async ({ request, localModel, modelSchema, overdueHarness, duplexPilot, productionSchedule }, runFixture, info) => {
+      16 |     const binary = overdueHarness ? process.env.E2E_HARNESS_BINARY : process.env.E2E_SERVER_BINARY
+    > 17 |     if (!binary) throw new Error('E2E_SERVER_BINARY is required for owned-process restart acceptance')
+         |                        ^
+      18 |     const model = { pending: 0, canceled: 0, feedbackCalls: 0, judgeCalls: 0 }
+      19 |     const pending = new Set<ServerResponse>()
+      20 |     const platform = createServer((req, res) => {
+        at Object.base.extend.server.auto (D:\en-words\review\ladder-integrated-browser-acceptance-20261016\source\web\e2e\recovery-server.ts:17:24)
+
+    Error Context: .test-artifacts\closure-1792152407008-19836\browser\interaction-boundaries-IX1-3b52e-ted-report-remains-readable\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    .test-artifacts\closure-1792152407008-19836\browser\interaction-boundaries-IX1-3b52e-ted-report-remains-readable\trace.zip
+    Usage:
+
+        npx playwright show-trace .test-artifacts\closure-1792152407008-19836\browser\interaction-boundaries-IX1-3b52e-ted-report-remains-readable\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    e2e\interaction-boundaries.spec.ts:57:85 › IX10 finished-room persistence › finished timeout sweep performs zero writes and completed report remains readable 
+  29 passed (4.0m)

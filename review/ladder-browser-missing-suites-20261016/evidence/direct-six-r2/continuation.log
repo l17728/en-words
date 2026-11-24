@@ -1,0 +1,47 @@
+[WebServer] (node:5904) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[WebServer] (node:16456) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+(node:22120) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 22:15:44 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 22:15:44 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 22:15:44 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+  ✓  1 e2e\continuation-wait.spec.ts:5:80 › WAIT39 progress keeps local playback waiting separate from delivery and other students (18.0s)
+[WebServer] 22:16:02 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 22:16:02 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+  ✓  2 e2e\continuation-wait.spec.ts:5:80 › WAIT39 disconnect keeps local playback waiting separate from delivery and other students (7.0s)
+[WebServer] 22:16:09 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 22:16:09 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+  ✓  3 e2e\continuation-wait.spec.ts:5:80 › WAIT39 account keeps local playback waiting separate from delivery and other students (9.1s)
+[WebServer] 22:16:18 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[WebServer] 22:16:18 [vite] http proxy error: /api/v1/bootstrap/status
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:18081
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+  ✓  4 e2e\continuation-wait.spec.ts:5:80 › WAIT39 fallback_error keeps local playback waiting separate from delivery and other students (6.9s)
+
+  4 passed (57.1s)

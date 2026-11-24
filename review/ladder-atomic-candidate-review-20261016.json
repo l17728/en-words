@@ -1,0 +1,213 @@
+{
+  "review_date": "2026-10-16",
+  "candidate": ".test-tools\\ladder-implementation-20261016",
+  "status": "changes_requested",
+  "review_mode": "Independent architecture/backend/security/configuration-transaction review of actual27-file isolated candidate and existing source dependencies. No compilation, tests, SQL, model calls or candidate edits.",
+  "design": "review/ladder-atomic-coordinator-design-20261016.md",
+  "handoff": "_baseline/IMPLEMENTATION-HANDOFF.md",
+  "files": [
+    {
+      "path": "server/internal/api/agenttools.go",
+      "sha256": "14531080b368cb82f4541891043257b24bd81d6e21a3761e43b81f03e6e94519",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/api/agenttransaction.go",
+      "sha256": "9bfa3164b42a036bee111dd8bdbf74b6ae129ae0b92fd9a2f66a4ea38336c1a9",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/api/app.go",
+      "sha256": "f075e9e48ccd7e44a4aac1a008ce2df62699d41c1d8e95fc994393dde3ab4afe",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/api/configmutation.go",
+      "sha256": "eb2b40f0d6d62c69e09a662f2291808704adecf25a3ffa6b400800aa9b97e79a",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/api/configroutes.go",
+      "sha256": "c9362df9ebdf3240e7c7e4855f1871f53f57943e04c9728f02609335ffe49060",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/api/extra.go",
+      "sha256": "f16eb367ad6327a0a59e1e41bd4a4eb1bff4f771229f0cb182e2473ce33b4113",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/api/feedbackexecution.go",
+      "sha256": "7b9d3fb1440a715e8c0227be8710c52a148551b8f2d412f62050acd982219cc0",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/api/feedbackstorage.go",
+      "sha256": "6e0063fc3e2543d8c8b970e8910c9a1660790100259272f46ee74ae523843458",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/api/hub.go",
+      "sha256": "3239252fb4496cc8a7d8ba86b3df8b7400a3eb723b1d589f193fa991403fef42",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/api/ladder_atomic_regression_test.go",
+      "sha256": "627e2655b88269fd7fd7f34672281711e73cae875bf326d28fa0f7275b83c5e9",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/api/ladder_concurrency_regression_test.go",
+      "sha256": "7b0a0820a40e6ea68ce8ceec075278bee5fd3f02ba69b8d44ecd996d030572f9",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/api/ladder_failure_regression_test.go",
+      "sha256": "45a72a5ea71b43f2189639fd2eaf542ee92b4901bb1ca401186dbd8d0d07814b",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/api/ladder_routes_regression_test.go",
+      "sha256": "8c37d01a4e5ee815b4d9512a8fa256c60a0afcf93ae965f17c1a20f3666e3bb6",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/api/ladder_work_boundary_test.go",
+      "sha256": "65785968d81d0723563cdbfe457a7301b6ae9e6448475e05e150024f5d2a99fe",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/api/lessonexecution.go",
+      "sha256": "47fbeded9137aab5613fee190c8f961f66cbd9c235a1ca002b8d1dab4fd1a690",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/api/router.go",
+      "sha256": "cd7d21458a7f61ab339962db0fc5b2d0453733242afe96157982aa808cf2e990",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/config/config.go",
+      "sha256": "d53bad3696efcab84ec65171e5577fbe97afa099c75cd4f22e1c33985a188ef6",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/config/effective_view_test.go",
+      "sha256": "5c87394d554fe6545ddb6d5c4d139dfe62fe76ff57aa5db82f2d6c12de142860",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/config/mutation.go",
+      "sha256": "56b4998f81c7485a0d474cf16af96f3d8b2985b50dd324d6d438473c1d8d1a1b",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/scheduler/ladder_scope.go",
+      "sha256": "d0c132d925e17a81848a9ae456942dc3f4bd37add65b330d8bf757fd126a0bb3",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/scheduler/scheduler.go",
+      "sha256": "65f14d1241f85cd71ef7fe98a8159519ab39fe79560c3654dafe5f3805f5081b",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/scheduler/settlement.go",
+      "sha256": "63c5c79ef1f6d2e4c4f9e9f5757de7458c30da386c1f15fe447fac64a56e966d",
+      "handoff_match": true
+    },
+    {
+      "path": "server/internal/store/config_atomic.go",
+      "sha256": "b9249f390f41c436f5601587b100875bdf5f89ca8993c8eff136afe409f19b00",
+      "handoff_match": true
+    },
+    {
+      "path": "web/src/api/client.ts",
+      "sha256": "7a6eb344cc2449136e1f0bf435f44cf8b55ddd61f73021345c4e2db1e6e4d387",
+      "handoff_match": true
+    },
+    {
+      "path": "web/src/components/LadderSettings.tsx",
+      "sha256": "d3c79566b47359e5c9e2f5778580732e5360891fc665b25b310def848e88960e",
+      "handoff_match": true
+    },
+    {
+      "path": "web/src/pages/Admin.tsx",
+      "sha256": "118c22adf4204f64a864bee54c602e1aa7eaec56857100804d737a954f51509d",
+      "handoff_match": true
+    },
+    {
+      "path": "web/e2e/ladder-config.spec.ts",
+      "sha256": "2f08d69fde1ff824cfe4ada0dad1434a236d092d02b31264d610994d14792758",
+      "handoff_match": true
+    }
+  ],
+  "blocking_findings": [
+    {
+      "id": "LAD-AR-01",
+      "severity": "P1",
+      "file": "server/internal/store/config_atomic.go",
+      "line": 35,
+      "issue": "Protected scope discovery silently treats ASCII-case variants and same-name non-table objects as no reservation. SQLite identifiers are case-insensitive but sqlite_master name equality is case-sensitive.",
+      "trigger": "Create CLASSROOM_SCOPE_RESERVATIONS with a pilot row for an inheriting student, or expose that reserved name as a view. Change global ladder. count=0 returns an empty protection set, allowing configuration/cards mutation instead of rejecting protected/unknown scope.",
+      "required_fix": "Lookup owned name with ASCII case-insensitive semantics across object types; explicitly reject noncanonical name/non-table or malformed owned schema rather than treating it as absence. Preserve no-new-migration scope.",
+      "regression": "Real SQLite uppercase table with pilot/no-card scope and same-name view; assert whole mutation rejected with unchanged config/card/revision/audit. Canonical legacy/no-table compatibility positive cases."
+    },
+    {
+      "id": "LAD-AR-02",
+      "severity": "P2",
+      "file": "web/src/components/LadderSettings.tsx",
+      "line": 74,
+      "issue": "Unknown write delivery does not enter a reconciliation-required state. catch displays a suggestion but retains data/loadedIdentity; finally clears busy, so save/delete are immediately available using pre-write data. Successful POST followed by failing GET has the same issue.",
+      "trigger": "Let server commit set/delete, then lose its response, or return successful POST then fail effective GET. User can immediately submit again without observing effective value/revision, contrary to approved unknown-delivery contract.",
+      "required_fix": "Keep the edit draft but latch write-disabled reconciliation state for delivery-unknown and committed-read-failed outcomes; only a successful same-identity effective read clears it. Distinguish known validation rejection so retryable edits need not be discarded. Keep refresh_pending behavior and no automatic mutation retry.",
+      "regression": "Node state test plus actual UI delayed/committed-response-loss and post-success GET failure: retain draft, disable save/delete, no extra request on click, successful manual read restores eligibility."
+    },
+    {
+      "id": "LAD-AR-03",
+      "severity": "P2",
+      "file": "server/internal/api/configroutes.go",
+      "line": 22,
+      "issue": "New strict configuration decoder rejects unknown fields but accepts duplicate and case-alias JSON keys; encoding/json uses last value and case-insensitive struct matching, so ambiguous target/scope/value silently selects a mutation.",
+      "trigger": "POST raw JSON with duplicate scope/studentId or scope plus Scope containing different values. Request can become global or target another student despite an earlier contradictory field. DELETE likewise accepts conflicting studentId keys.",
+      "required_fix": "Reject duplicate/case-alias known fields and null required fields before applying mutations, using a narrow existing strict JSON validator or explicit token/schema check; retain current body cap and fixed safe errors.",
+      "regression": "Raw-body HTTP tests for exact duplicate and mixed-case duplicate scope/studentId/key/value and null targets, assert400 and zero config/revision/card/audit writes. Ordinary canonical request remains accepted."
+    }
+  ],
+  "verified_invariants": [
+    "WithAtomicWrite reuses pinned atomicConnection and acquires SQLite writer before config/card reads; nested ownership remains governed by existing helper.",
+    "Effective before/after ladder comparison is per student and includes goalMode derivation; global protected no-card IDs are included in canonical-table case. Only ladder_step is updated; no due/status overwrite or automatic step promotion.",
+    "SQLite config/cards/revisions/fixed audit share one transaction; live Reload occurs after commit under agentWriteMu; refresh failure returns committed plus refresh_pending.",
+    "Fresh persistent reads do not fall back to live cache; placement reset+plan now share fresh work while already-saved draft remains separately committed.",
+    "Memory ChangeConfig follows agentWriteMu then App.mu then cfg/scheduler/memory private clones; mixed unsupported backend fails before writes.",
+    "Persistent tool/feedback/completion factories use writer-first safe owner; inner work avoids nested transaction. Current System Agent configuration key whitelist is unchanged.",
+    "Paired live scheduling consumers reject non-work calls; memory completion ConfigWorkView retains original pending-settlement and finished metadata ownership.",
+    "Hub fetches fresh new-class config outside Hub.mu and double-checks Room existence; persisted snapshots remain authoritative for restore.",
+    "Effective DTO distinguishes explicit student/global versus goal-derived default, supplies both revisions and delete fallback; HTTP routes remain admin-only.",
+    "Pilot component default migration/App routes are not enabled by this slice."
+  ],
+  "acceptance_gaps": [
+    {
+      "severity": "required_before_acceptance",
+      "description": "Handoff correctly states no compile/test execution.14 new Go top-level cases and one authored E2E do not yet cover the full approved matrix. No passing result claimed."
+    },
+    {
+      "severity": "required_before_acceptance",
+      "description": "Add actual fresh-work consumer cases after Reload failure (new Hub entry, placement finish, completion next lesson), cross-App scheduling using changed ladder, old-room frozen config retention, and memory completion/config concurrency. Current refresh test only calls FreshConfigSnapshot/EffectiveConfiguration."
+    },
+    {
+      "severity": "required_before_acceptance",
+      "description": "Add config persistence/audit failure, cancellation, no-op delete zero writes/revisions/audit, mixed backend rejection, same-length effective changes and complete goalMode set/delete inheritance cases; existing card-failure/deferred-COMMIT/two-App tests are useful but not substitutes."
+    },
+    {
+      "severity": "required_before_acceptance",
+      "description": "The sole ladder E2E requires preseeded accounts, has no dedicated runnable acceptance configuration, no second-student/card-state isolation, restart persistence or real SQL failure recovery. Handoff already declares these missing; do not call it complete UI acceptance."
+    }
+  ],
+  "nonblocking_boundaries": [
+    "ConfigWorkView is an exported trusted-internal seam, not runtime authorization; current production memory-completion call owns agentWriteMu. Do not expose it as an unguarded API or claim arbitrary caller isolation.",
+    "configMutation capability is assembled but no current sensitive Agent tool consumes it; unchanged System whitelist means this is not new Agent ladder autonomy.",
+    "Strict schema protection correction is a conservative read guard, not authorization to integrate Pilot products or migrate default22-table schema.",
+    "All findings concern isolated candidate only; approved formal startup/repeat/G1/WAIT39 candidate is unchanged."
+  ]
+}

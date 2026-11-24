@@ -1,0 +1,48 @@
+﻿{
+  "review_id": "pilot-start-kernel-agent-review2-20261016",
+  "domain": "ai_agent_teaching_strategy",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "cross_checked_document": "docs/04-Agent与话术库设计.md",
+  "review_type": "read_only_design_rereview",
+  "code_modified": false,
+  "tests_run": false,
+  "decision": "block",
+  "summary": "AGENT-START-01..03及05在设计层已关闭；仍需明确可编译的 TeacherAgent 精确 T-01 渲染 API/黄金文本语义，以及 rollback 后同一 task 的共享预算处理。",
+  "prior_findings": [
+    {"id":"AGENT-START-01","status":"closed_design_only"},
+    {"id":"AGENT-START-02","status":"closed_design_only"},
+    {"id":"AGENT-START-03","status":"closed_for_isolated_fixture_only"},
+    {"id":"AGENT-START-04","status":"partially_closed_new_budget_retry_issue"},
+    {"id":"AGENT-START-05","status":"closed_design_only"}
+  ],
+  "findings": [
+    {
+      "id":"AGENT-START-06",
+      "priority":"P1",
+      "status":"blocking",
+      "title":"T-01 precise render contract is not a callable TeacherAgent API",
+      "evidence":"SDD invokes RenderID(OP-1), which exists on scripts.Bank rather than exported TeacherAgent; api adapter cannot access TeacherAgent.bank. Existing TeacherAgent.Render performs category selection; Bank.RenderID still colloquializes and changes nickname, so the exact golden string is not clearly the runtime output contract. Fallback ownership is also unclear.",
+      "required_change":"Specify a compileable Agent-layer T01 renderer and its input/output/template/fallback semantics; define whether OP-1 may colloquialize and whether golden is byte-exact or semantic. Keep script bank access and teaching copy inside Agent layer. Add semantic and length assertions."
+    },
+    {
+      "id":"AGENT-START-07",
+      "priority":"P1",
+      "status":"blocking",
+      "title":"Same event retry can refresh the two-call tool budget",
+      "evidence":"SDD gives each context budget=2 and permits same-command pure tool re-execution after proven rollback. Existing tools.WithEventBudget stores counter in context; rebuilding context resets it, while reusing it leaves no budget after say+show_word. Resetting would violate docs/04 shared per-event budget.",
+      "required_change":"Freeze same-task budget behavior across rollback/retry. Do not create a new task/context just to obtain fresh budget. Define recovery (persistent budget, precomputed audited plan, or terminal failure) and test first-call rollback/retry accounting."
+    }
+  ],
+  "agent_domain_checks": {
+    "T01_order_say_then_show_word": "pass_design",
+    "T01_intro_nickname_and_length": "pass_design_pending_callable_agent_contract",
+    "trusted_first_lesson_source": "pass_for_isolated_fixture_only",
+    "frozen_meanings_in_command_and_outbox": "pass_design",
+    "D15_tool_boundary": "pass_design",
+    "registry_shared_budget": "blocked_on_retry_semantics",
+    "task_scope_and_owner_auth": "pass_design",
+    "no_implicit_classroom_progression": "pass_design"
+  },
+  "out_of_scope": ["production model/audio", "outbox dispatch", "legacy Room integration", "real classroom pilot"],
+  "retest_required": true
+}

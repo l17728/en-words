@@ -1,0 +1,207 @@
+﻿{
+    "title":  "Integrated Playwright browser acceptance",
+    "date":  "2026-10-16",
+    "snapshot_at":  "2026-10-16 19:43 Asia/Shanghai",
+    "snapshot":  "review/ladder-integrated-browser-acceptance-20261016/source",
+    "snapshot_hash_evidence":  "review/ladder-integrated-browser-acceptance-20261016/evidence/final-hash-check.json",
+    "snapshot_source_files":  1013,
+    "snapshot_source_bytes":  34116718,
+    "snapshot_node_modules_files":  19988,
+    "snapshot_node_modules_bytes":  184028672,
+    "package_json_sha256":  "9f89379bad59cae8ea90abd0991d0bc77651d1b4de342ec88be157e154b0c48d",
+    "package_lock_sha256":  "37bbcd595ef594ef8d6f94b2dcd7761f17fe498fe872869ebfac568fb226b7ca",
+    "go_binary_sha256":  "E75D2AD4100FD79704D6160E8A93A0672434E366DFA1454B80C69BA716076D6A",
+    "mode":  "headless Chromium; serial; retries=0; reuseExistingServer=false; single snapshot-owned server per config",
+    "browser_cache":  "C:\\Users\\Administrator\\AppData\\Local\\ms-playwright read-only (PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1)",
+    "formal_node_modules":  "read-only; snapshot copy excluded .vite; all test/build/cache/temp outputs isolated under report directory",
+    "test_binary":  "review/ladder-integrated-browser-acceptance-20261016/bin/en-words-formal.exe built from frozen source/server",
+    "runs":  [
+                 {
+                     "flaky":  0,
+                     "unexpected":  0,
+                     "config":  "playwright.config.ts",
+                     "ports":  [
+                                   18080,
+                                   15173
+                               ],
+                     "skipped":  0,
+                     "duration_seconds":  105,
+                     "tests":  9,
+                     "passed":  9,
+                     "artifact":  "closure-1792151706041-5888",
+                     "pid":  5888
+                 },
+                 {
+                     "flaky":  0,
+                     "unexpected":  0,
+                     "config":  "playwright.headless.config.ts",
+                     "ports":  [
+                                   18080,
+                                   15173
+                               ],
+                     "skipped":  0,
+                     "duration_seconds":  93.4,
+                     "tests":  9,
+                     "passed":  9,
+                     "artifact":  "closure-1792151813255-16104",
+                     "pid":  16104
+                 },
+                 {
+                     "flaky":  0,
+                     "unexpected":  0,
+                     "config":  "playwright.closure.config.ts",
+                     "ports":  [
+                                   18080,
+                                   15173
+                               ],
+                     "skipped":  0,
+                     "duration_seconds":  68.2,
+                     "tests":  6,
+                     "passed":  6,
+                     "artifact":  "closure-1792151907930-21740",
+                     "pid":  21740
+                 },
+                 {
+                     "flaky":  0,
+                     "unexpected":  0,
+                     "config":  "playwright.continuation.config.ts",
+                     "ports":  [
+                                   18081,
+                                   15174
+                               ],
+                     "skipped":  0,
+                     "duration_seconds":  61.2,
+                     "tests":  4,
+                     "passed":  4,
+                     "artifact":  "closure-1792151978001-6960",
+                     "pid":  6960
+                 },
+                 {
+                     "flaky":  0,
+                     "unexpected":  0,
+                     "config":  "playwright.duplex.config.ts",
+                     "ports":  [
+                                   18081,
+                                   15174
+                               ],
+                     "skipped":  0,
+                     "duration_seconds":  38.2,
+                     "tests":  7,
+                     "passed":  7,
+                     "artifact":  "closure-1792152040617-22308",
+                     "pid":  22308
+                 },
+                 {
+                     "flaky":  0,
+                     "unexpected":  0,
+                     "config":  "playwright.feedback.config.ts",
+                     "ports":  [
+                                   18080,
+                                   15173
+                               ],
+                     "skipped":  0,
+                     "duration_seconds":  220.8,
+                     "tests":  26,
+                     "passed":  26,
+                     "artifact":  "closure-1792152080395-15256",
+                     "pid":  15256
+                 },
+                 {
+                     "flaky":  0,
+                     "unexpected":  0,
+                     "config":  "playwright.firstuse.config.ts",
+                     "ports":  [
+                                   18080,
+                                   15173
+                               ],
+                     "skipped":  0,
+                     "duration_seconds":  88.3,
+                     "tests":  1,
+                     "passed":  1,
+                     "artifact":  "closure-1792152302608-16796",
+                     "pid":  16796
+                 },
+                 {
+                     "flaky":  0,
+                     "unexpected":  1,
+                     "config":  "playwright.interaction.config.ts",
+                     "ports":  [
+                                   18081,
+                                   15174
+                               ],
+                     "skipped":  0,
+                     "duration_seconds":  241.7,
+                     "tests":  30,
+                     "passed":  29,
+                     "artifact":  "closure-1792152392300-20312",
+                     "pid":  20312
+                 }
+             ],
+    "totals":  {
+                   "configs_completed":  8,
+                   "configs_total_nonaggregate":  17,
+                   "tests":  92,
+                   "passed":  91,
+                   "unexpected":  1,
+                   "skipped":  0,
+                   "flaky":  0,
+                   "product_behavior_failures":  0,
+                   "harness_failures":  1,
+                   "config_suite_failures":  0
+               },
+    "first_failure":  {
+                          "config":  "playwright.interaction.config.ts",
+                          "test":  "IX10 finished-room persistence › finished timeout sweep performs zero writes and completed report remains readable",
+                          "file":  "web/e2e/interaction-boundaries.spec.ts:57",
+                          "message":  "Error: E2E_SERVER_BINARY is required for owned-process restart acceptance",
+                          "stack":  "web/e2e/recovery-server.ts:17",
+                          "trace":  "review/ladder-integrated-browser-acceptance-20261016.logs/interaction-IX10-trace.zip",
+                          "error_context":  "review/ladder-integrated-browser-acceptance-20261016.logs/interaction-IX10-error-context.md",
+                          "actual_missing_variable":  "E2E_HARNESS_BINARY",
+                          "configured_variable":  "E2E_SERVER_BINARY",
+                          "harness_branch":  "IX10 sets overdueHarness:true; recovery-server.ts:16 selects E2E_HARNESS_BINARY when overdueHarness is true.",
+                          "classification":  "Test-runner configuration omission; the application behavior under IX10 was not exercised. Playwright error text is hardcoded as E2E_SERVER_BINARY even when the harness branch actually requires E2E_HARNESS_BINARY.",
+                          "call_chain":  [
+                                             "playwright.interaction.config.ts imports playwright.recovery.config.ts",
+                                             "playwright.recovery.config.ts provides the isolated Vite server on 15174 and E2E_API_PORT=18081",
+                                             "interaction-boundaries.spec.ts:57 uses test.use({overdueHarness:true}) and requests the server fixture",
+                                             "e2e/recovery-server.ts:16 selects process.env.E2E_HARNESS_BINARY for overdueHarness",
+                                             "e2e/recovery-server.ts:17 throws before IX10 test actions because this runner supplied only E2E_SERVER_BINARY"
+                                         ]
+                      },
+    "not_run":  [
+                    "playwright.journey.config.ts",
+                    "playwright.ladder.config.ts",
+                    "playwright.media.config.ts",
+                    "playwright.overdue.config.ts",
+                    "playwright.playback.config.ts",
+                    "playwright.recovery.config.ts",
+                    "playwright.repeat.config.ts",
+                    "playwright.startup.config.ts",
+                    "playwright.subtitle-real.config.ts",
+                    "playwright.frozen.config.ts (aggregate harness; requires frozen build manifest)"
+                ],
+    "logs":  "review/ladder-integrated-browser-acceptance-20261016.logs",
+    "native_results":  "review/ladder-integrated-browser-acceptance-20261016.logs/results",
+    "cleanup":  {
+                    "suite_loop_runner_stopped_after_first_suite_failure":  true,
+                    "playwright_owned_processes_exited":  true,
+                    "owned_test_ports_released":  [
+                                                      18080,
+                                                      18081,
+                                                      18082,
+                                                      18083,
+                                                      15173,
+                                                      15174,
+                                                      15175
+                                                  ],
+                    "shared_services_stopped":  false,
+                    "formal_node_modules_written":  false,
+                    "browser_cache_written":  false
+                },
+    "limitations":  [
+                        "PowerShell Start-Process wrapper returned a null ExitCode field for all invocations; final pass/fail counts are taken from Playwright native results.json and captured stdout. The raw wrapper metadata is preserved with this report.",
+                        "The full matrix is incomplete by explicit stop-on-first-failure rule; 9 direct suite configs plus the frozen aggregate were not launched.",
+                        "The local model-backed real-media suites were not reached."
+                    ]
+}

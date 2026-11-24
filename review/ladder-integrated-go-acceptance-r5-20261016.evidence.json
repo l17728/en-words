@@ -1,0 +1,58 @@
+{
+  "review/ladder-integrated-go-acceptance-r5-20261016.logs/coverage.log": {
+    "sha256": "5957a7e20fae97311702990bce6731857f65fd20b4fbc08c3f9c440df8bdd8dc",
+    "bytes": 1293599
+  },
+  "review/ladder-integrated-go-acceptance-r5-20261016.logs/coverage.out": {
+    "sha256": "f635242d30d6e1c480a7879f03dab046a86bbf0495c846cc8e35ea46526b2659",
+    "bytes": 8609876
+  },
+  "review/ladder-integrated-go-acceptance-r5-20261016.logs/coverage.stderr.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "review/ladder-integrated-go-acceptance-r5-20261016.logs/formal-source-before.json": {
+    "sha256": "f61896c3430ecad093694f4e172126292709d7ec5492b7daeb536890f2af92c9",
+    "bytes": 30987
+  },
+  "review/ladder-integrated-go-acceptance-r5-20261016.logs/race.log": {
+    "sha256": "d8e3b6e6efee96b81d82da638d857eb5d466bfa1776179a144a4e31a43d32668",
+    "bytes": 1289116
+  },
+  "review/ladder-integrated-go-acceptance-r5-20261016.logs/race.stderr.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "review/ladder-integrated-go-acceptance-r5-20261016.logs/source-before.json": {
+    "sha256": "f61896c3430ecad093694f4e172126292709d7ec5492b7daeb536890f2af92c9",
+    "bytes": 30987
+  },
+  "review/ladder-integrated-go-acceptance-r5-20261016.logs/store-race.log": {
+    "sha256": "30f3b87d162ce2bfae0db5b8f512ea5d58589b88dfecdda7f0387bdb9fcbe159",
+    "bytes": 256892
+  },
+  "review/ladder-integrated-go-acceptance-r5-20261016.logs/store-race.stderr.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "review/ladder-integrated-go-acceptance-r5-20261016.logs/vet.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "review/ladder-integrated-go-acceptance-r5-20261016.logs/vet.stderr.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "toolchain": {
+    "D:\\en-words\\.test-tools\\go\\bin\\go.exe": "7609132b0d289bf42ca9dba23b849824ecdf4af5323094e9cfb5ea1633e3866a",
+    "D:\\en-words\\.test-tools\\llvm-mingw-20261006-ucrt-x86_64\\bin\\clang.exe": "ee85bef2c733e24a26c22be3df94bd631cf9528a048fce91241c182a936737fe"
+  },
+  "cache_paths": {
+    "GOCACHE": "D:\\en-words\\.test-tools\\startup-targeted-r4-20261016\\gocache",
+    "GOMODCACHE": "D:\\en-words\\.test-tools\\startup-targeted-r4-20261016\\gomodcache",
+    "GOTMPDIR": "D:\\en-words\\.test-tools\\startup-targeted-r4-20261016\\gotmp",
+    "TEMP": "D:\\en-words\\.test-tools\\startup-targeted-r4-20261016\\temp"
+  },
+  "go_mod_sha256": "789a1f7d0718221ea83bcd642e9b36ca820d05de00dabea59544e9f9c2bb5f31",
+  "go_sum_sha256": "6b9e1ac15b410e29bea9b7b44db5940db3343ff41ed64275d5e7a6ba5dc11cf8"
+}

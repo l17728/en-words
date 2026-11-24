@@ -1,0 +1,9 @@
+﻿{
+    "command":  "go test -c ./internal/api -o D:\\en-words\\review\\ladder-ix10-harness-retest-20261016\\bin\\api-harness.test.exe",
+    "pid":  13564,
+    "started_at":  "2026-10-16T20:23:07.1536569+08:00",
+    "duration_seconds":  53.08,
+    "exit_code":  null,
+    "stdout":  "D:\\en-words\\review\\ladder-ix10-harness-retest-20261016\\bin\\api-harness-build.stdout.log",
+    "stderr":  "D:\\en-words\\review\\ladder-ix10-harness-retest-20261016\\bin\\api-harness-build.stderr.log"
+}

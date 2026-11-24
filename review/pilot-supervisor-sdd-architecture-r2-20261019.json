@@ -1,0 +1,28 @@
+{
+  "review": "pilot-supervisor-sdd-architecture-r2-20261019",
+  "date": "2026-10-19",
+  "source": "docs/42-Pilot隔离运行监督器SDD.md",
+  "source_sha256": "8A651B4D5193C2DD047BEAE85379C631FA617FF74230A6298D6DB495E980FC51",
+  "comparison_source": "docs/41-试点课堂Start持久迁移内核SDD.md §109.1-109.4",
+  "status": "PASS",
+  "blocking_count": 0,
+  "previous_findings": [
+    {"id": "SUP-SDD-01", "status": "CLOSED", "evidence": "§7 separates first bootstrap from later case creation, specifies permanent bootstrap exclusion through durable first frame, then stable case lock, and preserves case->catalog for subsequent cases."},
+    {"id": "SUP-SDD-02", "status": "CLOSED", "evidence": "§8 provides all-state capability/recovery matrix including open_recovery_required receipt-first disposition and cleanup_quarantined resume; no Planner/Registry replay."},
+    {"id": "SUP-SDD-03", "status": "CLOSED", "evidence": "§7 places stable case locks outside removable case directories and prohibits unlink/recreate through tombstone and cleanup resume."},
+    {"id": "SUP-SDD-04", "status": "CLOSED", "evidence": "§8 defines typed least-capability handles by state; §9 assigns shared root/catalog handles to Supervisor and case-scoped handles to CaseHandle."}
+  ],
+  "resolved_during_review": [
+    {"id": "SUP-SDD-R2-01", "severity": "P2", "status": "CLOSED", "evidence": "Current §2 invariant 1 now specifies 16-byte/128-bit IDs encoded as 32 lowercase hex, matching §7 and docs/41 §109.1."}
+  ],
+  "findings": [
+  ],
+  "new_blocking_findings": 0,
+  "passed": [
+    "Bootstrap and subsequent-case lock ordering now match docs/41 §109, with durable bootstrap serialization and explicit failure/restart cases.",
+    "The state matrix covers all nine catalog states and prevents ordinary opens or side effects in restricted states.",
+    "Cleanup resume reuses a permanent lock identity outside the removable case directory.",
+    "Typed state-specific handles and Supervisor/CaseHandle resource ownership close the prior least-capability and shared-handle ambiguity."
+  ],
+  "execution": "Read-only architecture design review. No design/code changes; no tests or builds run."
+}

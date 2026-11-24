@@ -1,0 +1,65 @@
+{
+  "review": "pilot-start-catalog-code-backend-review",
+  "date": "2026-10-19",
+  "round": 2,
+  "scope": [
+    "server/internal/store/pilot_start_catalog.go",
+    "server/internal/store/pilot_start_catalog_test.go",
+    "server/internal/store/pilot_start_catalog_lock_unix.go",
+    "server/internal/store/pilot_start_catalog_lock_windows.go",
+    "docs/41-试点课堂Start持久迁移内核SDD.md §109"
+  ],
+  "tests_run": false,
+  "verdict": "PASS_WITH_P2_GAP",
+  "findings": [
+    {
+      "id": "CATALOG-R2-P2-1",
+      "priority": "P2",
+      "status": "OPEN",
+      "title": "Lock acquisition failure can poison shared health during another active writer",
+      "location": "server/internal/store/pilot_start_catalog.go:105-107,143-145,189-191,240-242",
+      "detail": "Lock acquisition failures poison shared health without owning the global catalog lock. Another local operation may already hold that lock and have passed its under-lock health recheck, then continue writing after the health flag is poisoned.",
+      "recommendation": "Serialize full local catalog critical sections and poison transitions with a supervisor-wide operation gate, or explicitly narrow the contract; add a deterministic test with one writer paused after its health recheck and another caller's injected lock failure."
+    },
+    {
+      "id": "CATALOG-R2-OLD-1",
+      "priority": "P1",
+      "status": "CLOSED",
+      "title": "Limit exhaustion must poison supervisor globally",
+      "evidence": "Transition poisons shared health on frame and byte limits; test verifies future Snapshot rejection."
+    },
+    {
+      "id": "CATALOG-R2-OLD-2",
+      "priority": "P1",
+      "status": "CLOSED",
+      "title": "Require shared health and recheck under lock",
+      "evidence": "Constructors reject nil health; all mutating/read entry points perform a post-lock health check."
+    },
+    {
+      "id": "CATALOG-R2-OLD-3",
+      "priority": "P1",
+      "status": "CLOSED",
+      "title": "Poison before unlock after startup/read failures",
+      "evidence": "Deterministic unlock-window barrier tests startup Sync and Snapshot read errors."
+    },
+    {
+      "id": "CATALOG-R2-OLD-4",
+      "priority": "P2",
+      "status": "CLOSED_DESIGN_PENDING_CI",
+      "title": "Cross-process file lock test and platform implementations",
+      "evidence": "Self-spawned process contention test plus Unix flock and Windows LockFileEx implementations; OS-specific tagged execution remains an integration gate."
+    },
+    {
+      "id": "CATALOG-R2-OLD-5",
+      "priority": "P2",
+      "status": "CLOSED",
+      "title": "Reject noncanonical JSON frames",
+      "evidence": "Decoder byte-compares canonical re-encoding; tests cover reordered fields, whitespace, unknown/duplicate keys, and trailing object."
+    }
+  ],
+  "blocking_for_slice": false,
+  "integration_gates": [
+    "Run pilot_e2e tagged tests on Windows and POSIX CI.",
+    "Wire one supervisor-owned pilotCatalogHealth into every issued journal and enforce OpenVerified/bootstrap/ACL contracts from §109."
+  ]
+}

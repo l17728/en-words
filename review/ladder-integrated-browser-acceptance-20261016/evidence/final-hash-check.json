@@ -1,0 +1,26 @@
+{
+  "source": {
+    "equal": true,
+    "formal_files": 1013,
+    "snapshot_files": 1013,
+    "formal_bytes": 34116718,
+    "snapshot_bytes": 34116718,
+    "missing": [],
+    "extra": [],
+    "hash_mismatches": []
+  },
+  "node_modules": {
+    "equal": true,
+    "formal_files": 19988,
+    "snapshot_files": 19988,
+    "formal_bytes": 184028672,
+    "snapshot_bytes": 184028672,
+    "missing": [],
+    "extra": [],
+    "hash_mismatches": []
+  },
+  "package_json_sha256_formal": "9f89379bad59cae8ea90abd0991d0bc77651d1b4de342ec88be157e154b0c48d",
+  "package_json_sha256_snapshot": "9f89379bad59cae8ea90abd0991d0bc77651d1b4de342ec88be157e154b0c48d",
+  "package_lock_sha256_formal": "37bbcd595ef594ef8d6f94b2dcd7761f17fe498fe872869ebfac568fb226b7ca",
+  "package_lock_sha256_snapshot": "37bbcd595ef594ef8d6f94b2dcd7761f17fe498fe872869ebfac568fb226b7ca"
+}

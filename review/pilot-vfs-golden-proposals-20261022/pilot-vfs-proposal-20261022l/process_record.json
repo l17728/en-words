@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "run_id": "8f4037d97b5f888f85fc8a47d7d2c960",
+  "command": [
+    "/tmp/pilot-go/go/bin/go",
+    "test",
+    "-exec",
+    "/tmp/pilot-vfs-run-1m3a2ks9/pilot-vfs-strace-wrapper",
+    "-tags=pilot_e2e",
+    "-run",
+    "^TestProposePinnedVFSCallbackGoldens$",
+    "-count=1",
+    "-timeout=120s",
+    "-v",
+    "./internal/pilotcontrol"
+  ],
+  "exit_code": 0,
+  "artifact_security_error": null,
+  "stdout": {
+    "file": "test.stdout.log",
+    "sha256": "8142c637d75dab6983fa5f0f8b0de865f87ede8ab5d642711273adc00281dc47",
+    "bytes": 979
+  },
+  "stderr": {
+    "file": "test.stderr.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "lock_syscall_trace": {
+    "file": "lock-syscalls.raw.log",
+    "sha256": "e2052c140bfdd28f5ea8cf86b30c14d237fe578ba296ff841be9558079f141f1",
+    "bytes": 699856,
+    "status": "CAPTURED_UNCORRELATED",
+    "reason": ""
+  }
+}

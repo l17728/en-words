@@ -1,0 +1,29 @@
+﻿{
+    "review":  "startup-dual-pool-race-contract-adjustment",
+    "date":  "2026-10-16",
+    "status":  "passed_for_scoped_test_implementation",
+    "mode":  "read_only_no_tests_or_build",
+    "source":  "review/startup-dual-pool-race-contract-adjustment-20261016.md",
+    "source_sha256":  "562a9b4e15098a10bf234f6783d4703d41bea8be4b94126a282c1a160552fcd6",
+    "blockers":  [
+
+                 ],
+    "passed":  [
+                   "Contract matches docs37 sections3-4: after both independent workers observe empty schema, exactly one initializer succeeds; loser may be initialization conflict or actual SQLite BUSY family.",
+                   "Actual driver is github.com/glebarez/go-sqlite. Typed errors.As and primary-code mask avoid unrelated modernc Error types and arbitrary Code interfaces. LOCKED, cancellation, constraints and ordinary errors remain failures.",
+                   "Winner and reopened database must match the independent full schema reference; worker ownership, bounded join and fixed cleanup diagnostics remain mandatory.",
+                   "Only test assertions and bounded diagnostics change; production startup, transaction, SQLite settings and timing gates remain unchanged.",
+                   "Historical failure does not expose its actual loser category. It remains unknown and must not be retrospectively labelled BUSY."
+               ],
+    "implementation_checks":  [
+                                  "Require both ready events before accepting a BUSY loser; a pre-barrier failure is not a valid established competition.",
+                                  "Use errors.As to *github.com/glebarez/go-sqlite.Error, reject nonpositive codes, then require code \u0026 255 == 5. Cover wrapped errors and 517, and reject 6/262,19,0,cancel and lookalike Code errors.",
+                                  "Final shared schema equality proves complete final state and absence of extra objects, not independent proof of each losing transaction rollback. Retain separate fault-injection rollback tests; do not require shared database empty after winner commits.",
+                                  "Preserve 20-second ready,20-second result and10-second cleanup budgets. No raw error, SQL, path or connection string in terminal diagnostics; retain capped worker stages and overflow flags."
+                              ],
+    "limitations":  [
+                        "Design review only; revised classifier and actual targeted race evidence still require implementation review and execution by test agent.",
+                        "No conclusion about the root cause of the original startup race or historical classroom COMMIT latency."
+                    ],
+    "decision":  "No remaining design blocker. Proceed only with the scoped test implementation and its reviewed regression plan."
+}

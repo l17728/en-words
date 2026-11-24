@@ -1,0 +1,18 @@
+{
+  "mode": "read_only_review_no_tests",
+  "status": "blocked_for_pilot_enablement_safe_to_design_disabled_legacy_gate_slice",
+  "reviewed": ["docs/36-全双工课堂统一提交接线设计.md sections 15-18", "server/internal/store/pilot_store.go", "server/internal/store/pilot_schema.go", "server/internal/store/pilot_schema_verifier.go", "server/internal/store/scheduler_repo.go", "server/internal/api/hub.go", "server/internal/api/router.go", "server/internal/api/lessonexecution.go"],
+  "blockers": [
+    {"id": "PW01", "risk": "legacy_writers_bypass_scope_and_lesson_owner_guard", "enablement_blocker": true},
+    {"id": "PW02", "risk": "legacy_room_entry_has_no_persistent_mode_check", "enablement_blocker": true},
+    {"id": "PW03", "risk": "delete_leaves_runtime_and_draft_without_room_task_fence", "enablement_blocker": true},
+    {"id": "PW04", "risk": "finished_enter_join_zero_write_not_proven_mutable_recovery_must_not_bypass", "enablement_blocker": true},
+    {"id": "PW05", "risk": "unmigrated_legacy_bridge_not_wired_before_side_effects", "enablement_blocker": true}
+  ],
+  "current_private_component_exposure": "no_application_factory_or_public_migration_or_pilot_creation_route",
+  "existing_validation_scope": "r5 Go full/race/coverage and cross-batch 12 suites 131 executions; not future pilot wiring",
+  "next_slice": "disabled legacy scope and entry protection; keep migration and pilot creation unreachable until all writer/delete contracts close",
+  "report": "review/pilot-next-wiring-backend-review-20261016.md",
+  "production_modified": false,
+  "tests_run": false
+}

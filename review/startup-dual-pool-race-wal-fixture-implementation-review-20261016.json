@@ -1,0 +1,39 @@
+﻿{
+    "review":  "startup-dual-pool-race-wal-fixture-implementation",
+    "date":  "2026-10-16",
+    "status":  "passed_for_targeted_validation",
+    "source":  "server/internal/store/startup_matrix_test.go",
+    "source_sha256":  "c272437e6c3c85f14b63897eed584fa9c1be16694f5076f3809d74efa1441465",
+    "blockers":  [
+
+                 ],
+    "closed_blockers":  [
+                            "Cleanup defer now exists before preflight assertions; successful Close allows safe pre-worker failure cleanup, failed Close retains directory.",
+                            "WAL and empty sqlite_master count now use the same single-connection sql.DB; schemaObjects helper and its ignored Close result are removed from this preflight.",
+                            "Preflight errors are fixed categories; simultaneous query and Close failure preserves both fixed category and close_failed boolean instead of printing raw driver error or hiding close failure."
+                        ],
+    "passed":  [
+                   "WAL result must equal wal; user tables/indexes/triggers/views count must be zero before workers launch.",
+                   "Explicit preflight.Close completes before independent worker pools start. No retry or error swallowing allows a failed preflight to proceed.",
+                   "Before-ready worker completion including BUSY still sets worker_returned_before_ready and fails after cleanup. Only established two-ready competition reaches the loser allowlist.",
+                   "Worker pool ownership, bounded stage summaries,20/20/10-second gates and final schema/reopen checks remain as reviewed; the added logic is confined to the test fixture."
+               ],
+    "nonblocking":  [
+
+                    ],
+    "limitations":  [
+                        "Only static review performed; no tests/builds or source edits. This JSON report is the only new file.",
+                        "Preinitialized WAL intentionally isolates schema contention; it does not prove initial journal-mode contention harmless or resolved.",
+                        "Final schema completeness does not replace separate loser rollback fault-injection evidence."
+                    ],
+    "decision":  "WAL-DIAG-01 closed by direct single-line review: preflight.Close failure now sets allPoolsClosed=false. Zero blockers and zero remaining findings. No tests executed; targeted background validation may proceed.",
+    "closed_nonblocking":  [
+                               {
+                                   "recommendation":  "Set allPoolsClosed=false when preflight.Close fails so the retained-directory summary agrees with the explicit close_failed status. Resource deletion is already safely prevented.",
+                                   "finding":  "Close failure correctly retains directory through cleanupDir=false and prints close_failed=true, but deferred retained-directory summary can still say pools_closed=true because this flag is not changed in the preflight Close-failure branch.",
+                                   "id":  "WAL-DIAG-01",
+                                   "location":  "preflight Close error branch and initial allPoolsClosed=true",
+                                   "severity":  "P3"
+                               }
+                           ]
+}

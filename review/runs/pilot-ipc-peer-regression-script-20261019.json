@@ -1,0 +1,22 @@
+{
+ "elapsed_s": 158,
+ "steps": [
+  {
+   "step": "go-test-all",
+   "cmd": "go test ./... -count=1 -timeout 300s",
+   "exit": 0,
+   "output_tail": "ok  \tenwords/cmd/judge-eval\t1.799s\nok  \tenwords/cmd/local-eval\t1.764s\nok  \tenwords/cmd/server\t5.850s\nok  \tenwords/internal/agent\t0.853s\nok  \tenwords/internal/api\t66.143s\nok  \tenwords/internal/auth\t0.854s\nok  \tenwords/internal/classroom\t2.365s\nok  \tenwords/internal/config\t1.459s\nok  \tenwords/internal/duplex\t1.397s\nok  \tenwords/internal/feedback\t4.506s\nok  \tenwords/internal/judge\t4.170s\nok  \tenwords/internal/llmzhipu\t4.399s\nok  \tenwords/internal/localmodel\t4.951s\nok  \tenwords/internal/memory\t4.136s\nok  \tenwords/internal/obs\t5.114s\nok  \tenwords/internal/remoteprovider\t3.103s\nok  \tenwords/internal/scheduler\t2.279s\nok  \tenwords/internal/scripts\t1.812s\nok  \tenwords/internal/store\t37.373s\nok  \tenwords/internal/tools\t1.833s\nok  \tenwords/internal/voiceclone\t2.320s\nok  \tenwords/internal/voicecmd\t1.459s\nok  \tenwords/internal/wordbook\t1.488s\n"
+  },
+  {
+   "step": "web-build",
+   "cmd": "npm run build",
+   "exit": 0,
+   "output_tail": "\n> web@0.0.0 build\n> tsc -b && vite build\n\nvite v8.2.2 building client environment for production...\ntransforming...\n✓ 3134 modules transformed.\nrendering chunks...\ncomputing gzip size...\ndist/index.html                     0.49 kB │ gzip:   0.35 kB\ndist/assets/index-DGNrK5qb.css      1.78 kB │ gzip:   0.81 kB\ndist/assets/index-COnniZVc.js   1,169.93 kB │ gzip: 376.27 kB\n\n✓ built in 33.56s\n[plugin builtin:vite-reporter] \n(!) Some chunks are larger than 500 kB after minification. Consider:\n- Using dynamic import() to code-split the application\n- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting\n- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.\n\u001b[33m[PLUGIN_TIMINGS] \u001b[0mYour build spent 5% of 33.5s inside plugin hooks (1.6s).\nMeasured inside the callback, so queue time is excluded and time the callback itself awaited is not:\n  - vite:css-post renderChunk (3%, 1.2s, 1 call)\nSee https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.\n\n"
+  },
+  {
+   "step": "e2e-bugs-regression",
+   "exit": "SKIPPED",
+   "note": "服务未运行（8080/5173 不可达），跳过 E2E"
+  }
+ ]
+}

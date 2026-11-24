@@ -1,0 +1,31 @@
+﻿{
+    "review":  "ladder-browser-cross-batch-index",
+    "date":  "2026-10-16",
+    "status":  "blocked_for_full_aggregate_acceptance",
+    "blockers":  [
+                     {
+                         "files":  [
+                                       "review/ladder-browser-cross-batch-index-20261016.json",
+                                       "review/ladder-integrated-browser-acceptance-20261016/evidence/playwright-results.json"
+                                   ],
+                         "finding":  "Six direct-config suites are promoted to accepted53 cases, but original execution ledger records exit_code=null and status=failed for each. Native JSON is not retained by the index. Stdout shows completed case-level passed summaries, which does not independently settle command/global-teardown termination.",
+                         "id":  "INDEX-01",
+                         "required":  "Keep these six suites as stdout-reported/superseded-incomplete with exit unknown, not accepted. Obtain original complete terminal/native evidence if available, or rerun only these six whole suites with current frozen source/binary and retained native JSON plus explicit exit0.",
+                         "severity":  "P2_evidence"
+                     }
+                 ],
+    "verified_partial":  [
+                             "Direct stdout summaries report9+6+4+7+26+1=53 passed cases. This is legitimate historical case evidence, not evidence of a product code failure.",
+                             "native-results-summary.json also reports counts/errorCount0, but is a derived summary without linked retained native report/hash; it cannot erase the contradictory raw command ledger.",
+                             "Index correctly separates batch and binary identities and excludes historical145 from current totals.",
+                             "The other six suites account for78 native-reported cases, including prior independently verified42-ID recovery union; their evidence need not be invalidated or blindly rerun because the direct batch has missing terminal evidence."
+                         ],
+    "nonblocking":  [
+                        "Missing native JSON alone is not necessarily disqualifying if equivalent complete original case, retry, global-error and terminal-exit evidence is preserved. Here exit evidence is specifically unknown.",
+                        "A line/title identifier is a surrogate, not a native Playwright ID; retain that distinction.",
+                        "Global skipped/unexpected/flaky0 must not silently promote less-complete evidence into the same acceptance level as native reports."
+                    ],
+    "resolution_agreed":  "Parent has accepted retaining the six old suites as superseded/incomplete and collecting their complete current-source evidence through the unified runner. Pending evidence does not imply a product defect.",
+    "recommendation":  "Revise aggregate status to partial/pending until six suites are re-evidenced. Afterward recompute12-suite exact coverage with per-batch hashes and failures retained; no single-run or single-binary claim.",
+    "execution":  "Read-only evidence inspection; no tests/builds or product edits. This review JSON is the only output file."
+}

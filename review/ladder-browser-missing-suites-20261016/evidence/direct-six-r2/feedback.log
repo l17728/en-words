@@ -1,0 +1,42 @@
+[WebServer] (node:16836) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[WebServer] (node:6100) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 26 tests using 1 worker
+
+(node:18096) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 e2e\feedback-regression.spec.js:87:1 › voice feedback survives a lost WS reply with its complete original text (14.8s)
+  ✓   2 e2e\feedback-regression.spec.js:123:1 › undelivered voice feedback needs confirmation and ignores older feedback versions (10.3s)
+  ✓   3 e2e\feedback-regression.spec.js:155:1 › processing polling resumes after a transient query failure (5.0s)
+  ✓   4 e2e\feedback-regression.spec.js:176:1 › lost feedback response recovers one frozen submission and survives relogin (4.6s)
+  ✓   5 e2e\feedback-regression.spec.js:206:1 › partial feedback preserves applied quantity and isolates another student (4.8s)
+  ✓   6 e2e\feedback-regression.spec.js:224:1 › complaint in partial task appears once in real admin todo and notification views (7.6s)
+  ✓   7 e2e\feedback-regression.spec.js:255:1 › SQLite intent failure retries only unfinished work from the real feedback UI (4.5s)
+  ✓   8 e2e\feedback-regression.spec.js:290:1 › definitive rejection clears pending hints and failed records never claim processing (2.8s)
+  ✓   9 e2e\feedback-regression.spec.js:309:1 › submission conflict shows the original durable result without executing edited text (2.8s)
+  ✓  10 e2e\feedback-regression.spec.js:328:1 › invalid date and excessive frequency require confirmation without changing learning settings (14.2s)
+  ✓  11 e2e\feedback-regression.spec.js:342:1 › FB060 comma and semicolon date alternatives require confirmation without schedule writes (4.2s)
+  ✓  12 e2e\feedback-regression.spec.js:356:1 › linked clear clarification survives a lost response using the same child submission (4.7s)
+  ✓  13 e2e\feedback-regression.spec.js:381:1 › uncertain linked reply locks its draft and recovers the same child without a second mutation (5.7s)
+  ✓  14 e2e\feedback-regression.spec.js:411:1 › twenty-first difficult word shows FIFO eviction and never changes another student pool (33.0s)
+  ✓  15 e2e\feedback-regression.spec.js:443:1 › second unclear linked reply escalates once to administrator and remains student-isolated (8.9s)
+  ✓  16 e2e\feedback-regression.spec.js:465:1 › already answered clarification stays linked and shows refresh guidance (4.1s)
+  ✓  17 e2e\feedback-regression.spec.js:476:1 › monthly fourth postponement asks confirmation without hidden override or another schedule write (6.3s)
+  ✓  18 e2e\feedback-regression.spec.js:494:1 › late linked child response after account switch cannot query old parent with new credentials (5.7s)
+  ✓  19 e2e\feedback-regression.spec.js:520:1 › cross-tab account change removes old voice drafts and closes the previous classroom (11.4s)
+  ✓  20 e2e\feedback-regression.spec.js:560:1 › selected schedule updates after normal and queried feedback while another student remains unchanged (10.8s)
+  ✓  21 e2e\feedback-regression.spec.js:600:1 › excessive difficult-word feedback explains splitting and performs no partial action (3.4s)
+  ✓  22 e2e\feedback-regression.spec.js:614:1 › dashboard account switch clears drafts and selection and ignores old notifications (5.7s)
+  ✓  23 e2e\feedback-regression.spec.js:646:1 › settings account switch reloads the new student values instead of old unsaved edits (4.0s)
+  ✓  24 e2e\feedback-regression.spec.js:657:1 › late 401 from an earlier token cannot log out the new session while a current 401 does (3.6s)
+  ✓  25 e2e\feedback-regression.spec.js:691:1 › terminal prerequisite failure removes the dependent intent retry button (4.3s)
+  ✓  26 e2e\feedback-regression.spec.js:718:1 › renewed administrator session closes the previous feedback detail (3.7s)
+
+  26 passed (3.6m)

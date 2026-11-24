@@ -1,0 +1,3448 @@
+{
+  "scope": "single fixed-load diagnostic; not performance acceptance",
+  "totals": {
+    "completed": 50,
+    "failed": 0,
+    "in_flight": 0,
+    "not_attempted": 0
+  },
+  "binary_sha256": "ee301db6f5eed1f87e76c9ae29a0feb041b20335686485a365103dc62babfa4f",
+  "elapsed_seconds": 4.452999999979511,
+  "production_unchanged": true,
+  "setup": {
+    "audit_baseline": 1,
+    "elapsed_ns": 900804200,
+    "event": "setup_complete",
+    "pragmas": {
+      "busy_timeout": 5000,
+      "journal_mode": "wal",
+      "synchronous": 2,
+      "wal_autocheckpoint": 1000
+    }
+  },
+  "validation": {
+    "audit_delta": 50,
+    "audit_identity_ok": true,
+    "duration_ns": 4711600,
+    "event": "validation",
+    "samples": 0,
+    "snapshot_count": 1,
+    "snapshot_equals_final_state": true,
+    "unique_task_proofs": 50,
+    "validation_complete": true
+  },
+  "phase_ms": {
+    "transaction_ms": {
+      "n": 50,
+      "min": 9,
+      "median": 25.5,
+      "p95": 125,
+      "max": 155,
+      "sum": 1960
+    },
+    "finalize_ms": {
+      "n": 50,
+      "min": 8,
+      "median": 24.0,
+      "p95": 124,
+      "max": 155,
+      "sum": 1863
+    },
+    "lock_wait_ms": {
+      "n": 50,
+      "min": 0,
+      "median": 0.0,
+      "p95": 0,
+      "max": 0,
+      "sum": 0
+    },
+    "begin_wait_ms": {
+      "n": 50,
+      "min": 0,
+      "median": 0.0,
+      "p95": 0,
+      "max": 1,
+      "sum": 2
+    },
+    "config_load_ms": {
+      "n": 50,
+      "min": 0,
+      "median": 0.0,
+      "p95": 1,
+      "max": 2,
+      "sum": 7
+    },
+    "audit_write_ms": {
+      "n": 50,
+      "min": 0,
+      "median": 0.0,
+      "p95": 2,
+      "max": 7,
+      "sum": 24
+    }
+  },
+  "tool_ms": {
+    "n": 50,
+    "min": 9.2919,
+    "median": 26.4515,
+    "p95": 125.0745,
+    "max": 155.4963,
+    "sum": 2000.0057
+  },
+  "snapshot_ms": {
+    "n": 50,
+    "min": 0.0,
+    "median": 0.0,
+    "p95": 3.0745,
+    "max": 54.9976,
+    "sum": 86.9201
+  },
+  "wal_first": 358472,
+  "wal_last": 997072,
+  "io_delta": {
+    "ReadOperations": 0,
+    "WriteOperations": 458,
+    "OtherOperations": 200,
+    "ReadBytes": 0,
+    "WriteBytes": 720431,
+    "OtherBytes": 0
+  },
+  "db_first": {
+    "MaxOpenConnections": 1,
+    "OpenConnections": 1,
+    "InUse": 0,
+    "Idle": 1,
+    "WaitCount": 0,
+    "WaitDuration": 0,
+    "MaxIdleClosed": 0,
+    "MaxIdleTimeClosed": 0,
+    "MaxLifetimeClosed": 0
+  },
+  "db_last": {
+    "MaxOpenConnections": 1,
+    "OpenConnections": 1,
+    "InUse": 0,
+    "Idle": 1,
+    "WaitCount": 0,
+    "WaitDuration": 0,
+    "MaxIdleClosed": 0,
+    "MaxIdleTimeClosed": 0,
+    "MaxLifetimeClosed": 0
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "tool_ns": 44454400,
+      "timing": {
+        "audit_write_ms": 1,
+        "begin_wait_ms": 1,
+        "config_load_ms": 0,
+        "finalize_ms": 37,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 39,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 4983500,
+        "callback": 5985200,
+        "finalize": 6986600,
+        "idle": 44454400,
+        "post_transaction": 44454400,
+        "tool": 0
+      },
+      "snapshot_ns": 54997600,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 5,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 9345,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        358472,
+        370832,
+        379072
+      ]
+    },
+    {
+      "round": 2,
+      "tool_ns": 60052400,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 1,
+        "finalize_ms": 58,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 60,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 1998400,
+        "idle": 60052400,
+        "post_transaction": 60052400,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1093,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        379072,
+        391432,
+        391432
+      ]
+    },
+    {
+      "round": 3,
+      "tool_ns": 35995900,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 35,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 35,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 0,
+        "idle": 35995900,
+        "post_transaction": 35995900,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1093,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        391432,
+        403792,
+        403792
+      ]
+    },
+    {
+      "round": 4,
+      "tool_ns": 32694900,
+      "timing": {
+        "audit_write_ms": 7,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 21,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 32,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 11000200,
+        "idle": 32694900,
+        "post_transaction": 32694900,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1094,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        403792,
+        416152,
+        416152
+      ]
+    },
+    {
+      "round": 5,
+      "tool_ns": 74996100,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 73,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 74,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 998300,
+        "finalize": 998300,
+        "idle": 74996100,
+        "post_transaction": 74996100,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1102,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        416152,
+        428512,
+        428512
+      ]
+    },
+    {
+      "round": 6,
+      "tool_ns": 35551600,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 35,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 35,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 0,
+        "idle": 35551600,
+        "post_transaction": 35551600,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1087,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        428512,
+        440872,
+        440872
+      ]
+    },
+    {
+      "round": 7,
+      "tool_ns": 21634600,
+      "timing": {
+        "audit_write_ms": 1,
+        "begin_wait_ms": 0,
+        "config_load_ms": 2,
+        "finalize_ms": 17,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 21,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 4002600,
+        "idle": 21634600,
+        "post_transaction": 21634600,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1093,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        440872,
+        453232,
+        453232
+      ]
+    },
+    {
+      "round": 8,
+      "tool_ns": 155496300,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 155,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 155,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 0,
+        "idle": 155496300,
+        "post_transaction": 155496300,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1097,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        453232,
+        465592,
+        465592
+      ]
+    },
+    {
+      "round": 9,
+      "tool_ns": 25235200,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 24,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 25,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 999100,
+        "idle": 25235200,
+        "post_transaction": 25235200,
+        "tool": 0
+      },
+      "snapshot_ns": 997500,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1092,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        465592,
+        477952,
+        477952
+      ]
+    },
+    {
+      "round": 10,
+      "tool_ns": 14033700,
+      "timing": {
+        "audit_write_ms": 1,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 13,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 14,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 1004400,
+        "idle": 14033700,
+        "post_transaction": 14033700,
+        "tool": 0
+      },
+      "snapshot_ns": 1001500,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1094,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        477952,
+        490312,
+        490312
+      ]
+    },
+    {
+      "round": 11,
+      "tool_ns": 30396200,
+      "timing": {
+        "audit_write_ms": 2,
+        "begin_wait_ms": 0,
+        "config_load_ms": 1,
+        "finalize_ms": 26,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 30,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 3996200,
+        "idle": 30396200,
+        "post_transaction": 30396200,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1094,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        490312,
+        502672,
+        502672
+      ]
+    },
+    {
+      "round": 12,
+      "tool_ns": 31904000,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 30,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 31,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 998100,
+        "idle": 31904000,
+        "post_transaction": 31904000,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1093,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        502672,
+        515032,
+        515032
+      ]
+    },
+    {
+      "round": 13,
+      "tool_ns": 24387100,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 24,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 24,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 0,
+        "idle": 24387100,
+        "post_transaction": 24004600,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1093,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        515032,
+        527392,
+        527392
+      ]
+    },
+    {
+      "round": 14,
+      "tool_ns": 13026200,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 13,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 13,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 0,
+        "idle": 13026200,
+        "post_transaction": 13026200,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1093,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        527392,
+        539752,
+        539752
+      ]
+    },
+    {
+      "round": 15,
+      "tool_ns": 14180500,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 1,
+        "finalize_ms": 13,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 14,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 1002200,
+        "idle": 14180500,
+        "post_transaction": 14180500,
+        "tool": 0
+      },
+      "snapshot_ns": 2003600,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1100,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        539752,
+        552112,
+        552112
+      ]
+    },
+    {
+      "round": 16,
+      "tool_ns": 64432200,
+      "timing": {
+        "audit_write_ms": 6,
+        "begin_wait_ms": 0,
+        "config_load_ms": 1,
+        "finalize_ms": 25,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 63,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 38231500,
+        "idle": 64432200,
+        "post_transaction": 63900300,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1095,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        552112,
+        564472,
+        564472
+      ]
+    },
+    {
+      "round": 17,
+      "tool_ns": 100312300,
+      "timing": {
+        "audit_write_ms": 1,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 98,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 100,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 2000600,
+        "idle": 100312300,
+        "post_transaction": 100312300,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1098,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        564472,
+        576832,
+        576832
+      ]
+    },
+    {
+      "round": 18,
+      "tool_ns": 20151900,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 18,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 20,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 1997600,
+        "idle": 20151900,
+        "post_transaction": 20151900,
+        "tool": 0
+      },
+      "snapshot_ns": 1004900,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1094,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        576832,
+        589192,
+        589192
+      ]
+    },
+    {
+      "round": 19,
+      "tool_ns": 78964300,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 78,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 78,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 0,
+        "idle": 78964300,
+        "post_transaction": 78964300,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1094,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        589192,
+        601552,
+        601552
+      ]
+    },
+    {
+      "round": 20,
+      "tool_ns": 132966700,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 131,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 132,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 999900,
+        "idle": 132966700,
+        "post_transaction": 132428900,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1098,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        601552,
+        613912,
+        613912
+      ]
+    },
+    {
+      "round": 21,
+      "tool_ns": 10718100,
+      "timing": {
+        "audit_write_ms": 1,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 9,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 10,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 1001600,
+        "idle": 10718100,
+        "post_transaction": 10718100,
+        "tool": 0
+      },
+      "snapshot_ns": 3074500,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1098,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        613912,
+        626272,
+        626272
+      ]
+    },
+    {
+      "round": 22,
+      "tool_ns": 19062400,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 19,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 19,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 0,
+        "idle": 19062400,
+        "post_transaction": 19062400,
+        "tool": 0
+      },
+      "snapshot_ns": 998500,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1093,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        626272,
+        638632,
+        638632
+      ]
+    },
+    {
+      "round": 23,
+      "tool_ns": 20023100,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 19,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 20,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 997100,
+        "idle": 20023100,
+        "post_transaction": 20023100,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1098,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        638632,
+        650992,
+        650992
+      ]
+    },
+    {
+      "round": 24,
+      "tool_ns": 31991300,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 30,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 31,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 993900,
+        "idle": 31991300,
+        "post_transaction": 31991300,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1098,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        650992,
+        663352,
+        663352
+      ]
+    },
+    {
+      "round": 25,
+      "tool_ns": 69508800,
+      "timing": {
+        "audit_write_ms": 1,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 68,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 69,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 1000600,
+        "idle": 69508800,
+        "post_transaction": 69508800,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1094,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        663352,
+        675712,
+        675712
+      ]
+    },
+    {
+      "round": 26,
+      "tool_ns": 59867200,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 59,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 59,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 0,
+        "idle": 59867200,
+        "post_transaction": 59867200,
+        "tool": 0
+      },
+      "snapshot_ns": 1998900,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1094,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        675712,
+        688072,
+        688072
+      ]
+    },
+    {
+      "round": 27,
+      "tool_ns": 51413300,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 50,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 51,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 1002400,
+        "idle": 51413300,
+        "post_transaction": 51413300,
+        "tool": 0
+      },
+      "snapshot_ns": 1002000,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1094,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        688072,
+        700432,
+        700432
+      ]
+    },
+    {
+      "round": 28,
+      "tool_ns": 22830000,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 21,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 22,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 2000400,
+        "idle": 22830000,
+        "post_transaction": 22830000,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1094,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        700432,
+        712792,
+        712792
+      ]
+    },
+    {
+      "round": 29,
+      "tool_ns": 19320900,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 17,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 19,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 2002100,
+        "idle": 19320900,
+        "post_transaction": 19320900,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1099,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        712792,
+        725152,
+        725152
+      ]
+    },
+    {
+      "round": 30,
+      "tool_ns": 12242900,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 11,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 12,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 998300,
+        "idle": 12242900,
+        "post_transaction": 12242900,
+        "tool": 0
+      },
+      "snapshot_ns": 6996000,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1093,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        725152,
+        737512,
+        737512
+      ]
+    },
+    {
+      "round": 31,
+      "tool_ns": 16998600,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 15,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 16,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 999300,
+        "idle": 16998600,
+        "post_transaction": 16998600,
+        "tool": 0
+      },
+      "snapshot_ns": 1001700,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1098,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        737512,
+        749872,
+        749872
+      ]
+    },
+    {
+      "round": 32,
+      "tool_ns": 18003100,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 18,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 18,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 0,
+        "idle": 18003100,
+        "post_transaction": 18003100,
+        "tool": 0
+      },
+      "snapshot_ns": 999400,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1093,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        749872,
+        762232,
+        762232
+      ]
+    },
+    {
+      "round": 33,
+      "tool_ns": 16909700,
+      "timing": {
+        "audit_write_ms": 1,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 15,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 16,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 1000600,
+        "idle": 16909700,
+        "post_transaction": 16909700,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 12,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 24720,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1094,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        762232,
+        786952,
+        786952
+      ]
+    },
+    {
+      "round": 34,
+      "tool_ns": 10997200,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 10,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 10,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 996600,
+        "idle": 10997200,
+        "post_transaction": 10997200,
+        "tool": 0
+      },
+      "snapshot_ns": 1002500,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1099,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        786952,
+        799312,
+        799312
+      ]
+    },
+    {
+      "round": 35,
+      "tool_ns": 9291900,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 8,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 9,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 969200,
+        "idle": 9291900,
+        "post_transaction": 9291900,
+        "tool": 0
+      },
+      "snapshot_ns": 996800,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1088,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        799312,
+        811672,
+        811672
+      ]
+    },
+    {
+      "round": 36,
+      "tool_ns": 17633100,
+      "timing": {
+        "audit_write_ms": 1,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 14,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 17,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 3543000,
+        "idle": 17633100,
+        "post_transaction": 17633100,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1100,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        811672,
+        824032,
+        824032
+      ]
+    },
+    {
+      "round": 37,
+      "tool_ns": 17996300,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 1,
+        "config_load_ms": 0,
+        "finalize_ms": 15,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 17,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 1009100,
+        "finalize": 1999700,
+        "idle": 17996300,
+        "post_transaction": 17714700,
+        "tool": 0
+      },
+      "snapshot_ns": 856400,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1100,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        824032,
+        836392,
+        836392
+      ]
+    },
+    {
+      "round": 38,
+      "tool_ns": 13639600,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 13,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 13,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 527200,
+        "idle": 13639600,
+        "post_transaction": 13639600,
+        "tool": 0
+      },
+      "snapshot_ns": 998500,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1099,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        836392,
+        848752,
+        848752
+      ]
+    },
+    {
+      "round": 39,
+      "tool_ns": 32675800,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 31,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 32,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 998600,
+        "idle": 32675800,
+        "post_transaction": 32675800,
+        "tool": 0
+      },
+      "snapshot_ns": 998000,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1093,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        848752,
+        861112,
+        861112
+      ]
+    },
+    {
+      "round": 40,
+      "tool_ns": 26908900,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 26,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 26,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 854600,
+        "idle": 26908900,
+        "post_transaction": 26908900,
+        "tool": 0
+      },
+      "snapshot_ns": 982100,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1098,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        861112,
+        873472,
+        873472
+      ]
+    },
+    {
+      "round": 41,
+      "tool_ns": 23209900,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 22,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 23,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 999400,
+        "idle": 23209900,
+        "post_transaction": 23209900,
+        "tool": 0
+      },
+      "snapshot_ns": 1000000,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1093,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        873472,
+        885832,
+        885832
+      ]
+    },
+    {
+      "round": 42,
+      "tool_ns": 60994100,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 1,
+        "finalize_ms": 59,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 60,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 1001400,
+        "idle": 60994100,
+        "post_transaction": 60994100,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1100,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        885832,
+        898192,
+        898192
+      ]
+    },
+    {
+      "round": 43,
+      "tool_ns": 67567600,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 67,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 67,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 0,
+        "idle": 67567600,
+        "post_transaction": 67567600,
+        "tool": 0
+      },
+      "snapshot_ns": 1001800,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1088,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        898192,
+        910552,
+        910552
+      ]
+    },
+    {
+      "round": 44,
+      "tool_ns": 22999700,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 21,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 22,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 1001000,
+        "idle": 22999700,
+        "post_transaction": 22999700,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1094,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        910552,
+        922912,
+        922912
+      ]
+    },
+    {
+      "round": 45,
+      "tool_ns": 11995900,
+      "timing": {
+        "audit_write_ms": 1,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 10,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 11,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 1003400,
+        "idle": 11995900,
+        "post_transaction": 11995900,
+        "tool": 0
+      },
+      "snapshot_ns": 1003000,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1101,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        922912,
+        935272,
+        935272
+      ]
+    },
+    {
+      "round": 46,
+      "tool_ns": 25994100,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 24,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 25,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 1000000,
+        "idle": 25994100,
+        "post_transaction": 25994100,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1096,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        935272,
+        947632,
+        947632
+      ]
+    },
+    {
+      "round": 47,
+      "tool_ns": 125074500,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 124,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 125,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 998200,
+        "idle": 125074500,
+        "post_transaction": 125074500,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1100,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        947632,
+        959992,
+        959992
+      ]
+    },
+    {
+      "round": 48,
+      "tool_ns": 27999000,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 26,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 27,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 1002200,
+        "idle": 27999000,
+        "post_transaction": 27999000,
+        "tool": 0
+      },
+      "snapshot_ns": 1002500,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1096,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        959992,
+        972352,
+        972352
+      ]
+    },
+    {
+      "round": 49,
+      "tool_ns": 83653400,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 83,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 83,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 0,
+        "idle": 83653400,
+        "post_transaction": 83653400,
+        "tool": 0
+      },
+      "snapshot_ns": 1002400,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1090,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        972352,
+        984712,
+        984712
+      ]
+    },
+    {
+      "round": 50,
+      "tool_ns": 41618800,
+      "timing": {
+        "audit_write_ms": 0,
+        "begin_wait_ms": 0,
+        "config_load_ms": 0,
+        "finalize_ms": 35,
+        "lock_wait_ms": 0,
+        "rollback_audit_write_ms": 0,
+        "transaction_ms": 36,
+        "transaction_outcome": "committed"
+      },
+      "marks_ns": {
+        "begin": 0,
+        "callback": 0,
+        "finalize": 999700,
+        "idle": 41618800,
+        "post_transaction": 36627300,
+        "tool": 0
+      },
+      "snapshot_ns": 0,
+      "tool_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 6,
+        "OtherOperations": 2,
+        "ReadBytes": 0,
+        "WriteBytes": 12360,
+        "OtherBytes": 0
+      },
+      "snapshot_io_delta": {
+        "ReadOperations": 0,
+        "WriteOperations": 1,
+        "OtherOperations": 1,
+        "ReadBytes": 0,
+        "WriteBytes": 1095,
+        "OtherBytes": 0
+      },
+      "tool_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "snapshot_db_delta": {
+        "MaxOpenConnections": 0,
+        "OpenConnections": 0,
+        "InUse": 0,
+        "Idle": 0,
+        "WaitCount": 0,
+        "WaitDuration": 0,
+        "MaxIdleClosed": 0,
+        "MaxIdleTimeClosed": 0,
+        "MaxLifetimeClosed": 0
+      },
+      "wal_bytes": [
+        984712,
+        997072,
+        997072
+      ]
+    }
+  ],
+  "source_sha256": {
+    "internal\\api\\agenttransaction.go": "5ca24e8af6af8f647b4a577f110c2131a2e5dede006330bbe690b39bac8227b2",
+    "internal\\api\\fixed_load_hook.go": "94fa94e5403a7de4a5b858cdc9c3aba13b82bafff544ff86579cf575d6e2628b",
+    "internal\\api\\fixed_load_harness_test.go": "b7b2f0572e29128892dfaa36df2515d9e9e6f8a9ff8c97e427c0cdb710839bcc"
+  },
+  "evidence_sha256": {
+    ".test-artifacts\\fixed-load-diagnostic-20261016\\run-summary.json": "b778095d63fd7f3168a745529ffb92204a7d67b9f3d804eceab04a7c4b3c860b",
+    ".test-artifacts\\fixed-load-diagnostic-20261016\\run-output.txt": "fcd318b201e6c105940f97f0af7cc3ce6a55d8c5a3f1736db5fa0c63b4081ace",
+    ".test-artifacts\\fixed-load-diagnostic-20261016\\source-before.json": "b2212e4368e3e555e72697c7166bf6a825169bf742efa787decfdc3bed715eb4",
+    ".test-artifacts\\fixed-load-diagnostic-20261016\\helpers.log": "946c8314a6b70dd835120f5af3a4cf928aa6fe7d2b29ff9598cc28a0e4d44aa4",
+    ".test-artifacts\\fixed-load-diagnostic-20261016\\build-summary.json": "5373da8fd0c7189c46830b2652b21b2ea2aff313d8fa5ff5eae1be18e0ee77ff",
+    ".test-tools\\fixed_load_runner.py": "84d2fb4116b11b97ed1c412590b42344b0f88d81de244c2f49908ec2e377598a",
+    ".test-tools\\test_fixed_load_runner.py": "ff5f888e148af8f5d488eb1b99d94e32d94320a31f5f5afd403705a176652857"
+  }
+}

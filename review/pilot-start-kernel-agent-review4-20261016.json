@@ -1,0 +1,46 @@
+﻿{
+  "review_id": "pilot-start-kernel-agent-review4-20261016",
+  "domain": "ai_agent_teaching_strategy",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_type": "read_only_design_rereview",
+  "code_modified": false,
+  "tests_run": false,
+  "decision": "block",
+  "summary": "sidecar 已将失败尝试与成功生命周期 receipt 隔离，但在 say 成功、show_word 随后失败时会丢弃成功 say 的 audit，仍不符合 D-15。",
+  "prior_findings": [
+    {"id":"AGENT-START-06","status":"closed_design_contract"},
+    {"id":"AGENT-START-07","status":"closed_same_task_rollback"},
+    {"id":"AGENT-START-08","status":"partially_closed_failed_call_only_sidecar_misses_prior_success"},
+    {"id":"AGENT-START-09","status":"mostly_closed_store_deep_copy_digest_and_cache"}
+  ],
+  "findings": [
+    {
+      "id":"AGENT-START-10",
+      "priority":"P1",
+      "status":"blocking",
+      "section":"docs/41 §3, §4, §6",
+      "title":"Incomplete bundle drops audit for successful Registry prefix calls",
+      "evidence":"SDD discards lifecycle audit buffer on Registry failure and sends only failure to sidecar. In the T-01 say-success/show_word-fails case, Registry.Call already emitted successful say AuditEntry, but no lifecycle audit is written and sidecar as specified only records failed calls. The say tool execution is therefore untraceable, although it must not be made an orphan lifecycle audit.",
+      "required_change":"On incomplete bundle, persist the full ordered Registry attempt prefix/outcomes in the separate redacted sidecar (including earlier success and final failure), while writing no lifecycle audit/receipt/checkpoint/outbox. Validate sequence/cardinality, attempt terminal reason, duplicate/missing/corrupt records fail closed, and add the failure matrix plus no-secret-content checks."
+    },
+    {
+      "id":"AGENT-START-11",
+      "priority":"P2",
+      "status":"implementation_contract",
+      "section":"docs/41 §3 sidecar and §5 harness lifecycle",
+      "title":"Sidecar/HMAC/DB recovery location must survive the promised restart",
+      "evidence":"Harness says each run creates a fresh private temp directory, while terminal_failed detection after restart requires the same sidecar, HMAC key, and SQLite state. The restart boundary is not explicit.",
+      "required_change":"Distinguish server-process restart within one harness (reuse protected DB/sidecar/key) from a fresh isolated harness (new state, no recovery claim). Test truncated/corrupt sidecar, key loss/change, and duplicate attempt tombstones fail closed; define bounded sync failure behavior."
+    }
+  ],
+  "checklist": {
+    "RenderLessonStartT01":"pass_design",
+    "T01_semantic_boundary":"pass_design",
+    "bundle_same_task_rollback":"pass_design",
+    "D15_event_budget":"pass_design_same_task_retry",
+    "success_receipt_orphaning":"pass_design_separated",
+    "failed_registry_call_audit":"partial_missing_successful_prefix",
+    "production_entry_or_media":"out_of_scope_and_absent"
+  },
+  "retest_required": true
+}

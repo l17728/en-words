@@ -328,7 +328,7 @@ S-05 的无数字词量调整由 `agent.ResolveFeedbackWords(kind,current,target
 
 “次日”相对检测日取下一日，并保持原计划的本地时分，避免停机多天恢复后重排到过去。同学生同词库存在另一有效 scheduled 课时返回 conflict 提示管理员，不能覆盖该课；冲突处理与已成功动作分开留痕。禁止接通旧 HandleOverdue 直接策略路径。持久 task 唯一键为 `(lesson_id,原open_at,policy_version)`；首次事务冻结计数/策略/目标时刻，执行事务重验课程原状态和时间，完成 receipt、旧课状态、新课及通知、工具审计一并提交。失败回滚可重试，重启/双实例重放读同 receipt；每个任务共享8调用预算及稳定 trace_id，记录 overdue_detected/agent_decision/overdue_replanned/overdue_conflict，日志不含课堂原文。
 
-旧 S-06/S-07/S-09 要求仍为待实现验收项，不能以历史策略名义关闭：
+原始需求中的 S-06/S-07/S-09 曾是待验收项；2026-10-14 的补充实现已完成这些策略与关联澄清闭环，具体行为以 `docs/19-反馈额度与关联澄清补齐规格.md` 及对应 Go/Playwright 回归为准。以下条目保留为必须持续满足的业务约束，不再表示功能未实现：
 
 - **月推迟≤3次**：按学生、本地自然月统计成功提交的主动请假 receipt；事务中检查并增加，第4次只确认/升级，不能改期。失败、幂等重放、cron 自动重排均不消耗次数。跨词库共享学生月额度，冻结提交月，恢复不转移月份额度。
 - **Boost池≤20 FIFO**：按学生+词库维护首次激活次序及唯一 word_id；已有活跃词再次反馈不改变排队年龄、不重复占位。第21个成功请求原子移除最早活跃标记并增加新词；同时间以持久序号排序。反馈 receipt、两张卡及审计同事务，失败不淘汰。结课消费后不再占池。
@@ -336,7 +336,7 @@ S-05 的无数字词量调整由 `agent.ResolveFeedbackWords(kind,current,target
 
 冷恢复时 prepared 目标已过期不能永久重试旧日期：在独立准备事务中保存旧 `version/plan/reason=target_elapsed/superseded_at` 到不可丢弃的计划历史，递增 attempt version，再由 Agent 按本次检测日重新冻结未来目标；旧任务唯一键和 trace 不变。完成凭证永不重规划。执行事务用 status+attempt version 比较，落后实例不得执行旧版本。执行时再次校验学生启用、词库选择及课程原状态/原 openAt，不以准备时通过代替提交时校验。
 
-对应验收须有 Go 固定时钟/双实例/事务故障/重启测试，以及学生通知、管理员升级、多词库配额、FIFO 可见学习顺序和关联澄清 Playwright 用例。此节只冻结设计，未声称上述入口已实现。
+对应回归覆盖 Go 固定时钟/双实例/事务故障/重启，以及学生通知、管理员升级、多词库配额、FIFO 可见学习顺序和关联澄清 Playwright 用例；本段是原始规格约束，实施状态见 `docs/19-反馈额度与关联澄清补齐规格.md`。
 # 2026-10-14 已实施的策略与平台边界补充
 
 S-06月主动请假：Agent `FeedbackPostponeLimit/FeedbackPostponeAllowed` 定义3次策略；平台在逐意图事务读取同学生同提交月成功D receipt，Agent决定执行或need_confirm。quota、回复文本与结果limit取同一政策源；确认提示为本任务终态，当前无绕过限额的确认写接口。失败、cron和幂等重放不消耗额度，多D各成功一次计一次。

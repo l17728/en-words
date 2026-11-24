@@ -1,0 +1,7 @@
+COMMAND: go test -count=1 -timeout=240s -tags=pilot_e2e ./internal/pilotsupervisor
+GO: go version go1.25.14 windows/amd64
+OS: Windows-10-10.0.19045-SP0
+# enwords/internal/pilotsupervisor [enwords/internal/pilotsupervisor.test]
+internal\pilotsupervisor\peer_windows.go:351:7: assignment mismatch: 1 variable but windows.WaitForSingleObject returns 2 values
+FAIL	enwords/internal/pilotsupervisor [build failed]
+FAIL

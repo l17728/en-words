@@ -1,0 +1,28 @@
+﻿{
+  "review": "architecture-15",
+  "date": "2026-10-16",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "verdict": "PASS",
+  "tests_run": false,
+  "closed_findings": [
+    {
+      "id": "A14-01",
+      "status": "closed",
+      "evidence": "§3明确乐观catalog读取并释放、取得case生命周期锁、catalog锁下重读最新完整记录链、释放catalog锁后才OpenVerified/DB；case锁持续到连接与句柄关闭。§97覆盖cleanup-wins和opener-wins，并断言拒绝路径DB open计数为0。"
+    },
+    {
+      "id": "security-17-storage-boundary",
+      "status": "closed",
+      "evidence": "OpenVerified身份校验、受保护目录威胁边界和SQLite连接后PRAGMA诊断的限制保持一致；没有宣称抵抗同账号竞态。"
+    }
+  ],
+  "checks": {
+    "two_phase_open_authorization": "PASS",
+    "open_cleanup_both_interleavings": "PASS",
+    "global_generation_lock": "PASS",
+    "lock_order_case_then_catalog": "PASS",
+    "bounded_catalog_critical_section": "PASS",
+    "no_new_architecture_blockers": true
+  },
+  "findings": []
+}

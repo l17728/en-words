@@ -1,0 +1,48 @@
+{
+  "status": "review_passed",
+  "blocking_findings": 0,
+  "review_date": "2026-10-16",
+  "scope": "Actual namespace/environment patch and new test-source review; no tests/build/browser executed by reviewer.",
+  "files": [
+    {
+      "path": "review/run_frozen_browser_acceptance.py",
+      "sha256": "77ebeba148e9de997280c4fe014273848257e59647a0901db7c9c10a50eb4db8",
+      "matches_report": true
+    },
+    {
+      "path": "review/test_frozen_browser_acceptance.py",
+      "sha256": "871a591589d2effd4cba5878445433cede78c856bba3ca7d4143e00b608fdf91",
+      "matches_report": true
+    },
+    {
+      "path": "web/playwright.frozen.config.ts",
+      "sha256": "b0c2a39d8ad5bb1818e63c24f195c225645d52aab2229239b8490350abed886b",
+      "matches_report": true
+    },
+    {
+      "path": "web/e2e/frozen-build.ts",
+      "sha256": "09a57099368090f8de9abc03a3c8a2dd8396d37a0b5686af1d509922e5d9e946",
+      "matches_report": true
+    },
+    {
+      "path": "web/tests/frozen-build.test.ts",
+      "sha256": "7e09ac4c4456beeb2392524cf0940c6ce5a6d09a27427a8272d397bba47891f8",
+      "matches_report": true
+    }
+  ],
+  "first_failed_manifest_unchanged": true,
+  "checks": [
+    "suite_key rejects undeclared suites; discovery still rejects duplicate raw IDs within a suite.",
+    "validate_suite_reports rejects expected keys with foreign suite prefix, strips only current prefix, then invokes existing once-pass/no-retry/no-skip validator.",
+    "All full discovery, recovery partitions, accepted IDs and final union now use the same suite namespace. Raw IDs retained in reports for traceability.",
+    "firstuse/playback share actual test source but differ in explicit configuration and conditional playback scenario; suite_binding freezes distinct config hashes.",
+    "Every Playwright invocation overrides E2E_PLAYBACK_SETTINGS to1 only for playback,0 otherwise, so parent environment cannot silently make firstuse the playback scenario.",
+    "New tests reject cross-suite keys, repeated reports and unknown suite; config test checks actual files and existing configuredPlayback branch."
+  ],
+  "evidence_limits": [
+    "Reported Python27 is combined helper-family count, not14 tests in this single test module.",
+    "Existing discovery145 offline remapping does not constitute new browser execution or product acceptance.",
+    "Original failed run remains unchanged.",
+    "Formal145 requires fresh frozen execution under new runner inputs; no reuse of failed-run completion as acceptance."
+  ]
+}

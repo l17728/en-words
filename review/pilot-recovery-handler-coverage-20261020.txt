@@ -1,0 +1,22 @@
+﻿Focused recovery handler/codec coverage (Windows host)
+Date: 2026-10-20
+Scope: recovery_bootstrap.go; Linux-only recovery_transport_linux.go excluded from runtime on Windows by build constraints.
+Source hashes:
+EBA13B7E972A7B19EF80A0ECD33B86AA832A0CBE7294296783CC65F251481165  D:\en-words\server\internal\pilotsupervisor\recovery_bootstrap.go
+5AD49D67F9057E80812F9DA200A518F9C780B1E045CA48F57470DAFE048E6B9D  D:\en-words\server\internal\pilotsupervisor\recovery_bootstrap_test.go
+C6429C835CCA33EF7B8DBD2FAF444D96E85B2770CA6CF9DFF1722D645A3E0CB4  D:\en-words\server\internal\pilotsupervisor\recovery_transport_linux.go
+3E19884F0CE8CE882D27FE1CC9A3925C29C78559C61A8C5493C1405B423B1AB5  D:\en-words\server\internal\pilotsupervisor\recovery_transport_linux_test.go
+
+Command: go test -count=1 -tags pilot_e2e -coverprofile=D:\en-words\.test-tools\pilot-supervisor-windows.cover ./internal/pilotsupervisor
+Result: see final uncached coverage test in transport validation report.
+
+Command: go tool cover -func=D:\en-words\.test-tools\pilot-supervisor-windows.cover (run from server/).
+enwords/internal/pilotsupervisor/recovery_bootstrap.go:70:	encodeRecoveryBootstrap				83.3%
+enwords/internal/pilotsupervisor/recovery_bootstrap.go:81:	decodeRecoveryBootstrap				100.0%
+enwords/internal/pilotsupervisor/recovery_bootstrap.go:101:	encodeRecoveryBootstrapAck			83.3%
+enwords/internal/pilotsupervisor/recovery_bootstrap.go:112:	decodeRecoveryBootstrapAck			100.0%
+enwords/internal/pilotsupervisor/recovery_bootstrap.go:132:	validRecoveryBootstrap				100.0%
+enwords/internal/pilotsupervisor/recovery_bootstrap.go:139:	validRecoveryBootstrapAck			100.0%
+enwords/internal/pilotsupervisor/recovery_bootstrap.go:151:	recoveryBootstrapAckMatches			100.0%
+enwords/internal/pilotsupervisor/recovery_bootstrap.go:159:	handleRecoveryBootstrap				97.4%
+total:								(statements)					48.4%

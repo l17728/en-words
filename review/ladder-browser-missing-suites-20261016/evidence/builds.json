@@ -1,0 +1,43 @@
+[
+  {
+    "stage": "server",
+    "command": [
+      "D:\\en-words\\.test-tools\\go\\bin\\go.exe",
+      "build",
+      "-o",
+      "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\bin\\en-words-candidate.exe",
+      "./cmd/server"
+    ],
+    "cwd": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\source\\server",
+    "pid": 3616,
+    "duration_seconds": 227.18,
+    "exit_code": 0,
+    "timed_out": false,
+    "stdout": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\logs\\server-build.stdout.log",
+    "stderr": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\logs\\server-build.stderr.log",
+    "binary": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\bin\\en-words-candidate.exe",
+    "binary_exists": true,
+    "binary_sha256": "5164ad7d612d10afbf0e267058080050b53df30d4c84bd5e28fddd430497814a"
+  },
+  {
+    "stage": "api_harness",
+    "command": [
+      "D:\\en-words\\.test-tools\\go\\bin\\go.exe",
+      "test",
+      "-c",
+      "./internal/api",
+      "-o",
+      "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\bin\\api-harness.test.exe"
+    ],
+    "cwd": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\source\\server",
+    "pid": 3088,
+    "duration_seconds": 40.86,
+    "exit_code": 0,
+    "timed_out": false,
+    "stdout": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\logs\\api_harness-build.stdout.log",
+    "stderr": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\logs\\api_harness-build.stderr.log",
+    "binary": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\bin\\api-harness.test.exe",
+    "binary_exists": true,
+    "binary_sha256": "9b1ba542b2a6b53a005e97e507bfccd504e98ef76bd534bd808063e1365be5af"
+  }
+]

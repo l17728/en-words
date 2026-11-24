@@ -1,0 +1,13 @@
+{
+  "review":"pilot-start-kernel-sdd-architecture-review9",
+  "date":"2026-10-16",
+  "source":"docs/41-试点课堂Start持久迁移内核SDD.md",
+  "source_sha256":"4e3f7f70dabafeb722030862df6973d85f976353892f39d3bbb2f8469a5da6c3",
+  "status":"BLOCK",
+  "blocker_count":1,
+  "blockers":[{"id":"START9-01","severity":"P2","location":"section3 Planner.Execute interface and tool_started/tool_result protocol","finding":"No explicit error-returning per-tool durability interface joins Coordinator-owned sidecar to adapter-owned Registry calls","required":"Define restricted before/after-tool permit or per-tool execution interface with fixed plan/task/tool binding; before Sync gates handler and after Sync gates next tool; propagate all errors without raw sidecar access"}],
+  "nonblocking":[{"severity":"P3","finding":"Priority pending-state list omits plan_ready/tool_started"},{"severity":"P3","finding":"Teacher name typo and meanings-in-audit wording contradict golden and metadata schema"},{"severity":"P3","finding":"Old one-record-per-attempt assertion conflicts with multi-event chain"}],
+  "approved":["Plan binding before tool invocation", "New event fields and updated golden field order", "Trusted HMAC task/trace linkage and audit separation", "Receipt-first recovery with degraded case write denial", "Explicit trusted-OS-account threat model and supervisor retention/cleanup policy"],
+  "execution":{"tests":false,"builds":false,"services":false,"spec_or_source_edits":false,"golden_crypto_executed":false},
+  "report":"review/pilot-start-kernel-sdd-architecture-review9-20261016.md"
+}

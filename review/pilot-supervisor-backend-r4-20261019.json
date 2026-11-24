@@ -1,0 +1,37 @@
+{
+  "review":"pilot-supervisor-backend-r4",
+  "date":"2026-10-19",
+  "documents":[
+    {"path":"docs/41-试点课堂Start持久迁移内核SDD.md","sha256":"EDCCD7B52ACE3300912796B69730B7B91D6C47542D959B9471798D173E10BE34"},
+    {"path":"docs/42-Pilot隔离运行监督器SDD.md","sha256":"BB41520912F0F81077DFE1905654599C4E5E369C5F81C8F58569C6F33B82FCB8"}
+  ],
+  "scope":"Backend implementability follow-up: all prior R3 findings, schema/template vs startupModels and pilotV2Objects, read-only recovery SQL allowlist, catalog write uncertainty, error mapping, logging lifecycle, SQLite and §112 compatibility.",
+  "mode":"read-only design review; source inspected for existing pilot_schema.go/startupModels; no code changes or tests",
+  "result":"blocked",
+  "prior_findings":[
+    {"id":"R3-P1-close-state-unimplementable","status":"closed_design","evidence":"§§3, 9.3-9.4 and FI-CLOSE now allow only closed,nil or unknown,error in production; os.File/DB.Close errors map unknown/restart_required; still_open is explicitly fake-only with proof; harness must terminate and confirm PID exit before restart."},
+    {"id":"R3-P1-provisioning-db-counter-contradiction","status":"closed_design","evidence":"§§8, 9.7 and FI-DB now use an embedded read-only complete schema template, copied via verified CREATE_NEW; no runtime SQLite initialization; db_template_bytes is separately counted."},
+    {"id":"R3-P2-catalog-fault-oracles-under-specified","status":"closed_design","evidence":"FI-CAT-02a distinguishes zero/short/full-frame write error; FI-CAT-02b maps Sync error and gives fresh-replay complete/no/partial outcomes; FI-OPEN read/decode/identity faults have global poison and stable error mapping."},
+    {"id":"R3-P2-context-error-mapping","status":"closed_design","evidence":"§9.2 maps context.Canceled to operation_canceled and deadline/internal cap to lock_timeout; FI-OPEN-01a repeats the mapping."},
+    {"id":"R3-P2-log-lifecycle","status":"closed_design","evidence":"§9.1 and FI-LOG-01/02 define bootstrap create/recovery, permissions/Sync, reset-only-empty-root rule, append durability, cap/reservation, and post-catalog fail-closed behavior."}
+  ],
+  "blocking_findings":1,
+  "findings":[
+    {
+      "id":"R4-P2-template-resync-before-ready",
+      "severity":"P2",
+      "section":"§8 provisioning recovery; §13 FI-DB-01a; §9.7 embedded template durability",
+      "title":"Recovery accepts a complete template by digest without requiring a fresh Sync before ready",
+      "detail":"Initial copy requires file and case-directory Sync before ready, and copy/Sync errors poison the current process. After a crash during/after template copy or Sync, however, §8 says same identity plus full template SHA/length confirms completion and then permits provisioning to append ready; FI-DB-01a likewise says a full hash plus original identity can recover ready. Neither requires the new process to Sync the verified template file and case directory before the ready transition. A complete digest only proves current readable bytes, not that those bytes and the directory entry have reached the required durable boundary after the uncertain prior Sync. Since catalog ready is the durable authorization state, a crash/power-loss window can leave ready durable while the DB template is not.",
+      "required_action":"For provisioning recovery, after OpenVerified and successful full template digest/length verification, call Sync on the same verified DB handle and case-directory handle, check both results, then append/Sync ready. Any Sync error remains global poison/io_uncertain. Add named FI barriers for the recovery Syncs, with restart oracle and zero SQLite connections. Update §8 and FI-DB-01a to state the order explicitly.",
+      "evidence":"§8: provisioning recovery checks identity/template SHA/length and complete members then transitions ready; §13 FI-DB-01a accepts complete SHA+original identity as sufficient for ready; §8 initial provisioning separately mandates file and directory Sync before ready, exposing the missing recovery step."
+    }
+  ],
+  "notes":[
+    "The embedded-template approach resolves the previous zero-byte SQLite initialization incompatibility. Existing server/internal/store/startup.go startupModels provides base tables including runtime_records and lessons; pilot_schema.go pilotV2Objects is incremental and cannot independently initialize an empty DB. The SDD now correctly says the offline generator builds base startupModels plus pilotV2Objects and marker, with no runtime migration. This is implementable by creating the base schema, then applying the pilot v2 schema/marker in a deterministic offline fixture generator.",
+    "The exact recovery SQL allowlist, validation counters, marker equality, object manifest ordering, canonical SQL encoding, SHA-256 digest and pilotSQLTokens normalization are sufficiently specified for an implementation; provisioning recovery hashes bytes without opening SQLite.",
+    "FI-CAT-02a/b now give a useful fresh-process oracle for full/partial/no frame after write/Sync uncertainty. No blocker remains in the prior catalog fault matrix review.",
+    "Context error mapping and production close/reap contract are consistent. The §112 driver canonical-path limitation and in-process HMAC key boundary remain compatible with docs/41; no OS handle-binding claim is made.",
+    "No product code was changed and no tests were run. This is design review only."
+  ]
+}

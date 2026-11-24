@@ -1,0 +1,7 @@
+go: downloading golang.org/x/sys v0.41.0
+go: downloading github.com/go-playground/locales v0.14.1
+go: downloading modernc.org/sqlite v1.23.1
+go: downloading github.com/dustin/go-humanize v1.0.1
+go: downloading modernc.org/mathutil v1.5.0
+go: downloading modernc.org/memory v1.5.0
+go: downloading github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec

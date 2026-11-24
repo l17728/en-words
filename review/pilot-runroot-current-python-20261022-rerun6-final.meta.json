@@ -1,0 +1,15 @@
+{
+  "cwd": "D:\\en-words",
+  "command": "C:\\Python312\\python.exe -m unittest -v review.test_pilot_runroot_manifest review.test_pilot_vfs_candidate_runner review.test_pilot_test_discovery",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.19045-SP0",
+  "PYTHONPATH": "D:\\en-words\\review",
+  "exit_code": 0,
+  "duration_seconds": 2.241,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "0144c68f5d932c0d5520baf36757498cef8f13915ecdaef2de32db14bd4b034e",
+  "manifest_test_sha256": "176195062fdbb26dfa360600c126d7ec947e2d3503ba25ec7d2f26bcc75a9b65",
+  "manifest_sha256": "e8456558503014ecadcb1e5498cd4fc5be6b8098e4dfc6ee6cb2645dee5cfb81",
+  "docs50_sha256": "23e5c61b3061b3a15053399dbdb6269d34273e4c6f302d6c37c16a97e92a2989",
+  "docs50_test_tenant_disabled": true
+}

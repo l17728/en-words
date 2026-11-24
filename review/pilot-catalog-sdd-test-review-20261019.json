@@ -1,0 +1,68 @@
+{
+  "review": "pilot-catalog-sdd-test-review-20261019",
+  "date": "2026-10-19",
+  "document": "docs/41-????Start??????SDD.md",
+  "section": "?109.3 Acceptance additions, cross-checked with ??109.1?109.2",
+  "domain": "test design and acceptance matrix",
+  "verdict": "BLOCKED",
+  "tests_run": false,
+  "scope": "Read-only assessment of determinism, fault injection points, recovery oracles, transition coverage, limits, and concurrency tests. No code or SDD changes.",
+  "summary": "?109.3 names the correct acceptance themes and correctly avoids inferring response delivery after a complete Sync. It is not yet a deterministic, executable matrix: crash offsets, exact failure seams and expected state assertions, race schedules, and boundary values are left implicit. Resolve the findings before calling the catalog test contract implementation-ready.",
+  "strengths": [
+    "Separates complete valid frames from partial/corrupt frames and treats a complete valid chain as authoritative after restart; tests do not guess whether the old HTTP response arrived.",
+    "Includes golden frame/CRC, canonical JSON, global generation order, legal/illegal transitions, size/frame caps, writes and Sync, process restart, multi-process append, and OS-specific gates.",
+    "Requires fail-closed behavior and explicitly says uncertain catalog durability must prevent DB/sidecar/key opens."
+  ],
+  "findings": [
+    {
+      "id": "CAT-TEST-1093-01",
+      "severity": "P2",
+      "status": "open",
+      "title": "Crash-boundary coverage is not pinned to deterministic byte offsets and recovery oracles",
+      "evidence": "?109.3 says ?complete-frame crash boundaries? and ?Restart at every frame boundary? but does not say whether this means inter-record boundaries or crashes inside a frame. The frame in ?109.1 has distinct magic, length, payload, CRC, repeated length, trailer, file Sync, first-create parent Sync, and response boundaries.",
+      "risk": "Different implementations can claim coverage while testing different crash points; a partial header/payload/footer or a full frame before/after Sync may escape the matrix.",
+      "recommendation": "Enumerate a child-process crash hook after each write component and before/after file Sync, parent Sync, and response. For each point specify expected bytes on disk, restart verdict (accept complete valid chain vs global integrity failure), state/generation, and whether case files may be opened. Use fixed payloads and case IDs for these tests."
+    },
+    {
+      "id": "CAT-TEST-1093-02",
+      "severity": "P2",
+      "status": "open",
+      "title": "Fault-injection seams and per-failure assertions are underspecified",
+      "evidence": "?109.3 names short write, partial frame, file Sync failure, and first-create parent Sync failure, but gives no injection contract or expected result per seam. The protocol also depends on lock acquisition, seek/read, exclusive create, full-chain parse, file Sync, parent Sync, and restart replay.",
+      "risk": "A generic injected error may never distinguish zero-byte write from partial/full-frame write with uncertain Sync; tests may verify only an error return while missing global poison, no retry, or forbidden DB/sidecar/key opens.",
+      "recommendation": "Define injectable operations (CreateExclusive, Lock, Seek, Read, Write(n,err), FileSync, ParentSync) and a case table with each failure point, prior durable state, returned class, poison scope, retry policy, restart result, and expected counts of DB/sidecar/key opens. Include short-write with n=0, 0<n<len, and full frame plus Sync error."
+    },
+    {
+      "id": "CAT-TEST-1093-03",
+      "severity": "P2",
+      "status": "open",
+      "title": "Transition and capacity requirements lack explicit boundary vectors",
+      "evidence": "?109.3 says to cover every allowed/forbidden transition and the size/frame-count limits, while ?109.2 has 11 allowed edges plus the absent initial state and many forbidden edges. ?109.1 defines 1?256-byte payloads, 16 MiB and 65,536-frame maxima, contiguous generations, and overflow failure.",
+      "risk": "?Every? and ?limits? are hard to audit without a traceable vector list; off-by-one behavior, generation overflow, no-write-on-rejection, and accidental case-local rather than global generation checks can remain untested.",
+      "recommendation": "Add a transition table test with one positive and one negative vector for each source/destination pair, asserting record count/generation unchanged on rejection. Add exact max and max+1 vectors for payload length, total catalog bytes, frame count, and generation overflow; assert accepted maxima replay and rejected additions do not append or acknowledge."
+    },
+    {
+      "id": "CAT-TEST-1093-04",
+      "severity": "P2",
+      "status": "open",
+      "title": "Cross-process race test has no deterministic scheduler or broader concurrency oracle",
+      "evidence": "?109.3 asks two processes appending different cases to produce one contiguous generation chain, but does not define synchronization barriers, competing operations, or assertions for duplicate IDs, same-case state races, readers observing append in progress, or one process failing while holding/releasing the lock.",
+      "risk": "A timing/sleep-based test can pass without overlapping critical sections and may be flaky across Windows/POSIX or CI load.",
+      "recommendation": "Use named barriers/channels to force both children to contend at the lock boundary, then release in controlled orders. Assert exactly one contiguous global generation sequence, valid complete frames, legal per-case chains, no duplicate generation, no partial snapshot, and deterministic fail-closed/recovery behavior when a process exits at each lock/append phase. Run the same vectors on Windows and POSIX."
+    }
+  ],
+  "reviewed_areas": {
+    "golden_wire_format": "PARTIAL: required, but test fixture determinism and exact vector list should be stated",
+    "canonical_json_and_crc": "PARTIAL: broad categories named; malformed cases and boundary vectors are not enumerated here",
+    "state_transitions": "GAP: ?every? transition lacks a traceable matrix",
+    "crash_recovery": "GAP: frame-internal crash offsets and expected recovery outcomes are not explicit",
+    "fault_injection": "GAP: seam/result/no-side-effect mapping is incomplete",
+    "cross_process_concurrency": "GAP: deterministic contention schedule and full oracle are absent",
+    "platform_security_gates": "ACKNOWLEDGED_SEPARATELY: Windows/POSIX verified handle and ACL gates are explicitly reserved"
+  },
+  "exit_criteria": [
+    "Add traceable deterministic vectors and explicit expected outcomes for every crash/failure injection point.",
+    "Add transition and numeric-boundary tables with no-write/no-ack assertions for rejected operations.",
+    "Specify barrier-controlled multi-process schedules and run them on both supported OS families."
+  ]
+}

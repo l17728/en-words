@@ -1,0 +1,412 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\en-words\\review\\ladder-integrated-browser-acceptance-20261016\\source\\web\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--config",
+      "playwright.duplex.config.ts"
+    ],
+    "configFile": "D:\\en-words\\review\\ladder-integrated-browser-acceptance-20261016\\source\\web\\playwright.duplex.config.ts",
+    "rootDir": "D:/en-words/review/ladder-integrated-browser-acceptance-20261016/source/web/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/en-words/review/ladder-integrated-browser-acceptance-20261016/source/web/.test-artifacts/closure-1792152040617-22308/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "D:/en-words/review/ladder-integrated-browser-acceptance-20261016/source/web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "duplex-preflight.spec.ts"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "D:\\en-words\\review\\ladder-integrated-browser-acceptance-20261016\\source\\web\\.test-artifacts\\closure-1792152040617-22308\\results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "duplex-preflight.spec.ts",
+      "file": "duplex-preflight.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "FD01 actual false and unknown remain distinct; capture is local and stop rejects late callbacks",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3413,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:00:59.171Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTA3NjhdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaW50ZWdyYXRlZC1icm93c2VyLWFjY2VwdGFuY2UtMjAyNjEwMTZcXHNvdXJjZVxcd2ViXFwudGVzdC1hcnRpZmFjdHNcXGNsb3N1cmUtMTc5MjE1MjA1NTE0MS0xNDg3NlxcYnJvd3NlclxcZHVwbGV4LXByZWZsaWdodC1GRDAxLWFjdHUtZDJjY2Utc3RvcC1yZWplY3RzLWxhdGUtY2FsbGJhY2tzXFxyZWNvdmVyeS5kYiIsIm1vZGVsIjp7InBlbmRpbmciOjAsImNhbmNlbGVkIjowLCJmZWVkYmFja0NhbGxzIjowLCJqdWRnZUNhbGxzIjowfSwiZXhpdHMiOlt7InBpZCI6MTA3NjgsImV4aXRDb2RlIjpudWxsLCJzaWduYWxDb2RlIjoiU0lHVEVSTSJ9XX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1d112b2b61473ce594ce-71124209ebf9b8ed7d2f",
+          "file": "duplex-preflight.spec.ts",
+          "line": 45,
+          "column": 1
+        },
+        {
+          "title": "FD06 denied microphone remains recoverable and exposes text return",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2901,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:01:02.621Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMjA0NzZdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaW50ZWdyYXRlZC1icm93c2VyLWFjY2VwdGFuY2UtMjAyNjEwMTZcXHNvdXJjZVxcd2ViXFwudGVzdC1hcnRpZmFjdHNcXGNsb3N1cmUtMTc5MjE1MjA1NTE0MS0xNDg3NlxcYnJvd3NlclxcZHVwbGV4LXByZWZsaWdodC1GRDA2LWRlbmktZGY2ZjYtYmxlLWFuZC1leHBvc2VzLXRleHQtcmV0dXJuXFxyZWNvdmVyeS5kYiIsIm1vZGVsIjp7InBlbmRpbmciOjAsImNhbmNlbGVkIjowLCJmZWVkYmFja0NhbGxzIjowLCJqdWRnZUNhbGxzIjowfSwiZXhpdHMiOlt7InBpZCI6MjA0NzYsImV4aXRDb2RlIjpudWxsLCJzaWduYWxDb2RlIjoiU0lHVEVSTSJ9XX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1d112b2b61473ce594ce-1ca555cae1a50e25a3c3",
+          "file": "duplex-preflight.spec.ts",
+          "line": 68,
+          "column": 1
+        },
+        {
+          "title": "FD11 permission resolved after cancellation closes track and never starts old session",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3186,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:01:05.551Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTk3Nl0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1pbnRlZ3JhdGVkLWJyb3dzZXItYWNjZXB0YW5jZS0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTUyMDU1MTQxLTE0ODc2XFxicm93c2VyXFxkdXBsZXgtcHJlZmxpZ2h0LUZEMTEtcGVybS02ZDA4ZC1uZC1uZXZlci1zdGFydHMtb2xkLXNlc3Npb25cXHJlY292ZXJ5LmRiIiwibW9kZWwiOnsicGVuZGluZyI6MCwiY2FuY2VsZWQiOjAsImZlZWRiYWNrQ2FsbHMiOjAsImp1ZGdlQ2FsbHMiOjB9LCJleGl0cyI6W3sicGlkIjoxOTc2LCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1d112b2b61473ce594ce-26f92bab8d0211f49e8b",
+          "file": "duplex-preflight.spec.ts",
+          "line": 78,
+          "column": 1
+        },
+        {
+          "title": "FD01 real capability route gates owner and exposes no remote credentials",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3176,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:01:08.772Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbODEwMF0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1pbnRlZ3JhdGVkLWJyb3dzZXItYWNjZXB0YW5jZS0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTUyMDU1MTQxLTE0ODc2XFxicm93c2VyXFxkdXBsZXgtcHJlZmxpZ2h0LUZEMDEtcmVhbC04Y2I2Yi1wb3Nlcy1uby1yZW1vdGUtY3JlZGVudGlhbHNcXHJlY292ZXJ5LmRiIiwibW9kZWwiOnsicGVuZGluZyI6MCwiY2FuY2VsZWQiOjAsImZlZWRiYWNrQ2FsbHMiOjAsImp1ZGdlQ2FsbHMiOjB9LCJleGl0cyI6W3sicGlkIjo4MTAwLCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1d112b2b61473ce594ce-c006af15bbe12b8f3389",
+          "file": "duplex-preflight.spec.ts",
+          "line": 91,
+          "column": 1
+        },
+        {
+          "title": "FD11 switching owned lesson resets active preflight and processor failure stops all resources",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3177,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:01:11.978Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMjAzNjBdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaW50ZWdyYXRlZC1icm93c2VyLWFjY2VwdGFuY2UtMjAyNjEwMTZcXHNvdXJjZVxcd2ViXFwudGVzdC1hcnRpZmFjdHNcXGNsb3N1cmUtMTc5MjE1MjA1NTE0MS0xNDg3NlxcYnJvd3NlclxcZHVwbGV4LXByZWZsaWdodC1GRDExLXN3aXQtNGYyMTMtZmFpbHVyZS1zdG9wcy1hbGwtcmVzb3VyY2VzXFxyZWNvdmVyeS5kYiIsIm1vZGVsIjp7InBlbmRpbmciOjAsImNhbmNlbGVkIjowLCJmZWVkYmFja0NhbGxzIjowLCJqdWRnZUNhbGxzIjowfSwiZXhpdHMiOlt7InBpZCI6MjAzNjAsImV4aXRDb2RlIjpudWxsLCJzaWduYWxDb2RlIjoiU0lHVEVSTSJ9XX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1d112b2b61473ce594ce-844ec9ff1a442d732b93",
+          "file": "duplex-preflight.spec.ts",
+          "line": 108,
+          "column": 1
+        },
+        {
+          "title": "FD11 lost authorization before rejected audio initialization releases microphone immediately",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2644,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:01:15.190Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTQ3NDhdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaW50ZWdyYXRlZC1icm93c2VyLWFjY2VwdGFuY2UtMjAyNjEwMTZcXHNvdXJjZVxcd2ViXFwudGVzdC1hcnRpZmFjdHNcXGNsb3N1cmUtMTc5MjE1MjA1NTE0MS0xNDg3NlxcYnJvd3NlclxcZHVwbGV4LXByZWZsaWdodC1GRDExLWxvc3QtYTA5ZmItYXNlcy1taWNyb3Bob25lLWltbWVkaWF0ZWx5XFxyZWNvdmVyeS5kYiIsIm1vZGVsIjp7InBlbmRpbmciOjAsImNhbmNlbGVkIjowLCJmZWVkYmFja0NhbGxzIjowLCJqdWRnZUNhbGxzIjowfSwiZXhpdHMiOlt7InBpZCI6MTQ3NDgsImV4aXRDb2RlIjpudWxsLCJzaWduYWxDb2RlIjoiU0lHVEVSTSJ9XX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1d112b2b61473ce594ce-af8f0a1017562efe34a4",
+          "file": "duplex-preflight.spec.ts",
+          "line": 127,
+          "column": 1
+        }
+      ],
+      "suites": [
+        {
+          "title": "server pilot disabled",
+          "file": "duplex-preflight.spec.ts",
+          "line": 32,
+          "column": 6,
+          "specs": [
+            {
+              "title": "FD01 disabled pilot cannot request microphone even with query switch",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3702,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-16T12:00:55.229Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "model-platform-transport",
+                          "contentType": "application/json",
+                          "body": "W10="
+                        },
+                        {
+                          "name": "owned-process-evidence",
+                          "contentType": "application/json",
+                          "body": "eyJwaWRzIjpbMTEwNDRdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaW50ZWdyYXRlZC1icm93c2VyLWFjY2VwdGFuY2UtMjAyNjEwMTZcXHNvdXJjZVxcd2ViXFwudGVzdC1hcnRpZmFjdHNcXGNsb3N1cmUtMTc5MjE1MjA1NTE0MS0xNDg3NlxcYnJvd3NlclxcZHVwbGV4LXByZWZsaWdodC1zZXJ2ZXItcGktNjRlOTMtaG9uZS1ldmVuLXdpdGgtcXVlcnktc3dpdGNoXFxyZWNvdmVyeS5kYiIsIm1vZGVsIjp7InBlbmRpbmciOjAsImNhbmNlbGVkIjowLCJmZWVkYmFja0NhbGxzIjowLCJqdWRnZUNhbGxzIjowfSwiZXhpdHMiOlt7InBpZCI6MTEwNDQsImV4aXRDb2RlIjpudWxsLCJzaWduYWxDb2RlIjoiU0lHVEVSTSJ9XX0="
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "1d112b2b61473ce594ce-3c0fa7fdd15b15045e0b",
+              "file": "duplex-preflight.spec.ts",
+              "line": 34,
+              "column": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-16T12:00:40.641Z",
+    "duration": 38195.04,
+    "expected": 7,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

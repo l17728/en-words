@@ -1,0 +1,64 @@
+{
+  "runner": {
+    "path": "source-verified/review/run_browser_acceptance.py",
+    "sha256": "720fca497351381be5e8c3c25ef4cfe874f371e0bc4bd9122f0ddc573353051d"
+  },
+  "suite": [
+    "interaction"
+  ],
+  "source_before_sha256": "b8439f15cfd90ed435b17d7d23fd5a4ae0e6b78790a07f0923f09e444dac93d1",
+  "source_after_sha256": "b8439f15cfd90ed435b17d7d23fd5a4ae0e6b78790a07f0923f09e444dac93d1",
+  "source_unchanged": true,
+  "native_stats": {
+    "startTime": "2026-10-16T12:36:01.062Z",
+    "duration": 338490.694,
+    "expected": 30,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "discovered_and_reported_tests": 30,
+  "unique_test_titles": 30,
+  "all_test_ids_unique": true,
+  "ix10_matches": 1,
+  "ix10": [
+    {
+      "file": "interaction-boundaries.spec.ts",
+      "title": "finished timeout sweep performs zero writes and completed report remains readable",
+      "line": 57,
+      "status": "expected",
+      "result_count": 1,
+      "result_statuses": [
+        "passed"
+      ],
+      "retries": [
+        0
+      ]
+    }
+  ],
+  "server_sha256": "e75d2ad4100fd79704d6160e8a93a0672434e366dfa1454b80c69ba716076d6a",
+  "harness_sha256": "ba469b056d3c5912f909c394eb7c7edf2ba55fa1102c79f2673664112e6eab5a",
+  "server_file_sha256": "e75d2ad4100fd79704d6160e8a93a0672434e366dfa1454b80c69ba716076d6a",
+  "harness_file_sha256": "ba469b056d3c5912f909c394eb7c7edf2ba55fa1102c79f2673664112e6eab5a",
+  "dependency_manifest": {
+    "baseline_files": 19986,
+    "formal_files": 19986,
+    "clone_files": 19986,
+    "formal_bytes": 184027331,
+    "clone_bytes": 184027331,
+    "formal_vs_baseline": [],
+    "clone_vs_formal": []
+  },
+  "native_json": "evidence/playwright-interaction-r1/interaction-results.json",
+  "runner_manifest": "evidence/playwright-interaction-r1/manifest.json",
+  "logs": "evidence/playwright-interaction-r1",
+  "cleanup": {
+    "runner_cli_worker_chromium_server_vite_processes_remaining": 0,
+    "listeners_remaining_on_18081_15174": 0,
+    "formal_web_node_modules_written": false,
+    "fixed_snapshot_written": false,
+    "clone_node_modules_tmp_cache_generated_by_runner": true,
+    "shared_8090_used": false,
+    "real_or_human_audio_used": false
+  }
+}

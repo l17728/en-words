@@ -1,0 +1,39 @@
+{
+  "review_id": "pilot-start-kernel-sdd-security-review18-20261016",
+  "date": "2026-10-16",
+  "reviewer_domain": "security",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_type": "read-only design review",
+  "compared_against": "review/pilot-start-kernel-sdd-security-review17-20261016.json",
+  "focus": [
+    "PSK-SEC17-01 closure",
+    "case lifecycle lock hold interval across authorization and protected opens",
+    "catalog/case lock order",
+    "cleanup-wins and opener-wins same-case races"
+  ],
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "approved_narrow_test_only_design_under_declared_threat_model",
+  "summary": "PSK-SEC17-01 is closed in the current SDD. The case OS lifecycle lock is explicitly held from before the second catalog authorization until the operation finishes and all DB/sidecar/key handles are closed. Cleanup retains the same lock from durable quarantine through deletion, parent Sync, and tombstone. The acceptance matrix now specifies both cleanup-wins stale-snapshot rejection and opener-wins contention where cleanup waits until handles close, plus bounded completion. Case-before-catalog ordering and the prohibition on catalog-to-case acquisition remain consistent, with no lock cycle apparent. No new design blocker was found.",
+  "round17_dispositions": [
+    {
+      "finding_id": "PSK-SEC17-01",
+      "disposition": "closed_in_design",
+      "evidence": "§3 specifies continuous lifecycle-lock ownership from before the second catalog re-read through operation completion and closure of all SQLite/DB/sidecar/key handles. Cleanup holds that lock through quarantine append+Sync, deletion, parent-directory Sync, and tombstone append+Sync. §6 adds the opener-wins contention case and preserves cleanup-wins stale-snapshot rejection."
+    }
+  ],
+  "control_dispositions": {
+    "two_phase_catalog_authorization": "coherent: optimistic read is revalidated under catalog lock only after case lock acquisition; protected opens occur while case lock remains held",
+    "cleanup_wins": "opener rechecks current catalog after acquiring case lock and rejects before DB open after quarantine/tombstone",
+    "opener_wins": "cleanup waits while authorized opener retains case lock and active handles; cleanup proceeds after close/release, later opener rejects before DB open",
+    "lock_order": "case lifecycle lock then catalog lock; catalog holders never wait for case lock; no cycle apparent",
+    "cleanup_failure": "quarantine is durable before deletion; lock remains held through failure handling, then fail-closed state is preserved before release"
+  },
+  "remaining_blocker_count": 0,
+  "remaining_conditions": [],
+  "limitations": [
+    "No tests or runtime validation were run.",
+    "No OS lock primitive, filesystem handle, SQLite connection, process contention, or cleanup path was exercised.",
+    "Approval is limited to the written design under its declared test-only trusted-local-account boundary; it does not establish implementation correctness or classroom readiness."
+  ]
+}

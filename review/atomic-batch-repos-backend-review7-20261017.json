@@ -1,0 +1,36 @@
+{
+  "review": "atomic-batch-repos-backend-review7-20261017",
+  "date": "2026-10-17",
+  "target": "server/internal/store/atomic_batch_repos_test.go",
+  "references": [
+    "server/internal/store/import_atomic.go",
+    "server/internal/store/placement_atomic.go",
+    "server/internal/store/store.go",
+    "server/internal/wordbook/import_atomic.go"
+  ],
+  "code_modified": false,
+  "tests_run_by_reviewer": false,
+  "verdict": "BLOCK",
+  "findings": [
+    {
+      "id": "ATOMIC-REPO-TEST-R7-1",
+      "severity": "P1",
+      "status": "open",
+      "file": "server/internal/store/atomic_batch_repos_test.go",
+      "line": 29,
+      "title": "ListEntries returns three values but the new test captures only two",
+      "evidence": "WordbookRepo.ListEntries signature is ([]*wordbook.Entry, int64, error); the assignment `entries, err := repo.ListEntries(...)` does not compile.",
+      "recommendation": "Capture the total explicitly, e.g. `entries, total, err := ...`, then assert total == 2; or use `entries, _, err := ...`."
+    }
+  ],
+  "resolved_checks": {
+    "import_order_duplicate_and_invalid_semantics": "LOGICALLY_CORRECT_AFTER_COMPILE_FIX",
+    "missing_book_and_pre_cancel_behavior": "CONSISTENT_WITH_IMPLEMENTATION",
+    "card_idempotency_and_nil_behavior": "CONSISTENT_WITH_IMPLEMENTATION_BUT_BATCH_ROLLBACK_ASSERTION_MISSING",
+    "placement_scope_status_and_draft": "CONSISTENT_WITH_IMPLEMENTATION"
+  },
+  "recommendations": [
+    "Add a CreateCardsIfAbsent test with one new valid card followed by nil, then assert no row was inserted.",
+    "After cancellation in MarkPlacementAtomic, assert the stored draft and statuses remain unchanged."
+  ]
+}

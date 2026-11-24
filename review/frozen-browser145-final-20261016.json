@@ -1,0 +1,638 @@
+{
+  "status": "passed",
+  "session_id": 29946,
+  "runner_exit_code": 0,
+  "manifest": {
+    "path": ".test-artifacts\\frozen-browser145-r17-restart2-20261016\\manifest.json",
+    "sha256": "7559215f1a39ac3ce4329bdd1b7669fb70dedac449775ac1ca8bf5bb70bcce32"
+  },
+  "handoff": {
+    "path": "D:\\en-words\\review\\pilot-r17-browser-handoff-20261016.json",
+    "sha256": "a9050f5392407c5a151c555de83f60e0113489048f9e44d0df421f9830b95a9a"
+  },
+  "source_sha256": "fc16869dfb13a9ad4cdba0a3d63208a35f3f6d29be16bad7fc8079739717cf83",
+  "binaries": {
+    "server": {
+      "path": "D:\\en-words\\.test-artifacts\\pilot-r17-20261016-server.exe",
+      "sha256": "d71328a0691cd48aa44e2c4f36a481d613e7afa8d01e13dd6576c7024532cd86"
+    },
+    "harness": {
+      "path": "D:\\en-words\\.test-artifacts\\pilot-r17-20261016-classroom-harness.exe",
+      "sha256": "b537fdd4956a22321da059dd59474ce7c3e51683b8056da07ae2637cb269d372"
+    },
+    "startup_harness": {
+      "path": "D:\\en-words\\.test-artifacts\\pilot-r17-20261016-startup-process-harness.exe",
+      "sha256": "093424e91ca7422884cc10c2c97608b11fad5d0d383b71785a1c22977a3ffec6"
+    },
+    "cleanup_harness": {
+      "path": "D:\\en-words\\.test-artifacts\\pilot-r17-20261016-startup-cleanup-harness.exe",
+      "sha256": "2d3c237bdad43bfd92befb847f269c98f5c58d40226d2d30421ae87d7058feef"
+    },
+    "old_startup_server": {
+      "path": "D:\\en-words\\.test-artifacts\\startup-baseline-20261016\\old-server.exe",
+      "sha256": "282bd570550cf3e29d3b6c68f9987f4a89e02dd3dd75a6ce3cb81d122c27472f"
+    }
+  },
+  "identity": {
+    "schema": "suite::(Playwright spec.id + colon + projectId)",
+    "accepted": 145,
+    "unique": 145,
+    "accepted_ids_sha256": "bf01cf46b6cc7b3b79648b651c065e0ec82dd47668ce90ccf7051888b775d7be",
+    "full_ids_location": "manifest.accepted_ids",
+    "recovery_disjoint_partition_counts": [
+      7,
+      7,
+      7,
+      7,
+      7,
+      7
+    ]
+  },
+  "suites": [
+    {
+      "suite": "continuation",
+      "passed": 4,
+      "duration_ms": 119878.521,
+      "reports": [
+        {
+          "path": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\continuation.json",
+          "sha256": "bc517eb69870ea563025607ca7425cc84b9b7438581109f2f406e8c8061a59f5",
+          "stats": {
+            "startTime": "2026-10-16T08:41:55.917Z",
+            "duration": 119878.52100000001,
+            "expected": 4,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "ids": [
+            "continuation::8de5ab06db3d7553acd4-7a7cf7993fedb1658205:",
+            "continuation::8de5ab06db3d7553acd4-fea587ae11d48b31431a:",
+            "continuation::8de5ab06db3d7553acd4-8aa271d287c52080e282:",
+            "continuation::8de5ab06db3d7553acd4-43b5a7ed56bd3e8f9d2b:"
+          ]
+        }
+      ]
+    },
+    {
+      "suite": "interaction",
+      "passed": 30,
+      "duration_ms": 513871.085,
+      "reports": [
+        {
+          "path": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\interaction.json",
+          "sha256": "d599440096080c1a12630008474819abea71a3829ebe8d18e6d2272ae9265d01",
+          "stats": {
+            "startTime": "2026-10-16T08:44:43.849Z",
+            "duration": 513871.085,
+            "expected": 30,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "ids": [
+            "interaction::711a63dc09f8e4d2f1ae-9244999eb20bf5fb92c6:",
+            "interaction::711a63dc09f8e4d2f1ae-44716bd6ee73e139760f:",
+            "interaction::711a63dc09f8e4d2f1ae-9064502c503467934c5b:",
+            "interaction::711a63dc09f8e4d2f1ae-2bc3c7fafe81214592fa:",
+            "interaction::711a63dc09f8e4d2f1ae-039b1087425efc360597:",
+            "interaction::711a63dc09f8e4d2f1ae-44515ee1e434d7d0df96:",
+            "interaction::711a63dc09f8e4d2f1ae-c608cb6d2f86f0114361:",
+            "interaction::711a63dc09f8e4d2f1ae-4ad6cdbe1f5e988ec080:",
+            "interaction::711a63dc09f8e4d2f1ae-6752b7bb7fafc7a47d55:",
+            "interaction::711a63dc09f8e4d2f1ae-9dc6c68bb1a71153a6a4:",
+            "interaction::da9b511028e96919cce4-2cbd8b49f5363648d18f:",
+            "interaction::da9b511028e96919cce4-400300a77ff0a73ae68f:",
+            "interaction::da9b511028e96919cce4-8ac25d07424c3b763589:",
+            "interaction::da9b511028e96919cce4-13da1c0f8a4bd1ecd8ea:",
+            "interaction::31fcef471d8e010abb99-8eac899901978debe6ec:",
+            "interaction::31fcef471d8e010abb99-729ceacf31d41362684f:",
+            "interaction::31fcef471d8e010abb99-7b144f837d0ba0182713:",
+            "interaction::31fcef471d8e010abb99-a91909a6b4a9a46554ac:",
+            "interaction::31fcef471d8e010abb99-50b1db45707d0e3a1a52:",
+            "interaction::31fcef471d8e010abb99-829b560c5397dd8917d1:",
+            "interaction::31fcef471d8e010abb99-97b5eb813925a283d53a:",
+            "interaction::31fcef471d8e010abb99-c935d4e954219dac2066:",
+            "interaction::31fcef471d8e010abb99-b8d5f39fe6cb383aaa46:",
+            "interaction::31fcef471d8e010abb99-d1a77c9a94a6a81a1187:",
+            "interaction::31fcef471d8e010abb99-38be6f929cf972b29285:",
+            "interaction::31fcef471d8e010abb99-dbe1eeaa866a8417c6c5:",
+            "interaction::31fcef471d8e010abb99-edc82c6ab0c47e36f749:",
+            "interaction::31fcef471d8e010abb99-512e2180db5662588c8d:",
+            "interaction::31fcef471d8e010abb99-0f697ac2d60049830c0f:",
+            "interaction::31fcef471d8e010abb99-50e02c972e5dfe47991b:"
+          ]
+        }
+      ]
+    },
+    {
+      "suite": "feedback",
+      "passed": 26,
+      "duration_ms": 584216.785,
+      "reports": [
+        {
+          "path": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\feedback.json",
+          "sha256": "b74372f9edb196f5fd266b94a859419561d2642d3996803a3ea82993e685d15f",
+          "stats": {
+            "startTime": "2026-10-16T08:54:21.212Z",
+            "duration": 584216.785,
+            "expected": 26,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "ids": [
+            "feedback::14be73979fd90895dc45-ab99b8775cf119fbb078:",
+            "feedback::14be73979fd90895dc45-3383bc87c5297f7cf1e3:",
+            "feedback::14be73979fd90895dc45-14cb1e0e1a48ca1db112:",
+            "feedback::14be73979fd90895dc45-a717ce5d099b26f61049:",
+            "feedback::14be73979fd90895dc45-a26a60a4f166f545936d:",
+            "feedback::14be73979fd90895dc45-7403c3fd807f23cb4550:",
+            "feedback::14be73979fd90895dc45-6ae67f0e16b99e11fd44:",
+            "feedback::14be73979fd90895dc45-baf42ac93445f7308513:",
+            "feedback::14be73979fd90895dc45-3b6e93bedb69aa47e45b:",
+            "feedback::14be73979fd90895dc45-d1d57564d96a7e3e5753:",
+            "feedback::14be73979fd90895dc45-620920fdde5fede6a3e0:",
+            "feedback::14be73979fd90895dc45-3a2a3ea3b1578f9e96f0:",
+            "feedback::14be73979fd90895dc45-07f5fb2d32c22a329244:",
+            "feedback::14be73979fd90895dc45-9bf4e10b8e6af6113966:",
+            "feedback::14be73979fd90895dc45-ee46fda7e8b048b47a6a:",
+            "feedback::14be73979fd90895dc45-b7205f5db8a7b6a1e735:",
+            "feedback::14be73979fd90895dc45-c7762c6fc9ba8983198d:",
+            "feedback::14be73979fd90895dc45-e413ded4c99bdbe2d9df:",
+            "feedback::14be73979fd90895dc45-3c4b47386852c63a15e5:",
+            "feedback::14be73979fd90895dc45-2c9c138eef237056a2bd:",
+            "feedback::14be73979fd90895dc45-c6fc331a2d1208931188:",
+            "feedback::14be73979fd90895dc45-c4b69894283358509458:",
+            "feedback::14be73979fd90895dc45-652dec4c25dba63bf96b:",
+            "feedback::14be73979fd90895dc45-8bcc2f2952475338b727:",
+            "feedback::14be73979fd90895dc45-e068c2a8e18bfca69fab:",
+            "feedback::14be73979fd90895dc45-dafbd198ee4cfe7d315f:"
+          ]
+        }
+      ]
+    },
+    {
+      "suite": "closure",
+      "passed": 6,
+      "duration_ms": 144514.726,
+      "reports": [
+        {
+          "path": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\closure.json",
+          "sha256": "7c10826c342ef58e40694b53aa7b569da7e07ace95beb97a243c0cc793b15ab6",
+          "stats": {
+            "startTime": "2026-10-16T09:06:16.585Z",
+            "duration": 144514.726,
+            "expected": 6,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "ids": [
+            "closure::f9c6b8a6fbecc443b75d-6dd2d51ebac0cbf1c676:",
+            "closure::f9c6b8a6fbecc443b75d-6c696a959d642ece5b7c:",
+            "closure::f9c6b8a6fbecc443b75d-1b17c21ab1cd798da2ef:",
+            "closure::f9c6b8a6fbecc443b75d-d92a1bade57c29cdefbc:",
+            "closure::f9c6b8a6fbecc443b75d-a4df0b2f777c829f7a35:",
+            "closure::f9c6b8a6fbecc443b75d-25e355cde34c19ad346d:"
+          ]
+        }
+      ]
+    },
+    {
+      "suite": "playback",
+      "passed": 1,
+      "duration_ms": 126763.996,
+      "reports": [
+        {
+          "path": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\playback.json",
+          "sha256": "ddae152fcec705f3e58348713d934e4cd679938676b6dc6354dd9917fe355447",
+          "stats": {
+            "startTime": "2026-10-16T09:10:11.371Z",
+            "duration": 126763.99599999998,
+            "expected": 1,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "ids": [
+            "playback::b1e74dc03d12aa4ab45a-cb03df086ccfb02c66bf:"
+          ]
+        }
+      ]
+    },
+    {
+      "suite": "legacy",
+      "passed": 9,
+      "duration_ms": 168027.142,
+      "reports": [
+        {
+          "path": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\legacy.json",
+          "sha256": "6e8308d1771282cada46a674b0b5d144240dba6224e6dc5b152ef4c6c020b593",
+          "stats": {
+            "startTime": "2026-10-16T09:13:49.444Z",
+            "duration": 168027.142,
+            "expected": 9,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "ids": [
+            "legacy::306384d2e0116321e537-6a90a8562f44beddec87:",
+            "legacy::306384d2e0116321e537-68a748572fe6faa81e3e:",
+            "legacy::306384d2e0116321e537-5a2664a61d2987c7992e:",
+            "legacy::306384d2e0116321e537-7c371fcc2c8c82e983fa:",
+            "legacy::306384d2e0116321e537-c5e86c541d2f3424d08f:",
+            "legacy::306384d2e0116321e537-fabdcd8c871d4356d39e:",
+            "legacy::306384d2e0116321e537-97e94a6b124c59740f84:",
+            "legacy::4219922fea2e2bd3c691-1f31091a414367fa5e37:",
+            "legacy::4219922fea2e2bd3c691-524390f7267cfb882a47:"
+          ]
+        }
+      ]
+    },
+    {
+      "suite": "journey",
+      "passed": 1,
+      "duration_ms": 155435.732,
+      "reports": [
+        {
+          "path": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\journey.json",
+          "sha256": "8681fca0ec00c4a9217acb75294c219cc837a8fa7b949706c27b709fa9227327",
+          "stats": {
+            "startTime": "2026-10-16T09:17:46.498Z",
+            "duration": 155435.73200000002,
+            "expected": 1,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "ids": [
+            "journey::0ad98a87486c1522f54f-d89f97d9277ea2092438:"
+          ]
+        }
+      ]
+    },
+    {
+      "suite": "firstuse",
+      "passed": 1,
+      "duration_ms": 74246.422,
+      "reports": [
+        {
+          "path": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\firstuse.json",
+          "sha256": "397f5b3d19188446e686640f37a37e2313e814ab286b35657b4a69ed5db339fa",
+          "stats": {
+            "startTime": "2026-10-16T09:20:54.499Z",
+            "duration": 74246.42199999999,
+            "expected": 1,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "ids": [
+            "firstuse::b1e74dc03d12aa4ab45a-cb03df086ccfb02c66bf:"
+          ]
+        }
+      ]
+    },
+    {
+      "suite": "overdue",
+      "passed": 1,
+      "duration_ms": 19111.691,
+      "reports": [
+        {
+          "path": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\overdue.json",
+          "sha256": "457936371e1b4c2e09b878ad2ffdb4610c961685a31462dbd150a067b7f0381a",
+          "stats": {
+            "startTime": "2026-10-16T09:22:34.054Z",
+            "duration": 19111.691000000003,
+            "expected": 1,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "ids": [
+            "overdue::83c99d519851164e27d2-25356db76bb89f23dd4b:"
+          ]
+        }
+      ]
+    },
+    {
+      "suite": "duplex",
+      "passed": 7,
+      "duration_ms": 100111.851,
+      "reports": [
+        {
+          "path": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\duplex.json",
+          "sha256": "0450cefea5e7286a3c2885ef781721f11c76f4e7cac7430826deff34b001fa86",
+          "stats": {
+            "startTime": "2026-10-16T09:23:40.371Z",
+            "duration": 100111.851,
+            "expected": 7,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "ids": [
+            "duplex::1d112b2b61473ce594ce-71124209ebf9b8ed7d2f:",
+            "duplex::1d112b2b61473ce594ce-1ca555cae1a50e25a3c3:",
+            "duplex::1d112b2b61473ce594ce-26f92bab8d0211f49e8b:",
+            "duplex::1d112b2b61473ce594ce-c006af15bbe12b8f3389:",
+            "duplex::1d112b2b61473ce594ce-844ec9ff1a442d732b93:",
+            "duplex::1d112b2b61473ce594ce-af8f0a1017562efe34a4:",
+            "duplex::1d112b2b61473ce594ce-3c0fa7fdd15b15045e0b:"
+          ]
+        }
+      ]
+    },
+    {
+      "suite": "repeat",
+      "passed": 3,
+      "duration_ms": 128041.894,
+      "reports": [
+        {
+          "path": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\repeat.json",
+          "sha256": "fffa189ccba21e671385db8b0cc54e334a9c04821c4a5e59aade1fb79a84eea7",
+          "stats": {
+            "startTime": "2026-10-16T09:26:42.783Z",
+            "duration": 128041.89399999999,
+            "expected": 3,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "ids": [
+            "repeat::8d0111c44aa423cce2c0-67824cdf500923a127c5:",
+            "repeat::8d0111c44aa423cce2c0-5a3db3134c3366f4176a:",
+            "repeat::8d0111c44aa423cce2c0-94c53d96f65b707aa515:"
+          ]
+        }
+      ]
+    },
+    {
+      "suite": "startup",
+      "passed": 14,
+      "duration_ms": 169713.556,
+      "reports": [
+        {
+          "path": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\startup.json",
+          "sha256": "3d21c578c4da3359288263127f0f61000d7812ac6585c299c37403786865a4fe",
+          "stats": {
+            "startTime": "2026-10-16T09:29:42.547Z",
+            "duration": 169713.556,
+            "expected": 14,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "ids": [
+            "startup::7cff55e2261629ec6cba-057f879fbe6b48cad03d:",
+            "startup::7cff55e2261629ec6cba-3902920477cd58ec32ab:",
+            "startup::7cff55e2261629ec6cba-74b17a05fe61d4263c53:",
+            "startup::7cff55e2261629ec6cba-4435a4f6b5855dbbec20:",
+            "startup::7cff55e2261629ec6cba-08a70eabf90ac0e56606:",
+            "startup::7cff55e2261629ec6cba-f60d46257fb63ee2db23:",
+            "startup::7cff55e2261629ec6cba-6e765eb63eb3a588241f:",
+            "startup::7cff55e2261629ec6cba-7cfeb8b47cb0718c8efb:",
+            "startup::7cff55e2261629ec6cba-43164c7e1f8df2da0cdb:",
+            "startup::7cff55e2261629ec6cba-ac546bf93a7a2f67a5f6:",
+            "startup::7cff55e2261629ec6cba-d5adb51a832f9f8d7f75:",
+            "startup::7cff55e2261629ec6cba-df8626ba82690a33107a:",
+            "startup::7cff55e2261629ec6cba-98d8ea3ad70cfbcac905:",
+            "startup::7cff55e2261629ec6cba-00646d20faff39454450:"
+          ]
+        }
+      ]
+    },
+    {
+      "suite": "recovery",
+      "passed": 42,
+      "duration_ms": 866662.592,
+      "reports": [
+        {
+          "path": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\recovery-part1.json",
+          "sha256": "c76e225dbb9d3d101de7d6de629b9e7326c7cb9d47177d95549c660fea1c739e",
+          "stats": {
+            "startTime": "2026-10-16T09:33:21.333Z",
+            "duration": 94618.59000000001,
+            "expected": 7,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "ids": [
+            "recovery::35ea996143c87e645b34-3b055731872edb2e868c:",
+            "recovery::35ea996143c87e645b34-ad87ab1531516af338cd:",
+            "recovery::35ea996143c87e645b34-1441ca2d57dceae87b9c:",
+            "recovery::35ea996143c87e645b34-c8e819704df38a718f21:",
+            "recovery::35ea996143c87e645b34-8f2191af31627b8e04dd:",
+            "recovery::35ea996143c87e645b34-153bb25c4674d1e1499f:",
+            "recovery::35ea996143c87e645b34-bc00f792a0e55907a3f9:"
+          ]
+        },
+        {
+          "path": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\recovery-part2.json",
+          "sha256": "34af42699fb11c7b8f6ad4d6d3c49ed9c269386618370b58567bf33c099c66f3",
+          "stats": {
+            "startTime": "2026-10-16T09:35:53.241Z",
+            "duration": 81728.409,
+            "expected": 7,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "ids": [
+            "recovery::35ea996143c87e645b34-0c463353dc8513dd91e6:",
+            "recovery::35ea996143c87e645b34-07f1e1e0e4222e3e2cc0:",
+            "recovery::35ea996143c87e645b34-38e3cc6f4b5bfc70f95f:",
+            "recovery::35ea996143c87e645b34-b95ad09029194566f6a7:",
+            "recovery::35ea996143c87e645b34-23b1bfca992e50d0402b:",
+            "recovery::35ea996143c87e645b34-79b2f71fd0fa40867c35:",
+            "recovery::35ea996143c87e645b34-04a7195326c2bd67c1ce:"
+          ]
+        },
+        {
+          "path": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\recovery-part3.json",
+          "sha256": "5fd0e5898fc65f02135d5fc75ae9d956c79afa2dff14aa0d7b0e08a1cbb518aa",
+          "stats": {
+            "startTime": "2026-10-16T09:38:30.379Z",
+            "duration": 250584.701,
+            "expected": 7,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "ids": [
+            "recovery::35ea996143c87e645b34-0acf4234424cd69c7a1d:",
+            "recovery::35ea996143c87e645b34-e63053db13a8056e40e8:",
+            "recovery::35ea996143c87e645b34-e27a80093de726d23c60:",
+            "recovery::35ea996143c87e645b34-2aa9df3de5f3d995a14a:",
+            "recovery::35ea996143c87e645b34-6a40327a36a0903cd77c:",
+            "recovery::35ea996143c87e645b34-92707c4417157d7bf31d:",
+            "recovery::35ea996143c87e645b34-051a495086e349acd9f2:"
+          ]
+        },
+        {
+          "path": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\recovery-part4.json",
+          "sha256": "c8638d200c187b54746d65754d0f97d49b7876ccdd18d9b3419b31fd711a8b09",
+          "stats": {
+            "startTime": "2026-10-16T09:43:17.800Z",
+            "duration": 145283.399,
+            "expected": 7,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "ids": [
+            "recovery::35ea996143c87e645b34-5067a453ab1fe4eff99e:",
+            "recovery::35ea996143c87e645b34-307bb59462096d8d9f63:",
+            "recovery::35ea996143c87e645b34-63d0e5790ab2d1dea70c:",
+            "recovery::35ea996143c87e645b34-87e27a250fbffc02563d:",
+            "recovery::35ea996143c87e645b34-474569c0a80cd801857f:",
+            "recovery::35ea996143c87e645b34-3de4e3cdbd4d6b990e0f:",
+            "recovery::35ea996143c87e645b34-42c401979a70c51ba5d8:"
+          ]
+        },
+        {
+          "path": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\recovery-part5.json",
+          "sha256": "e41399fa7fff5d6d2b96ae42878489372fd6ad5a75967d541be4493866c679d9",
+          "stats": {
+            "startTime": "2026-10-16T09:46:34.985Z",
+            "duration": 157098.524,
+            "expected": 7,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "ids": [
+            "recovery::35ea996143c87e645b34-0e532f9523a82497fb1e:",
+            "recovery::35ea996143c87e645b34-764c654b47c5a918e6ba:",
+            "recovery::35ea996143c87e645b34-3a30994d79d956a07ea2:",
+            "recovery::35ea996143c87e645b34-7a747a3587aaa26828e8:",
+            "recovery::35ea996143c87e645b34-c154d8b31c75db70fc67:",
+            "recovery::35ea996143c87e645b34-9ab1c84a2d7a6bde0bbf:",
+            "recovery::35ea996143c87e645b34-cc2a1ba2916d125233a7:"
+          ]
+        },
+        {
+          "path": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\recovery-part6.json",
+          "sha256": "bad17e748a561b75df9c3f418925adcaf169ae5ea7e6be0846873934ad28126f",
+          "stats": {
+            "startTime": "2026-10-16T09:49:58.700Z",
+            "duration": 137348.969,
+            "expected": 7,
+            "skipped": 0,
+            "unexpected": 0,
+            "flaky": 0
+          },
+          "ids": [
+            "recovery::35ea996143c87e645b34-bed6173a13fdb6bd3d63:",
+            "recovery::35ea996143c87e645b34-6b1f0e1a4bdafd111815:",
+            "recovery::35ea996143c87e645b34-640608d28e758d3465dd:",
+            "recovery::35ea996143c87e645b34-be1d1340b9cea6457535:",
+            "recovery::35ea996143c87e645b34-9a45187a6d8fad11edb0:",
+            "recovery::35ea996143c87e645b34-63a23c31e8ec2f42b0ba:",
+            "recovery::35ea996143c87e645b34-26ecce2d3458468b644c:"
+          ]
+        }
+      ]
+    }
+  ],
+  "preflight": {
+    "counts_towards_145": false,
+    "discovery": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\sub03-preflight-list.json",
+    "report": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\sub03-preflight.json",
+    "ids": [
+      "recovery::35ea996143c87e645b34-be1d1340b9cea6457535:",
+      "recovery::35ea996143c87e645b34-9a45187a6d8fad11edb0:"
+    ],
+    "stats": {
+      "startTime": "2026-10-16T08:23:35.301Z",
+      "duration": 69496.243,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  },
+  "node": {
+    "passed": 83,
+    "failed": 0,
+    "skipped": 0,
+    "log": ".test-artifacts\\frozen-browser145-r17-restart2-20261016\\node-unit.log"
+  },
+  "python": {
+    "passed": 27,
+    "failed": 0,
+    "log": ".test-artifacts\\frozen-browser145-r17-restart2-20261016\\python-tools.log"
+  },
+  "lint": {
+    "exit_code": 0,
+    "log": ".test-artifacts\\frozen-browser145-r17-restart2-20261016\\lint.log"
+  },
+  "build": {
+    "command": [
+      "cmd.exe",
+      "/d",
+      "/s",
+      "/c",
+      "npm run build"
+    ],
+    "budget_s": 180,
+    "started_at": "2026-10-16T08:21:54.130884+00:00",
+    "owned_pid": 17884,
+    "exit_code": 0,
+    "elapsed_ms": 24406,
+    "name": "build"
+  },
+  "freezes": {
+    "source_unchanged": true,
+    "inputs_unchanged": true,
+    "dist_unchanged": true,
+    "dependencies_unchanged": true,
+    "finalization_errors": [],
+    "not_completed_suites": []
+  },
+  "retry": 0,
+  "skipped": 0,
+  "flaky": 0,
+  "unexpected": 0,
+  "timing": {
+    "runner_before_final_hash_ms": 5590531,
+    "runner_before_final_hash_minutes": 93.176,
+    "browser_suite_report_duration_sum_ms": 3170595.993,
+    "boundary": "total_elapsed_ms is sampled before finally full dependency hashing; it does not include the final SHA scan. Exact outer wall duration was not captured. No normal-classroom SLO inference from this mixed fault suite."
+  },
+  "inputs_manifest": "manifest.inputs_before/inputs_after includes per-file bytes/SHA; dependency inventory and dist manifest are preserved in the same manifest",
+  "process_logs": "Each stage .process.json in the output directory records owned PID, start, budget and real exit; final runner exit0 observed via session29946. No additional tests or cleanup of evidence performed.",
+  "previous_attempts": [
+    {
+      "directory": ".test-artifacts\\frozen-browser145-r17-20261016",
+      "manifest_sha256": "443ed43f955f68fe29d31b26d1ebddf3ffaa88de9eee3b52f66019c237807e3a",
+      "stored_status": "failed",
+      "stored_failure": {
+        "type": "RuntimeError",
+        "message": "Full discovery must contain 145 unique IDs",
+        "stage": "recovery-discovery"
+      },
+      "accepted_into_final": false,
+      "classification": "Runner raw-ID global namespace defect; stopped before formal suites."
+    },
+    {
+      "directory": ".test-artifacts\\frozen-browser145-r17-scopefix-20261016",
+      "manifest_sha256": "ee1f2cb020bfb27820f8958cfa816dbfc8faabea08d305b4dd59205ddcfdb4f6",
+      "stored_status": "running",
+      "stored_failure": null,
+      "accepted_into_final": false,
+      "classification": "Interrupted partial run during platform daemon restart; no Python stack or finalized manifest. Root observed no runner/browser process and no interaction.process.json; continuation4 passed is historical only."
+    }
+  ],
+  "limitations": [
+    "Mock/controlled-provider browser regression is not human acoustic, ASR/TTS quality or end-to-end native duplex acceptance.",
+    "Historical COMMIT 21.678s and startup/IO tails remain separate unresolved performance evidence; this functional pass does not close their SLO.",
+    "ST09 injects cleanup plus real Router seam, not the complete run entrypoint.",
+    "SUB03 uses the reviewed bounded B-stream barrier and paused test clock; it is client isolation evidence, not unrestricted simultaneous speech performance.",
+    "Historical startup baseline binary only creates legacy data; current normal server restores it. No diagnostic server replaces production assembly."
+  ],
+  "command": "python review/run_frozen_browser_acceptance.py --handoff review/pilot-r17-browser-handoff-20261016.json --server .test-artifacts/pilot-r17-20261016-server.exe --harness .test-artifacts/pilot-r17-20261016-classroom-harness.exe --startup-harness .test-artifacts/pilot-r17-20261016-startup-process-harness.exe --cleanup-harness .test-artifacts/pilot-r17-20261016-startup-cleanup-harness.exe --old-startup-server .test-artifacts/startup-baseline-20261016/old-server.exe --output .test-artifacts/frozen-browser145-r17-restart2-20261016"
+}

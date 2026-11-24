@@ -1,0 +1,11 @@
+=== RUN   TestProposePinnedVFSCallbackGoldens
+    pilot_vfs_trace_candidate_test.go:633: golden_candidate fixture_group=sqlite3451-vfs-flags status=CANDIDATE artifact=sqlite3451-vfs-flags.candidate.json
+    pilot_vfs_trace_candidate_test.go:633: golden_candidate fixture_group=sqlite3451-unix-lock-trace status=CANDIDATE artifact=sqlite3451-unix-lock-trace.candidate.json
+    pilot_vfs_trace_candidate_test.go:633: golden_candidate fixture_group=sqlite3451-shm-lock-trace status=CANDIDATE artifact=sqlite3451-shm-lock-trace.candidate.json
+    pilot_vfs_trace_candidate_test.go:633: golden_candidate fixture_group=sqlite3451-pager-delete-trace status=CANDIDATE artifact=sqlite3451-pager-delete-trace.candidate.json
+    pilot_vfs_trace_candidate_test.go:635: raw_trace_files=16 harness_sha256=d7aa15a6210fba62c8f50d9f0bf65c999294c0c35f959071db794b06f36fd801 status=CANDIDATE_ONLY
+    pilot_vfs_goldens_linux_test.go:191: normalize sqlite3451-shm-lock-trace candidate: scenario SHM-CROSS-PROCESS-CONTEND: detail contains path-like host data
+--- FAIL: TestProposePinnedVFSCallbackGoldens (1.01s)
+FAIL
+FAIL	enwords/internal/pilotcontrol	1.033s
+FAIL

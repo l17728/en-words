@@ -1,0 +1,25 @@
+{
+  "review": "pilot-supervisor-crossdoc-test-r8",
+  "date": "2026-10-19",
+  "mode": "read-only SDD test-design review; implementation tests not run",
+  "documents": {
+    "docs/42-Pilot隔离运行监督器SDD.md": "C1EAE6935BA3581AFFB47D1A8D9EF4CD6F5E8092E08A27BBD543EB1CA8A3905E",
+    "cross_reference": "docs/41-试点课堂Start持久迁移内核SDD.md"
+  },
+  "verdict": "PASS_FOR_TEST_DESIGN",
+  "findings": [],
+  "checks": {
+    "grant_scope_and_request_digest_binding": "PASS_FOR_DESIGN",
+    "recovery_order_and_per_statement_stop_counters": "PASS_FOR_DESIGN",
+    "FI_REC_01_suffix_vs_prefix_oracles": "PASS_FOR_DESIGN",
+    "E2E_PILOT_06_branch_assertions": "PASS_FOR_DESIGN",
+    "logical_time_and_diagnostics": "PASS_FOR_DESIGN",
+    "cross_process_crash_injection": "PASS_FOR_DESIGN",
+    "linux_windows_platform_gates": "SPECIFIED_NOT_EXECUTED",
+    "playwright_and_classroom_acceptance": "SPECIFIED_NOT_EXECUTED"
+  },
+  "limitations": [
+    "No implementation tests or platform jobs were run.",
+    "Production integration, Playwright E2E, and isolated classroom pilot remain unverified acceptance gates."
+  ]
+}

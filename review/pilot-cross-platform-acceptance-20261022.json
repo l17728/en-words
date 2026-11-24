@@ -1,0 +1,277 @@
+{
+  "source_unchanged": true,
+  "source_before": "e781c6cd9f373dc1653de53853ed59977a63077de12c740f5f4588a5e96168bc",
+  "source_after": "e781c6cd9f373dc1653de53853ed59977a63077de12c740f5f4588a5e96168bc",
+  "results": [
+    {
+      "name": "windows-test",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.25.0\\bin\\go.exe",
+        "test",
+        "-p=1",
+        "-count=1",
+        "-json",
+        "-tags=pilot_e2e",
+        "-timeout=180s",
+        "./internal/pilotcontrol",
+        "./internal/pilotsupervisor"
+      ],
+      "cwd": "D:\\en-words\\server",
+      "exit": 1,
+      "seconds": 394.507,
+      "env": {
+        "GOOS": "windows",
+        "GOARCH": "amd64",
+        "CGO_ENABLED": "1",
+        "CC": "D:\\en-words\\.test-tools\\llvm-mingw-20261006-ucrt-x86_64\\bin\\x86_64-w64-mingw32-gcc.exe",
+        "GOCACHE": "D:\\en-words\\.test-tools\\gocache",
+        "GOMODCACHE": "D:\\en-words\\.test-tools\\gomodcache",
+        "GOTOOLCHAIN": "local",
+        "GOPROXY": "off"
+      }
+    },
+    {
+      "name": "windows-vet",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.25.0\\bin\\go.exe",
+        "vet",
+        "-tags=pilot_e2e",
+        "./internal/pilotcontrol",
+        "./internal/pilotsupervisor"
+      ],
+      "cwd": "D:\\en-words\\server",
+      "exit": 1,
+      "seconds": 171.137,
+      "env": {
+        "GOOS": "windows",
+        "GOARCH": "amd64",
+        "CGO_ENABLED": "1",
+        "CC": "D:\\en-words\\.test-tools\\llvm-mingw-20261006-ucrt-x86_64\\bin\\x86_64-w64-mingw32-gcc.exe",
+        "GOCACHE": "D:\\en-words\\.test-tools\\gocache",
+        "GOMODCACHE": "D:\\en-words\\.test-tools\\gomodcache",
+        "GOTOOLCHAIN": "local",
+        "GOPROXY": "off"
+      }
+    },
+    {
+      "name": "linux-amd64-pilotcontrol",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.25.0\\bin\\go.exe",
+        "test",
+        "-c",
+        "-tags=pilot_e2e",
+        "-o",
+        "D:\\en-words\\.test-artifacts\\pilot-cross-platform-20261022\\pilotcontrol-linux-amd64.test",
+        "./internal/pilotcontrol"
+      ],
+      "cwd": "D:\\en-words\\server",
+      "exit": 1,
+      "seconds": 57.697,
+      "env": {
+        "GOOS": "linux",
+        "GOARCH": "amd64",
+        "CGO_ENABLED": "0",
+        "CC": "D:\\en-words\\.test-tools\\llvm-mingw-20261006-ucrt-x86_64\\bin\\x86_64-w64-mingw32-gcc.exe",
+        "GOCACHE": "D:\\en-words\\.test-tools\\gocache",
+        "GOMODCACHE": "D:\\en-words\\.test-tools\\gomodcache",
+        "GOTOOLCHAIN": "local",
+        "GOPROXY": "off"
+      }
+    },
+    {
+      "name": "linux-amd64-pilotsupervisor",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.25.0\\bin\\go.exe",
+        "test",
+        "-c",
+        "-tags=pilot_e2e",
+        "-o",
+        "D:\\en-words\\.test-artifacts\\pilot-cross-platform-20261022\\pilotsupervisor-linux-amd64.test",
+        "./internal/pilotsupervisor"
+      ],
+      "cwd": "D:\\en-words\\server",
+      "exit": 1,
+      "seconds": 16.748,
+      "env": {
+        "GOOS": "linux",
+        "GOARCH": "amd64",
+        "CGO_ENABLED": "0",
+        "CC": "D:\\en-words\\.test-tools\\llvm-mingw-20261006-ucrt-x86_64\\bin\\x86_64-w64-mingw32-gcc.exe",
+        "GOCACHE": "D:\\en-words\\.test-tools\\gocache",
+        "GOMODCACHE": "D:\\en-words\\.test-tools\\gomodcache",
+        "GOTOOLCHAIN": "local",
+        "GOPROXY": "off"
+      }
+    },
+    {
+      "name": "linux-amd64-vet",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.25.0\\bin\\go.exe",
+        "vet",
+        "-tags=pilot_e2e",
+        "./internal/pilotcontrol",
+        "./internal/pilotsupervisor"
+      ],
+      "cwd": "D:\\en-words\\server",
+      "exit": 1,
+      "seconds": 8.692,
+      "env": {
+        "GOOS": "linux",
+        "GOARCH": "amd64",
+        "CGO_ENABLED": "0",
+        "CC": "D:\\en-words\\.test-tools\\llvm-mingw-20261006-ucrt-x86_64\\bin\\x86_64-w64-mingw32-gcc.exe",
+        "GOCACHE": "D:\\en-words\\.test-tools\\gocache",
+        "GOMODCACHE": "D:\\en-words\\.test-tools\\gomodcache",
+        "GOTOOLCHAIN": "local",
+        "GOPROXY": "off"
+      }
+    },
+    {
+      "name": "linux-arm64-pilotcontrol",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.25.0\\bin\\go.exe",
+        "test",
+        "-c",
+        "-tags=pilot_e2e",
+        "-o",
+        "D:\\en-words\\.test-artifacts\\pilot-cross-platform-20261022\\pilotcontrol-linux-arm64.test",
+        "./internal/pilotcontrol"
+      ],
+      "cwd": "D:\\en-words\\server",
+      "exit": 1,
+      "seconds": 12.759,
+      "env": {
+        "GOOS": "linux",
+        "GOARCH": "arm64",
+        "CGO_ENABLED": "0",
+        "CC": "D:\\en-words\\.test-tools\\llvm-mingw-20261006-ucrt-x86_64\\bin\\x86_64-w64-mingw32-gcc.exe",
+        "GOCACHE": "D:\\en-words\\.test-tools\\gocache",
+        "GOMODCACHE": "D:\\en-words\\.test-tools\\gomodcache",
+        "GOTOOLCHAIN": "local",
+        "GOPROXY": "off"
+      }
+    },
+    {
+      "name": "linux-arm64-pilotsupervisor",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.25.0\\bin\\go.exe",
+        "test",
+        "-c",
+        "-tags=pilot_e2e",
+        "-o",
+        "D:\\en-words\\.test-artifacts\\pilot-cross-platform-20261022\\pilotsupervisor-linux-arm64.test",
+        "./internal/pilotsupervisor"
+      ],
+      "cwd": "D:\\en-words\\server",
+      "exit": 1,
+      "seconds": 11.585,
+      "env": {
+        "GOOS": "linux",
+        "GOARCH": "arm64",
+        "CGO_ENABLED": "0",
+        "CC": "D:\\en-words\\.test-tools\\llvm-mingw-20261006-ucrt-x86_64\\bin\\x86_64-w64-mingw32-gcc.exe",
+        "GOCACHE": "D:\\en-words\\.test-tools\\gocache",
+        "GOMODCACHE": "D:\\en-words\\.test-tools\\gomodcache",
+        "GOTOOLCHAIN": "local",
+        "GOPROXY": "off"
+      }
+    },
+    {
+      "name": "linux-arm64-vet",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.25.0\\bin\\go.exe",
+        "vet",
+        "-tags=pilot_e2e",
+        "./internal/pilotcontrol",
+        "./internal/pilotsupervisor"
+      ],
+      "cwd": "D:\\en-words\\server",
+      "exit": 1,
+      "seconds": 6.678,
+      "env": {
+        "GOOS": "linux",
+        "GOARCH": "arm64",
+        "CGO_ENABLED": "0",
+        "CC": "D:\\en-words\\.test-tools\\llvm-mingw-20261006-ucrt-x86_64\\bin\\x86_64-w64-mingw32-gcc.exe",
+        "GOCACHE": "D:\\en-words\\.test-tools\\gocache",
+        "GOMODCACHE": "D:\\en-words\\.test-tools\\gomodcache",
+        "GOTOOLCHAIN": "local",
+        "GOPROXY": "off"
+      }
+    }
+  ],
+  "split_results": [
+    {
+      "name": "windows-split-pilotcontrol",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.25.0\\bin\\go.exe",
+        "test",
+        "-p=1",
+        "-count=1",
+        "-tags=pilot_e2e",
+        "-timeout=60s",
+        "./internal/pilotcontrol"
+      ],
+      "exit": 0,
+      "seconds": 6.8043553829193115
+    },
+    {
+      "name": "windows-split-pilotsupervisor",
+      "command": [
+        "D:\\en-words\\.test-tools\\go1.25.0\\bin\\go.exe",
+        "test",
+        "-p=1",
+        "-count=1",
+        "-tags=pilot_e2e",
+        "-timeout=60s",
+        "./internal/pilotsupervisor"
+      ],
+      "exit": 0,
+      "seconds": 29.216792821884155
+    }
+  ],
+  "native_json_test_counts": {
+    "enwords/internal/pilotcontrol": {
+      "pass": 23
+    },
+    "enwords/internal/pilotsupervisor": {
+      "pass": 447
+    }
+  },
+  "after_split_source_unchanged": true,
+  "head": "e1da932490c7f92ae60b553b52dd47ef8871cf52",
+  "limitations": [
+    "Combined Windows test manually terminated after both package PASS events; actual exit 1.",
+    "Windows vet manually terminated after no output/no child and >90 seconds; actual exit 1; not accepted.",
+    "Linux CGO=0 cross build/vet failed in local Go standard library: Fchmodat redeclared and undefined O_PATH. No Linux binaries accepted.",
+    "CGO=0 cannot validate cgo-only pinned Linux VFS even with a successful cross compile.",
+    "No Linux native/race/coverage tests run."
+  ],
+  "artifacts": {
+    "linux-amd64-pilotcontrol.stderr": "bdcb749c88bc0b4cb570255815985e442cebd07ee24dc695aff255dd2055895b",
+    "linux-amd64-pilotcontrol.stdout": "be41f7dc80000016094673a6507213c4ec33564bc1328be7e2d336034da1f9be",
+    "linux-amd64-pilotsupervisor.stderr": "bdcb749c88bc0b4cb570255815985e442cebd07ee24dc695aff255dd2055895b",
+    "linux-amd64-pilotsupervisor.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "linux-amd64-vet.stderr": "bdcb749c88bc0b4cb570255815985e442cebd07ee24dc695aff255dd2055895b",
+    "linux-amd64-vet.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "linux-arm64-pilotcontrol.stderr": "bdcb749c88bc0b4cb570255815985e442cebd07ee24dc695aff255dd2055895b",
+    "linux-arm64-pilotcontrol.stdout": "be41f7dc80000016094673a6507213c4ec33564bc1328be7e2d336034da1f9be",
+    "linux-arm64-pilotsupervisor.stderr": "bdcb749c88bc0b4cb570255815985e442cebd07ee24dc695aff255dd2055895b",
+    "linux-arm64-pilotsupervisor.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "linux-arm64-vet.stderr": "bdcb749c88bc0b4cb570255815985e442cebd07ee24dc695aff255dd2055895b",
+    "linux-arm64-vet.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "results.json": "00fb2d7d7f18aaa6458a1cc53074fbaf148acf48731260c7d5a367e0884ceb75",
+    "source-after.json": "728bd72306a2bbfa652b5710c091f46dfc8f8c47109968ac28690ab770c9c6bd",
+    "source-before.json": "728bd72306a2bbfa652b5710c091f46dfc8f8c47109968ac28690ab770c9c6bd",
+    "split-results.json": "b00cf8e4d3f175794f3de03537fe0e84e54df7a0f9ace32120c1cb168eabc8ec",
+    "summary.json": "54b0585ab03f8877379055a1e62f82126ac65a895f64fd263addb315b5c9140a",
+    "windows-split-pilotcontrol.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows-split-pilotcontrol.stdout": "7c8d1e7c316f684ecf0c95d42b17056d8c238cd9f68b692544de44842499af3d",
+    "windows-split-pilotsupervisor.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows-split-pilotsupervisor.stdout": "f11ff5c7a592bc76d1ab2a55cdcbb88f4599e7f16df74c14e461d3fb028b7ce8",
+    "windows-test.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows-test.stdout": "74f5d7110a3f02423348c5b0af83d98d1150753b017e763cf805914da320596d",
+    "windows-vet.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows-vet.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

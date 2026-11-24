@@ -1,0 +1,13 @@
+{"Time":"2026-10-16T20:15:19.2076389+08:00","Action":"start","Package":"enwords/internal/store"}
+{"Time":"2026-10-16T20:15:23.2618035+08:00","Action":"run","Package":"enwords/internal/store","Test":"TestStartupTwoIndependentPoolsNeverPublishPartialSchema"}
+{"Time":"2026-10-16T20:15:23.2618035+08:00","Action":"output","Package":"enwords/internal/store","Test":"TestStartupTwoIndependentPoolsNeverPublishPartialSchema","Output":"=== RUN   TestStartupTwoIndependentPoolsNeverPublishPartialSchema\n"}
+{"Time":"2026-10-16T20:15:23.4960222+08:00","Action":"output","Package":"enwords/internal/store","Test":"TestStartupTwoIndependentPoolsNeverPublishPartialSchema","Output":"    startup_matrix_test.go:610: \n"}
+{"Time":"2026-10-16T20:15:23.4965516+08:00","Action":"output","Package":"enwords/internal/store","Test":"TestStartupTwoIndependentPoolsNeverPublishPartialSchema","Output":"        \tError Trace:\tD:/en-words/server/internal/store/startup_matrix_test.go:610\n"}
+{"Time":"2026-10-16T20:15:23.4965516+08:00","Action":"output","Package":"enwords/internal/store","Test":"TestStartupTwoIndependentPoolsNeverPublishPartialSchema","Output":"        \tError:      \tShould be true\n"}
+{"Time":"2026-10-16T20:15:23.4965516+08:00","Action":"output","Package":"enwords/internal/store","Test":"TestStartupTwoIndependentPoolsNeverPublishPartialSchema","Output":"        \tTest:       \tTestStartupTwoIndependentPoolsNeverPublishPartialSchema\n"}
+{"Time":"2026-10-16T20:15:23.4965516+08:00","Action":"output","Package":"enwords/internal/store","Test":"TestStartupTwoIndependentPoolsNeverPublishPartialSchema","Output":"        \tMessages:   \tlosing worker must report initialization conflict\n"}
+{"Time":"2026-10-16T20:15:23.4987056+08:00","Action":"output","Package":"enwords/internal/store","Test":"TestStartupTwoIndependentPoolsNeverPublishPartialSchema","Output":"--- FAIL: TestStartupTwoIndependentPoolsNeverPublishPartialSchema (0.24s)\n"}
+{"Time":"2026-10-16T20:15:23.4987056+08:00","Action":"fail","Package":"enwords/internal/store","Test":"TestStartupTwoIndependentPoolsNeverPublishPartialSchema","Elapsed":0.24}
+{"Time":"2026-10-16T20:15:23.4992401+08:00","Action":"output","Package":"enwords/internal/store","Output":"FAIL\n"}
+{"Time":"2026-10-16T20:15:23.5087786+08:00","Action":"output","Package":"enwords/internal/store","Output":"FAIL\tenwords/internal/store\t4.300s\n"}
+{"Time":"2026-10-16T20:15:23.5087786+08:00","Action":"fail","Package":"enwords/internal/store","Elapsed":4.301}

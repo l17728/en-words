@@ -1,0 +1,37 @@
+{
+  "review": "pilot-catalog-sdd-test-review",
+  "revision": "r5",
+  "date": "2026-10-19",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "sections": ["109.3", "109.4"],
+  "domain": "test design",
+  "verdict": "PASS",
+  "tests_run": false,
+  "scope": "Read-only review of catalog acceptance determinism, fault injection, crash/restart oracles, and multi-process race coverage.",
+  "summary": "The r4 P3 is closed. Same-case Start uses a two-stage barrier that proves both processes observed optimistic ready before lock contention; provisioning recovery proves exactly one ready frame/generation and no duplicate transition. No new blocker was found.",
+  "closed_findings": [
+    {
+      "id": "CAT-TEST-1094-05",
+      "prior_severity": "P3",
+      "status": "closed",
+      "evidence": "Concurrent provisioning recovery asserts exactly one provisioning-to-ready frame/generation; the other process observes ready without appending a duplicate transition."
+    }
+  ],
+  "reviewed_areas": [
+    "Two-stage barrier for same-case stale-read Start race",
+    "Concurrent provisioning recovery and unique transition/generation",
+    "Child-process crash/restart outcomes and side-effect open counters",
+    "Framing/schema and journal size/frame/generation boundaries",
+    "Write, file Sync, parent-directory Sync, replay, identity, and cleanup faults",
+    "Response-loss convergence and test-only golden vectors"
+  ],
+  "new_blockers": [],
+  "limitations": [
+    "No tests were run; this is a test-design review only.",
+    "Windows and POSIX verified-handle, ACL/mode, file-identity, lock-release, and parent-directory durability implementation gates remain mandatory and are not certified by this review."
+  ],
+  "artifacts": [
+    "review/pilot-catalog-sdd-test-review-20261019-r5.md",
+    "review/pilot-catalog-sdd-test-review-20261019-r5.json"
+  ]
+}

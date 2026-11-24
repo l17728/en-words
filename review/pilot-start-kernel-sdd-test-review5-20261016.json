@@ -1,0 +1,63 @@
+{
+  "review": "pilot-start-kernel-sdd-test-review-5",
+  "date": "2026-10-16",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "tests_run": false,
+  "implementation_approved": false,
+  "focus": [
+    "T-01 Agent/Bank API",
+    "bundle and failed-attempt audit",
+    "rollback/unknown/restart lifecycle",
+    "cross-lesson lifecycle verifier isolation",
+    "Playwright acceptance closure"
+  ],
+  "findings": [
+    {
+      "id": "PILOT-START-TEST-11",
+      "severity": "P1",
+      "status": "block",
+      "where": "docs/41 section 3 bundle failure behavior and section 6 cases 2/6",
+      "problem": "Incomplete Registry bundle failures discard the local auditor buffer and are called terminal, but there is no durable attempt identity/failure audit or planning/registry failure event/reason. Blocking retries only on the same in-memory task does not prevent a new HTTP request/process from creating a new task and invoking the tools again.",
+      "required_action": "Define attempt correlation and retry semantics across requests/restarts, or explicitly permit retry with a new attempt/task. Add partial-success-then-failure/panic, retry, and restart tests."
+    },
+    {
+      "id": "PILOT-START-TEST-12",
+      "severity": "P1",
+      "status": "block",
+      "where": "docs/41 sections 3, 6 cases 3-4",
+      "problem": "Same-process pending_unknown recovery and restart-after-known-commit are specified, but restart after an unknown transaction that rolled back is not. The bundle/capability are memory-only, yet same-ID retry requires reusing them without recreating the task or rerunning Registry.",
+      "required_action": "Add post-restart commit and rollback cases and define durable recovery, deterministic side-effect-free reconstruction, or a proven-rollback terminal command policy. Receipt absence after restart must not alone be treated as rollback proof."
+    },
+    {
+      "id": "PILOT-START-TEST-13",
+      "severity": "P1",
+      "status": "block",
+      "where": "docs/41 section 4 lifecycle dispatcher; section 6",
+      "problem": "Per-lesson lifecycle dispatch is described, but global schema inspection enumeration and cross-lesson isolation are not tested. There are no mixed created/active fixtures or cross-linked receipt/audit/outbox corruption cases.",
+      "required_action": "Add two-owner/two-lesson fixtures proving per-lesson fail-closed isolation, global verifier detection, and that one decision's trace/audit cannot satisfy another lesson."
+    },
+    {
+      "id": "PILOT-START-TEST-14",
+      "severity": "P2",
+      "status": "block",
+      "where": "docs/41 T-01 Agent API and section 6 case 6",
+      "problem": "The exact OP-1 success text is pinned, but returned TemplateID/Source and missing/malformed-template fallback are not acceptance-tested. The fallback contract could regress to a random variant or violate its name/introduction/length constraints without failing the described tests.",
+      "required_action": "Add exact template success provenance and deterministic fallback vectors for missing/error/malformed Bank results, including text constraints and no-randomization assertion."
+    },
+    {
+      "id": "PILOT-START-TEST-15",
+      "severity": "P2",
+      "status": "block",
+      "where": "docs/41 sections 2, 5, 6 Playwright scenario",
+      "problem": "Product UI/default routes are explicitly excluded, but the Playwright scenario refers to a page creating a lesson and rendering T-01/word state without defining the browser entry surface.",
+      "required_action": "Specify harness-only fixture page versus direct API calls versus existing app UI, and label what the E2E does and does not prove while retaining production route-absence checks."
+    }
+  ],
+  "closed_prior_contracts": [
+    "fingerprint golden vector and typed codec fixture",
+    "two tool/two audit/two outbox cardinality and audit map metadata",
+    "post-COMMIT response-drop hook with independent database verification",
+    "pending_unknown event/reason mapping and strict event schema"
+  ],
+  "disposition": "Resolve P1 findings 11-13 before implementation approval; close or explicitly scope-limit P2 findings 14-15."
+}

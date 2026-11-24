@@ -1,0 +1,57 @@
+{
+  "server": {
+    "source_files": 476,
+    "snapshot_files": 476,
+    "source_bytes": 166149558,
+    "snapshot_bytes": 166149558,
+    "missing": [],
+    "extra": [],
+    "hash_mismatches": []
+  },
+  "web": {
+    "source_files": 121,
+    "snapshot_files": 121,
+    "source_bytes": 1005946,
+    "snapshot_bytes": 1005946,
+    "missing": [],
+    "extra": [],
+    "hash_mismatches": []
+  },
+  "data/seed": {
+    "source_files": 7,
+    "snapshot_files": 7,
+    "source_bytes": 836558,
+    "snapshot_bytes": 836558,
+    "missing": [],
+    "extra": [],
+    "hash_mismatches": []
+  },
+  "npm_files": {
+    "package_json_sha256_formal": "9f89379bad59cae8ea90abd0991d0bc77651d1b4de342ec88be157e154b0c48d",
+    "package_json_sha256_snapshot": "9f89379bad59cae8ea90abd0991d0bc77651d1b4de342ec88be157e154b0c48d",
+    "package_lock_sha256_formal": "37bbcd595ef594ef8d6f94b2dcd7761f17fe498fe872869ebfac568fb226b7ca",
+    "package_lock_sha256_snapshot": "37bbcd595ef594ef8d6f94b2dcd7761f17fe498fe872869ebfac568fb226b7ca"
+  },
+  "node_modules": {
+    "baseline_files": 19986,
+    "formal_files": 19986,
+    "snapshot_files": 19986,
+    "baseline_bytes": 184027331,
+    "formal_bytes": 184027331,
+    "snapshot_bytes": 184027331,
+    "formal_vs_baseline": [],
+    "snapshot_vs_formal": []
+  },
+  "review/run_browser_acceptance.py": {
+    "formal_sha256": "720fca497351381be5e8c3c25ef4cfe874f371e0bc4bd9122f0ddc573353051d",
+    "snapshot_sha256": "720fca497351381be5e8c3c25ef4cfe874f371e0bc4bd9122f0ddc573353051d",
+    "equal": true
+  },
+  "review/audio-fixtures/en/05.wav": {
+    "formal_sha256": "def819a48d66c1058257c227245f267714ff74547e122952d8f6e2a1adb2eca5",
+    "snapshot_sha256": "def819a48d66c1058257c227245f267714ff74547e122952d8f6e2a1adb2eca5",
+    "equal": true
+  },
+  "runner_sources_sha256": "b8439f15cfd90ed435b17d7d23fd5a4ae0e6b78790a07f0923f09e444dac93d1",
+  "all_equal": true
+}

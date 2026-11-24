@@ -1,0 +1,117 @@
+{
+  "status": "passed",
+  "blocking_findings": 0,
+  "errors": [],
+  "review_date": "2026-10-16",
+  "manifest": "D:\\en-words\\.test-artifacts\\frozen-browser145-r17-restart2-20261016\\manifest.json",
+  "manifest_sha256": "7559215f1a39ac3ce4329bdd1b7669fb70dedac449775ac1ca8bf5bb70bcce32",
+  "review_mode": "Independent read-only parsing/hash comparison; no tests or browser executed.",
+  "unique_suite_namespaced_ids": 145,
+  "suites": [
+    {
+      "suite": "continuation",
+      "passed": 4,
+      "reports": 1
+    },
+    {
+      "suite": "interaction",
+      "passed": 30,
+      "reports": 1
+    },
+    {
+      "suite": "feedback",
+      "passed": 26,
+      "reports": 1
+    },
+    {
+      "suite": "closure",
+      "passed": 6,
+      "reports": 1
+    },
+    {
+      "suite": "playback",
+      "passed": 1,
+      "reports": 1
+    },
+    {
+      "suite": "legacy",
+      "passed": 9,
+      "reports": 1
+    },
+    {
+      "suite": "journey",
+      "passed": 1,
+      "reports": 1
+    },
+    {
+      "suite": "firstuse",
+      "passed": 1,
+      "reports": 1
+    },
+    {
+      "suite": "overdue",
+      "passed": 1,
+      "reports": 1
+    },
+    {
+      "suite": "duplex",
+      "passed": 7,
+      "reports": 1
+    },
+    {
+      "suite": "repeat",
+      "passed": 3,
+      "reports": 1
+    },
+    {
+      "suite": "startup",
+      "passed": 14,
+      "reports": 1
+    },
+    {
+      "suite": "recovery",
+      "passed": 42,
+      "reports": 6
+    }
+  ],
+  "execution_reports_checked": 18,
+  "evidence_hashes_checked": 41,
+  "all_stage_process_exits_zero": true,
+  "recovery_partition": "6 x7 exact disjoint42",
+  "preflight": "2 separate, excluded from145",
+  "immutability": "Full recorded source/input/dist/dependency before-after inventories independently compared. All five binary bytes and41 evidence files independently rehashed now; approved handoff hash exact. No redundant full installed-dependency tree rehash in this review.",
+  "prior_runs": [
+    {
+      "path": ".test-artifacts\\frozen-browser145-r17-20261016\\manifest.json",
+      "sha256": "443ed43f955f68fe29d31b26d1ebddf3ffaa88de9eee3b52f66019c237807e3a",
+      "status": "failed",
+      "stage": "recovery-discovery",
+      "failure": {
+        "type": "RuntimeError",
+        "message": "Full discovery must contain 145 unique IDs",
+        "stage": "recovery-discovery"
+      },
+      "completed_suites": []
+    },
+    {
+      "path": ".test-artifacts\\frozen-browser145-r17-scopefix-20261016\\manifest.json",
+      "sha256": "ee1f2cb020bfb27820f8958cfa816dbfc8faabea08d305b4dd59205ddcfdb4f6",
+      "status": "running",
+      "stage": "interaction",
+      "failure": null,
+      "completed_suites": [
+        "continuation"
+      ]
+    }
+  ],
+  "history_boundary": "First raw-ID collision run failed before accepted suites. Scopefix manifest remains running at interaction after continuation passed; it is incomplete and not accepted. Daemon-restart attribution is parent/orchestrator testimony, not independently proven by this manifest. Final145 all originate in restart2, including a fresh continuation report; no prior run results merged.",
+  "limits": [
+    "Mock/controlled media and isolated server/SQLite functional validation, not real audio/acoustic quality, real model or deployed-user classroom acceptance.",
+    "Actual legacy product-server routes are exercised; private Pilot components/G1 preflight do not demonstrate Pilot Room/Agent end-to-end integration.",
+    "ST09 uses cleanup+Router seam, not complete production-run injected failure.",
+    "Bounded WS barriers are not unbarriered acoustic concurrency.",
+    "Dependencies verified at endpoints plus stage metadata, not continuous byte attestation.",
+    "Historical21.678/22.594-second COMMIT tails remain open.",
+    "Manifest total_elapsed_ms is measured before final full dependency hashing, not entire command wall time."
+  ]
+}

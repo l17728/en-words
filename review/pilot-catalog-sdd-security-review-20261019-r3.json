@@ -1,0 +1,27 @@
+{
+  "review_id": "pilot-catalog-sdd-security-review-20261019-r3",
+  "date": "2026-10-19",
+  "artifact": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "scope": ["§109.3", "§109.4", "§42"],
+  "review_type": "read-only design security review",
+  "decision": "PASS",
+  "blockers": [],
+  "findings": [],
+  "checks": {
+    "single_start_per_case_and_fresh_case_retry": "PASS",
+    "case_id_permanent_tombstone_no_reuse": "PASS",
+    "stable_lock_outside_removable_case_directory": "PASS_BY_DESIGN_PENDING_IMPLEMENTATION",
+    "cleanup_resume_without_db_sidecar_key_open": "PASS",
+    "cleanup_restart_and_absent_directory": "PASS",
+    "ordinary_request_denied_during_cleanup": "PASS",
+    "authorization_or_toctou_regression_in_stated_threat_model": "NONE_IDENTIFIED"
+  },
+  "implementation_acceptance_gate": [
+    "Verify owner-only ACL/mode and reject reparse points, links, and unexpected identity for lock root and lock object.",
+    "Acquire per-case locks through verified handles and never unlink/recreate the lock object while holders or waiters may exist.",
+    "Cross-process test that opener and cleanup-resume contend on the same lock identity across case-directory removal and supervisor restart."
+  ],
+  "tests_run": false,
+  "code_changed": false,
+  "limitations": "PASS is for the written design only; platform lock identity, ACL, and durability behavior were not executed or verified."
+}

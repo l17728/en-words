@@ -1,0 +1,52 @@
+[
+  {
+    "suite": "interaction",
+    "exit": 0,
+    "reports": [
+      {
+        "path": "D:\\en-words\\review\\ladder-ix10-harness-retest-20261016\\evidence\\playwright-interaction-r1\\interaction-results.json",
+        "stats": {
+          "startTime": "2026-10-16T12:36:01.062Z",
+          "duration": 338490.694,
+          "expected": 30,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "test_ids": [
+          "711a63dc09f8e4d2f1ae-9244999eb20bf5fb92c6:",
+          "711a63dc09f8e4d2f1ae-44716bd6ee73e139760f:",
+          "711a63dc09f8e4d2f1ae-9064502c503467934c5b:",
+          "711a63dc09f8e4d2f1ae-2bc3c7fafe81214592fa:",
+          "711a63dc09f8e4d2f1ae-039b1087425efc360597:",
+          "711a63dc09f8e4d2f1ae-44515ee1e434d7d0df96:",
+          "711a63dc09f8e4d2f1ae-c608cb6d2f86f0114361:",
+          "711a63dc09f8e4d2f1ae-4ad6cdbe1f5e988ec080:",
+          "711a63dc09f8e4d2f1ae-6752b7bb7fafc7a47d55:",
+          "711a63dc09f8e4d2f1ae-9dc6c68bb1a71153a6a4:",
+          "da9b511028e96919cce4-2cbd8b49f5363648d18f:",
+          "da9b511028e96919cce4-400300a77ff0a73ae68f:",
+          "da9b511028e96919cce4-8ac25d07424c3b763589:",
+          "da9b511028e96919cce4-13da1c0f8a4bd1ecd8ea:",
+          "31fcef471d8e010abb99-8eac899901978debe6ec:",
+          "31fcef471d8e010abb99-729ceacf31d41362684f:",
+          "31fcef471d8e010abb99-7b144f837d0ba0182713:",
+          "31fcef471d8e010abb99-a91909a6b4a9a46554ac:",
+          "31fcef471d8e010abb99-50b1db45707d0e3a1a52:",
+          "31fcef471d8e010abb99-829b560c5397dd8917d1:",
+          "31fcef471d8e010abb99-97b5eb813925a283d53a:",
+          "31fcef471d8e010abb99-c935d4e954219dac2066:",
+          "31fcef471d8e010abb99-b8d5f39fe6cb383aaa46:",
+          "31fcef471d8e010abb99-d1a77c9a94a6a81a1187:",
+          "31fcef471d8e010abb99-38be6f929cf972b29285:",
+          "31fcef471d8e010abb99-dbe1eeaa866a8417c6c5:",
+          "31fcef471d8e010abb99-edc82c6ab0c47e36f749:",
+          "31fcef471d8e010abb99-512e2180db5662588c8d:",
+          "31fcef471d8e010abb99-0f697ac2d60049830c0f:",
+          "31fcef471d8e010abb99-50e02c972e5dfe47991b:"
+        ]
+      }
+    ],
+    "expected_ids": null
+  }
+]

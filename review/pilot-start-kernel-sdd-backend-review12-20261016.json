@@ -1,0 +1,24 @@
+﻿{
+  "review": "pilot-start-kernel-sdd-backend-review12",
+  "date": "2026-10-16",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "scope": "read-only review of OpenVerified ordering, cleanup quarantine, one-shot Registry wrapper, and loopback request guards",
+  "code_modified": false,
+  "docs_modified": false,
+  "tests_run": false,
+  "verdict": "BLOCK",
+  "findings": [
+    {"id":"BE12-1","severity":"P1","status":"open","title":"OpenVerified file identity is not explicitly bound to the SQLite file object later used","recommendation":"Specify atomic verified open and pass the same handle/object to SQLite, or a fully equivalent nonreplaceable open protocol; prohibit path reopen after validation and cover replacement injection."},
+    {"id":"BE12-2","severity":"P2","status":"open","title":"Cleanup quarantine catalog access and failure ordering are underspecified","recommendation":"Protect and identity-verify the catalog, consult it before case path creation/open, durably record quarantine before releasing lifecycle lock, and fail closed if catalog verification/write fails."}
+  ],
+  "checks": {
+    "openverified_before_receipt": "PASS",
+    "one_shot_registry_package_boundary": "PASS",
+    "loopback_host_origin_csrf_before_coordinator": "PASS",
+    "receipt_recovery_order": "PASS_WITH_IMPLEMENTATION_GATE"
+  },
+  "implementation_gates": [
+    "Demonstrate the exact SQLite driver's verified-handle/no-follow open path on Windows and POSIX.",
+    "Implement pinned-connection rollback_proven without treating unknown commit as rollback."
+  ]
+}

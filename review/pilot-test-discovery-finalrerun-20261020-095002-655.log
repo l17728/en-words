@@ -1,0 +1,13 @@
+﻿Pilot manifest audit was interrupted on the user's/parent's updated instruction after raw event capture was available.
+
+Command: python review/pilot_test_discovery.py --manifest review/pilot-pure-contract-manifest.json --target windows/amd64 --artifacts-dir .test-artifacts/pilot-test-discovery-final-20261020
+Wrapper exit code: 1 (Ctrl-C on parent instruction; this is not a test failure verdict)
+Runner SHA256 at launch: 36312F4ECAE038BD848315AE7A6C2D8E9ACE0B38D07715997F51AE7F1EFDF670
+Manifest SHA256: 7F4DB708F2165429C2B8FA71EAB95BC2A899DD62CBC7B2E3A441D90D0CB3CEA5
+Run directory: D:\en-words\.test-artifacts\pilot-test-discovery-final-20261020\20261020T015005.431037Z
+Audit state at interruption: RUNNING_TESTS / INCOMPLETE
+Completed parent tests: TestPilotLedgerTransitionFunction PASS (exit 0); TestPilotCleanupAnchorContract PASS (exit 0)
+Not executed: TestPilotCleanupOwnerClaimContract, TestPilotCleanupRecoveryContract
+The Go discovery output (go-test-list.stdout.txt, 1707 bytes), original JSONL events for both completed parents, and report.json are preserved in the run directory. No Go/compile/link/vet test process remains active.
+
+EXIT_CODE=1

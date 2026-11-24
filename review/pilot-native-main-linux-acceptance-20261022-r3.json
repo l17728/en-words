@@ -1,0 +1,75 @@
+{
+  "source_before": "e781c6cd9f373dc1653de53853ed59977a63077de12c740f5f4588a5e96168bc",
+  "source_after": "e781c6cd9f373dc1653de53853ed59977a63077de12c740f5f4588a5e96168bc",
+  "source_unchanged": true,
+  "go_before": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+  "go_after": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+  "env": {
+    "GOROOT": "/tmp/enwords-pilot-linux-acceptance-20261022/go",
+    "GOTOOLCHAIN": "local",
+    "GOPROXY": "off",
+    "GOPATH": "/tmp/enwords-pilot-main-20261022-r3/owned/evidence-r3/gopath",
+    "GOMODCACHE": "/tmp/enwords-pilot-ubuntu-20261022/evidence-r2/modules",
+    "PILOT_FS_TEST_ROOT": "/tmp/enwords-pilot-main-20261022-r3/owned/evidence-r3/fs",
+    "GOCACHE": "/tmp/enwords-pilot-ubuntu-20261022/evidence-r2/cache",
+    "GOTMPDIR": "/tmp/enwords-pilot-main-20261022-r3/owned/evidence-r3/tmp",
+    "TMPDIR": "/tmp/enwords-pilot-main-20261022-r3/owned/evidence-r3/work",
+    "CGO_ENABLED": "1",
+    "CC": "/usr/bin/gcc"
+  },
+  "cwd": "/tmp/enwords-pilot-main-20261022-r3/server",
+  "results": [
+    {
+      "stage": "control-test",
+      "command": [
+        "/tmp/enwords-pilot-linux-acceptance-20261022/go/bin/go",
+        "test",
+        "-count=1",
+        "-json",
+        "-timeout=180s",
+        "./internal/pilotcontrol"
+      ],
+      "exit": 1,
+      "elapsed_s": 34.02958125434816,
+      "stop_reason": null,
+      "disk_before": 1471107072,
+      "disk_min": 1421283328,
+      "disk_after": 1414242304
+    }
+  ],
+  "status": "FAILED_MISSING_TEST_INPUT",
+  "counts": {
+    "run": 23,
+    "pass": 19,
+    "fail": 4,
+    "skip": 0
+  },
+  "failed_tests": [
+    "TestOpenRejectsUnexpectedPersistentView",
+    "TestOpenRejectsUnexpectedSQLiteUserVersionWithoutMutation",
+    "TestOpenAcceptsExactPinnedSchemaFixture",
+    "TestProtectedConnectionRevalidatesSchemaAfterReadOnlyPreflight"
+  ],
+  "missing_asset": {
+    "path": "review\\pilot-control-ledger-v3-literal-ddl-draft-20261021.sql",
+    "sha256": "a32c7ead5544fef50576989c7655dd4a9d70b9ae21a2358f91824054bf45403d"
+  },
+  "not_run": [
+    "supervisor-test",
+    "control-race",
+    "supervisor-race",
+    "control-vet",
+    "supervisor-vet"
+  ],
+  "evidence_dir": ".test-artifacts\\pilot-native-main-linux-20261022-r3",
+  "scope": "Current main worktree; native Linux amd64/ext4; existing ubuntu UID1000 GID1001; no privileged/system-state acceptance",
+  "root_cause": "Snapshot packaging omitted repository review SQL fixture required by sqlite_test.go:347; no source change or rerun.",
+  "logs": {
+    "control-test.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "control-test.stdout": "798742bf70a6e584fcb7343bf01d7ae92e051c741574754dc4c5087b45051c85",
+    "driver.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "driver.stdout": "49ee7029fd312182621b33de6c432ec2591614e0a5d8aa6d09c3760cd96a01b6",
+    "setup.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "setup.stdout": "87537ea331fde92d6f3540e6cefc6c4e76b479b49376d0ab4d66358c5386fc97"
+  }
+}

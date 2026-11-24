@@ -1,0 +1,12 @@
+
+Running 7 tests using 1 worker
+
+  ✓  1 e2e\duplex-preflight.spec.ts:34:1 › server pilot disabled › FD01 disabled pilot cannot request microphone even with query switch (3.7s)
+  ✓  2 e2e\duplex-preflight.spec.ts:45:1 › FD01 actual false and unknown remain distinct; capture is local and stop rejects late callbacks (3.4s)
+  ✓  3 e2e\duplex-preflight.spec.ts:68:1 › FD06 denied microphone remains recoverable and exposes text return (2.9s)
+  ✓  4 e2e\duplex-preflight.spec.ts:78:1 › FD11 permission resolved after cancellation closes track and never starts old session (3.2s)
+  ✓  5 e2e\duplex-preflight.spec.ts:91:1 › FD01 real capability route gates owner and exposes no remote credentials (3.2s)
+  ✓  6 e2e\duplex-preflight.spec.ts:108:1 › FD11 switching owned lesson resets active preflight and processor failure stops all resources (3.2s)
+  ✓  7 e2e\duplex-preflight.spec.ts:127:1 › FD11 lost authorization before rejected audio initialization releases microphone immediately (2.6s)
+
+  7 passed (38.2s)

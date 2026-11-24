@@ -1,0 +1,2 @@
+--- FAIL: TestPilotVFSChildSHMFinalUnmapReopen (0.01s)
+    pilot_vfs_trace_candidate_test.go:1389: persist final-unmap child trace after close: file exists

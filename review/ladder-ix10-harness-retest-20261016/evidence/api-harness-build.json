@@ -1,0 +1,18 @@
+{
+  "command": [
+    "D:\\en-words\\.test-tools\\go\\bin\\go.exe",
+    "test",
+    "-c",
+    "./internal/api",
+    "-o",
+    "D:\\en-words\\review\\ladder-ix10-harness-retest-20261016\\bin\\api-harness.test.exe"
+  ],
+  "cwd": "D:\\en-words\\review\\ladder-ix10-harness-retest-20261016\\source-verified\\server",
+  "duration_seconds": 238.53,
+  "exit_code": 0,
+  "timeout": false,
+  "stdout": "D:\\en-words\\review\\ladder-ix10-harness-retest-20261016\\logs\\api-harness-build.stdout.log",
+  "stderr": "D:\\en-words\\review\\ladder-ix10-harness-retest-20261016\\logs\\api-harness-build.stderr.log",
+  "harness_exists": true,
+  "harness_sha256": "ba469b056d3c5912f909c394eb7c7edf2ba55fa1102c79f2673664112e6eab5a"
+}

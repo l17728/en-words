@@ -1,0 +1,49 @@
+{
+  "review": "pilot-start-kernel-code-backend-review3-20261017",
+  "date": "2026-10-17",
+  "target": [
+    "server/internal/agent/pilot_start.go",
+    "server/internal/agent/pilot_start_test.go",
+    "server/internal/scripts/pilot_exact.go",
+    "server/internal/store/pilot_start_sidecar.go",
+    "server/internal/store/pilot_start_sidecar_test.go"
+  ],
+  "reference": "docs/41-试点课堂Start持久迁移内核SDD.md §§24,44-46,94,108",
+  "scope_note": "Coordinator/HTTP harness is not wired. Cross-process lifecycle lock, OpenVerified, Windows ACL, and Windows parent-directory durability remain integration gates.",
+  "code_modified": false,
+  "tests_run_by_reviewer": false,
+  "validation_evidence": "Existing final validation artifacts report pilot-tag agent/scripts/store tests exited 0; reviewer did not execute tests.",
+  "verdict": "BLOCK",
+  "findings": [
+    {
+      "id": "BE-CODE-R3-1",
+      "severity": "P2",
+      "status": "open",
+      "file": "server/internal/store/pilot_start_sidecar_test.go",
+      "lines": "not covered; implementation at pilot_start_sidecar.go:102-109,184-193",
+      "title": "Durable I/O failure paths have no fault-injection regression coverage",
+      "evidence": "Append handles partial/zero writes and file Sync failures by degrading; create handles parent Sync failure. No current tests inject these failures or assert restart/supervisor behavior after an uncertain durable append.",
+      "recommendation": "Introduce a narrow injectable file/sync abstraction and test zero-byte write, partial write, file Sync failure, and parent-directory Sync failure. Assert the writer becomes unusable, does not append another event or create a replacement chain, and recovery fails closed or derives only the fully durable chain according to the supervisor contract."
+    }
+  ],
+  "resolved": [
+    "BE-CODE-1: creation and recovery are separated; missing and empty recovery sidecars reject; POSIX parent directory Sync is present.",
+    "BE-CODE-2: commit attempts are bounded and attempt 2 terminal failure is covered by a full append/close/reopen chain.",
+    "BE-CODE-3: later events remain bound to known plan and bundle HMAC values, including terminal events.",
+    "BE-CODE-4: a valid attempt_started fixture now reaches the pre-write capacity guard and verifies unchanged file length plus degraded state."
+  ],
+  "integration_gates": [
+    "Coordinator/HTTP harness and pilot_e2e wiring remain absent from reviewed files.",
+    "Supervisor must enforce cross-process per-case lifecycle locking and current catalog reauthorization.",
+    "Pass OpenVerified handles/identity and enforce Windows ACL plus parent-directory durability before integration.",
+    "Cleanup, WAL/SHM/journal lifecycle, and full §94 end-to-end recovery acceptance remain unverified here."
+  ],
+  "checks": {
+    "create_vs_reopen_missing_empty": "PASS_WITH_PLATFORM_GATES",
+    "commit_attempt_and_full_chain_replay": "PASS",
+    "known_plan_bundle_hmac_continuity": "PASS",
+    "prewrite_capacity_guard": "PASS_WITH_INJECTED_LIMIT_FIXTURE",
+    "durable_io_failure_injection": "BLOCK_P2",
+    "cross_process_lock_and_verified_open": "NOT_YET_INTEGRATED"
+  }
+}

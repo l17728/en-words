@@ -1,0 +1,5 @@
+Command: go test -timeout=110s -tags pilot_e2e ./internal/store -run PilotCatalog -count=1
+GOCACHE=D:\en-words\.test-tools\gocache
+GOMODCACHE=D:\en-words\.test-tools\gomodcache
+
+ok  	enwords/internal/store	35.794s

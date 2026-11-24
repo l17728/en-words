@@ -1,0 +1,1 @@
+﻿ssh root@124.156.193.122 id -un; uname -a; findmnt -no SOURCE,FSTYPE,TARGET /; systemctl is-system-running; findmnt -no FSTYPE /sys/fs/cgroup; cat /sys/fs/cgroup/cgroup.controllers; test -w /sys/fs/cgroup && echo cgroup_root_writable; getent passwd ubuntu picer; unshare -m true && echo mountns_available
