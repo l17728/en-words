@@ -1,6 +1,6 @@
 # Pilot Host Logger Service Lifecycle SDD
 
-**Status: lifecycle implementation slice complete and statically reviewed; overall feature incomplete.** The current pilot_e2e service code and Linux test package cross-compile for amd64/arm64; Windows tagged tests and default Go tests pass. Linux-native execution is still outstanding. Host UID/systemd preflight, production launcher integration, and privileged Linux acceptance remain outstanding; this phase does not enable classroom traffic.
+**Status (2026-10-22): isolated lifecycle package implementation and Linux amd64/ext4 package acceptance passed; overall feature incomplete.** The reviewed Linux run covers the full `pilotsupervisor` package under unprivileged `nobody`, including tagged tests, race, vet, no-CGO, and deterministic coverage. It does not satisfy privileged launcher/service-identity acceptance. Host UID/systemd preflight, production launcher integration, pinned SQLite VFS, A0/A1/A2 orchestration, and product E2E remain outstanding; classroom traffic stays disabled.
 
 ## 1. Goal and boundary
 
@@ -63,26 +63,4 @@ Reviewers must confirm the registration trust chain and socket credential semant
 - EOF no longer makes a context unregisterable while its handler or pidfd watcher is still active. `handlerActive` remains set through watcher cancel/join and socket cleanup; a barrier test confirms UNREGISTER cannot close the pidfd in that interval.
 - Design, architecture, backend, security, and test-design reviews passed these changes. Exact-snapshot checks passed on Windows: tagged package tests, default `go test ./...`, tagged vet, Linux amd64 vet, and Linux amd64/arm64 tagged test-binary cross-compilation. Artifacts are in `server/.test-artifacts/pilot-logger-barrier-20261021-012101/`.
 - Reviewed source bindings: `logger_service_linux.go` SHA-256 `EFA4B381E70C0C661DBF51889343B9A98AF39A48A32AF07B6C32F92E0393859C`; `logger_service_linux_test.go` SHA-256 `FB85E50BD4FDA4C721FF06B5A964CE06CB1CFF7B1BC8BE19CB738F1AB24F6193`.
-- The four new service lifecycle cases compiled into a Linux/amd64 test binary but did not execute because no Linux runtime/runner is configured in this workspace. Cross-compilation and a historical Linux run do not satisfy native acceptance. The cases also remain an isolated service slice: they do not prove launcher-authenticated child identity or product E2E.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- Current native evidence: `review/pilot-supervisor-linux-package-acceptance-20261022.md` records five uncached Linux amd64/ext4 runs of the full `pilotsupervisor` package, 80.7% statement coverage, passing race/vet/no-CGO checks, and exact source hashes. The final review is `review/pilot-supervisor-linux-package-final-review-20261022.md`. This supersedes the earlier note that the lifecycle tests had only cross-compiled. The run does not prove privileged launcher-authenticated identity, production registration, RunRoot product orchestration, arm64/XFS support, or product E2E; those remain separate acceptance gates.\n

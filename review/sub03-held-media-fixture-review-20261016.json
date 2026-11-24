@@ -17,5 +17,20 @@
     "reviewer": "architecture_review",
     "new_blockers": 0,
     "scope": "actual saved SUB03 body; no execution"
+  },
+  "clock_followup": {
+    "status": "saved; independent architecture actual review passed with zero new blockers; not executed",
+    "failure_report": ".test-artifacts/continuation-wait-20261016/frozen-build/sub03.json",
+    "actual_results": "phase clock.pauseAt past before fault injection; pause passed",
+    "change": "After real login navigate B to about:blank; install captured real time minus one day and pause to captured real time on empty document only. Navigate to real classroom with paused clock replay. Assert first segment1 delay0, frozen time, current pending utterance before onstart and same started object after A event.",
+    "local_implementation_evidence": "playwright-core/lib/coreBundle.js install/pauseAt addInitScript log, ClockController pauseAt advances due timers and rejects past; production playback first segment delay0; hold media returns without timer",
+    "unchanged_boundaries": [
+      "A media watchdog",
+      "Node real15s barrier",
+      "A500ms cancellation assertion",
+      "SUB02 original15s",
+      "SUB04"
+    ],
+    "spec_sha256": "7ed2cf38d2f943b840398a9a8dcf0f8cb94a05bcb212f4fc3ccd3b428a7511e3"
   }
 }

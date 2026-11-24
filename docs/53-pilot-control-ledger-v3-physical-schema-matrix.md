@@ -26,7 +26,7 @@ All tables are in the exact v3 allowlist. The DDL manifest will use SQLite `STRI
 
 | Table | Purpose, primary/unique keys, and branch shape | Mutability |
 |---|---|---|
-| `run_root_ledger_meta` | `(singleton=1, schema_version=3)` only | Immutable after initialization |
+| `run_root_ledger_meta` | `(singleton=1, schema_version=3, control_generation:8-byte positive monotonic BLOB)` | Schema version immutable; resident PilotControlReaper increments control_generation exactly once under OS singleton lock at startup before RPC admission |
 | `pilot_control_generations` | PK generation; unique launch nonce; unique `(generation,launch_nonce,normal_run_epoch,mode)`. Normal rows carry only normal epoch; recovery rows carry only the complete target tuple. | Immutable; reject UPDATE/DELETE/REPLACE |
 | `pilot_launcher_journal_anchor` | Singleton PK 1; immutable random journal ID and externally provisioned restore generation; last durable sequence and record hash, updated timestamp. The external generation detects paired database+journal snapshot rollback; sequence/hash detect journal-only rollback including queued/canceled keys with no business-ledger row. | Only `AdvanceLauncherJournalAnchor` may update by exact sequence/hash CAS to sequence+1; ID/generation change and DELETE are rejected |
 | `pilot_principal_aliases` | PK `(tenant_id,identity_key_version,identity_digest)`; unique `(tenant_id,principal_ref,identity_key_version)` to retain one mapping per principal/key version; no immutable user ID | Immutable; reject UPDATE/DELETE/REPLACE |
@@ -48,6 +48,7 @@ All tables are in the exact v3 allowlist. The DDL manifest will use SQLite `STRI
 | `pilot_run_cleanup_dispositions` | PK epoch; cleanup disposition, exact root identity, disposition digest and canonical evidence | Immutable single disposition; conflicting second disposition rejects |
 | `pilot_root_run_state` | PK epoch FK allocation; created-root identity; containment `run_state`; `cleanup_state`; nullable containment-evidence digest. Created-root rows only. | Exact monotonic CAS; root identity immutable; terminal values immutable |
 | `run_root_event_outbox` | PK outbox ID; FK operation; unique `(operation_id,event_name)` for intent and finish; immutable event bytes/digest/process ID; mutable delivery state, ACK digest+correlation, or suppression receipt digest | `ready -> send_authorized -> acknowledged`; only intent may `ready -> suppressed` with matching cancellation receipt; ACK identity cannot change |
+| `intent_binding` | PK 32-byte handle hash; stable 32-byte principal ref; terminal decision `BOUND|EXPIRED`; event time; nullable 16-byte run epoch; eight-byte control-generation BLOB; 32-byte canonical row digest | One immutable row inserted by the serialized first-bind/expiry transaction; run epoch required only for BOUND; restart reads this row as authority for quota journal settlement |
 
 No browser idempotency-key mapping is stored in `operations.sqlite`. The launcher journal resolves the original key to the immutable epoch/operation binding. `LookupByPrincipalOperation` receives the resolved `business_operation_id`/epoch binding plus signed admission, checks current authorization first, then scopes the read by authenticated tenant and stable principal. It does not accept a browser idempotency hash and never accepts a caller-selected principal. For this pilot integration, the unique business key is `(tenant_id,principal_ref,business_operation_id)`; this tenant scope supersedes the older docs/43 generic principal-only wording.
 
@@ -61,7 +62,7 @@ No browser idempotency-key mapping is stored in `operations.sqlite`. The launche
 
 ## Initialization contract
 
-Empty-file initialization takes `BEGIN IMMEDIATE`, creates the exact allowlisted schema, and atomically inserts exactly one metadata row `(singleton=1,schema_version=3)`, one free lease row `(singleton_id=1,run_epoch=NULL,generation=NULL,operation_id=NULL,updated_at=0)`, one immutable capacity policy row selected from the configured production or isolated-fixture profile, and the global sentinel counter `(global,X'',zeroblob(32),0)`. It sets `PRAGMA user_version=3` before commit. Tenant and principal zero counters are inserted only in a Prepare transaction that also inserts the matching allocation; rollback leaves no orphan scope. Startup verifies singleton cardinality, exact configured policy, scope inventory, counts, and pragmas before opening admission. Any mismatch rejects without schema/data/version writes.
+Empty-file initialization takes `BEGIN IMMEDIATE`, creates the exact allowlisted schema, and atomically inserts exactly one metadata row `(singleton=1,schema_version=3)`, one free lease row `(singleton_id=1,run_epoch=NULL,generation=NULL,operation_id=NULL,updated_at=0)`, one immutable capacity policy row selected from the configured production or isolated-fixture profile, and the global sentinel counter `(global,X'',zeroblob(32),0)`. It seeds `run_root_ledger_meta` with `(singleton=1,schema_version=3,control_generation=0x0000000000000001)`, then sets `PRAGMA user_version=3` before commit. The first resident PilotControlReaper startup increments the seed to 2 in its pre-admission transaction; no RPC is accepted before this increment commits. The mutable control-generation field is excluded from the fixed-seed digest. Tenant and principal zero counters are inserted only in a Prepare transaction that also inserts the matching allocation; rollback leaves no orphan scope. Startup verifies singleton cardinality, exact configured policy, scope inventory, counts, and pragmas before opening admission.  Any mismatch rejects without schema/data/version writes. **Pilot initialization amendment (docs/62):** the new-file path sets and verifies `foreign_keys=ON` and `recursive_triggers=ON` per physical connection, preflights an empty schema with `user_version=0`, switches to WAL outside a transaction, then commits DDL, fixed seeds, and the final immutable `pilot_initialization_state` marker atomically. The marker table has the exact closed columns, checks, immutable triggers, and digest semantics specified in docs/62. Its fixed-seed manifest covers immutable reference/content rows only; mutable initial lease/capacity/launcher-anchor rows are initialized atomically but validated later against legal current state and the protected deployment anchor, never against their initial NULL/zero values. These marker, seed, and bootstrap-state rules are mandatory additions to the literal v3 DDL/seed inventory before implementation; existing databases are read-only preflighted and never initialized or reseeded.
 
 ## Trigger and inventory policy
 
@@ -77,4 +78,59 @@ Before COMMIT, validate (1) control-generation mode and handoff tuple; (2) lifec
 
 ## Review and next gate
 
-Architecture, backend, security, and test reviewers must approve this matrix and its exact source hashes before the literal DDL is frozen. The DDL manifest must state the exact columns, constraints, triggers, partial-index SQL, and named invariant SQL; each normalized statement receives a SHA-256. The companion `review/pilot-control-ledger-v3-schema-fault-manifest-20261021.json` is the stable schema/fault test source and hash-binds docs/51-53. It must cover empty initialization, exact v3 reopen, v2/partial/tampered rejection without schema/data/`user_version` mutation, pooled-connection pragmas, REPLACE/UPSERT resistance, all transition edges, the four branch shapes (created, EEXIST, prepared-cancel, no-root), capacity races, and the numeric one-million-row benchmark profile in docs/52. Capacity reads must hit exactly the global, tenant, and principal counter rows; only the allocation INSERT trigger increments them and records first-crossing alert events, and offline reconciliation checks exact equality against permanent allocation tombstones and policy thresholds. Scope-key vectors must include global `X''/zeroblob(32)`, tenant `X'5431'/zeroblob(32)`, and principal `X'5431'/X'0000000000000000000000000000000000000000000000000000000000000000'`, with all cross-kind sentinel variants rejected. Only then may ledger mutation code be implemented.
+Architecture, backend, security, and test reviewers must approve this matrix and its exact source hashes before the literal DDL is frozen. The DDL manifest must state the exact columns, constraints, triggers, partial-index SQL, and named invariant SQL; each normalized statement receives a SHA-256. The companion `review/pilot-control-ledger-v3-schema-fault-manifest-20261021.json` is the stable schema/fault test source and binds docs/50-54, docs/62-63, and the compiled schema-inventory baseline; review this complete input set at identical hashes. Its 48 cases cover empty initialization, exact v3 reopen, v2/partial/tampered rejection without schema/data/`user_version` mutation, pooled-connection pragmas, REPLACE/UPSERT resistance, all transition edges, the four branch shapes (created, EEXIST, prepared-cancel, no-root), capacity races, intent-binding digest/signature integrity, and the numeric one-million-row benchmark profile in docs/52. Capacity reads must hit exactly the global, tenant, and principal counter rows; only the allocation INSERT trigger increments them and records first-crossing alert events, and offline reconciliation checks exact equality against permanent allocation tombstones and policy thresholds. Scope-key vectors must include global `X''/zeroblob(32)`, tenant `X'5431'/zeroblob(32)`, and principal `X'5431'/X'0000000000000000000000000000000000000000000000000000000000000000'`, with all cross-kind sentinel variants rejected. Only then may ledger mutation code be implemented.
+
+### Intent binding v3 schema delta (design-only)
+
+The following literal DDL is the proposed docs/63 addition. It is not yet in the compiled `schema_inventory_v3.json` and authorizes neither code nor database writes. Existing v3 databases are rejected unchanged; this is not an in-place migration. Before implementation, regenerate the complete DDL manifest/inventory and its fault cases from this delta and review exact hashes.
+
+```sql
+CREATE TABLE run_root_ledger_meta (
+    singleton INTEGER NOT NULL PRIMARY KEY CHECK (singleton=1),
+    schema_version INTEGER NOT NULL CHECK (schema_version=3),
+    control_generation BLOB NOT NULL
+        CHECK (typeof(control_generation)='blob' AND length(control_generation)=8
+               AND control_generation > X'0000000000000000')
+) STRICT;
+
+CREATE TRIGGER run_root_ledger_meta_update_guard BEFORE UPDATE ON run_root_ledger_meta
+WHEN NEW.singleton IS NOT OLD.singleton
+  OR NEW.schema_version IS NOT OLD.schema_version
+  OR typeof(NEW.control_generation)!='blob'
+  OR length(NEW.control_generation)!=8
+  OR NEW.control_generation<=OLD.control_generation
+BEGIN SELECT RAISE(ABORT,'invalid control generation advance'); END;
+
+CREATE TABLE intent_binding (
+    handle_hash BLOB NOT NULL PRIMARY KEY
+        CHECK (typeof(handle_hash)='blob' AND length(handle_hash)=32),
+    principal_ref BLOB NOT NULL
+        CHECK (typeof(principal_ref)='blob' AND length(principal_ref)=32),
+    decision TEXT NOT NULL CHECK (decision IN ('BOUND','EXPIRED')),
+    event_time_ns INTEGER NOT NULL CHECK (event_time_ns > 0),
+    run_epoch BLOB
+        CHECK (run_epoch IS NULL OR (typeof(run_epoch)='blob' AND length(run_epoch)=16)),
+    control_generation BLOB NOT NULL
+        CHECK (typeof(control_generation)='blob' AND length(control_generation)=8
+               AND control_generation > X'0000000000000000'),
+    row_digest BLOB NOT NULL
+        CHECK (typeof(row_digest)='blob' AND length(row_digest)=32),
+    CHECK ((decision='BOUND' AND typeof(run_epoch)='blob' AND length(run_epoch)=16)
+        OR (decision='EXPIRED' AND run_epoch IS NULL))
+) STRICT, WITHOUT ROWID;
+
+INSERT INTO run_root_ledger_meta(singleton,schema_version,control_generation)
+VALUES (1,3,X'0000000000000001');
+
+CREATE TRIGGER intent_binding_no_update BEFORE UPDATE ON intent_binding
+BEGIN SELECT RAISE(ABORT,'intent_binding is immutable'); END;
+CREATE TRIGGER intent_binding_no_delete BEFORE DELETE ON intent_binding
+BEGIN SELECT RAISE(ABORT,'intent_binding is immutable'); END;
+CREATE TRIGGER intent_binding_no_replace BEFORE INSERT ON intent_binding
+WHEN EXISTS (SELECT 1 FROM intent_binding WHERE handle_hash=NEW.handle_hash)
+BEGIN SELECT RAISE(ABORT,'intent_binding is immutable'); END;
+```
+
+`IncrementControlGeneration` is a single-use, startup-only typed write capability. The typed store decodes the eight-byte big-endian counter, checks for `math.MaxUint64`, computes exactly `n+1`, writes under the OS single-writer lock, reads back the exact value, and commits before RPC admission. The trigger only checks that the row identity/schema version remain fixed and that the new value is a strictly greater eight-byte BLOB; it calls no application-defined SQL function, so connections retain `trusted_schema=OFF`. A skipped value after uncertain commit is allowed; wrap, reuse, or admission before commit is not. `row_digest` is `SHA-256(ASCII("en-words-intent-binding-row-v1\\0") || canonical-CBOR([handle_hash,principal_ref,decision,event_time_ns,run_epoch-or-null,control_generation]))`. SQLite enforces storage type and length only; the trusted typed store MUST recompute the digest from the canonical tuple before INSERT/COMMIT and reject mismatch without mutation. Startup replay and every receipt/read path MUST recompute and compare it; mismatch quarantines the ledger before RPC readiness and retains quota capacity. SQLite need not implement SHA-256. The meta row's existing no-delete/no-replace guards remain. Exact hash names for this DDL and the replacement update trigger are generated into `schema_inventory_v3.json` only after review.
+
+The existing `run_root_ledger_meta_no_update` trigger is replaced by `run_root_ledger_meta_update_guard`. The connection authorizer permits this table's UPDATE only inside `IncrementControlGeneration`; the DDL guard preserves the other columns and requires a strictly increasing eight-byte BLOB. The typed startup method enforces exactly one unsigned-u64 increment and checks overflow before writing. Initialization inserts `control_generation=X'0000000000000001'`; after acquiring the OS singleton lock, first service startup commits value 2 before RPC admission. A crash after that commit but before readiness consumes the value; next startup increments again. The mutable counter is excluded from fixed-seed digest. An exhausted `0xffffffffffffffff` counter blocks startup without wrap or reseed.

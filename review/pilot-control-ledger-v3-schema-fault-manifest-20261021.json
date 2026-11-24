@@ -4,11 +4,14 @@
   "created_utc": "2026-10-21",
   "status": "DESIGN_ONLY_NOT_IMPLEMENTED",
   "source_hashes": {
-    "docs/51-pilot-control-ledger-v3-sdd.md": "13e3e2d6859623f8c6f424d87e139fe684bde5cd48d4506dd3e8b9ca276b2a26",
-    "docs/52-pilot-control-ledger-v3-physical-model-decisions.md": "4a33744b224cbf5ea3c94149c451218f38598fe64bc2a42ffd10054e1f86bef5",
-    "docs/53-pilot-control-ledger-v3-physical-schema-matrix.md": "9709f5e61705e7e2089c0191021e86de4914ff621a182099734d0fa4be53cb74",
-    "docs/54-pilot-runroot-stage-a-implementation-delta.md": "c4c0dd80d56df92f265da2a0b9b18bb754267595faf6510c1899398aa2841070",
-    "docs/50-pilot-runroot-product-orchestration-sdd.md": "fa699830239aa0463c574cff4ae2ff7aa6f85b6a163d57b6abdb3907bcbaa52f"
+    "docs/50-pilot-runroot-product-orchestration-sdd.md": "53f450dcb139bc10aee48e38006adadbb1491bb1889538892a37dce37f70bf12",
+    "docs/51-pilot-control-ledger-v3-sdd.md": "236af90bc914e325b62367338328bcd769f769f85fcfcbe8972410b0b58c363a",
+    "docs/52-pilot-control-ledger-v3-physical-model-decisions.md": "eac7115e9fb30c0a2eb2b470dadd24bbf2ba0b2b5b69978298bc64f9b5107cd7",
+    "docs/53-pilot-control-ledger-v3-physical-schema-matrix.md": "a1074766827e010f7247c985c4e957ad3f193b8a38f0503be052fa2aa0ca5dac",
+    "docs/54-pilot-runroot-stage-a-implementation-delta.md": "2a430df671493f0ca4386b46742207a74104f0821b5e63eb0014f4693580e733",
+    "docs/62-pilot-vfs-initialization-and-recovery-amendment.md": "44333074581018d3a98d0b0cf8aab8edaf53d0c195ea3429bb71a33221e04ed8",
+    "docs/63-pilot-intent-quota-journal-sdd.md": "366e726cce3d7715864e48013fc9145047a87338a8f69459915e0a3e909ab6b6",
+    "server/internal/pilotcontrol/schema_inventory_v3.json": "38173f3c9cddae29e2627505e17058a9a97bab265502cd87d84d78c6fc8af672"
   },
   "cases": [
     {
@@ -266,7 +269,7 @@
     {
       "case_id": "PERF-01",
       "area": "million-row-benchmark",
-      "initial_state": "Linux x86-64 reference host, 4 dedicated vCPU, 16 GiB RAM, local NVMe, Ubuntu 24.04 LTS, SQLite 3.45.x pinned image; Go release; WAL/synchronous FULL; 1,000,000 allocation/business rows, 100,000 principals, 10 tenants; 64 KiB payload+receipt+event bytes per 100 rows. Benchmark-only immutable caps global=1,500,000, tenant=250,000, principal=10,000. Run warm-cache and cold-cache datasets separately.",
+      "initial_state": "Linux x86-64 reference host, 4 dedicated vCPU, 16 GiB RAM, local NVMe, Ubuntu 24.04 LTS, SQLite 3.45.1 (3045001, source ID 2024-01-30 16:01:20 e876e51a0ed5c5b3126f52e532044363a014bc594cfefa87ffb5b82257cc467a) pinned image; Go release; WAL/synchronous FULL; 1,000,000 allocation/business rows, 100,000 principals, 10 tenants; 64 KiB payload+receipt+event bytes per 100 rows. Benchmark-only immutable caps global=1,500,000, tenant=250,000, principal=10,000. Run warm-cache and cold-cache datasets separately.",
       "named_barrier": "perf01.after_seed_before_measure",
       "action": "Run 5 warm-up rounds and 30 measured rounds. Before each mutating batch, restore read-only 1,000,000-row baseline; restore excluded from timing. New-admission batch: 10,000 distinct admissions, each completed and closed. Prepare separate exact-at-capacity datasets for global, one tenant, and one principal rejection (10,000 attempts each per round); other scopes remain below cap. Prepare separate active-run dataset for 10,000 legal closes per round. Exact replay uses baseline. Capture raw samples and environment.",
       "oracle": "Pass only if capacity lookup reads exactly three counter rows by PK (<=3 rows); allocation INSERT trigger updates those three; replay p95<=10ms; new admission and capacity rejection p95<=50ms; writer-lock p99<=100ms; no hot-path scans; quota race zero overshoot. Each workload uses prepared independent datasets and samples only the named operation; publish raw samples, p50/p95/p99, lock hold, scans, WAL peak, DB size and cache prep.",
@@ -340,8 +343,8 @@
       "area": "init-marker",
       "initial_state": "New empty database after WAL setup; no application schema or init marker.",
       "named_barrier": "schema37.before_init_transaction",
-      "action": "Create the reviewed v3 schema, immutable reference seeds, mutable bootstrap rows, then insert initialization marker as final statement and commit.",
-      "oracle": "Exactly one marker row; schema/seed digests are 32-byte BLOBs tied to reviewed embedded manifests; marker is immutable; WAL setup is outside the transaction; commit is atomic.",
+      "action": "On an empty database, execute the exact inventoried DDL and canonical fixed-seed payload in one BEGIN IMMEDIATE transaction; write user_version=3, insert the singleton initialization marker as the final DML statement, then commit.",
+      "oracle": "Exactly one marker row records format_version=1 and 32-byte BLOB hashes of the exact reviewed schema inventory and canonical seed-manifest bytes; marker is immutable; user_version precedes the marker; WAL setup is outside the transaction; schema, bootstrap rows, marker and user_version commit or roll back atomically.",
       "status": "BLOCKED_NOT_IMPLEMENTED"
     },
     {
@@ -358,8 +361,8 @@
       "area": "init-marker-digest",
       "initial_state": "Complete marker with wrong hash, wrong SQLite storage type, wrong byte length, duplicate row, or modified embedded manifest.",
       "named_barrier": "schema39.before_ready",
-      "action": "Validate marker against build-time approved schema and seed digests and inspect embedded payload integrity.",
-      "oracle": "QUARANTINED before readiness; digest type must be BLOB of exactly 32 bytes; no mutation or app dispatch.",
+      "action": "Validate singleton marker format, row cardinality, storage classes and 32-byte digests against the build-time schema inventory and canonical fixed-seed manifest; mutate either manifest and retry preflight.",
+      "oracle": "QUARANTINED before readiness for missing/duplicate/malformed marker, wrong digest/type/length or changed embedded payload; no mutation, reseed, user_version change or app dispatch.",
       "status": "BLOCKED_NOT_IMPLEMENTED"
     },
     {
@@ -378,6 +381,69 @@
       "named_barrier": "schema41.after_commit_before_ready",
       "action": "Restart and validate schema, marker, fixed seeds, mutable-row invariants, and all digests.",
       "oracle": "Accept only a complete exact marker plus full validation; otherwise QUARANTINED; never reseed or dispatch application work before READY.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-42",
+      "area": "intent-binding-ddl",
+      "initial_state": "Empty v3 database initialized from the reviewed DDL delta.",
+      "named_barrier": "schema42.before_manifest_compare",
+      "action": "Generate normalized full schema inventory including run_root_ledger_meta.control_generation, pilot_initialization_state and its immutable guards, intent_binding and its three immutability triggers.",
+      "oracle": "Exact user object names and normalized SQL hashes match regenerated inventory; object count and DDL digest are updated and bound by the initialization marker; literal sqlite_ prefix filtering excludes only SQLite-owned objects; the old inventory is rejected.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-43",
+      "area": "intent-binding-checks",
+      "initial_state": "Fresh v3 schema with no intent_binding rows.",
+      "named_barrier": "schema43.before_insert_guard",
+      "action": "Try valid BOUND/EXPIRED and malformed hashes, principal, epoch/state combinations, zero generation, duplicate handle, UPDATE, DELETE, INSERT OR REPLACE.",
+      "oracle": "Only exact valid row inserts; BOUND has 16-byte epoch, EXPIRED has NULL; duplicate/replacement/update/delete abort and rows remain byte-identical.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-44",
+      "area": "control-generation-startup",
+      "initial_state": "Fresh v3 initialized with control_generation=1 and fixed seed digest.",
+      "named_barrier": "schema44.before_startup_increment",
+      "action": "Start resident PilotControlReaper; crash before increment commit, after commit before ready, retry startup, and initialize a fresh database.",
+      "oracle": "No RPC before increment commits. First ready instance observes 2; uncertain/pre-ready committed increments are skipped, never reused. Fixed-seed digest excludes counter.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-45",
+      "area": "control-generation-overflow",
+      "initial_state": "Meta counter is 0xffffffffffffffff; startup capability is not armed.",
+      "named_barrier": "schema45.before_generation_overflow",
+      "action": "Attempt service startup and attempts by unarmed connection to update counter.",
+      "oracle": "Startup refuses before RPC admission with no wrap/reseed; unarmed updates abort and all other meta columns remain unchanged.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-46",
+      "area": "intent-binding-crash-recovery",
+      "initial_state": "Launcher binding_pending plus either no ledger row, durable BOUND, or durable EXPIRED row.",
+      "named_barrier": "schema46.before_cross_store_reconcile",
+      "action": "Crash/restart through pending?ledger BOUND?local bound and expiry?ledger EXPIRED?local marker boundaries, including pending recovery at/after expiry.",
+      "oracle": "Reuse exact pending epoch only before expiry; after expiry with no BOUND commit EXPIRED at actual time, cancel pending and never spawn. Existing BOUND/EXPIRED is reconciled idempotently; no epoch reassignment or backdating.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-47",
+      "area": "intent-binding-row-digest-integrity",
+      "initial_state": "Fresh v3 schema with a valid intent_binding decision row, plus an independently corrupted fixture whose row_digest differs from the canonical tuple.",
+      "named_barrier": "schema47.before_digest_recompute",
+      "action": "Through the typed store, attempt a valid bind with a supplied wrong digest; create two independent corrupted database fixtures by flipping one digest bit. On fixture A, verify reopen/startup validation rejects before RPC readiness. On fixture B, independently verify receipt/read validation detects the mismatch on an already initialized test instance. Include wrong-field and wrong-digest combinations; do not count a skipped read assertion after startup rejection as coverage.",
+      "oracle": "Typed insertion recomputes SHA-256 over the fixed domain and canonical CBOR tuple before commit; mismatches reject with no row, receipt, journal, or response mutation. Fixture A is quarantined before readiness; fixture B read/replay is independently rejected and quarantined. Both emit safe integrity diagnostics and retain quota capacity. SQLite length/type CHECK is not accepted as digest verification.",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "case_id": "SCHEMA-48",
+      "area": "intent-binding-receipt-authenticity",
+      "initial_state": "A committed BOUND/EXPIRED row has a verified canonical row_digest; quota service pins the resident PilotControlReaper public-key fingerprint and receives a receipt over authenticated local IPC from the registered launcher.",
+      "named_barrier": "schema48.before_quota_settlement",
+      "action": "Exercise valid receipt, modified field/signature, unpinned key, wrong principal/handle/decision, replayed receipt, launcher peer substitution, and crash after ledger commit before receipt delivery.",
+      "oracle": "Only the resident service signature over the exact committed-row receipt and authenticated registered-launcher peer permit settlement. Invalid signature, key pin, tuple, or peer rejects with no BOUND/EXPIRED journal mutation; exact replay is idempotent. A post-commit lost receipt is recovered from the ledger and reissued identically; key rotation is unavailable absent its separately reviewed procedure.",
       "status": "BLOCKED_NOT_IMPLEMENTED"
     }
   ],

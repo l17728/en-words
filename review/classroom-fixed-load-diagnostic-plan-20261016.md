@@ -1,4 +1,6 @@
-# 课堂持久工具固定负载诊断（待评审执行）
+# 课堂持久工具固定负载诊断（预执行基线）
+
+> 状态：本方案已完成文档评审并于 2026-10-16 唯一执行一次。结果见[固定负载诊断结果](classroom-fixed-load-diagnostic-result-20261016.md)及[计划复审](classroom-fixed-load-diagnostic-plan-review-20261016.json)。本计划保留为冻结的执行前设计，不构成再次运行授权。
 
 目的：定位已反复出现、尚未关闭的热事务收尾长尾。历史 G09 `classroom.say` finalize 22.594 秒见 `duplex-browser-g1-review-20261015.md`；本轮 SUB02 `classroom.start_repeat` finalize 21.678 秒。二者同属成功事务收尾延迟，尚不能认定共同物理根因。单次 SUB02 诊断仅得到 70ms、0 慢样本，不能关闭此问题。
 
@@ -41,8 +43,8 @@ WAL 文件长度是分配/保留的大小，不能等同本轮新增帧、有效
 
 只在新 `.test-tools` 隔离副本新增 opt-in `_test.go` harness、函数名采样 helper，以及 `agenttransaction.go` 的只观察阶段 hook（callback/finalize 起止，nil hook 默认无行为）；不替换 driver、不编辑正式 server。父进程 runner 固定一次执行、目录拒绝覆盖、记录原/诊断源码与二进制 SHA、完整数据分母和 owned 清理。正式跑前只做 helper 的摘要脱敏、预算/上限和 started 未 finished 归类短离线测试。
 
-正常收尾检查数据库 audit 行数与成功调用相符、snapshot 最终存在、任务来源与 trace 对齐；检查在 180 秒剩余预算内完成且单列耗时，不能扩大总预算。若对应审计错误或数目不符，诊断有效性失败，不用于速度结论。
+正常收尾不能只检查 audit 行数和 snapshot 存在：还须核对 audit 增量、每条 audit 的 tool/actor/role/trace/OK 身份、可信任务日志与唯一 task ID 证明及同课 trace 的映射，并比较最终 snapshot 的完整序列化内容与最后合法机器状态。若数据库 audit schema 不含 task ID，只能说明 task 关联来自可信任务日志，不能描述成数据库外键。末核必须在 180 秒剩余预算内完成且单列耗时，不能扩大总预算。若对应审计错误或数目不符，诊断有效性失败，不用于速度结论。
 
 判读只允许：慢栈落在 sql.Tx/driverConn 锁可支持 Go/连接锁等待线索；落在 SQLite COMMIT/WAL/checkpoint/系统同步函数可支持驱动内路径线索。没有 syscall 单次时长或 OS 文件跟踪证据，不能声称已量出 fsync/AV/设备故障。两次约 20 秒与 busy_timeout/autocheckpoint 的关系均待证；不得按相近数字推导重试次数。若固定负载未复现，完整保留 50 次结果，不追跑，原长尾仍未关闭。
 
-本文件仅设计，等待架构实际审查与主审执行批准。
+本文件是执行前的冻结设计基线。固定负载结果没有复现长尾、没有慢栈样本，都不能关闭历史 21.678 秒或 22.594 秒事件，也不能证明两次事件有共同物理原因。函数栈名只作为定位线索；不能单独区分调度延迟、文件系统同步、杀毒软件干扰或 SQLite 锁/检查点根因。任何后续取证都需另立方案、独立评审和明确授权，不能通过重跑本固定实验来追求慢样本。

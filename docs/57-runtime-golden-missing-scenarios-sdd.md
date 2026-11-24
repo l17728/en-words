@@ -1,5 +1,11 @@
 # Runtime Golden Harness Completion SDD
 
+EEXIST control frames are decoded as a closed protocol: reject duplicate or unknown JSON keys, missing/null required fields, trailing JSON values, wrong field types, and unknown message types; enforce a type-specific semantic schema. Poll retries `EINTR`; `POLLERR` and `POLLNVAL` are fatal descriptor/protocol errors. On Linux SOCK_SEQPACKET, a zero-byte read at peer close cannot be distinguished from a queued zero-length record, so peer closure at a required barrier is fatal rather than `NOT RUN`. Fault-path E2E tests must assert a process-specific bounded cleanup record (`reaped=true`, `cleanup=CLEAN`, `timed_out=false`) as well as the expected failure marker.
+
+The child sends a terminal `DONE` frame with the reserved sequence value `0` after all wrappers finish and the callback trace is durably published; ordinary frames continue to use contiguous positive sequence numbers. The parent accepts normal completion only after this typed terminal frame, then independently waits for and verifies child exit; EOF before `DONE` is a protocol failure. The initial `UNAVAILABLE` path also requires `DONE`, clean exit status, bounded reap, and successful final trace publication before it can be `NOT RUN`.
+
+A zero-length `SOCK_SEQPACKET` record remains malformed even if peer hangup is reported at the same time; inspect `MSG_EOR` before classifying zero-byte peek as EOF. The initial `UNAVAILABLE` path is only `NOT RUN` after child exit code zero, bounded reap, and successful final trace publication.
+
 ## Status and boundary
 
 This SDD covers only the two rows in docs/56 that the current candidate generator hard-codes as `NOT RUN`: `VFSFLAGS-SIDECAR-EEXIST-REOPEN` and `PAGER-HOT-ROLLBACK-EXCLUSIVE`. It authorizes test-only Linux/CGo helpers and disposable child processes. It does not implement or register a private production VFS, change SQLite production wiring, or promote host-VFS observations to canonical goldens.
