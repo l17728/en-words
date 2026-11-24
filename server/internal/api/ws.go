@@ -590,6 +590,12 @@ func (a *App) handleWS(c *gin.Context) {
 					if rejected {
 						if a.DuplexStore != nil {
 							room.discardDeferredEffects()
+							if err := a.DuplexStore.RejectReceipt(ctx, tk.StudentID, lessonID, receipt.DecisionID); err != nil {
+								a.Log.ErrorCtx(ctx, "duplex", "receipt_reject_failed", map[string]any{
+									"lesson_id": lessonID, "student_id": tk.StudentID,
+									"decision_id": receipt.DecisionID, "error": err.Error(),
+								})
+							}
 						}
 						for _, frame := range frames {
 							_ = client.Send(frame)
@@ -599,7 +605,7 @@ func (a *App) handleWS(c *gin.Context) {
 					}
 					effectsStatus := "completed"
 					if a.DuplexStore != nil && !rejected {
-						if err := a.DuplexStore.CommitSnapshot(ctx, tk.StudentID, lessonID, receipt.DecisionID, room.durableSnapshot()); err != nil {
+						if err := a.DuplexStore.CommitSnapshot(ctx, tk.StudentID, lessonID, receipt.DecisionID, beforeState, room.durableSnapshot()); err != nil {
 							room.discardDeferredEffects()
 							_ = room.restoreDurableSnapshot(beforeState)
 							_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "commit_pending_recovery", "utterance_id": shadowIdentity.Utterance})
