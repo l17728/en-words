@@ -90,6 +90,7 @@ TTS 回执的 `origin_context` 绑定音频开始播放时的课堂 epoch/turn�
 - 目前 deferred actions 是 `classroom.Action`，Teacher Agent 的解析结果及审计由 `callAgentTool` 各自事务生成。将 action 意图直接放入 outbox 再于恢复时重跑工具不满足冻结最终 payload/同事务审计；此边界须先重构出可在确认事务内执行的受信事务工具 executor，再接入 Room。不得通过将 Agent 工具调用改成无审计快捷路径规避该约束。
 - Room rejection 现在通过 `RejectReceipt` 将预留收据终结为 `rejected`，并有存储回归；端到端竞态和跨进程 receipt 旅程仍未验收。旧 DuplexOutbox 表结构迁移、双连接/双进程真实 SQLite Playwright 崩溃旅程尚未全部验收。
 - 只有状态为 `committed` 且 fingerprint 相同的 receipt 可被 `Commit` 视为幂等成功；`committing/rejected` 冲突。删除了可脱离状态事务单独把 receipt 标为 committed 的 `FinalizeReceipt`；已有 checkpoint 读取时也验证 JSON 与 SQLite 版本边界。
+- 当前提交复验：`go test ./... -count=1`、`go vet ./...`、`go test -race ./internal/store -run TestDuplex -count=1` 通过；`web/playwright.duplex.config.ts` 使用本次构建的 server binary 通过 **9/9**。这些回归验证已接线的 Shadow/预检路径和存储原语，不覆盖尚未实现的 Outbox ACK/跨进程恢复旅程。
 
 ### 评审决议
 
