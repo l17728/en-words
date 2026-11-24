@@ -186,6 +186,31 @@ func TestEnglishSpeechUsesDedicatedLocalRoute(t *testing.T) {
 	require.Equal(t, wav, got)
 }
 
+func TestSynthesizeForPinsApprovedServiceModelAndVoice(t *testing.T) {
+	wav := pcmWAVFixture()
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/tts-en/speech" {
+			t.Errorf("unexpected route %s", r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		var body map[string]any
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		require.Equal(t, "approved-model", body["model"])
+		require.Equal(t, "en-GB-teacher", body["voice"])
+		_, _ = w.Write(wav)
+	}))
+	defer s.Close()
+	c, err := New(s.URL, nil)
+	require.NoError(t, err)
+	c.Services["approved-service"] = Service{ID: "approved-service", Model: "approved-model", Capabilities: []string{"tts"}}
+	got, err := c.SynthesizeFor(context.Background(), "approved-service", "approved-model", "en-GB-teacher", "teacher", "en")
+	require.NoError(t, err)
+	require.Equal(t, wav, got)
+	_, err = c.SynthesizeFor(context.Background(), "approved-service", "different-model", "en-GB-teacher", "teacher", "en")
+	require.Error(t, err, "a worker may not override the approved model")
+}
+
 func TestProfileRoutesRequestsToAssignedServices(t *testing.T) {
 	wav := pcmWAVFixture()
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

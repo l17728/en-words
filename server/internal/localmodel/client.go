@@ -339,17 +339,34 @@ func (c *Client) Transcribe(ctx context.Context, audio []byte, filename, languag
 }
 
 func (c *Client) Synthesize(ctx context.Context, text, lang string) (audio []byte, err error) {
+	id := c.serviceID("tts_zh")
+	if lang == "en" {
+		id = c.serviceID("tts_en")
+	}
+	return c.SynthesizeFor(ctx, id, c.Services[id].Model, "default", text, lang)
+}
+
+// SynthesizeFor performs synthesis through one explicitly pinned discovered
+// service/model/voice. Resident workers use it to honor the server-approved
+// immutable job capability rather than their own mutable default profile.
+func (c *Client) SynthesizeFor(ctx context.Context, serviceID, model, voice, text, lang string) (audio []byte, err error) {
 	ctx = obs.WithChild(ctx, "tts")
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 	start := time.Now()
-	defer func() { c.mediaResult(ctx, "tts", lang, len(audio), start, err) }()
-	id, path := c.serviceID("tts_zh"), "/api/tts/speech"
+	defer func() { c.mediaResultPinned(ctx, "tts", model, lang, len(audio), start, err) }()
+	path := "/api/tts/speech"
 	if lang == "en" {
-		id, path = c.serviceID("tts_en"), "/api/tts-en/speech"
+		path = "/api/tts-en/speech"
 	}
-	if (lang != "en" && lang != "zh") || !c.Has(id, "tts") || len([]rune(text)) > 300 || strings.TrimSpace(text) == "" {
+	if (lang != "en" && lang != "zh") || serviceID == "" || !c.Has(serviceID, "tts") || model == "" || c.Services[serviceID].Model != model || len([]rune(text)) > 300 || strings.TrimSpace(text) == "" {
 		return nil, fmt.Errorf("model console: unsupported speech request")
+	}
+	if voice == "" {
+		voice = "default"
+	}
+	if len(voice) > 100 {
+		return nil, fmt.Errorf("model console: unsupported speech voice")
 	}
 	queueStart := time.Now()
 	if err := c.acquireTTS(ctx); err != nil {
@@ -360,7 +377,7 @@ func (c *Client) Synthesize(ctx context.Context, text, lang string) (audio []byt
 	if waited := time.Since(queueStart).Milliseconds(); waited > 0 {
 		c.Log.InfoCtx(ctx, "provider", "model_queue_acquired", map[string]any{"task": "tts", "language": lang, "wait_ms": waited})
 	}
-	body, _ := json.Marshal(map[string]any{"model": c.Services[id].Model, "input": text, "voice": "default", "response_format": "wav"})
+	body, _ := json.Marshal(map[string]any{"model": model, "input": text, "voice": voice, "response_format": "wav"})
 	raw, err := c.request(ctx, path, "application/json", bytes.NewReader(body), MaxAudio)
 	if err != nil {
 		return nil, err
@@ -390,4 +407,17 @@ func (c *Client) mediaResult(ctx context.Context, task, lang string, bytes int, 
 	} else {
 		c.Log.InfoCtx(ctx, "provider", "model_request_completed", fields)
 	}
+}
+
+func (c *Client) mediaResultPinned(ctx context.Context, task, model, lang string, bytes int, start time.Time, err error) {
+	fields := map[string]any{"task": task, "model": model, "language": lang, "bytes": bytes, "duration_ms": time.Since(start).Milliseconds()}
+	if err != nil {
+		fields["reason"] = "invalid_media_or_provider_failure"
+		if ctx.Err() != nil {
+			fields["reason"] = "canceled_or_timeout"
+		}
+		c.Log.ErrorCtx(ctx, "provider", "model_request_failed", fields)
+		return
+	}
+	c.Log.InfoCtx(ctx, "provider", "model_request_completed", fields)
 }

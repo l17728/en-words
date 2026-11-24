@@ -6,6 +6,7 @@ import { useAuthStore } from '../stores/auth'
 import { ExclusiveAction } from '../interaction/exclusive-action'
 import { LatestRead } from '../interaction/latest-read'
 import LadderSettings from '../components/LadderSettings'
+import SpeechAgentsPanel from '../components/SpeechAgentsPanel'
 
 export default function AdminPage() {
   const nav = useNavigate()
@@ -85,6 +86,7 @@ export default function AdminPage() {
       <Button onClick={() => nav('/settings')}>学习设置</Button>
       <Button onClick={() => { logout(); nav('/login') }}>退出</Button></Space>
     <LadderSettings />
+    <SpeechAgentsPanel />
     <Card title="学生反馈待办" style={{ marginBottom: 16 }} extra={<Button onClick={() => setTodoAttempt(n => n + 1)}>刷新待办</Button>}>
       {todoError && <Alert type="error" title={todoError} />}
       <List dataSource={todos} locale={{ emptyText: '暂无反馈待办' }} renderItem={todo => <List.Item key={todo.id}

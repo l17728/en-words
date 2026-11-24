@@ -52,6 +52,7 @@ func (a *App) Router() *gin.Engine {
 	authed := v.Group("", a.authMW())
 	a.registerProviderRoutes(authed)
 	a.registerSpeechMaterialRoutes(authed)
+	a.registerSpeechAgentRoutes(authed, v)
 	a.registerTeacherAnalysisRoutes(authed)
 	a.registerModelProfileRoutes(authed)
 	a.registerPilotRoutes(authed)
@@ -339,6 +340,17 @@ func (a *App) Router() *gin.Engine {
 		if !a.TestMode && a.Clock.Now().Before(lesson.OpenAt) {
 			c.JSON(http.StatusOK, fail(errForbidden, "lesson not open yet"))
 			return
+		}
+		if c.Query("mode") == "text" {
+			a.Log.InfoCtx(c.Request.Context(), "speech", "speech_material_degraded_text", map[string]any{"lesson_id": id, "student_id": claimsOf(c).UID, "reason": "user_selected_text_mode"})
+		}
+		if a.DB != nil && a.Local != nil && c.Query("e2e") != "1" && c.Query("mode") != "text" {
+			ready, rev, readyErr := a.speechMaterialsReady(id)
+			if readyErr != nil || !ready {
+				a.Log.InfoCtx(c.Request.Context(), "speech", "speech_material_gate_blocked", map[string]any{"lesson_id": id, "manifest_revision": rev, "reason": "not_ready"})
+				c.JSON(http.StatusOK, fail(http.StatusConflict, "speech_materials_pending"))
+				return
+			}
 		}
 		room, snap, err := a.Rooms.EnterContext(c.Request.Context(), id, claimsOf(c).UID)
 		if err != nil {

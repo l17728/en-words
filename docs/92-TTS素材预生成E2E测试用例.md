@@ -1,6 +1,6 @@
 # TTS 素材预生成 E2E 测试用例
 
-测试使用现有 isolated server harness、隔离 SQLite、可控 `/api/v1/speech/synthesize` stub、固定两条词条和管理员/学生账号，运行 headless Chromium。服务端 stub 计数器和 JSON 日志是合成次数的唯一证据；ASR 不在本套缓存断言中。每例结束删除 fixture，禁止依赖运行顺序。
+测试使用 isolated server harness、隔离 SQLite、可控 Model Console HTTP TTS stub、固定词条和管理员/多学生账号，运行 headless Chromium。stub 提供 `/api/models`、`/api/tts/speech` 和 `/api/tts-en/speech`，可控制失败/延迟并计数合成调用；音频使用固定 WAV fixture。ASR 不在本套缓存断言中。每例使用独立词条，禁止依赖运行顺序。
 
 | 编号 | 场景 | 核心断言 |
 |---|---|---|
@@ -16,8 +16,26 @@
 | E2E-TTS-10 | 管理员强刷 | 管理员按词条强制刷新后仅新 revision 重新生成，普通学生无刷新权限。 |
 | E2E-TTS-11 | 轮询可靠性 | 进度响应乱序、重复或短暂超时不回退 UI；最终状态以 manifest revision 为准。 |
 | E2E-TTS-12 | 观察证据 | 测试从 trace_id 读取服务端日志，验证 scan/job/cache-hit/ready/gate 事件链完整且不含密钥或原文。 |
+| E2E-TTS-13 | 驻留执行器管理 | 管理员签发短时 enrollment、仅显示一次令牌；设备可轮换和撤销，普通用户无操作入口。 |
 
-执行细则：E2E-TTS-02 断言固定高度进度容器的 bounding box 不变、开始按钮 `disabled` 到 `enabled` 只发生一次；E2E-TTS-03 断言 stub 计数为 1 且两名学生的 `manifest_revision` 相同；E2E-TTS-07 通过 harness 重启服务并注入过期 lease；E2E-TTS-08 调用 `POST .../cancel` 后注入迟到结果并断言 revision 冲突；E2E-TTS-10 断言普通学生为 403/业务拒绝；E2E-TTS-11 注入乱序和延迟轮询响应，断言进度单调不回退；E2E-TTS-12 只读取测试日志文件并扫描密钥、完整文本、绝对路径。
+执行细则：Playwright 用例在 `web/e2e/tts-material-prewarm.spec.ts`，共 13 条，分别锁定扫描、状态 ETag 与课程权限、缓存命中、未就绪门禁、朗读规范化文本、跨学生共享、Profile 隔离/回切、强刷权限、失败重试、取消后迟到结果、固定进度区、旧 manifest 响应拒绝、文字降级。E2E-TTS-07 的 SQLite 关闭/重开过期 lease 恢复由 `TestSpeechMaterialProgressRecoveryReclaimsExpiredLease` 覆盖；E2E-TTS-12 的 trace 与脱敏由 `TestSpeechMaterialFailureLogsRetainTraceAndSafeCategory` 覆盖。旧 revision 不一致由浏览器响应拦截注入；完整并发/重启由 Go 测试补齐。
 
-通过标准：12/12 通过，失败分支至少各执行一次，关键用例连续无 flaky 重跑 2 次；E2E-TTS-02、03、06、07、08、09、11 必须同时有对应 Go 单测/集成测试。任何上游 429、网络断开或浏览器刷新不得造成重复计费式合成或课堂状态推进。两名学生并发和权限隔离是阻断门。
+通过标准：Playwright 13/13 通过，Go 单测/集成/竞态用例通过，关键 Playwright 场景连续无 flaky 重跑 2 次；E2E-TTS-02、03、06、07、08、09、11 均须有对应 Go 用例。真实外部 TTS 服务和真人课堂属于另外的环境验收，不用 stub 结果替代。任何上游 429、网络断开或浏览器刷新不得造成重复计费式合成或课堂状态推进。跨学生共享和权限隔离是阻断门。
 
+## 2026-11-23 自动化验收
+
+- `web/e2e/tts-material-prewarm.spec.ts`：13/13 通过，headless Chromium + 隔离 SQLite + 本地 TTS stub。
+- `go test ./... -count=1`、`go vet ./...` 通过；`go test -race ./internal/api -run 'TestSpeech(Manifest|Material|Cache)|TestLessonSpeechTexts' -count=1` 通过。
+- 当前验收不覆盖本机 8090 模型平台的真实发音质量、resident adapter、真人课堂及 8 人容量。
+
+
+## 新增后端回归用例
+
+- `TestSpeechMaterialRoutesScanEnsureProgressCancelAndOwnership`：真实 API Router 扫描、预生成、失败进度、ETag/304、越权拒绝及取消路径。
+- `TestSpeechCacheKernelLockSerializesAcrossProcesses`：子进程持锁时第二进程等待至超时；持有者退出后锁可再次获得。
+- `TestSpeechCacheSharesSingleSynthesisAcrossProcesses`：两个独立进程争用相同 cache key，只调用一次 TTS，最终 WAV 和 SQLite ready/hash/size 元数据一致。
+- `TestSpeechMaterialWorkerQueuedAtShutdownExitsWithoutClaim`：关闭会取消等待槽位的 worker，且关闭后不会再启动任务。
+- `TestSpeechCacheRegenerationReactivatesCorruptFailedAsset`：缓存损坏后重生成可将资产元数据恢复为 ready，散列及大小正确。
+- `TestSpeechMaterialsReadyRequiresEveryCurrentProfileWAV`：无持久层、未迁移表、全部素材有效、缺失文件四种门禁状态。
+- `TestSpeechMaterialWorkerPersistsSuccessAndProviderFailure`：worker 成功与上游失败分别写入 ready/failed 状态，失败保留安全错误类别并递增 attempt。
+- `TestSpeechCacheUnavailableAndInvalidProviderOutput`、`TestSpeechCacheRefreshReplacesExistingAsset`：缺失 provider、无效 WAV 拒绝、缓存命中与管理员强刷重新合成。

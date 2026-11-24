@@ -10,8 +10,12 @@ type SpeechMaterialJob struct {
 	CacheKey         string `gorm:"uniqueIndex:idx_speech_job_key_revision"`
 	ManifestRevision string `gorm:"uniqueIndex:idx_speech_job_key_revision"`
 	LessonID         int64  `gorm:"index"`
-	Language         string
+	Language         string `gorm:"index:idx_speech_job_capability"`
 	SpeechText       string
+	ServiceID        string `gorm:"index:idx_speech_job_capability"`
+	Model            string `gorm:"index:idx_speech_job_capability"`
+	Voice            string
+	AgentID          string `gorm:"index"`
 	Status           string `gorm:"index"`
 	Attempt          int
 	AttemptToken     string
