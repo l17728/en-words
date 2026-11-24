@@ -43,4 +43,4 @@
 
 首音控制协议 CI 曾在浏览器连接阶段失败。根因是 Playwright 手动进入课堂时未携带 `?e2e=1`，导致课堂预先生成素材门禁被触发；此隔离 fixture 不启动驻留 TTS worker，故授权流程未完成，WebSocket 未建立。这是 E2E 入口遗漏测试模式标志，不是 ASR/TTS 模型延迟。
 
-修正 URL 后，本机 Windows 完整运行 `review/first_audio_matrix_control.py`：隔离 SQLite 与真实 `api.App` 启动一个生命周期，跑两次无头浏览器课堂旅程，中间复位一次。结果 `two_journeys_passed`、reset_count=1、两次均各通过一次且无重试。首音起播观测分别 730.6 ms、1089.7 ms，播放帧至合成 `onstart` 分别 2.7 ms、3.1 ms。该结果验证本机双旅程和复位闭环，不替代最新 SHA 的 Linux CI；Linux 重验待完成。
+修正 URL 后，本机 Windows 完整运行 `review/first_audio_matrix_control.py`：隔离 SQLite 与真实 `api.App` 启动一个生命周期，跑两次无头浏览器课堂旅程，中间复位一次。结果 `two_journeys_passed`、reset_count=1、两次均各通过一次且无重试。首音起播观测分别 730.6 ms、1089.7 ms，播放帧至合成 `onstart` 分别 2.7 ms、3.1 ms。最新 SHA `d1ca1b9e75cf65e5e31f1fcb1ddfc57e96dce9e5` 的 GitHub Actions Linux 两旅程/reset 与 Windows 边界作业均通过。该证据验证隔离课堂旅程和复位闭环，不替代 Pilot Pinned VFS/RunRoot 验收或真人课堂体验。
