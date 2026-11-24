@@ -46,4 +46,4 @@ scan、cache-hit、job-started、ready、failed、gate-blocked、cancelled、tex
 
 最终复验补记：13 条素材 E2E 全部重复运行一次，共 26/26 通过；前端 build 与 lint 通过。独立架构、前端/E2E、安全评审均未发现 P0/P1/P2。新增子进程合成测试覆盖共享 SQLite 和缓存目录，断言相同 key 仅触发一次 TTS 且 ready 文件散列/大小一致。真人课堂、主观音质和多设备容量仍需线下验收。
 
-截至 2026-11-24，当前 Go API 包整体覆盖率实测为 79.1%，仍低于项目 80% 门槛。期间补充了驻留端 API、教师分析 worker/路由、课报读取和模型 Profile 恢复回归；完整 `go test ./... -count=1` 与 `go vet ./...` 通过，但不能替代覆盖率验收。因此 TTS 专项自动化通过，仓库 API 覆盖率质量门尚未封板。
+截至 2026-11-24，当前 Go API 包整体覆盖率实测为 79.3%，仍低于项目 80% 门槛。期间补充了驻留端 API、教师分析 worker/路由、课报读取、模型 Profile 恢复及 WebSocket 输入边界回归；完整 `go test ./... -count=1` 与 `go vet ./...` 通过，但不能替代覆盖率验收。因此 TTS 专项自动化通过，仓库 API 覆盖率质量门尚未封板。
