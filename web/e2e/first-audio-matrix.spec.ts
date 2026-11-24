@@ -121,6 +121,7 @@ test('FIRST_AUDIO_MATRIX_JOURNEY_V1 first entry reaches subtitle and first audio
   })
 
   const frames: Array<Record<string, unknown>> = []
+  const connectionDiagnostics: string[] = []
   let observedSocket = false
   const classroomSockets = new Set<object>()
   const closedClassroomSockets = new Set<object>()
@@ -138,6 +139,10 @@ test('FIRST_AUDIO_MATRIX_JOURNEY_V1 first entry reaches subtitle and first audio
     if (url.pathname !== '/ws/classroom' || Number(url.searchParams.get('lessonId')) !== lessonId) return
     observedSocket = true
     classroomSockets.add(socket)
+    socket.on('socketerror', error => {
+      const status = error.match(/(?:response|status)(?: code)?\D{0,8}(\d{3})/i)?.[1]
+      connectionDiagnostics.push(status ? `ws_handshake_${status}` : 'ws_transport_error')
+    })
     socket.on('close', () => closedClassroomSockets.add(socket))
     socket.on('framereceived', ({ payload }) => {
       try {
@@ -145,6 +150,23 @@ test('FIRST_AUDIO_MATRIX_JOURNEY_V1 first entry reaches subtitle and first audio
         frames.push(frame)
       } catch { /* non-JSON control frames are irrelevant to the journey */ }
     })
+  })
+  page.on('requestfailed', request => {
+    const url = new URL(request.url())
+    if (url.pathname !== '/ws/classroom') return
+    const failure = request.failure()?.errorText || ''
+    const category = failure.includes('ERR_CONNECTION_REFUSED') ? 'connection_refused'
+      : failure.includes('ERR_CONNECTION_RESET') ? 'connection_reset'
+        : failure.includes('ERR_TIMED_OUT') ? 'timed_out' : 'request_failed'
+    connectionDiagnostics.push(`ws_${category}`)
+  })
+  page.on('response', response => {
+    const url = new URL(response.url())
+    if (response.status() >= 400 && url.pathname.startsWith(`/api/v1/classroom/lessons/${lessonId}/`)) {
+      const stage = url.pathname.endsWith('/enter') ? 'enter' : url.pathname.includes('/speech-materials/')
+        ? 'speech_materials' : 'classroom_api'
+      connectionDiagnostics.push(`${stage}_http_${response.status()}`)
+    }
   })
 
   await page.goto('/')
@@ -154,9 +176,12 @@ test('FIRST_AUDIO_MATRIX_JOURNEY_V1 first entry reaches subtitle and first audio
     state.entryAt = performance.now()
     window.history.pushState({}, '', path)
     window.dispatchEvent(new PopStateEvent('popstate'))
-  }, `/classroom/${lessonId}`)
-  await expect(page).toHaveURL(new RegExp(`/classroom/${lessonId}$`))
-  await expect(page.getByText('已连接', { exact: true })).toBeVisible({ timeout: 15_000 })
+  }, `/classroom/${lessonId}?e2e=1`)
+  await expect(page).toHaveURL(new RegExp(`/classroom/${lessonId}\\?e2e=1$`))
+  await expect.poll(async () => {
+    if (await page.getByText('已连接', { exact: true }).isVisible().catch(() => false)) return 'connected'
+    return connectionDiagnostics[0] || (observedSocket ? 'ws_connecting' : 'ws_not_opened')
+  }, { timeout: 15_000 }).toBe('connected')
   await expect.poll(() => frames.some(isShowWord), { timeout: 20_000 }).toBeTruthy()
   await expect.poll(() => frames.some(isPlayback), { timeout: 20_000 }).toBeTruthy()
   await expect.poll(() => page.evaluate(() => window.__firstAudioMatrix?.started.length || 0), { timeout: 20_000 }).toBeGreaterThan(0)
