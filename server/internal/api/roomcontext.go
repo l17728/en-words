@@ -70,6 +70,8 @@ func (r *Room) activeLocked(c Client) bool {
 
 // Legacy WS resume remains FIFO, but cannot resume a replacement connection.
 func (r *Room) resumeClient(ctx context.Context, client Client) {
+	r.mutationMu.RLock()
+	defer r.mutationMu.RUnlock()
 	lease, owned, err := r.operationLease(ctx)
 	if err != nil {
 		return

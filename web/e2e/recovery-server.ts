@@ -16,7 +16,7 @@ export const test = base.extend<{ duplexPilot: boolean; duplexShadow: boolean; l
   server: [async ({ request, localModel, modelSchema, overdueHarness, duplexPilot, duplexShadow, productionSchedule }, runFixture, info) => {
     const binary = overdueHarness ? process.env.E2E_HARNESS_BINARY : process.env.E2E_SERVER_BINARY
     if (!binary) throw new Error('E2E_SERVER_BINARY is required for owned-process restart acceptance')
-    const model = { pending: 0, canceled: 0, feedbackCalls: 0, judgeCalls: 0 }
+    const model = { pending: 0, canceled: 0, feedbackCalls: 0, judgeCalls: 0, asrCalls: 0 }
     const pending = new Set<ServerResponse>()
     const platform = createServer((req, res) => {
       applySchemaConnectionPolicy(modelSchema, res)
@@ -26,7 +26,12 @@ export const test = base.extend<{ duplexPilot: boolean; duplexShadow: boolean; l
       let raw = ''
       req.on('data', chunk => { raw += chunk })
       req.on('end', () => {
-        if (req.url === '/api/asr/transcriptions') { res.end(JSON.stringify({ text: 'cat' })); return }
+        if (req.url === '/api/asr/transcriptions') {
+          model.asrCalls++
+          const text = duplexShadow && model.asrCalls === 1 ? 'banana' : 'cat'
+          res.end(JSON.stringify({ text }))
+          return
+        }
         if (!raw.trim()) { res.statusCode = 503; res.end(JSON.stringify({ error: 'empty_platform_request' })); return }
         const body = JSON.parse(raw)
         const content = body.messages?.find((m: any) => m.role === 'user')?.content || ''

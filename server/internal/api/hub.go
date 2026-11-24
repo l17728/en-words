@@ -32,6 +32,9 @@ type Client interface {
 
 // Room 一间课堂。
 type Room struct {
+	// mutationMu is a barrier for durable duplex confirmation. Normal Room
+	// operations use RLock; voice_confirm holds Lock across prepare/commit/flush.
+	mutationMu          sync.RWMutex
 	inputContext        context.Context
 	generation          generationToken
 	pendingJudge        *roomJudgment
@@ -42,6 +45,7 @@ type Room struct {
 	epoch               string
 	lastTurnSignature   string
 	turnVersion         uint64
+	duplexInputRevision uint64
 	seenEvents          map[string]bool
 	eventOrder          []string
 	mu                  sync.Mutex
@@ -230,6 +234,8 @@ func (h *Hub) EnterContext(ctx context.Context, lessonID, studentID int64) (*Roo
 	}
 	h.mu.Unlock()
 
+	r.mutationMu.RLock()
+	defer r.mutationMu.RUnlock()
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.retired {
@@ -284,6 +290,8 @@ func (r *Room) JoinContext(ctx context.Context, c Client) {
 }
 
 func (r *Room) joinWithLease(ctx context.Context, c Client) {
+	r.mutationMu.RLock()
+	defer r.mutationMu.RUnlock()
 	effect, err := r.generation.Permit()
 	if err != nil {
 		if closer, ok := c.(interface{ Close() error }); ok {
@@ -331,6 +339,8 @@ func (r *Room) joinWithLease(ctx context.Context, c Client) {
 }
 
 func (r *Room) Leave(c Client) {
+	r.mutationMu.RLock()
+	defer r.mutationMu.RUnlock()
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.clients, c)
@@ -414,11 +424,32 @@ func (r *Room) flushDeferredEffects(ctx context.Context) []Msg {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if len(r.deferredActions) == 0 {
+		r.app.Log.InfoCtx(r.traceContext(), "duplex", "deferred_effects_flush_empty", map[string]any{
+			"lesson_id": r.lessonID, "phase": r.machine.Phase(),
+		})
 		r.deferEffects = false
 		return nil
 	}
+	r.app.Log.InfoCtx(r.traceContext(), "duplex", "deferred_effects_flush_started", map[string]any{
+		"lesson_id": r.lessonID, "phase": r.machine.Phase(), "action_count": len(r.deferredActions),
+	})
 	r.deferEffects = false
-	return r.broadcastEffectsLocked(ctx, true)
+	previousInputContext := r.inputContext
+	r.inputContext = ctx
+	taskContext, err := r.teacherTaskLocked()
+	r.inputContext = previousInputContext
+	if err != nil {
+		out := r.effectFailureLocked("task_unavailable")
+		r.app.Log.ErrorCtx(r.traceContext(), "duplex", "deferred_effects_task_failed", map[string]any{
+			"lesson_id": r.lessonID, "phase": r.machine.Phase(),
+		})
+		return out
+	}
+	out := r.broadcastEffectsLocked(taskContext, true)
+	r.app.Log.InfoCtx(r.traceContext(), "duplex", "deferred_effects_flush_completed", map[string]any{
+		"lesson_id": r.lessonID, "phase": r.machine.Phase(), "frame_count": len(out), "pending_action_count": len(r.deferredActions),
+	})
+	return out
 }
 
 func (r *Room) currentItemView() (classroom.QuizItemView, bool) {
@@ -499,6 +530,10 @@ func (r *Room) broadcastEffectsLocked(ctx context.Context, allowJudge bool) []Ms
 	}
 	r.lastActions = actions
 	if r.deferEffects {
+		r.deferredActions = append(r.deferredActions, actions...)
+		r.app.Log.InfoCtx(r.traceContext(), "duplex", "classroom_effects_deferred", map[string]any{
+			"lesson_id": r.lessonID, "phase": r.machine.Phase(), "action_count": len(actions),
+		})
 		return nil
 	}
 	bound, err := withTeacherEffects(ctx, r.lastActions, r.machine.Snapshot())
@@ -661,6 +696,8 @@ func (r *Room) broadcastActionsOnly() []Msg {
 
 // HandleEvent 学生事件入口；返回本步产生的全部帧（REST/WS 双通道）。
 func (r *Room) HandleEvent(ev classroom.Event) []Msg {
+	r.mutationMu.RLock()
+	defer r.mutationMu.RUnlock()
 	lease, err := r.app.generations.acquireFor(context.Background(), r.generation)
 	if err != nil {
 		return nil
@@ -694,6 +731,8 @@ func (r *Room) handleEventLocked(ev classroom.Event) []Msg {
 
 // FireTimeout 强制触发当前相位超时（测试钩子/平台兜底）。
 func (r *Room) FireTimeout() []Msg {
+	r.mutationMu.RLock()
+	defer r.mutationMu.RUnlock()
 	lease, err := r.app.generations.acquireFor(context.Background(), r.generation)
 	if err != nil {
 		return nil
@@ -717,6 +756,8 @@ func (r *Room) FireTimeout() []Msg {
 
 // Tick 生产计时循环节拍：相位驻留超时才触发。
 func (r *Room) Tick() {
+	r.mutationMu.RLock()
+	defer r.mutationMu.RUnlock()
 	lease, err := r.app.generations.acquireFor(context.Background(), r.generation)
 	if err != nil {
 		return
@@ -789,6 +830,8 @@ func (r *Room) Tick() {
 // HandleVoiceText 语音转写：指令优先→跟读判读→反馈捕获→作答（02 §12.1）。
 // 返回 (指令类型, 产生的帧)。
 func (r *Room) HandleVoiceText(text string) (string, []Msg) {
+	r.mutationMu.RLock()
+	defer r.mutationMu.RUnlock()
 	lease, err := r.app.generations.acquireFor(context.Background(), r.generation)
 	if err != nil {
 		return "", nil
@@ -908,6 +951,8 @@ func (r *Room) applyCommand(cmd string) []Msg {
 
 // SessionTimeout 会话超时暂停（R2-09）。
 func (r *Room) SessionTimeout() []Msg {
+	r.mutationMu.RLock()
+	defer r.mutationMu.RUnlock()
 	lease, err := r.app.generations.acquireFor(context.Background(), r.generation)
 	if err != nil {
 		return nil
@@ -935,6 +980,8 @@ func (r *Room) SessionTimeout() []Msg {
 
 // Resume 续课。
 func (r *Room) Resume() []Msg {
+	r.mutationMu.RLock()
+	defer r.mutationMu.RUnlock()
 	lease, err := r.app.generations.acquireFor(context.Background(), r.generation)
 	if err != nil {
 		return nil
@@ -1064,6 +1111,8 @@ func (h *Hub) Drop(lessonID int64) error {
 	h.mu.Unlock()
 	var closeErrors []error
 	if r != nil {
+		r.mutationMu.Lock()
+		defer r.mutationMu.Unlock()
 		r.mu.Lock()
 		r.retired = true
 		r.cancelJudgmentLocked()

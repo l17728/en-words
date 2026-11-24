@@ -71,6 +71,12 @@ func (r *Room) HandleClientEvent(e ClientEnvelope, ev classroom.Event, source ..
 	return r.HandleClientEventContext(context.Background(), e, ev, source...)
 }
 func (r *Room) HandleClientEventContext(ctx context.Context, e ClientEnvelope, ev classroom.Event, source ...Client) []Msg {
+	r.mutationMu.RLock()
+	defer r.mutationMu.RUnlock()
+	return r.handleClientEventContext(ctx, e, ev, source...)
+}
+
+func (r *Room) handleClientEventContext(ctx context.Context, e ClientEnvelope, ev classroom.Event, source ...Client) []Msg {
 	lease, ownedLease, leaseErr := r.operationLease(ctx)
 	if leaseErr != nil {
 		return []Msg{{"type": "event_rejected", "reason": "generation_retired", "event_id": e.EventID}}
@@ -172,6 +178,14 @@ func (r *Room) HandleClientVoiceSubmission(e ClientEnvelope, text string, source
 	return r.HandleClientVoiceSubmissionContext(context.Background(), e, text, source...)
 }
 func (r *Room) HandleClientVoiceSubmissionContext(ctx context.Context, e ClientEnvelope, text string, source ...Client) (string, string, []Msg) {
+	r.mutationMu.RLock()
+	defer r.mutationMu.RUnlock()
+	return r.handleClientVoiceSubmissionContext(ctx, e, text, source...)
+}
+
+// handleClientVoiceSubmissionContext is used only when the caller already
+// owns mutationMu for a larger durable duplex transaction.
+func (r *Room) handleClientVoiceSubmissionContext(ctx context.Context, e ClientEnvelope, text string, source ...Client) (string, string, []Msg) {
 	lease, ownedLease, leaseErr := r.operationLease(ctx)
 	if leaseErr != nil {
 		return "", "", []Msg{{"type": "event_rejected", "reason": "generation_retired", "event_id": e.EventID, "submission_id": e.SubmissionID}}
@@ -213,6 +227,11 @@ func (r *Room) HandleClientVoiceSubmissionContext(ctx context.Context, e ClientE
 	if command == "feedback" {
 		done["normalized_text"] = strings.TrimSpace(strings.ReplaceAll(payload, "\r\n", "\n"))
 	}
-	r.emitLocked(done)
+	// The duplex confirmation path defers this receipt until its SQLite commit
+	// succeeds. Broadcasting from inside ingress would acknowledge a decision
+	// before the durable state and confirmation receipt are committed.
+	if !r.deferEffects {
+		r.emitLocked(done)
+	}
 	return command, payload, append(out, done)
 }

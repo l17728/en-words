@@ -57,6 +57,28 @@ func duplexReceiptNeedsRecovery(receipt store.DuplexReceipt, now time.Time) bool
 	return !receipt.UpdatedAt.After(now) && now.Sub(receipt.UpdatedAt) >= duplexReceiptRecoveryWindow
 }
 
+// nextDuplexInputRevision makes each recognition attempt unique within the
+// classroom epoch. Classroom turns may remain unchanged after an unrecognized
+// or rejected answer, but a new audio lease still needs a fresh durable receipt.
+func nextDuplexInputRevision(turnRevision, previousRevision uint64) (uint64, bool) {
+	base := turnRevision
+	if previousRevision > base {
+		base = previousRevision
+	}
+	if base == ^uint64(0) {
+		return 0, false
+	}
+	return base + 1, true
+}
+
+func (r *Room) nextDuplexInputRevisionLocked() (uint64, bool) {
+	revision, ok := nextDuplexInputRevision(r.turnVersion, r.duplexInputRevision)
+	if ok {
+		r.duplexInputRevision = revision
+	}
+	return revision, ok
+}
+
 func pcm16WAV(pcm []byte, sampleRate int) []byte {
 	data := make([]byte, 44+len(pcm))
 	copy(data[0:], []byte("RIFF"))
@@ -446,8 +468,12 @@ func (a *App) handleWS(c *gin.Context) {
 				}
 				room.mu.Lock()
 				turn := room.contextLocked()
-				inputRevision := room.turnVersion
+				inputRevision, revisionOK := room.nextDuplexInputRevisionLocked()
 				room.mu.Unlock()
+				if !revisionOK {
+					_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "revision_exhausted"})
+					continue
+				}
 				shadowIdentity = duplex.Identity{Session: newToken(), Epoch: turn.Epoch, InputRevision: inputRevision, Utterance: newToken()}
 				var err error
 				shadowSession, err = duplex.New(shadowIdentity)
@@ -512,72 +538,100 @@ func (a *App) handleWS(c *gin.Context) {
 				_ = client.Send(Msg{"type": "voice_final", "event_id": envelope.EventID, "session_id": shadowIdentity.Session, "epoch": shadowIdentity.Epoch, "input_revision": finalRevision, "utterance_id": shadowIdentity.Utterance, "text": text})
 				_ = client.Send(Msg{"type": "voice_confirmation_required", "event_id": envelope.EventID, "session_id": shadowIdentity.Session, "epoch": shadowIdentity.Epoch, "input_revision": finalRevision, "utterance_id": shadowIdentity.Utterance, "text": text, "expires_ms": 8000})
 			case "voice_confirm":
-				if shadowSession == nil {
-					_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "stale_stream"})
-					continue
-				}
-				final, _ := m["text"].(string)
-				revision, _ := m["input_revision"].(float64)
-				textHash, _ := m["text_hash"].(string)
-				if err := shadowSession.ConfirmWithHash(shadowIdentity, uint64(revision), final, textHash, time.Now()); err != nil {
-					_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": duplexReason(err)})
-					continue
-				}
-				var receipt store.DuplexReceipt
-				if a.DuplexStore != nil {
-					var err error
-					receipt, err = a.DuplexStore.PrepareReceipt(ctx, store.DuplexReceipt{
-						DecisionID: shadowIdentity.Utterance,
-						LessonID:   lessonID, StudentID: tk.StudentID,
-						Epoch: shadowIdentity.Epoch, InputRevision: uint64(revision),
-						UtteranceID: shadowIdentity.Utterance, TextHash: textHash, Status: "committing",
-					})
-					if err != nil {
-						_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "receipt_conflict"})
-						continue
+				func() {
+					room.mutationMu.Lock()
+					defer room.mutationMu.Unlock()
+					if shadowSession == nil {
+						_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "stale_stream"})
+						return
 					}
-					if receipt.Status == "committed" {
-						_ = client.Send(Msg{"type": "voice_confirmed", "event_id": envelope.EventID, "utterance_id": shadowIdentity.Utterance, "command": "replayed", "commit_receipt": receipt.DecisionID, "replayed": true})
+					final, _ := m["text"].(string)
+					revision, _ := m["input_revision"].(float64)
+					textHash, _ := m["text_hash"].(string)
+					if err := shadowSession.ConfirmWithHash(shadowIdentity, uint64(revision), final, textHash, time.Now()); err != nil {
+						_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": duplexReason(err)})
+						return
+					}
+					var receipt store.DuplexReceipt
+					if a.DuplexStore != nil {
+						var err error
+						receipt, err = a.DuplexStore.PrepareReceipt(ctx, store.DuplexReceipt{
+							DecisionID: shadowIdentity.Utterance,
+							LessonID:   lessonID, StudentID: tk.StudentID,
+							Epoch: shadowIdentity.Epoch, InputRevision: uint64(revision),
+							UtteranceID: shadowIdentity.Utterance, TextHash: textHash, Status: "committing",
+						})
+						if err != nil {
+							a.Log.ErrorCtx(ctx, "duplex", "receipt_prepare_failed", map[string]any{
+								"lesson_id": lessonID, "student_id": tk.StudentID,
+								"epoch": shadowIdentity.Epoch, "input_revision": revision,
+								"utterance_id": shadowIdentity.Utterance, "error": err.Error(),
+							})
+							_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "receipt_conflict"})
+							return
+						}
+						if receipt.Status == "committed" {
+							_ = client.Send(Msg{"type": "voice_confirmed", "event_id": envelope.EventID, "utterance_id": shadowIdentity.Utterance, "command": "replayed", "commit_receipt": receipt.DecisionID, "replayed": true})
+							shadowSession = nil
+							return
+						}
+						if duplexReceiptNeedsRecovery(receipt, time.Now().UTC()) {
+							_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "commit_pending_recovery", "utterance_id": shadowIdentity.Utterance})
+							return
+						}
+					}
+					var beforeState classroom.State
+					if a.DuplexStore != nil {
+						beforeState = room.durableSnapshot()
+						room.beginDeferredEffects()
+					}
+					cmd, _, frames := room.handleClientVoiceSubmissionContext(ctx, envelope, final, client)
+					rejected := len(frames) > 0 && frames[0]["type"] == "event_rejected"
+					if rejected {
+						if a.DuplexStore != nil {
+							room.discardDeferredEffects()
+						}
+						for _, frame := range frames {
+							_ = client.Send(frame)
+						}
 						shadowSession = nil
-						continue
+						return
 					}
-					if duplexReceiptNeedsRecovery(receipt, time.Now().UTC()) {
-						_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "commit_pending_recovery", "utterance_id": shadowIdentity.Utterance})
-						continue
+					effectsStatus := "completed"
+					if a.DuplexStore != nil && !rejected {
+						if err := a.DuplexStore.CommitSnapshot(ctx, tk.StudentID, lessonID, receipt.DecisionID, room.durableSnapshot()); err != nil {
+							room.discardDeferredEffects()
+							_ = room.restoreDurableSnapshot(beforeState)
+							_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "commit_pending_recovery", "utterance_id": shadowIdentity.Utterance})
+							return
+						}
+						// flushDeferredEffects broadcasts through Room.emitLocked. Its
+						// returned frames are for REST/tests and must not be sent again
+						// by this WebSocket handler.
+						flushed := room.flushDeferredEffects(ctx)
+						for _, frame := range flushed {
+							if frame["type"] == "classroom_error" {
+								effectsStatus = "pending"
+								break
+							}
+						}
 					}
-				}
-				var beforeState classroom.State
-				if a.DuplexStore != nil {
-					beforeState = room.durableSnapshot()
-					room.beginDeferredEffects()
-				}
-				cmd, _, frames := room.HandleClientVoiceSubmissionContext(ctx, envelope, final, client)
-				rejected := len(frames) > 0 && frames[0]["type"] == "event_rejected"
-				if a.DuplexStore != nil && rejected {
-					room.discardDeferredEffects()
-				}
-				var deferredFrames []Msg
-				if a.DuplexStore != nil && !rejected {
-					if err := a.DuplexStore.CommitSnapshot(ctx, tk.StudentID, lessonID, receipt.DecisionID, room.durableSnapshot()); err != nil {
-						room.discardDeferredEffects()
-						_ = room.restoreDurableSnapshot(beforeState)
-						_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "commit_pending_recovery", "utterance_id": shadowIdentity.Utterance})
-						continue
+					if a.DuplexStore != nil {
+						// Durable mode suppresses Room.emitLocked until the commit, so
+						// these acknowledgement frames must be sent here. In memory-only
+						// mode ingress already broadcasts them through the Room.
+						for _, frame := range frames {
+							_ = client.Send(frame)
+						}
 					}
-					deferredFrames = room.flushDeferredEffects(ctx)
-				}
-				for _, frame := range frames {
-					_ = client.Send(frame)
-				}
-				for _, frame := range deferredFrames {
-					_ = client.Send(frame)
-				}
-				confirmed := Msg{"type": "voice_confirmed", "event_id": envelope.EventID, "utterance_id": shadowIdentity.Utterance, "command": cmd}
-				if a.DuplexStore != nil {
-					confirmed["commit_receipt"] = receipt.DecisionID
-				}
-				_ = client.Send(confirmed)
-				shadowSession = nil
+					confirmed := Msg{"type": "voice_confirmed", "event_id": envelope.EventID, "utterance_id": shadowIdentity.Utterance, "command": cmd}
+					confirmed["effects_status"] = effectsStatus
+					if a.DuplexStore != nil {
+						confirmed["commit_receipt"] = receipt.DecisionID
+					}
+					_ = client.Send(confirmed)
+					shadowSession = nil
+				}()
 			case "resume":
 				room.resumeClient(ctx, client)
 			}
