@@ -1,4 +1,4 @@
-﻿import { PlaybackContinuationWait, type WaitReason } from '../audio/continuation-wait'
+import { PlaybackContinuationWait, type WaitReason } from '../audio/continuation-wait'
 import { clientId } from '../interaction/client-id'
 import { AnswerFlight } from '../interaction/answer-flight'
 import { speechCache } from '../audio/speech-cache'
@@ -98,7 +98,8 @@ export default function ClassroomPage() {
     }
   }, [lessonId, userId, sessionToken])
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
-  const [speechMaterials, setSpeechMaterials] = useState<{ ready: number; total: number; pending: number; failed: number; can_start: boolean } | null>(null)
+  const [speechMaterials, setSpeechMaterials] = useState<{ ready: number; total: number; pending: number; failed: number; failure_codes?: string[]; can_start: boolean } | null>(null)
+  const speechManifestRef = useRef('')
   const [providers, setProviders] = useState<Capabilities | null>(null)
   const providersRef = useRef<Capabilities | null>(null)
   const localAudioRef = useRef<AbortController | null>(null)
@@ -157,8 +158,8 @@ export default function ClassroomPage() {
   const textOnlyStorageKey = `enwords.text-only.${userId}.${lessonId}`
   const textOnlyInputRef = useRef(sessionStorage.getItem(textOnlyStorageKey) || '')
   const [textOnlyMode, setTextOnlyMode] = useState(!!textOnlyInputRef.current)
-  const inputIdentity = (currentPhase: string, current: Snapshot | null) =>
-    `${lessonId}:${currentPhase}:${currentPhase === 'repeating' ? `${current?.word_idx ?? ''}:${current?.in_reteach ? 1 : 0}:${current?.word ?? ''}` : `${current?.quiz_item?.seq ?? ''}:${current?.quiz_word ?? ''}`}`
+  const inputIdentity = useCallback((currentPhase: string, current: Snapshot | null) =>
+    `${lessonId}:${currentPhase}:${currentPhase === 'repeating' ? `${current?.word_idx ?? ''}:${current?.in_reteach ? 1 : 0}:${current?.word ?? ''}` : `${current?.quiz_item?.seq ?? ''}:${current?.quiz_word ?? ''}`}`, [lessonId])
   const revokeInput = () => {
     const previous = inputGate.current.ready
     if (previous) console.debug('[classroom_input]', { event: 'revoked', phase: previous.phase, epoch: previous.epoch, turn: previous.turn })
@@ -588,6 +589,7 @@ export default function ClassroomPage() {
     stopListening()
     onlineRef.current = false; inputGate.current.reset(); setInputTurn(null); updateAnswer('')
     setSnapshot(null); setBubble(''); setEnded(false); setSummary(null); setWsOk(false)
+    speechManifestRef.current = ''
     asrFailurePendingRef.current = ''
     asrCaptureStartedRef.current = ''
     resumeRequestRef.current++
@@ -600,21 +602,29 @@ export default function ClassroomPage() {
       // Production classrooms wait for server-side TTS material preparation.
       // E2E fixtures deliberately bypass this gate and exercise the existing
       // deterministic speech stub path.
-      if (!new URLSearchParams(window.location.search).has('e2e')) {
+      const textFallback = sessionStorage.getItem(textOnlyStorageKey) === 'pending'
+      if (!new URLSearchParams(window.location.search).has('e2e') && !textFallback) {
         const ensure = await api.post<any>(`/classroom/lessons/${lessonId}/speech-materials/ensure`)
-        setSpeechMaterials({ ready: ensure.ready || 0, total: ensure.total || 0, pending: ensure.missing || 0, failed: 0, can_start: !!ensure.can_start })
+        if (!current()) throw new ApiError('Session changed', 401)
+        speechManifestRef.current = ensure.manifest_revision || ''
+        setSpeechMaterials({ ready: ensure.ready || 0, total: ensure.total || 0, pending: ensure.missing || 0, failed: ensure.failed || 0, can_start: !!ensure.can_start })
         for (let attempt = 0; attempt < 180 && !ensure.can_start; attempt++) {
           await new Promise(resolve => window.setTimeout(resolve, 500))
+          if (!current()) throw new ApiError('Session changed', 401)
           const progress = await api.get<any>(`/classroom/lessons/${lessonId}/speech-materials/progress`)
+          if (!current()) throw new ApiError('Session changed', 401)
+          if (progress.manifest_revision !== speechManifestRef.current) throw new ApiError('课程语音素材清单已变化，请重新准备', 409)
           setSpeechMaterials(progress)
           if (progress.can_start) break
           if (progress.failed > 0) throw new ApiError('语音素材生成失败，请重试或使用文字模式', 503)
         }
         const final = await api.get<any>(`/classroom/lessons/${lessonId}/speech-materials/progress`)
+        if (!current()) throw new ApiError('Session changed', 401)
+        if (final.manifest_revision !== speechManifestRef.current) throw new ApiError('课程语音素材清单已变化，请重新准备', 409)
         setSpeechMaterials(final)
         if (!final.can_start) throw new ApiError('语音素材尚未准备完成', 503)
       }
-      const r = await api.post<EnterResult>(`/classroom/lessons/${lessonId}/enter`)
+      const r = await api.post<EnterResult>(`/classroom/lessons/${lessonId}/enter${textFallback ? '?mode=text' : ''}`)
       if (!current()) throw new ApiError('Session changed', 401)
       setSnapshot(r.snapshot)
       setAsrFailure(!!r.snapshot.paused && !!r.snapshot.input_failed)
@@ -825,7 +835,7 @@ export default function ClassroomPage() {
       setTextOnlyMode(false)
       setAsrFailure(false)
     }
-  }, [phase, snapshot?.word, snapshot?.word_idx, snapshot?.in_reteach, snapshot?.quiz_word, snapshot?.quiz_item?.seq, textOnlyStorageKey])
+  }, [phase, snapshot, inputIdentity, textOnlyStorageKey])
   const resumeClassroom = async (textOnly = false) => {
     if (resuming) return
     asrFailurePendingRef.current = ''
@@ -941,7 +951,7 @@ export default function ClassroomPage() {
       }
       setListening(false); setLocalStage('idle')
     }
-      }, [readyContextKey, wsOk, providers?.asr, lessonId, phase, snapshot?.paused, ended, sessionToken, activeTextOnly])
+      }, [readyContextKey, wsOk, providers?.asr, lessonId, phase, snapshot?.paused, ended, sessionToken, activeTextOnly, inputTurn])
 
   // 相位驱动：进跟读/答题自动开麦；离场停麦（phase 声明之后）
   useEffect(() => {
@@ -1007,11 +1017,11 @@ export default function ClassroomPage() {
           {(phase === 'tts_seg' || phase === 'reteach_show') && <Button onClick={() => sendEvent('tts_skip', String(lastTtsSegmentRef.current))}>改用文字，跳过本段</Button>}</>} />}
       {connectionError && <Alert type="error" style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 1100, width: 'min(680px, calc(100vw - 32px))' }} title={connectionError.message} action={<>
         {/语音素材|TTS/.test(connectionError.message) && <Button onClick={() => { textOnlyInputRef.current = 'pending'; sessionStorage.setItem(textOnlyStorageKey, 'pending'); setTextOnlyMode(true); window.location.reload() }}>使用文字继续</Button>}
-        <Button onClick={() => window.location.reload()}>重新连接课堂</Button>
+        <Button onClick={() => window.location.reload()}>{/语音素材|TTS/.test(connectionError.message) ? '重试语音' : '重新连接课堂'}</Button>
         <Button onClick={() => nav('/dashboard')}>返回课程表</Button>
       </>} />}
       {localStage !== 'idle' && <div role="status" style={{ position: 'fixed', bottom: 92, left: '50%', transform: 'translateX(-50%)', zIndex: 1050, minWidth: 180, padding: '8px 14px', borderRadius: 8, background: 'rgba(15, 23, 42, .88)', color: '#fff', textAlign: 'center', pointerEvents: 'none' }}>{localStage === 'preparing' ? '正在准备麦克风' : localStage === 'recording' ? '正在录音' : '正在识别，请稍候'}</div>}
-      {speechMaterials && !speechMaterials.can_start && <div role="status" aria-label="正在准备语音素材" style={{ position: 'fixed', top: 64, left: '50%', transform: 'translateX(-50%)', zIndex: 1050, width: 'min(560px, calc(100vw - 32px))', padding: '10px 14px', background: '#fff', borderRadius: 8, boxShadow: '0 4px 18px rgba(0,0,0,.12)' }}><div>正在准备课堂语音素材：{speechMaterials.ready}/{speechMaterials.total || '…'}</div><Progress percent={speechMaterials.total ? Math.round(speechMaterials.ready * 100 / speechMaterials.total) : 0} showInfo /></div>}
+      {speechMaterials && !speechMaterials.can_start && <div role="status" aria-label="正在准备语音素材" style={{ position: 'fixed', top: 64, left: '50%', transform: 'translateX(-50%)', zIndex: 1050, width: 'min(560px, calc(100vw - 32px))', padding: '10px 14px', background: '#fff', borderRadius: 8, boxShadow: '0 4px 18px rgba(0,0,0,.12)' }}><div>{speechMaterials.failed > 0 ? `语音素材生成失败：${speechMaterials.ready}/${speechMaterials.total}，失败 ${speechMaterials.failed} 项（${speechMaterials.failure_codes?.join('、') || 'provider_failure'}）` : `正在准备课堂语音素材：${speechMaterials.ready}/${speechMaterials.total || '…'}`}</div><Progress status={speechMaterials.failed > 0 ? 'exception' : 'active'} percent={speechMaterials.total ? Math.round(speechMaterials.ready * 100 / speechMaterials.total) : 0} showInfo /></div>}
       {speechError && <Alert type="warning" style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 1100, width: 'min(680px, calc(100vw - 32px))' }} title={speechError} closable onClose={() => setSpeechError('')} />}
       <div style={{ flex: 1, display: 'grid', gridTemplateRows: '170px 72px 56px 72px 48px', alignContent: 'center', justifyItems: 'center', rowGap: 18, padding: 24 }}>
         {!snapshot ? (
