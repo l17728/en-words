@@ -32,17 +32,25 @@ func (a *App) ensureDefaultModelProfile() (store.ModelProfile, error) {
 		return p, nil
 	}
 	if row.TextService == "" {
-		id, created := row.ID, row.CreatedAt
+		id, created, active := row.ID, row.CreatedAt, row.Active
 		row = p
-		row.ID, row.CreatedAt = id, created
+		row.ID, row.CreatedAt, row.Active = id, created, active
 		if err := a.DB.Save(&row).Error; err != nil {
 			return row, err
 		}
 	}
 	if !row.Active {
 		var active store.ModelProfile
-		if err := a.DB.Where("active = ?", true).Order("id ASC").First(&active).Error; err == nil {
+		err := a.DB.Where("active = ?", true).Order("id ASC").First(&active).Error
+		if err == nil {
 			return active, nil
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return row, err
+		}
+		row.Active = true
+		if err := a.DB.Save(&row).Error; err != nil {
+			return row, err
 		}
 	}
 	return row, nil
