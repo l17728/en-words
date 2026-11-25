@@ -34,7 +34,13 @@ type trustedToolExecutor struct {
 }
 
 func (a *App) newTrustedToolExecutor(tx *gorm.DB) (*trustedToolExecutor, error) {
-	if tx == nil {
+	if tx == nil || tx.Statement == nil {
+		return nil, fmt.Errorf("outer transaction required")
+	}
+	if _, ok := tx.Statement.ConnPool.(interface {
+		Commit() error
+		Rollback() error
+	}); !ok {
 		return nil, fmt.Errorf("outer transaction required")
 	}
 	return &trustedToolExecutor{app: a, tx: tx, buffer: &tools.MemAuditor{}}, nil

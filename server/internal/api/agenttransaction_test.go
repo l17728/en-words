@@ -66,6 +66,8 @@ func TestTrustedToolExecutorRejectsUntrustedScopeAndMissingTransaction(t *testin
 
 	db, err := store.Open(filepath.Join(t.TempDir(), "trusted-tool-scope.db"))
 	require.NoError(t, err)
+	_, err = app.newTrustedToolExecutor(db)
+	require.Error(t, err, "a base GORM handle is not an outer transaction")
 	sqlDB, err := db.DB()
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = sqlDB.Close() })
