@@ -22,6 +22,71 @@ type committedToolError struct{ cause error }
 func (e *committedToolError) Error() string { return "tool committed; configuration refresh pending" }
 func (e *committedToolError) Unwrap() error { return e.cause }
 
+// trustedToolExecutor executes a capability through a task-private registry
+// bound to the caller's existing transaction. It never begins or commits a
+// transaction; the outer owner controls commit and Call writes audit rows into
+// that same transaction.
+type trustedToolExecutor struct {
+	app             *App
+	tx              *gorm.DB
+	buffer          *tools.MemAuditor
+	auditsPersisted int
+}
+
+func (a *App) newTrustedToolExecutor(tx *gorm.DB) (*trustedToolExecutor, error) {
+	if tx == nil {
+		return nil, fmt.Errorf("outer transaction required")
+	}
+	return &trustedToolExecutor{app: a, tx: tx, buffer: &tools.MemAuditor{}}, nil
+}
+
+func (e *trustedToolExecutor) Call(ctx context.Context, caller tools.Caller, name string, args any) (any, error) {
+	if e == nil || e.app == nil || e.tx == nil {
+		return nil, fmt.Errorf("trusted transaction executor unavailable")
+	}
+	if ctx == nil {
+		return nil, fmt.Errorf("trusted classroom task required")
+	}
+	task, err := taskFromContext(ctx, caller)
+	if err != nil || task.app != e.app || task.role != tools.RoleTeacherAgent || task.trigger != "classroom_event" || task.lessonID <= 0 {
+		return nil, fmt.Errorf("trusted classroom task required")
+	}
+	// Audit identity comes from the trusted task role, never a caller-supplied ID.
+	caller.ID = string(task.role)
+	raw, err := json.Marshal(args)
+	if err != nil {
+		return nil, err
+	}
+	cfg, err := config.NewStore(store.NewConfigPersister(e.tx), nil)
+	if err != nil {
+		return nil, err
+	}
+	reg := tools.New(e.buffer)
+	svc := agentServices{configDB: e.tx, config: cfg, memory: memory.NewService(store.NewMemoryRepo(e.tx)), scheduler: scheduler.NewService(store.NewSchedulerRepo(e.tx), cfg, e.app.Clock), report: func(id int64) (*classroom.Result, error) { return capabilityReportTx(e.tx, id) }, transactional: true}
+	if err = e.app.registerAgentTools(reg, svc); err != nil {
+		return nil, err
+	}
+	if err = e.app.registerTeacherTool(reg); err != nil {
+		return nil, err
+	}
+	result, callErr := reg.Call(ctx, caller, name, raw)
+	entries := e.buffer.Snapshot()
+	if e.auditsPersisted < len(entries) {
+		if err := persistToolAudits(e.tx, entries[e.auditsPersisted:], false); err != nil {
+			return nil, fmt.Errorf("persist trusted tool audit: %w", err)
+		}
+		e.auditsPersisted = len(entries)
+	}
+	return result, callErr
+}
+
+func (e *trustedToolExecutor) Audits() []tools.AuditEntry {
+	if e == nil || e.buffer == nil {
+		return nil
+	}
+	return e.buffer.Snapshot()
+}
+
 // callAgentTool gives each persistent mutation and its audit one unit of work.
 // A future multi-action executor must bind the same definitions to its outer tx.
 func (a *App) callAgentTool(ctx context.Context, name string, args any) (any, error) {

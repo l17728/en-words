@@ -102,3 +102,10 @@ TTS 回执的 `origin_context` 绑定音频开始播放时的课堂 epoch/turn�
 4. 补旧 schema 升级、多连接 CAS/ACK 竞态和 SQLite 故障注入；再做双进程真实 `api.App` Playwright 杀进程恢复旅程。
 
 以上第 1、2 项是当前阻塞。Pilot/Shadow 继续 opt-in；仓储单测通过不代表产品闭环，也不解除生产 Pilot、VFS、TLS、真人课堂或听感验收门。
+
+
+### 2026-11-25 Transaction executor verification update
+- Added `trustedToolExecutor`, which binds teacher classroom tools to the caller's GORM transaction. It accepts only a trusted teacher task for this App and derives audit identity from that task. It does not begin or commit the transaction.
+- Each tool call persists its new audit rows inside the same outer transaction. Tests cover missing transaction rejection, non-teacher task rejection, audit rollback/commit, and atomic audit persistence with `DuplexRepo.Commit`. Replaying an already committed decision does not rerun the tool callback or duplicate audit/outbox rows.
+- Verified with `go test ./internal/api -run 'TestTrustedToolExecutor|TestDuplexCommitCanAtomicallyPersistTrustedToolAudit' -count=1`, `go test -race ./internal/api -run 'TestTrustedToolExecutor|TestDuplexCommitCanAtomicallyPersistTrustedToolAudit' -count=1`, full `go test ./... -count=1`, `go vet ./...`, and the duplex Playwright config (9/9).
+- This is transaction infrastructure only. Production `voice_confirm` still uses `PrepareReceipt -> CommitSnapshot -> flushDeferredEffects`; Room checkpoint restore, WS effect ACK/TTS completion, and outbox recovery delivery remain unimplemented. Do not treat these checks as end-to-end outbox acceptance.
