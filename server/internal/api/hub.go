@@ -319,8 +319,8 @@ func (r *Room) joinWithLease(ctx context.Context, c Client) {
 			_ = closer.Close()
 		}
 	}
+	delete(r.clients, c) // A reused client must also receive a fresh snapshot before recovery frames.
 	r.currentCli = c
-	r.clients[c] = true
 	wasFinished := r.finished
 	// A new delivery lease also invalidates any uncommitted answer from the old
 	// connection. Recover the same item without grading or consuming an attempt.
@@ -328,8 +328,23 @@ func (r *Room) joinWithLease(ctx context.Context, c Client) {
 	r.turnVersion++
 	r.machine.RecoverDelivery(false)
 	r.phaseSince = r.app.Clock.Now()
-	_ = c.Send(r.snapshotLocked())
-	r.broadcastActionsOnly()
+	// Resolve delivery recovery before exposing the connection. Recovery may
+	// advance the classroom turn while preparing the first playback actions; a
+	// snapshot sent before that transition would briefly authorize stale input.
+	initialFrames := r.broadcastActionsOnly()
+	r.clients[c] = true
+	snapshot := r.snapshotLocked()
+	_ = c.Send(snapshot)
+	for _, frame := range initialFrames {
+		// broadcastActionsOnly assigns sequence numbers before the snapshot is
+		// built. Re-sequence these recovery frames at send time so the client does
+		// not discard them as stale after accepting the newer snapshot.
+		frame["seq"] = r.nextSeqLocked()
+		if frame["context"] != nil {
+			frame["context"] = r.contextLocked()
+		}
+		_ = c.Send(frame)
+	}
 	if wasFinished {
 		if result, ok := r.app.Report(r.lessonID); ok {
 			_ = c.Send(Msg{"type": "lesson_summary", "seq": r.nextSeqLocked(), "context": r.contextLocked(), "report": result.Report, "correct": result.Correct})

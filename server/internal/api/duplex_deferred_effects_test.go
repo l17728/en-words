@@ -53,6 +53,23 @@ func TestDuplexDeferredEffectsFlushOnlyAfterCommit(t *testing.T) {
 	require.Len(t, client.frames, firstFlushFrameCount, "a repeated flush must not replay audio")
 }
 
+func TestJoinSnapshotPrecedesRecoveryFramesWithCurrentContext(t *testing.T) {
+	_, _, _, room := setupRoom(t)
+	client := &fakeClient{}
+	room.Join(client)
+	require.NotEmpty(t, client.frames)
+	require.Equal(t, "state_snapshot", client.frames[0]["type"], "the fresh connection must receive its snapshot before playback")
+	snapshotContext := client.frames[0]["context"]
+	lastSeq := client.frames[0]["seq"].(int)
+	for _, frame := range client.frames[1:] {
+		require.Greater(t, frame["seq"].(int), lastSeq, "recovery frames must have a sequence newer than the snapshot")
+		lastSeq = frame["seq"].(int)
+		if frame["context"] != nil {
+			require.Equal(t, snapshotContext, frame["context"], "recovery frames must use the context already published in the snapshot")
+		}
+	}
+}
+
 func TestDuplexDeferredEffectsDiscardAndRestoreAfterCommitFailure(t *testing.T) {
 	_, _, _, room := setupRoom(t)
 	client := &fakeClient{}

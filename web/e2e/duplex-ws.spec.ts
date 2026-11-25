@@ -19,6 +19,10 @@ test('WS duplex shadow requires explicit confirmation before classroom progress'
 
   const result = await page.evaluate(async ({ lessonId, ticket, context }) => {
     const frames: any[] = []
+    const acceptedAfterSnapshot: any[] = []
+    const staleAfterSnapshot: any[] = []
+    let hasSnapshot = false
+    let lastAccepted = { epoch: '', seq: 0 }
     let liveContext = context
     const queued = new Map<string, any[]>()
     const waiters = new Map<string, Array<{ resolve: (frame: any) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>>()
@@ -26,6 +30,17 @@ test('WS duplex shadow requires explicit confirmation before classroom progress'
     const ws = new WebSocket(url)
     ws.addEventListener('message', event => {
       const frame = JSON.parse(String(event.data)); frames.push(frame)
+      if (frame.type === 'state_snapshot' && frame.context && typeof frame.seq === 'number') {
+        hasSnapshot = true
+        lastAccepted = { epoch: frame.context.epoch, seq: frame.seq }
+      } else if (hasSnapshot && frame.context?.epoch && typeof frame.seq === 'number') {
+        if (frame.context.epoch === lastAccepted.epoch && frame.seq <= lastAccepted.seq) {
+          staleAfterSnapshot.push(frame.type)
+          return
+        }
+        lastAccepted = { epoch: frame.context.epoch, seq: frame.seq }
+        acceptedAfterSnapshot.push(frame)
+      }
       if (frame.context) liveContext = frame.context
       if (frame.snapshot?.context) liveContext = frame.snapshot.context
       const pending = frame.type === 'voice_stream_error'
@@ -54,6 +69,8 @@ test('WS duplex shadow requires explicit confirmation before classroom progress'
     }
     await new Promise<void>((resolve, reject) => { ws.onopen = () => resolve(); ws.onerror = () => reject(new Error('ws_error')) })
     await waitFor('state_snapshot')
+    // The server must finish Join recovery before exposing its first snapshot;
+    // sending immediately from that snapshot catches stale-turn initialization.
     let eventIndex = 0
     const sendClassroomEvent = async (event: string) => {
       const eventId = `duplex-class-${++eventIndex}`
@@ -123,6 +140,7 @@ test('WS duplex shadow requires explicit confirmation before classroom progress'
     ws.close()
     const last = attempts[attempts.length - 1]
     return { confirmed: last.confirmed, transcript: last.final.text, attempts,
+      acceptedAfterSnapshot: acceptedAfterSnapshot.map(frame => frame.type === 'ui_action' ? frame.action?.type : frame.type), staleAfterSnapshot,
       phases: frames.filter(frame => frame.type === 'phase_changed').map(frame => frame.phase), frames: frames.map(frame => frame.type) }
   }, { lessonId, ticket: entered.ticket, context: entered.snapshot.context })
 
@@ -145,4 +163,6 @@ test('WS duplex shadow requires explicit confirmation before classroom progress'
   for (const attempt of result.attempts) expect(attempt.actionCountAfterConfirm).toBeGreaterThanOrEqual(attempt.actionCountBeforeConfirm)
   expect(result.frames).toContain('voice_confirmation_required')
   expect(result.frames).toContain('voice_confirmed')
+  expect(result.staleAfterSnapshot).toEqual([], 'Join recovery frames must not be discarded as stale after the snapshot')
+  expect(result.acceptedAfterSnapshot).toContain('play_tts', 'the client must consume the initial recovered playback action')
 })
