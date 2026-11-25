@@ -112,3 +112,7 @@ TTS 回执的 `origin_context` 绑定音频开始播放时的课堂 epoch/turn�
 
 - Review follow-up: constructor now rejects both `nil` and a base GORM handle; it requires the underlying connection pool to expose transaction `Commit` and `Rollback`. The negative regression verifies a base DB cannot be mistaken for the outer transaction.
 - Status correction: the trusted transaction executor foundation is implemented and reviewed. The remaining blocker is its production Room/WS integration and the associated recovery and delivery lifecycle.
+
+- Added `CallFrozen`: it canonicalizes the trusted tool result and compares it with the precomputed outbox payload. A mismatch returns an error so the outer transaction rolls back; regression verifies neither audit nor outbox rows survive. Matching payload commits once, and duplicate decision replay does not invoke the tool callback again. This helper is still infrastructure pending production Room integration.
+
+- `CallFrozen` parses JSON numbers with `UseNumber()` to preserve large integer IDs exactly; regression checks `int64` values above 2^53 and rejects a one-unit mismatch.

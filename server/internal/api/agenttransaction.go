@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -84,6 +85,40 @@ func (e *trustedToolExecutor) Call(ctx context.Context, caller tools.Caller, nam
 		e.auditsPersisted = len(entries)
 	}
 	return result, callErr
+}
+
+func canonicalFrozenJSON(raw []byte) ([]byte, error) {
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.UseNumber()
+	var frozen any
+	if err := decoder.Decode(&frozen); err != nil {
+		return nil, err
+	}
+	return json.Marshal(frozen)
+}
+
+// CallFrozen requires the trusted tool's result to equal the payload already
+// frozen into the outbox candidate. Any mismatch fails the outer transaction.
+func (e *trustedToolExecutor) CallFrozen(ctx context.Context, caller tools.Caller, name string, args any, expected json.RawMessage) error {
+	if len(expected) == 0 || len(expected) > 16<<10 || !json.Valid(expected) {
+		return fmt.Errorf("invalid frozen tool result")
+	}
+	result, err := e.Call(ctx, caller, name, args)
+	if err != nil {
+		return err
+	}
+	raw, err := json.Marshal(result)
+	if err != nil {
+		return err
+	}
+	canonicalExpected, err := canonicalFrozenJSON(expected)
+	if err != nil {
+		return err
+	}
+	if !bytes.Equal(raw, canonicalExpected) {
+		return fmt.Errorf("trusted tool result differs from frozen outbox payload")
+	}
+	return nil
 }
 
 func (e *trustedToolExecutor) Audits() []tools.AuditEntry {

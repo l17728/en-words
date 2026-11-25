@@ -14,6 +14,18 @@ import (
 	"gorm.io/gorm"
 )
 
+func TestCanonicalFrozenJSONPreservesLargeInteger(t *testing.T) {
+	const id int64 = 9007199254740993
+	result, err := json.Marshal(map[string]any{"word_id": id})
+	require.NoError(t, err)
+	canonical, err := canonicalFrozenJSON([]byte(`{ "word_id" : 9007199254740993 }`))
+	require.NoError(t, err)
+	require.Equal(t, string(result), string(canonical))
+	wrong, err := canonicalFrozenJSON([]byte(`{"word_id":9007199254740992}`))
+	require.NoError(t, err)
+	require.NotEqual(t, result, wrong)
+}
+
 func TestTrustedToolExecutorUsesCallerTransactionForAudit(t *testing.T) {
 	app, _, lessonID, room := setupRoom(t)
 	db, err := store.Open(filepath.Join(t.TempDir(), "trusted-tool.db"))
@@ -102,7 +114,8 @@ func TestDuplexCommitCanAtomicallyPersistTrustedToolAudit(t *testing.T) {
 	candidate := store.DuplexCandidate{
 		DecisionID: "decision-trusted-tool", Epoch: "epoch-trusted-tool", UtteranceID: "utterance-trusted-tool",
 		InputRevision: 1, InputFingerprint: hex.EncodeToString(input[:]), TextHash: hex.EncodeToString(input[:]),
-		State: json.RawMessage(`{"phase":"wait_answer"}`), Effects: []json.RawMessage{json.RawMessage(`{"type":"teacher_say","text":"Try again."}`)},
+		State:   json.RawMessage(`{"phase":"wait_answer"}`),
+		Effects: []json.RawMessage{json.RawMessage(`{"type":"teacher_say","text":"different frozen payload"}`)},
 	}
 	applyCalls := 0
 	apply := func(tx *gorm.DB) error {
@@ -111,20 +124,24 @@ func TestDuplexCommitCanAtomicallyPersistTrustedToolAudit(t *testing.T) {
 		if e != nil {
 			return e
 		}
-		_, e = executor.Call(ctx, tools.Caller{Role: tools.RoleTeacherAgent, ID: "teacher_agent"}, "classroom.say", map[string]any{"text": "Try again.", "category": "nudge"})
-		if e != nil {
-			return e
-		}
-		return nil
+		return executor.CallFrozen(ctx, tools.Caller{Role: tools.RoleTeacherAgent, ID: "teacher_agent"}, "classroom.say", map[string]any{"text": "Try again.", "category": "nudge"}, candidate.Effects[0])
 	}
+	_, err = repo.Commit(context.Background(), room.studentID, lessonID, 0, candidate, apply)
+	require.Error(t, err, "the transaction must reject effects that differ from the frozen tool result")
+	var auditCount, outboxCount int64
+	require.NoError(t, db.Model(&store.AuditLog{}).Count(&auditCount).Error)
+	require.NoError(t, db.Model(&store.DuplexOutbox{}).Count(&outboxCount).Error)
+	require.Zero(t, auditCount)
+	require.Zero(t, outboxCount)
+
+	candidate.Effects[0] = json.RawMessage(`{"type":"ui_action","action":{"type":"say","text":"Try again.","category":"nudge"}}`)
 	first, err := repo.Commit(context.Background(), room.studentID, lessonID, 0, candidate, apply)
 	require.NoError(t, err)
 	require.Equal(t, "committed", first.Status)
 	second, err := repo.Commit(context.Background(), room.studentID, lessonID, 0, candidate, apply)
 	require.NoError(t, err)
 	require.Equal(t, first.DecisionID, second.DecisionID)
-	require.Equal(t, 1, applyCalls, "committed replay must not execute teacher tools or audits again")
-	var auditCount, outboxCount int64
+	require.Equal(t, 2, applyCalls, "committed replay must not execute teacher tools or audits again")
 	require.NoError(t, db.Model(&store.AuditLog{}).Count(&auditCount).Error)
 	require.NoError(t, db.Model(&store.DuplexOutbox{}).Count(&outboxCount).Error)
 	require.EqualValues(t, 1, auditCount)
