@@ -10,6 +10,7 @@ import (
 	"enwords/internal/auth"
 	"enwords/internal/obs"
 	"errors"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -393,6 +394,12 @@ func (a *App) handleWS(c *gin.Context) {
 		handshakeEffect.Release()
 		return
 	}
+	if session != nil {
+		if !socketCloser.Attach(conn) || session.Activate() != nil {
+			_ = conn.Close()
+			return
+		}
+	}
 	conn.SetReadLimit(16 << 10)
 	client := newWSClient(conn)
 	client.writePermit = lease.Token().Permit
@@ -434,6 +441,8 @@ func (a *App) handleWS(c *gin.Context) {
 	type queuedWSInput struct {
 		message  Msg
 		envelope ClientEnvelope
+		ctx      context.Context
+		release  func()
 	}
 	inputs := make(chan queuedWSInput, 16)
 	var shadowSession *duplex.Session
@@ -449,24 +458,16 @@ func (a *App) handleWS(c *gin.Context) {
 			room.Leave(client)
 			a.Log.InfoCtx(obs.WithTrace(ctx, "lesson-"+strconv.FormatInt(lessonID, 10)), "ws", "client_disconnected", map[string]any{"lesson_id": lessonID, "student_id": tk.StudentID})
 		}()
-		for {
-			var input queuedWSInput
-			select {
-			case <-ctx.Done():
-				return
-			case input = <-inputs:
+		stopping := false
+		for input := range inputs {
+			if input.release != nil && (stopping || ctx.Err() != nil) {
+				input.release()
+				continue
 			}
-			if ctx.Err() != nil || !room.IsActive(client) || !a.activeAccount(ctx, tk.StudentID, auth.RoleStudent, "") {
-				return
-			}
-			m, envelope := input.message, input.envelope
-			typ, _ := m["type"].(string)
-			switch typ {
-			case "student_event":
-				ev, _ := m["event"].(string)
-				text, _ := m["text"].(string)
-				if !validClassroomEvent(ev) {
-					continue
+			stopAfterInput := false
+			func() {
+				if input.release != nil {
+					defer input.release()
 				}
 				if len(text) > 2048 {
 					_ = client.Send(Msg{"type": "event_rejected", "reason": "event_text_too_long", "event_id": envelope.EventID})
@@ -477,38 +478,46 @@ func (a *App) handleWS(c *gin.Context) {
 					for _, f := range frames {
 						_ = client.Send(f)
 					}
-				}
-			case "voice_text": // Omni 中继 / 前端 Web Speech 上报的转写文本
-				text, _ := m["text"].(string)
-				if !validVoiceText(text) {
-					_ = client.Send(Msg{"type": "event_rejected", "event_id": envelope.EventID, "submission_id": envelope.SubmissionID, "reason": "invalid_text"})
-					continue
-				}
-				if _, body, matched := room.voiceParser.MatchFeedback(text); matched {
-					if _, err := normalizeFeedback(FeedbackSubmission{SubmissionID: envelope.SubmissionID, Text: body, Channel: "voice"}); err != nil {
-						failure := Msg(feedbackError(err))
-						failure["type"] = "feedback_reply"
-						failure["submission_id"] = envelope.SubmissionID
-						_ = client.Send(failure)
-						continue
+					frames := room.HandleClientEventContext(operationCtx, envelope, classroom.Event{Type: ev, Text: sanitizeText(text)}, client)
+					if len(frames) > 0 && frames[0]["type"] == "event_rejected" {
+						for _, frame := range frames {
+							_ = client.Send(frame)
+						}
 					}
-				}
-				cmd, body, frames := room.HandleClientVoiceSubmissionContext(ctx, envelope, text, client)
-				if len(frames) > 0 && frames[0]["type"] == "event_rejected" {
-					for _, f := range frames {
-						_ = client.Send(f)
+				case "voice_text":
+					text, _ := m["text"].(string)
+					if !validVoiceText(text) {
+						_ = client.Send(Msg{"type": "event_rejected", "event_id": envelope.EventID, "submission_id": envelope.SubmissionID, "reason": "invalid_text"})
+						return
 					}
-				}
-				if cmd == "feedback" {
-					rec, err := a.SubmitFeedback(ctx, tk.StudentID, FeedbackSubmission{SubmissionID: envelope.SubmissionID, Text: body, Channel: "voice"})
-					if err != nil {
-						failure := Msg(feedbackError(err))
-						failure["type"] = "feedback_reply"
-						failure["submission_id"] = envelope.SubmissionID
-						_ = client.Send(failure)
-					} else {
-						_ = client.Send(Msg{"type": "feedback_reply", "submission_id": rec.SubmissionID, "status": rec.Status, "reply": rec.Reply, "feedback": rec})
+					if _, body, matched := room.voiceParser.MatchFeedback(text); matched {
+						if _, err := normalizeFeedback(FeedbackSubmission{SubmissionID: envelope.SubmissionID, Text: body, Channel: "voice"}); err != nil {
+							failure := Msg(feedbackError(err))
+							failure["type"] = "feedback_reply"
+							failure["submission_id"] = envelope.SubmissionID
+							_ = client.Send(failure)
+							return
+						}
 					}
+					cmd, body, frames := room.HandleClientVoiceSubmissionContext(operationCtx, envelope, text, client)
+					if len(frames) > 0 && frames[0]["type"] == "event_rejected" {
+						for _, frame := range frames {
+							_ = client.Send(frame)
+						}
+					}
+					if cmd == "feedback" {
+						rec, err := a.SubmitFeedback(operationCtx, tk.StudentID, FeedbackSubmission{SubmissionID: envelope.SubmissionID, Text: body, Channel: "voice"})
+						if err != nil {
+							failure := Msg(feedbackError(err))
+							failure["type"] = "feedback_reply"
+							failure["submission_id"] = envelope.SubmissionID
+							_ = client.Send(failure)
+						} else {
+							_ = client.Send(Msg{"type": "feedback_reply", "submission_id": rec.SubmissionID, "status": rec.Status, "reply": rec.Reply, "feedback": rec})
+						}
+					}
+				case "resume":
+					room.resumeClient(operationCtx, client)
 				}
 			case "voice_stream_start":
 				if !a.DuplexShadow || a.Local == nil {
@@ -751,12 +760,29 @@ func (a *App) handleWS(c *gin.Context) {
 		defer cancel()
 		defer func() {
 			cancel()
+			close(inputs)
 			_ = client.Close()
-			select {
-			case <-workerDone:
-			case <-time.After(10 * time.Second):
+			joined := true
+			cleanupTimer := time.NewTimer(10 * time.Second)
+			defer cleanupTimer.Stop()
+			for _, done := range []<-chan struct{}{workerDone, client.writeDone} {
+				if done == nil {
+					continue
+				}
+				select {
+				case <-done:
+				case <-cleanupTimer.C:
+					joined = false
+				}
+				if !joined {
+					break
+				}
+			}
+			if !joined {
 				a.Log.ErrorCtx(ctx, "ws", "ws_worker_cleanup_timeout", map[string]any{"lesson_id": lessonID})
-				return
+			}
+			if joined && session != nil {
+				session.Release()
 			}
 		}()
 		for {
@@ -769,10 +795,24 @@ func (a *App) handleWS(c *gin.Context) {
 			if err := json.Unmarshal(raw, &m); err != nil {
 				return
 			}
-			if !room.IsActive(client) {
+			if m["type"] == "heartbeat" {
+				_ = client.Send(Msg{"type": "heartbeat_ack", "ts": time.Now().Unix()})
+				continue
+			}
+			operationCtx, release, acquireErr := ctx, func() {}, error(nil)
+			if a.firstAudioRequestAdmission != nil {
+				operationCtx, release, acquireErr = a.firstAudioRequestAdmission.AcquireOperation(ctx)
+			}
+			if acquireErr != nil || operationCtx == nil || release == nil ||
+				(a.firstAudioRequestAdmission != nil && !a.firstAudioRequestAdmission.OperationContextActive(operationCtx)) {
+				if release != nil {
+					release()
+				}
+				_ = client.Close()
 				return
 			}
-			if !a.activeAccount(ctx, tk.StudentID, auth.RoleStudent, "") {
+			if !room.IsActive(client) || !a.activeAccount(operationCtx, tk.StudentID, auth.RoleStudent, "") {
+				release()
 				return
 			}
 			var envelope ClientEnvelope
@@ -786,17 +826,16 @@ func (a *App) handleWS(c *gin.Context) {
 					rejected["submission_id"] = id
 				}
 				_ = client.Send(rejected)
-				continue
-			}
-			if m["type"] == "heartbeat" {
-				_ = client.Send(Msg{"type": "heartbeat_ack", "ts": time.Now().Unix()})
+				release()
 				continue
 			}
 			select {
-			case inputs <- queuedWSInput{m, envelope}:
+			case inputs <- queuedWSInput{message: m, envelope: envelope, ctx: operationCtx, release: release}:
 			case <-ctx.Done():
+				release()
 				return
 			default:
+				release()
 				a.Log.ErrorCtx(obs.WithTrace(ctx, "lesson-"+strconv.FormatInt(lessonID, 10)), "ws", "ws_input_backpressure", map[string]any{"lesson_id": lessonID, "capacity": cap(inputs), "reason": "input_queue_full"})
 				return
 			}

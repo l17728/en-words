@@ -117,8 +117,10 @@ func TestToolTransactionTimingIsBoundedAndSeparatesAuditStages(t *testing.T) {
 				require.Equal(t, "not_started", event["storage_rollback_state"])
 			}
 			if mode == "canceled_before_begin" {
+				require.Equal(t, "outcome_uncertain", event["transaction_outcome"])
 				require.Equal(t, event["transaction_ms"], event["begin_wait_ms"])
 				require.Zero(t, event["finalize_ms"])
+				require.Zero(t, event["rollback_audit_write_ms"])
 			}
 			if mode == "lock_wait" {
 				require.GreaterOrEqual(t, event["lock_wait_ms"].(float64), float64(25))

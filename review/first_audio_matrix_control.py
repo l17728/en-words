@@ -254,6 +254,36 @@ def _create_private_directory(path: Path) -> None:
         kernel.CloseHandle(token)
 
 
+def _discard_matrix_browser_output(path: Path, run_root: Path, *, process_tree_stopped: bool) -> None:
+    if process_tree_stopped is not True:
+        raise MatrixProtocolError(
+            "cleanup_incomplete; private browser output retained; do not archive"
+        )
+    root = run_root.resolve(strict=True)
+    if path.is_symlink():
+        path.unlink()
+        raise MatrixProtocolError("Playwright output directory became a symbolic link")
+    resolved = path.resolve(strict=False)
+    if resolved.parent != root or resolved.name != path.name:
+        raise MatrixProtocolError("Playwright output directory escaped its private run root")
+    if path.exists():
+        shutil.rmtree(resolved)
+
+
+def _require_matrix_monitor_healthy(monitor_error: BaseException | None) -> None:
+    if monitor_error is not None:
+        raise MatrixProtocolError(
+            "cleanup_incomplete; private browser output retained; do not archive"
+        ) from monitor_error
+
+
+def _finalize_matrix_browser_output(path: Path, run_root: Path, *,
+                                    process_tree_stopped: bool,
+                                    monitor_error: BaseException | None) -> None:
+    _require_matrix_monitor_healthy(monitor_error)
+    _discard_matrix_browser_output(path, run_root, process_tree_stopped=process_tree_stopped)
+
+
 def _assert_db_absent(db_path: Path) -> None:
     if db_path.exists() or db_path.is_symlink():
         raise ValueError("database path already exists")
@@ -537,6 +567,8 @@ def _collect_source_hashes(server_dir: Path) -> list[dict[str, str]]:
         "review/first-audio-matrix-isolated-backend-review-20261031.md",
         "review/first-audio-matrix-isolated-backend-review-20261026.md",
         "review/first-audio-matrix-control-protocol-review-20261026.md",
+        "review/first-audio-transaction-outcome-review-20261027.md",
+        "review/first-audio-write-inventory-review-20261027.md",
         "review/first_audio_matrix_control.py",
         "review/test_first_audio_matrix_control.py",
         "review/first_audio_latency_matrix.py",

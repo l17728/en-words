@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -257,10 +258,14 @@ func (a *App) callAgentTool(ctx context.Context, name string, args any) (any, er
 			a.Log.ErrorCtx(ctx, "tools", "audit_persist_skipped_outcome_uncertain", map[string]any{"task_id": task.taskID, "tool": name})
 		}
 	}
+	if outcome == toolTransactionOutcomeUncertain {
+		logCall(string(outcome), false)
+		return nil, &uncertainToolTransactionError{cause: err}
+	}
 	for _, entry := range entries {
 		a.ToolAudit.ToolCalled(entry)
 	}
-	logCall(outcome, err == nil)
+	logCall(string(outcome), err == nil)
 	if err != nil {
 		return nil, err
 	}

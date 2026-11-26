@@ -15,6 +15,10 @@ require (
 // which upstream's Go callback currently drops.
 replace github.com/mattn/go-sqlite3 => ./third_party/go-sqlite3
 
+// Local v1.21.2 fork rolls back a failed SQLite COMMIT before the connection
+// is returned to database/sql's pool.
+replace github.com/glebarez/go-sqlite => ./third_party/glebarez-go-sqlite
+
 require (
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.15.0 // indirect

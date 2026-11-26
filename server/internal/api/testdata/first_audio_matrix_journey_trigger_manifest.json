@@ -1,0 +1,24 @@
+{
+  "format_version": 1,
+  "sha256": "2866fbf00b92d9ba44a6ab21fd266f24477d593c410bf8dc2fc4eb9a79a07594",
+  "objects": [
+    {
+      "type": "trigger",
+      "name": "fa_audit_guard_delete",
+      "table": "audit_logs",
+      "sql": "CREATE TRIGGER fa_audit_guard_delete BEFORE DELETE ON audit_logs BEGIN SELECT RAISE(ABORT,'first_audio_guard'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "fa_audit_guard_insert",
+      "table": "audit_logs",
+      "sql": "CREATE TRIGGER fa_audit_guard_insert AFTER INSERT ON audit_logs BEGIN SELECT CASE WHEN first_audio_row_guard(typeof(NEW.id),CASE WHEN typeof(NEW.id)='text' THEN CAST(NEW.id AS TEXT) ELSE NEW.id END,typeof(NEW.ts),CASE WHEN typeof(NEW.ts)='text' THEN CAST(NEW.ts AS TEXT) ELSE NEW.ts END,typeof(NEW.actor_type),CASE WHEN typeof(NEW.actor_type)='text' THEN CAST(NEW.actor_type AS TEXT) ELSE NEW.actor_type END,typeof(NEW.actor_id),CASE WHEN typeof(NEW.actor_id)='text' THEN CAST(NEW.actor_id AS TEXT) ELSE NEW.actor_id END,typeof(NEW.actor_role),CASE WHEN typeof(NEW.actor_role)='text' THEN CAST(NEW.actor_role AS TEXT) ELSE NEW.actor_role END,typeof(NEW.tool),CASE WHEN typeof(NEW.tool)='text' THEN CAST(NEW.tool AS TEXT) ELSE NEW.tool END,typeof(NEW.risk),CASE WHEN typeof(NEW.risk)='text' THEN CAST(NEW.risk AS TEXT) ELSE NEW.risk END,typeof(NEW.ok),CASE WHEN typeof(NEW.ok)='text' THEN CAST(NEW.ok AS TEXT) ELSE NEW.ok END,typeof(NEW.result),CASE WHEN typeof(NEW.result)='text' THEN CAST(NEW.result AS TEXT) ELSE NEW.result END,typeof(NEW.args),CASE WHEN typeof(NEW.args)='text' THEN CAST(NEW.args AS TEXT) ELSE NEW.args END,typeof(NEW.duration_ms),CASE WHEN typeof(NEW.duration_ms)='text' THEN CAST(NEW.duration_ms AS TEXT) ELSE NEW.duration_ms END,typeof(NEW.trace_id),CASE WHEN typeof(NEW.trace_id)='text' THEN CAST(NEW.trace_id AS TEXT) ELSE NEW.trace_id END)=0 THEN RAISE(ABORT,'first_audio_guard') END; END"
+    },
+    {
+      "type": "trigger",
+      "name": "fa_audit_guard_update",
+      "table": "audit_logs",
+      "sql": "CREATE TRIGGER fa_audit_guard_update BEFORE UPDATE ON audit_logs BEGIN SELECT RAISE(ABORT,'first_audio_guard'); END"
+    }
+  ]
+}

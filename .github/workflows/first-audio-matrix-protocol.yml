@@ -1,4 +1,4 @@
-﻿name: First-audio control protocol checks
+name: First-audio control protocol checks
 
 on:
   workflow_dispatch:
@@ -13,6 +13,7 @@ on:
       - "server/go.mod"
       - "server/go.sum"
       - "server/third_party/go-sqlite3/**"
+      - "server/third_party/glebarez-go-sqlite/**"
       - "server/internal/api/**"
       - "server/internal/classroom/**"
       - "server/internal/config/**"
@@ -39,6 +40,7 @@ on:
       - "server/go.mod"
       - "server/go.sum"
       - "server/third_party/go-sqlite3/**"
+      - "server/third_party/glebarez-go-sqlite/**"
       - "server/internal/api/**"
       - "server/internal/classroom/**"
       - "server/internal/config/**"
@@ -62,11 +64,13 @@ jobs:
   protocol:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
+    env:
+      CGO_ENABLED: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.25.0"
+          go-version: "1.25.14"
           cache: true
           cache-dependency-path: server/go.sum
       - uses: actions/setup-python@v5
@@ -85,12 +89,52 @@ jobs:
         run: python3 -m unittest discover -s review -p test_first_audio_latency_matrix.py -v
       - name: Test JSONL parser, lifecycle, replay, and terminal cleanup
         working-directory: server
-        run: go test ./internal/api -run '^TestFirstAudioMatrix' -count=1 -timeout=5m
+        run: go test -v ./internal/api -run '^(TestFirstAudio(Matrix|Guard(Context|Probe|Controller|Publisher|CallbackTerminal|SQLiteCallback))|TestFirstAudioJourneyAdmission.*|TestFirstAudioLessonPrimaryKeyCardinalityRealSchema|TestFirstAudioGuardedAppPrepare(RealSQL|RejectsInvalidCapabilityBeforeOpen|NewAppStartupErrorClosesWithoutListener|NewAppPanicRollsBackAndClosesWithoutListener)|TestFirstAudioPreflightPrepare[A-Za-z0-9]*)$' -count=1 -timeout=5m
+      - name: Test strict SQLite journey audit row guard
+        working-directory: server
+        run: go test ./internal/api -run '^TestFirstAudioJourney(Audit|GuardSchemaManifest)' -count=1 -timeout=5m
+      - name: Verify reset authorizer capture manifest
+        working-directory: server
+        run: go test ./internal/api -run '^(TestFirstAudioReset(AuthorizerCaptureOnly|ManifestWriterRejectsSymlinkTargets)|TestFirstAudioTriggerManifestDigestIgnoresLineEndings)$' -count=1 -timeout=5m
+      - name: Test classroom tool transaction outcome handling
+        working-directory: server
+        run: go test ./internal/api -run '^(TestToolTransaction|TestObservedToolTransaction|TestUncertainToolTransaction|TestRetiredRoomRejectsPublicProgressionEntrypoints|TestDeferredCommitFailureStopsTeacherContinuationAndSnapshot)' -count=1 -timeout=5m
+      - name: Test local SQLite failed-COMMIT cleanup policy
+        working-directory: server/third_party/glebarez-go-sqlite
+        run: go test . -run '^TestFailedCommitCleanupError' -count=1 -timeout=1m
+      - name: Race-test immutable guard context publication
+        working-directory: server
+        run: go test -race ./internal/api -run '^(TestFirstAudioGuard(Context|Probe|Controller|Publisher)|TestFirstAudioMatrixRealSQLRejectsLessonUpdateBeforeTokenConsumption|TestFirstAudioMatrixRealSQLRejectsOtherLessonUpdate|TestFirstAudioMatrixRealSQLRejectsZeroRowUpdate|TestFirstAudioMatrixRealSQLRejectsCorruptedExpectedProjection|TestFirstAudioLessonPrimaryKeyCardinalityRealSchema|TestFirstAudioGuardedAppPrepare(RealSQL|RejectsInvalidCapabilityBeforeOpen|NewAppStartupErrorClosesWithoutListener|NewAppPanicRollsBackAndClosesWithoutListener)|TestFirstAudioPreflightPrepare[A-Za-z0-9]*)$' -count=1 -timeout=5m
+      - name: Race-test SQLite journey audit row guard
+        working-directory: server
+        run: go test -race ./internal/api -run '^TestFirstAudioJourneyAuditGuard' -count=1 -timeout=5m
+      - name: Race-test reset authorizer capture
+        working-directory: server
+        run: go test -race ./internal/api -run '^(TestFirstAudioReset(AuthorizerCaptureOnly|ManifestWriterRejectsSymlinkTargets)|TestFirstAudioTriggerManifestDigestIgnoresLineEndings)$' -count=1 -timeout=5m
+      - name: Race-test JOURNEY admission and reset barrier
+        working-directory: server
+        run: go test -race ./internal/api -run '^TestFirstAudioJourneyAdmission' -count=1 -timeout=5m
+      - name: Confirm Linux CGO compiler is active
+        run: |
+          test "$(go env CGO_ENABLED)" = "1"
+          gcc --version
+      - name: Check Go formatting and API package vet
+        working-directory: server
+        run: |
+          unformatted=$(gofmt -l internal/api/first_audio_matrix_*_test.go internal/api/first_audio_journey_admission_test.go internal/api/first_audio_journey_app_admission_test.go)
+          if [ -n "$unformatted" ]; then
+            while IFS= read -r file; do
+              gofmt -d "$file"
+            done <<< "$unformatted"
+            printf 'gofmt required for:\n%s\n' "$unformatted" >&2
+            exit 1
+          fi
+          go vet ./internal/api
       - name: Verify test-only harness is absent from production binary
         working-directory: server
         run: |
           go build -o "$RUNNER_TEMP/en-words-server" ./cmd/server
-          if go tool nm "$RUNNER_TEMP/en-words-server" | grep -q 'TestFirstAudioMatrix\|firstAudioControl'; then
+          if go tool nm "$RUNNER_TEMP/en-words-server" | grep -q 'TestFirstAudioMatrix\|TestFirstAudioGuardContext\|firstAudioControl\|firstAudioGuardContext'; then
             echo "test-only harness symbol leaked into production binary" >&2
             exit 1
           fi
@@ -108,11 +152,19 @@ jobs:
   windows-boundaries:
     runs-on: windows-latest
     timeout-minutes: 25
+    env:
+      CGO_ENABLED: "1"
     steps:
       - uses: actions/checkout@v4
+      - name: Install Windows CGO compiler
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: false
+          install: mingw-w64-x86_64-gcc
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.25.0"
+          go-version: "1.25.14"
           cache: true
           cache-dependency-path: server/go.sum
       - uses: actions/setup-python@v5
@@ -131,4 +183,16 @@ jobs:
         run: python -m unittest discover -s review -p test_first_audio_latency_matrix.py -v
       - name: Test Go harness path and lifecycle boundaries
         working-directory: server
-        run: go test ./internal/api -run '^TestFirstAudioMatrix' -count=1 -timeout=10m
+        run: go test ./internal/api -run '^(TestFirstAudio(Matrix|Guard(Context|Probe|Controller|Publisher|CallbackTerminal|SQLiteCallback))|TestFirstAudioJourneyAdmission.*|TestFirstAudioLessonPrimaryKeyCardinalityRealSchema|TestFirstAudioGuardedAppPrepare(RealSQL|RejectsInvalidCapabilityBeforeOpen|NewAppStartupErrorClosesWithoutListener|NewAppPanicRollsBackAndClosesWithoutListener)|TestFirstAudioPreflightPrepare[A-Za-z0-9]*)$' -count=1 -timeout=10m
+      - name: Test strict SQLite journey audit row guard
+        working-directory: server
+        run: go test ./internal/api -run '^TestFirstAudioJourney(Audit|GuardSchemaManifest)' -count=1 -timeout=5m
+      - name: Verify reset authorizer capture manifest
+        working-directory: server
+        run: go test ./internal/api -run '^(TestFirstAudioReset(AuthorizerCaptureOnly|ManifestWriterRejectsSymlinkTargets)|TestFirstAudioTriggerManifestDigestIgnoresLineEndings)$' -count=1 -timeout=5m
+      - name: Test classroom tool transaction outcome handling
+        working-directory: server
+        run: go test ./internal/api -run '^(TestToolTransaction|TestObservedToolTransaction|TestUncertainToolTransaction|TestRetiredRoomRejectsPublicProgressionEntrypoints|TestDeferredCommitFailureStopsTeacherContinuationAndSnapshot)' -count=1 -timeout=10m
+      - name: Test local SQLite failed-COMMIT cleanup policy
+        working-directory: server/third_party/glebarez-go-sqlite
+        run: go test . -run '^TestFailedCommitCleanupError' -count=1 -timeout=2m

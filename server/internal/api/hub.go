@@ -91,6 +91,7 @@ func NewHub(app *App) *Hub {
 }
 
 var errLessonUnavailable = errors.New("lesson unavailable")
+var errToolOutcomeUncertain = errors.New("tool transaction outcome uncertain")
 
 // Enter 进入/重进课堂：房间懒建（有持久化快照则恢复，IT-12）。
 func (h *Hub) Enter(lessonID, studentID int64) (*Room, Msg, error) {
@@ -254,6 +255,9 @@ func (h *Hub) EnterContext(ctx context.Context, lessonID, studentID int64) (*Roo
 		event := r.teacherPending
 		r.teacherPending = ""
 		r.teacherLifecycleLocked(event)
+		if r.retired {
+			return nil, nil, errToolOutcomeUncertain
+		}
 	}
 	return r, r.snapshotLocked(), nil
 }
@@ -641,6 +645,9 @@ func (r *Room) actionMsg(a classroom.Action) Msg {
 // 判分接线：phase==Judging 时同步 Mock 判分；phase 变化时记录 phaseSince + §14 日志；
 // 每次迁移后快照持久化（IT-12）；老师话术层随关键动作异步注入（D-10）。
 func (r *Room) broadcastLocked() []Msg {
+	if r.retired {
+		return nil
+	}
 	ctx, err := r.teacherTaskLocked()
 	if err != nil {
 		return r.effectFailureLocked("task_unavailable")
@@ -649,10 +656,25 @@ func (r *Room) broadcastLocked() []Msg {
 }
 
 func (r *Room) effectFailureLocked(reason string) []Msg {
+	if r.retired {
+		return nil
+	}
 	r.deliveryReady = false
 	r.app.saveLessonStateWithToken(r.traceContext(), r.lessonID, r.machine.Snapshot(), r.generation)
 	r.app.Log.ErrorCtx(r.traceContext(), "agent", "agent_action_failed", map[string]any{"lesson_id": r.lessonID, "reason": reason})
 	m := Msg{"type": "classroom_error", "code": "effect_unavailable", "retryable": true}
+	r.emitLocked(m)
+	return []Msg{m}
+}
+
+func (r *Room) uncertainToolTransactionLocked(tool string) []Msg {
+	r.deliveryReady = false
+	r.retired = true
+	r.cancelJudgmentLocked()
+	r.app.Log.ErrorCtx(r.traceContext(), "tools", "tool_outcome_uncertain_terminal", map[string]any{
+		"lesson_id": r.lessonID, "tool": tool, "retryable": false,
+	})
+	m := Msg{"type": "classroom_error", "code": "transaction_outcome_uncertain", "retryable": false}
 	r.emitLocked(m)
 	return []Msg{m}
 }
@@ -686,11 +708,18 @@ func (r *Room) broadcastEffectsLocked(ctx context.Context, allowJudge bool) []Ms
 		return r.effectFailureLocked("invalid_effect_plan")
 	}
 	for _, plan := range plans {
+		if r.retired {
+			return out
+		}
 		if r.lastActions[plan.Index].Type == classroom.ActLessonSummary {
 			continue
 		}
 		result, err := r.app.callAgentTool(bound, plan.Tool, map[string]any{"index": plan.Index})
 		if err != nil {
+			var uncertain *uncertainToolTransactionError
+			if errors.As(err, &uncertain) {
+				return append(out, r.uncertainToolTransactionLocked(plan.Tool)...)
+			}
 			return append(out, r.effectFailureLocked("effect_tool_failed")...)
 		}
 		a, ok := result.(classroom.Action)
@@ -700,6 +729,9 @@ func (r *Room) broadcastEffectsLocked(ctx context.Context, allowJudge bool) []Ms
 		m := r.actionMsg(a)
 		r.emitLocked(m)
 		out = append(out, m)
+	}
+	if r.retired {
+		return out
 	}
 	if ph := r.machine.Phase(); ph != r.lastPhase {
 		r.app.Log.InfoCtx(r.traceContext(), "classroom", "phase_changed", map[string]any{
@@ -716,7 +748,7 @@ func (r *Room) broadcastEffectsLocked(ctx context.Context, allowJudge bool) []Ms
 		out = append(out, r.judgeContextLocked(ctx)...)
 	}
 	if r.retired {
-		return nil
+		return out
 	}
 	if r.machine.Phase() == classroom.PhaseLessonEnd {
 		out = append(out, r.maybeFinishLocked()...)
@@ -728,6 +760,9 @@ func (r *Room) broadcastEffectsLocked(ctx context.Context, allowJudge bool) []Ms
 // emitTeacherUtterancesLocked 老师话术层（D-10 快路径伴生）：
 // 由本步动作推导事件 → 决策表选槽 → seed=lessonId 渲染 → say 帧 + 日志。
 func (r *Room) emitTeacherUtterancesLocked() []Msg {
+	if r.retired {
+		return nil
+	}
 	ctx, err := r.teacherTaskLocked()
 	if err != nil {
 		r.app.Log.ErrorCtx(r.traceContext(), "agent", "agent_action_failed", map[string]any{"lesson_id": r.lessonID, "error": err.Error()})
@@ -739,6 +774,9 @@ func (r *Room) emitTeacherUtterancesLocked() []Msg {
 func (r *Room) emitTeacherUtterancesContextLocked(ctx context.Context) []Msg {
 	var out []Msg
 	for _, action := range r.lastActions {
+		if r.retired {
+			return out
+		}
 		event := ""
 		switch action.Type {
 		case classroom.ActStartQuiz:
@@ -759,6 +797,9 @@ func (r *Room) emitTeacherUtterancesContextLocked(ctx context.Context) []Msg {
 		}
 		if event != "" {
 			out = append(out, r.teacherUtteranceLocked(ctx, r.teacherInputLocked(event, action.WordID))...)
+			if r.retired {
+				return out
+			}
 		}
 	}
 	return out

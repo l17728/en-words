@@ -1,0 +1,66 @@
+# Direct Row-Guard UDF Negative Review
+
+## Scope
+
+Review of the isolated real-SQL test for direct top-level invocation of
+`first_audio_row_guard` under the token-consumption permit, plus the tracked
+test driver's physical-close accounting. This is a component-level negative
+case only; it does not approve guarded `api.App`, browser journey, performance,
+or classroom acceptance.
+
+## Findings and disposition
+
+- Design review: **PASS**. `docs/85-first-audio-direct-row-guard-call-negative-sdd.md`
+  specifies the SQLite authorizer denial, bounded child-process isolation,
+  transaction terminalization, and physical connection eviction.
+- Security review: **PASS**. The registered variadic UDF is called only by a
+  real SQLite statement; the authorizer callback returns `SQLITE_DENY`, and
+  SQLite reports `SQLITE_ERROR` with authorization-denial text before the UDF
+  callback. The manifest is unchanged, callback count remains zero, and no
+  token material is logged.
+- Testability review: **PASS**. Cleanup callbacks use LIFO order so terminal
+  transaction cleanup precedes pinned-connection and pool closure. The direct
+  denial count is recorded separately from the expected rollback-denial delta.
+  Parent process enforces a deadline, waits/reaps its child, and caps output.
+- Reviewers performed static review; they did not execute the Go test.
+
+## Validation status
+
+The first [Linux and Windows protocol run](https://github.com/l17728/en-words/actions/runs/40812824256)
+failed. The follow-up [diagnostic run](https://github.com/l17728/en-words/actions/runs/40813969915)
+confirmed both platforms report primary code `1` (`SQLITE_ERROR`) and
+authorization-denial text. SQLite requirement H12505 specifies `SQLITE_ERROR`
+for a statement denied by an authorizer, so the SDD and test oracle now
+distinguish the authorizer's `SQLITE_DENY` callback decision from the API error
+code. The diagnostic run also found an existing regression check that expected
+`txActive` to remain true after successful physical Close; it now proves the
+transaction was active before cleanup and retired only after `closeOK`.
+Corrected CGO tests and platform validation are **PENDING**.
+
+The revised design, security, and test review: **PASS**. The denial assertion now matches
+the complete PREFLIGHT/TOKEN_CONSUMPTION/SQLITE_FUNCTION tuple, the API's
+observed `SQLITE_ERROR` and authorization-denial text, and zero UDF callbacks.
+Reviewers performed static review; the corrected Linux/Windows CI passed in
+[run 40814548849](https://github.com/l17728/en-words/actions/runs/40814548849),
+including the CGO test selector, Linux race tests, Go formatting/vet, web build,
+Playwright discovery, Windows boundary tests, and production-symbol check.
+
+After review noted that docs/78 also requires an explicit no-later-phase
+assertion, the SDD was revised and reviewed again. The child now publishes a
+valid, same-run JOURNEY candidate to the terminal controller after cleanup and
+asserts `errFirstAudioGuardContextTransition`. Security and test review: **PASS**.
+The corrected Linux/Windows protocol workflow passed in
+[run 40815213939](https://github.com/l17728/en-words/actions/runs/40815213939).
+The listener-factory assertion remains out of scope for this no-App component
+child and remains open for guarded-App integration. A full Linux package/backend
+regression on the same corrected revision passed all three jobs in
+[run 40815610001](https://github.com/l17728/en-words/actions/runs/40815610001),
+including full backend `go test ./...`, package race/vet, manifest inventory,
+and runner preflight. This is not VFS/RunRoot candidate acceptance.
+
+## Acceptance boundary
+
+Passing this case closes only the direct top-level row-guard UDF call. Other
+docs/78 negative cases, isolated backend and guarded-App integration, two-process
+Playwright journey/reset races, performance matrix, and human classroom pilot
+remain open.
