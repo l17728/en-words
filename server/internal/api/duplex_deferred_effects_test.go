@@ -203,6 +203,125 @@ func TestDeferredVoiceIngressDoesNotBroadcastSuccessBeforeCommit(t *testing.T) {
 	require.Contains(t, client.frames, Msg{"type": "event_processed", "event_id": "duplex-confirm-ack", "command": "repeat_read", "submission_id": ""})
 }
 
+func TestDurableVoiceRollbackRestoresEventIdentityAndTurnContext(t *testing.T) {
+	app, clock := newTestApp(t)
+	adminToken, _ := loginGet(t, app, "admin", "adminpw")
+	bookID := seedBook(t, app, adminToken, "duplex-rollback", "g7", []string{"cat"})
+	_, err := app.Auth.CreateUser("duplex-rollback-student", "pw", "student", auth.RoleStudent)
+	require.NoError(t, err)
+	_, studentID := loginGet(t, app, "duplex-rollback-student", "pw")
+	require.NoError(t, app.EnableBook(studentID, bookID))
+	require.NoError(t, app.PlacementSubmit(studentID, bookID, nil, true))
+	lessons, err := app.Sched.Lessons(studentID, bookID)
+	require.NoError(t, err)
+	clock.Advance(25 * time.Hour)
+	room, _, err := app.Rooms.Enter(lessons[0].ID, studentID)
+	require.NoError(t, err)
+	client := &fakeClient{}
+	room.Join(client)
+	room.HandleEvent(classroom.Event{Type: classroom.EvWordClicked})
+	for i := 0; i < 8 && room.Machine().Phase() != classroom.PhaseRepeating; i++ {
+		room.HandleEvent(classroom.Event{Type: classroom.EvTTSFinished})
+	}
+	require.Equal(t, classroom.PhaseRepeating, room.Machine().Phase())
+
+	room.mu.Lock()
+	envelope := ClientEnvelope{Context: room.contextLocked(), EventID: "retry-after-rollback"}
+	room.mu.Unlock()
+	before := room.captureMutationSnapshot()
+	target := "cat"
+	room.beginDeferredEffects()
+	command, _, frames := room.HandleClientVoiceSubmissionContext(context.Background(), envelope, target, client)
+	require.Equal(t, "repeat_read", command, "initial staged event frames: %#v", frames)
+	require.NotEmpty(t, frames)
+	require.NoError(t, room.restoreMutationSnapshot(before))
+	require.NotEqual(t, classroom.PhaseWaitAnswer, room.Machine().Phase(), "failed durable commit must restore the pre-decision phase")
+
+	room.beginDeferredEffects()
+	command, _, frames = room.HandleClientVoiceSubmissionContext(context.Background(), envelope, target, client)
+	require.Equal(t, "repeat_read", command, "the identical event identity must be retryable after rollback")
+	require.NotEmpty(t, frames)
+	require.NotEqual(t, "event_rejected", frames[0]["type"])
+	room.discardDeferredEffects()
+}
+
+func TestDurableVoiceFeedbackIsQueuedOnlyAfterCommitFlush(t *testing.T) {
+	_, _, _, room := setupRoom(t)
+	room.beginDeferredEffects()
+	room.mu.Lock()
+	command, _ := room.handleVoiceInputLocked("我想反馈每天词太多了", "我想反馈每天词太多了")
+	queuedEarly := false
+	select {
+	case <-room.FeedbackCh:
+		queuedEarly = true
+	default:
+	}
+	room.mu.Unlock()
+	require.Equal(t, "feedback", command)
+	require.False(t, queuedEarly, "feedback must not escape the durable confirmation before commit")
+	room.flushDeferredEffects(context.Background())
+	select {
+	case feedback := <-room.FeedbackCh:
+		require.NotEmpty(t, feedback)
+	default:
+		require.FailNow(t, "successful confirmation flush must enqueue deferred feedback")
+	}
+}
+
+func TestDurableRepeatFailureAnalysisWaitsForCommitAndRollsBack(t *testing.T) {
+	app, clock := newTestApp(t)
+	adminToken, _ := loginGet(t, app, "admin", "adminpw")
+	bookID := seedBook(t, app, adminToken, "duplex-failure-rollback", "g7", []string{"cat"})
+	_, err := app.Auth.CreateUser("duplex-failure-student", "pw", "student", auth.RoleStudent)
+	require.NoError(t, err)
+	_, studentID := loginGet(t, app, "duplex-failure-student", "pw")
+	require.NoError(t, app.EnableBook(studentID, bookID))
+	require.NoError(t, app.PlacementSubmit(studentID, bookID, nil, true))
+	lessons, err := app.Sched.Lessons(studentID, bookID)
+	require.NoError(t, err)
+	clock.Advance(25 * time.Hour)
+	room, _, err := app.Rooms.Enter(lessons[0].ID, studentID)
+	require.NoError(t, err)
+	client := &fakeClient{}
+	room.Join(client)
+	room.HandleEvent(classroom.Event{Type: classroom.EvWordClicked})
+	for i := 0; i < 8 && room.Machine().Phase() != classroom.PhaseRepeating; i++ {
+		room.HandleEvent(classroom.Event{Type: classroom.EvTTSFinished})
+	}
+	require.Equal(t, classroom.PhaseRepeating, room.Machine().Phase())
+	db, err := store.Open(filepath.Join(t.TempDir(), "teacher-failure-rollback.db"))
+	require.NoError(t, err)
+	app.DB = db
+	sqlDB, err := db.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = sqlDB.Close() })
+	before := room.captureMutationSnapshot()
+	room.beginDeferredEffects()
+	room.mu.Lock()
+	command, _ := room.handleVoiceInputLocked("banana", "banana")
+	room.mu.Unlock()
+	require.Empty(t, command)
+	var count int64
+	require.NoError(t, app.DB.Model(&store.TeacherFailureAnalysis{}).Count(&count).Error)
+	require.Zero(t, count, "an uncommitted mismatch cannot enqueue teacher analysis")
+	require.NoError(t, room.restoreMutationSnapshot(before))
+	require.NoError(t, app.DB.Model(&store.TeacherFailureAnalysis{}).Count(&count).Error)
+	require.Zero(t, count, "rolling back Room state must discard pending analysis intent")
+
+	room.beginDeferredEffects()
+	room.mu.Lock()
+	command, _ = room.handleVoiceInputLocked("banana", "banana")
+	room.mu.Unlock()
+	require.Empty(t, command)
+	room.mu.Lock()
+	pendingFailures := len(room.deferredFailures)
+	room.mu.Unlock()
+	require.Equal(t, 1, pendingFailures, "the confirmed mismatch must stage one teacher analysis intent")
+	room.flushDeferredEffects(context.Background())
+	require.NoError(t, app.DB.Model(&store.TeacherFailureAnalysis{}).Count(&count).Error)
+	require.EqualValues(t, 1, count, "the confirmed mismatch queues one analysis after commit")
+}
+
 func TestRoomMutationLeaseSerializesConcurrentIngress(t *testing.T) {
 	_, _, _, room := setupRoom(t)
 	room.mu.Lock()

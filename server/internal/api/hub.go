@@ -69,7 +69,14 @@ type Room struct {
 	lastActions         []classroom.Action // 最近一批 machine 动作（话术层输入）
 	deferEffects        bool
 	deferredActions     []classroom.Action
+	deferredFeedback    []string
+	deferredFailures    []teacherFailureIntent
 	encourageCounter    int // 自上次鼓励的判对数（encourageEveryN）
+}
+
+type teacherFailureIntent struct {
+	lessonID, entryID, studentID    int64
+	target, transcript, kind, epoch string
 }
 
 // Hub 房间表。
@@ -418,6 +425,95 @@ func (r *Room) restoreDurableSnapshot(state classroom.State) error {
 	return nil
 }
 
+// roomMutationSnapshot captures Room-local state changed while staging a
+// durable duplex decision. A machine snapshot alone cannot roll back event
+// dedupe and turn-context mutations after a failed commit.
+type roomMutationSnapshot struct {
+	state               classroom.State
+	epoch               string
+	lastTurnSignature   string
+	turnVersion         uint64
+	duplexInputRevision uint64
+	seenEvents          map[string]bool
+	eventOrder          []string
+	lastAnswer          string
+	teacherPending      string
+	teacherText         string
+	phaseSince          time.Time
+	lastPhase           string
+	lastActions         []classroom.Action
+	deferredActions     []classroom.Action
+	deferredFeedback    []string
+	deferredFailures    []teacherFailureIntent
+	deferEffects        bool
+	encourageCounter    int
+	deliveryReady       bool
+	finished            bool
+	settlementUncertain bool
+	lessonStatus        string
+}
+
+func (r *Room) captureMutationSnapshot() roomMutationSnapshot {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	seen := make(map[string]bool, len(r.seenEvents))
+	for id, value := range r.seenEvents {
+		seen[id] = value
+	}
+	return roomMutationSnapshot{
+		state: r.machine.Snapshot(), epoch: r.epoch, lastTurnSignature: r.lastTurnSignature,
+		turnVersion: r.turnVersion, duplexInputRevision: r.duplexInputRevision,
+		seenEvents: seen, eventOrder: append([]string(nil), r.eventOrder...), lastAnswer: r.lastAnswer,
+		teacherPending: r.teacherPending, teacherText: r.teacherText, phaseSince: r.phaseSince,
+		lastPhase: r.lastPhase, lastActions: cloneClassroomActions(r.lastActions),
+		deferredActions: cloneClassroomActions(r.deferredActions), deferredFeedback: append([]string(nil), r.deferredFeedback...),
+		deferredFailures: append([]teacherFailureIntent(nil), r.deferredFailures...),
+		deferEffects:     r.deferEffects, encourageCounter: r.encourageCounter, deliveryReady: r.deliveryReady,
+		finished: r.finished, settlementUncertain: r.settlementUncertain, lessonStatus: r.lessonStatus,
+	}
+}
+
+func (r *Room) restoreMutationSnapshot(snapshot roomMutationSnapshot) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if err := r.machine.Restore(snapshot.state); err != nil {
+		return err
+	}
+	r.epoch = snapshot.epoch
+	r.lastTurnSignature = snapshot.lastTurnSignature
+	r.turnVersion = snapshot.turnVersion
+	r.duplexInputRevision = snapshot.duplexInputRevision
+	r.seenEvents = make(map[string]bool, len(snapshot.seenEvents))
+	for id, value := range snapshot.seenEvents {
+		r.seenEvents[id] = value
+	}
+	r.eventOrder = append([]string(nil), snapshot.eventOrder...)
+	r.lastAnswer = snapshot.lastAnswer
+	r.teacherPending = snapshot.teacherPending
+	r.teacherText = snapshot.teacherText
+	r.phaseSince = snapshot.phaseSince
+	r.lastPhase = snapshot.lastPhase
+	r.lastActions = cloneClassroomActions(snapshot.lastActions)
+	r.deferredActions = cloneClassroomActions(snapshot.deferredActions)
+	r.deferredFeedback = append([]string(nil), snapshot.deferredFeedback...)
+	r.deferredFailures = append([]teacherFailureIntent(nil), snapshot.deferredFailures...)
+	r.deferEffects = snapshot.deferEffects
+	r.encourageCounter = snapshot.encourageCounter
+	r.deliveryReady = snapshot.deliveryReady
+	r.finished = snapshot.finished
+	r.settlementUncertain = snapshot.settlementUncertain
+	r.lessonStatus = snapshot.lessonStatus
+	return nil
+}
+
+func cloneClassroomActions(actions []classroom.Action) []classroom.Action {
+	copyActions := append([]classroom.Action(nil), actions...)
+	for i := range copyActions {
+		copyActions[i].Meanings = append([]string(nil), copyActions[i].Meanings...)
+	}
+	return copyActions
+}
+
 // beginDeferredEffects fences external Agent/TTS/judge effects while a duplex
 // confirmation is being committed. State transitions still run and their actions
 // are retained until flushDeferredEffects is called after the commit.
@@ -426,6 +522,8 @@ func (r *Room) beginDeferredEffects() {
 	defer r.mu.Unlock()
 	r.deferEffects = true
 	r.deferredActions = nil
+	r.deferredFeedback = nil
+	r.deferredFailures = nil
 }
 
 func (r *Room) discardDeferredEffects() {
@@ -433,6 +531,8 @@ func (r *Room) discardDeferredEffects() {
 	defer r.mu.Unlock()
 	r.deferEffects = false
 	r.deferredActions = nil
+	r.deferredFeedback = nil
+	r.deferredFailures = nil
 }
 
 func (r *Room) flushDeferredEffects(ctx context.Context) []Msg {
@@ -443,6 +543,8 @@ func (r *Room) flushDeferredEffects(ctx context.Context) []Msg {
 			"lesson_id": r.lessonID, "phase": r.machine.Phase(),
 		})
 		r.deferEffects = false
+		r.flushDeferredFeedbackLocked()
+		r.flushDeferredFailuresLocked()
 		return nil
 	}
 	r.app.Log.InfoCtx(r.traceContext(), "duplex", "deferred_effects_flush_started", map[string]any{
@@ -455,16 +557,40 @@ func (r *Room) flushDeferredEffects(ctx context.Context) []Msg {
 	r.inputContext = previousInputContext
 	if err != nil {
 		out := r.effectFailureLocked("task_unavailable")
+		r.flushDeferredFeedbackLocked()
+		r.flushDeferredFailuresLocked()
 		r.app.Log.ErrorCtx(r.traceContext(), "duplex", "deferred_effects_task_failed", map[string]any{
 			"lesson_id": r.lessonID, "phase": r.machine.Phase(),
 		})
 		return out
 	}
 	out := r.broadcastEffectsLocked(taskContext, true)
+	r.flushDeferredFeedbackLocked()
+	r.flushDeferredFailuresLocked()
 	r.app.Log.InfoCtx(r.traceContext(), "duplex", "deferred_effects_flush_completed", map[string]any{
 		"lesson_id": r.lessonID, "phase": r.machine.Phase(), "frame_count": len(out), "pending_action_count": len(r.deferredActions),
 	})
 	return out
+}
+
+func (r *Room) flushDeferredFeedbackLocked() {
+	// Queueing remains best-effort, matching ordinary classroom voice feedback
+	// semantics; it now happens after the durable confirmation boundary.
+	for _, payload := range r.deferredFeedback {
+		select {
+		case r.FeedbackCh <- payload:
+		default:
+			r.app.Log.WarnCtx(r.traceContext(), "feedback", "voice_feedback_queue_full", map[string]any{"lesson_id": r.lessonID})
+		}
+	}
+	r.deferredFeedback = nil
+}
+
+func (r *Room) flushDeferredFailuresLocked() {
+	for _, failure := range r.deferredFailures {
+		r.app.enqueueTeacherFailure(failure.lessonID, failure.entryID, failure.studentID, failure.target, failure.transcript, failure.kind, failure.epoch)
+	}
+	r.deferredFailures = nil
 }
 
 func (r *Room) currentItemView() (classroom.QuizItemView, bool) {
@@ -875,6 +1001,10 @@ func (r *Room) handleVoiceInputLocked(text, answerText string) (string, []Msg) {
 	}
 	r.activateDeliveryLocked()
 	if _, payload, ok := r.voiceParser.MatchFeedback(text); ok {
+		if r.deferEffects {
+			r.deferredFeedback = append(r.deferredFeedback, payload)
+			return "feedback", nil
+		}
 		select {
 		case r.FeedbackCh <- payload:
 		default:
@@ -930,7 +1060,12 @@ func (r *Room) handleVoiceInputLocked(text, answerText string) (string, []Msg) {
 			return "repeat_read", r.handleEventLocked(classroom.Event{Type: classroom.EvRepeatDone})
 		}
 		if result == "no_match" {
-			r.app.enqueueTeacherFailure(r.lessonID, w.ID, r.studentID, w.Word, text, "target_mismatch", r.epoch)
+			failure := teacherFailureIntent{lessonID: r.lessonID, entryID: w.ID, studentID: r.studentID, target: w.Word, transcript: text, kind: "target_mismatch", epoch: r.epoch}
+			if r.deferEffects {
+				r.deferredFailures = append(r.deferredFailures, failure)
+			} else {
+				r.app.enqueueTeacherFailure(failure.lessonID, failure.entryID, failure.studentID, failure.target, failure.transcript, failure.kind, failure.epoch)
+			}
 		}
 		return "", nil // 未确认目标词：继续听（原超时策略不变）
 	}

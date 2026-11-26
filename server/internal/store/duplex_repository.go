@@ -54,6 +54,15 @@ type DuplexOutbox struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
+type DuplexFeedbackDelivery struct {
+	SubmissionID string `gorm:"primaryKey"`
+	StudentID    int64  `gorm:"index"`
+	LessonID     int64  `gorm:"index"`
+	Text         string
+	Status       string `gorm:"index;not null;default:pending"`
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
 type DuplexCandidate struct {
 	DecisionID, Epoch, UtteranceID string
 	InputRevision                  uint64
@@ -61,13 +70,37 @@ type DuplexCandidate struct {
 	State                          json.RawMessage
 	Effects                        []json.RawMessage
 }
-type DuplexRepo struct{ db *gorm.DB }
+type DuplexRepo struct {
+	db *gorm.DB
+	// afterSnapshotCommit is a deterministic fault seam for the uncertain
+	// commit boundary tests; production repositories leave it nil.
+	afterSnapshotCommit func() error
+}
 
-func NewDuplexRepo(db *gorm.DB) *DuplexRepo { return &DuplexRepo{db} }
+func NewDuplexRepo(db *gorm.DB) *DuplexRepo { return &DuplexRepo{db: db} }
 
 // Migrate is explicitly opt-in; normal store.Migrate never creates these tables.
 func (r *DuplexRepo) Migrate() error {
-	return r.db.AutoMigrate(&DuplexCheckpoint{}, &DuplexReceipt{}, &DuplexOutbox{})
+	return r.db.AutoMigrate(&DuplexCheckpoint{}, &DuplexReceipt{}, &DuplexOutbox{}, &DuplexFeedbackDelivery{})
+}
+
+func (r *DuplexRepo) SaveFeedbackDelivery(ctx context.Context, student, lesson int64, id, text string) error {
+	if student <= 0 || lesson <= 0 || !validDuplexString(id) || text == "" || len(text) > 8192 {
+		return ErrDuplexConflict
+	}
+	row := DuplexFeedbackDelivery{SubmissionID: id, StudentID: student, LessonID: lesson, Text: text, Status: "pending"}
+	return r.db.WithContext(ctx).Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "submission_id"}}, DoNothing: true}).Create(&row).Error
+}
+func (r *DuplexRepo) PendingFeedbackDeliveries(ctx context.Context, student, lesson int64) ([]DuplexFeedbackDelivery, error) {
+	rows := []DuplexFeedbackDelivery{}
+	err := r.db.WithContext(ctx).Where("student_id=? AND lesson_id=? AND status=?", student, lesson, "pending").Order("created_at").Limit(32).Find(&rows).Error
+	return rows, err
+}
+func (r *DuplexRepo) CompleteFeedbackDelivery(ctx context.Context, student int64, id string) error {
+	return r.db.WithContext(ctx).Model(&DuplexFeedbackDelivery{}).Where("student_id=? AND submission_id=? AND status=?", student, id, "pending").Updates(map[string]any{"status": "completed", "updated_at": time.Now().UTC()}).Error
+}
+func (r *DuplexRepo) FailFeedbackDelivery(ctx context.Context, student int64, id string) error {
+	return r.db.WithContext(ctx).Model(&DuplexFeedbackDelivery{}).Where("student_id=? AND submission_id=? AND status=?", student, id, "pending").Updates(map[string]any{"status": "failed", "updated_at": time.Now().UTC()}).Error
 }
 
 // PrepareReceipt records the single-use confirmation intent before classroom
@@ -135,7 +168,7 @@ func (r *DuplexRepo) RejectReceipt(ctx context.Context, student, lesson int64, d
 // the matching confirmation receipt committed, provided the persisted snapshot
 // still equals the caller's pre-transition state. It is legacy-only and refuses
 // to operate once a duplex checkpoint exists; new code must use Commit.
-func (r *DuplexRepo) CommitSnapshot(ctx context.Context, student, lesson int64, decisionID string, expectedState, state any) error {
+func (r *DuplexRepo) CommitSnapshot(ctx context.Context, student, lesson int64, decisionID string, expectedState, state any, feedback ...*DuplexFeedbackDelivery) error {
 	if student <= 0 || lesson <= 0 || !validDuplexString(decisionID) || expectedState == nil || state == nil {
 		return ErrDuplexConflict
 	}
@@ -147,7 +180,7 @@ func (r *DuplexRepo) CommitSnapshot(ctx context.Context, student, lesson int64, 
 	if err != nil || len(raw) > 1<<20 || !json.Valid(raw) {
 		return ErrDuplexConflict
 	}
-	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	err = r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		key := fmt.Sprintf("snapshot/%d", lesson)
 		if err := tx.Exec("UPDATE runtime_records SET value=value WHERE key=? AND 1=0", key).Error; err != nil {
 			return err
@@ -187,8 +220,29 @@ func (r *DuplexRepo) CommitSnapshot(ctx context.Context, student, lesson int64, 
 		if receiptUpdate.RowsAffected != 1 {
 			return ErrDuplexConflict
 		}
+		if len(feedback) > 0 && feedback[0] != nil {
+			f := *feedback[0]
+			if f.StudentID != student || f.LessonID != lesson || !validDuplexString(f.SubmissionID) || f.Text == "" || len(f.Text) > 8192 {
+				return ErrDuplexConflict
+			}
+			f.Status = "pending"
+			if err := tx.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "submission_id"}}, DoNothing: true}).Create(&f).Error; err != nil {
+				return err
+			}
+			var existing DuplexFeedbackDelivery
+			if err := tx.First(&existing, "submission_id=?", f.SubmissionID).Error; err != nil {
+				return err
+			}
+			if existing.StudentID != student || existing.LessonID != lesson || existing.Text != f.Text {
+				return ErrDuplexConflict
+			}
+		}
 		return nil
 	})
+	if err == nil && r.afterSnapshotCommit != nil {
+		return r.afterSnapshotCommit()
+	}
+	return err
 }
 func (r *DuplexRepo) CreateCheckpoint(ctx context.Context, student, lesson int64, state json.RawMessage) error {
 	if student <= 0 || lesson <= 0 || !json.Valid(state) || len(state) > 1<<20 {

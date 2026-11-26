@@ -230,6 +230,15 @@ func (s *Session) confirm(id Identity, revision uint64, final, textHash string, 
 	if id != s.id || revision != s.revision {
 		return ErrStale
 	}
+	// A verified confirmation may be retried after the durable Room commit
+	// reports an uncertain outcome. Accept only the identical text bound to the
+	// same identity; this does not grant a second utterance or bypass validation.
+	if s.state == "verified" {
+		if final == s.text && (textHash == "" || textHash == TextHash(final)) {
+			return nil
+		}
+		return ErrState
+	}
 	if s.state != "confirming" {
 		return ErrState
 	}

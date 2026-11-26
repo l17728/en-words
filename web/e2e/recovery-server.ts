@@ -28,7 +28,8 @@ export const test = base.extend<{ duplexPilot: boolean; duplexShadow: boolean; l
       req.on('end', () => {
         if (req.url === '/api/asr/transcriptions') {
           model.asrCalls++
-          const text = duplexShadow && model.asrCalls === 1 ? 'banana' : 'cat'
+          const text = duplexShadow && model.asrCalls === 1 ? 'banana'
+            : duplexShadow && model.asrCalls === 3 ? '我想反馈每天词太多了' : 'cat'
           res.end(JSON.stringify({ text }))
           return
         }

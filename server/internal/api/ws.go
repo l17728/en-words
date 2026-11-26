@@ -48,6 +48,43 @@ func duplexReason(err error) string {
 	}
 }
 
+func (a *App) deliverDuplexFeedback(ctx context.Context, student, lesson int64, client Client, eventID string) {
+	if a.DuplexStore == nil {
+		return
+	}
+	deliveryCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+	defer cancel()
+	rows, err := a.DuplexStore.PendingFeedbackDeliveries(deliveryCtx, student, lesson)
+	if err != nil {
+		a.Log.ErrorCtx(ctx, "duplex", "feedback_outbox_read_failed", map[string]any{"lesson_id": lesson, "error": err.Error()})
+		return
+	}
+	for _, row := range rows {
+		rec, submitErr := a.SubmitFeedback(deliveryCtx, student, FeedbackSubmission{SubmissionID: row.SubmissionID, Text: row.Text, Channel: "voice"})
+		if submitErr != nil {
+			var permanent *FeedbackSubmissionError
+			if errors.As(submitErr, &permanent) && !permanent.Retryable {
+				if err := a.DuplexStore.FailFeedbackDelivery(deliveryCtx, student, row.SubmissionID); err != nil {
+					a.Log.ErrorCtx(deliveryCtx, "duplex", "feedback_outbox_quarantine_failed", map[string]any{"submission_id": row.SubmissionID, "error": err.Error()})
+				}
+			}
+			f := Msg(feedbackError(submitErr))
+			f["type"] = "feedback_reply"
+			f["submission_id"] = row.SubmissionID
+			_ = client.Send(f)
+			continue
+		}
+		if err := client.Send(Msg{"type": "feedback_reply", "event_id": eventID, "submission_id": rec.SubmissionID, "status": rec.Status, "reply": rec.Reply, "feedback": rec}); err != nil {
+			a.Log.WarnCtx(deliveryCtx, "duplex", "feedback_outbox_send_pending", map[string]any{"lesson_id": lesson, "submission_id": row.SubmissionID})
+			continue
+		}
+		if err := a.DuplexStore.CompleteFeedbackDelivery(deliveryCtx, student, row.SubmissionID); err != nil {
+			a.Log.ErrorCtx(ctx, "duplex", "feedback_outbox_ack_failed", map[string]any{"lesson_id": lesson, "submission_id": row.SubmissionID, "error": err.Error()})
+			continue
+		}
+	}
+}
+
 const duplexReceiptRecoveryWindow = 30 * time.Second
 
 func duplexReceiptNeedsRecovery(receipt store.DuplexReceipt, now time.Time) bool {
@@ -357,6 +394,9 @@ func (a *App) handleWS(c *gin.Context) {
 		return
 	}
 	room.JoinContext(requestCtx, client) // 首帧 state_snapshot（J4）
+	if a.DuplexStore != nil {
+		go a.deliverDuplexFeedback(requestCtx, tk.StudentID, lessonID, client, "")
+	}
 	handshakeEffect.Release()
 	removeCloser, err := lease.AddCloser(func() { _ = client.Close() })
 	if err != nil {
@@ -538,6 +578,9 @@ func (a *App) handleWS(c *gin.Context) {
 				_ = client.Send(Msg{"type": "voice_final", "event_id": envelope.EventID, "session_id": shadowIdentity.Session, "epoch": shadowIdentity.Epoch, "input_revision": finalRevision, "utterance_id": shadowIdentity.Utterance, "text": text})
 				_ = client.Send(Msg{"type": "voice_confirmation_required", "event_id": envelope.EventID, "session_id": shadowIdentity.Session, "epoch": shadowIdentity.Epoch, "input_revision": finalRevision, "utterance_id": shadowIdentity.Utterance, "text": text, "expires_ms": 8000})
 			case "voice_confirm":
+				var feedbackAfterCommit *FeedbackSubmission
+				var feedbackEventID string
+				commitAccepted := false
 				func() {
 					room.mutationMu.Lock()
 					defer room.mutationMu.Unlock()
@@ -551,6 +594,24 @@ func (a *App) handleWS(c *gin.Context) {
 					if err := shadowSession.ConfirmWithHash(shadowIdentity, uint64(revision), final, textHash, time.Now()); err != nil {
 						_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": duplexReason(err)})
 						return
+					}
+					if _, body, matched := room.voiceParser.MatchFeedback(final); matched {
+						id := "duplex_" + shadowIdentity.Utterance
+						if !feedbackSubmissionID.MatchString(id) {
+							_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "invalid_feedback_submission_id"})
+							return
+						}
+						envelope.SubmissionID = id
+						normalized, validationErr := normalizeFeedback(FeedbackSubmission{SubmissionID: id, Text: body, Channel: "voice"})
+						if validationErr != nil {
+							failure := Msg(feedbackError(validationErr))
+							failure["type"] = "feedback_reply"
+							failure["submission_id"] = id
+							_ = client.Send(failure)
+							return
+						}
+						feedbackAfterCommit = &normalized
+						feedbackEventID = envelope.EventID
 					}
 					var receipt store.DuplexReceipt
 					if a.DuplexStore != nil {
@@ -573,6 +634,7 @@ func (a *App) handleWS(c *gin.Context) {
 						if receipt.Status == "committed" {
 							_ = client.Send(Msg{"type": "voice_confirmed", "event_id": envelope.EventID, "utterance_id": shadowIdentity.Utterance, "command": "replayed", "commit_receipt": receipt.DecisionID, "replayed": true})
 							shadowSession = nil
+							commitAccepted = true
 							return
 						}
 						if duplexReceiptNeedsRecovery(receipt, time.Now().UTC()) {
@@ -581,11 +643,16 @@ func (a *App) handleWS(c *gin.Context) {
 						}
 					}
 					var beforeState classroom.State
+					var beforeRoom roomMutationSnapshot
 					if a.DuplexStore != nil {
-						beforeState = room.durableSnapshot()
+						beforeRoom = room.captureMutationSnapshot()
+						beforeState = beforeRoom.state
 						room.beginDeferredEffects()
 					}
-					cmd, _, frames := room.handleClientVoiceSubmissionContext(ctx, envelope, final, client)
+					cmd, body, frames := room.handleClientVoiceSubmissionContext(ctx, envelope, final, client)
+					if cmd == "feedback" && feedbackAfterCommit != nil {
+						feedbackAfterCommit.Text = body
+					}
 					rejected := len(frames) > 0 && frames[0]["type"] == "event_rejected"
 					if rejected {
 						if a.DuplexStore != nil {
@@ -605,11 +672,28 @@ func (a *App) handleWS(c *gin.Context) {
 					}
 					effectsStatus := "completed"
 					if a.DuplexStore != nil && !rejected {
-						if err := a.DuplexStore.CommitSnapshot(ctx, tk.StudentID, lessonID, receipt.DecisionID, beforeState, room.durableSnapshot()); err != nil {
-							room.discardDeferredEffects()
-							_ = room.restoreDurableSnapshot(beforeState)
-							_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "commit_pending_recovery", "utterance_id": shadowIdentity.Utterance})
-							return
+						var delivery *store.DuplexFeedbackDelivery
+						if feedbackAfterCommit != nil {
+							delivery = &store.DuplexFeedbackDelivery{SubmissionID: feedbackAfterCommit.SubmissionID, StudentID: tk.StudentID, LessonID: lessonID, Text: feedbackAfterCommit.Text}
+						}
+						if err := a.DuplexStore.CommitSnapshot(ctx, tk.StudentID, lessonID, receipt.DecisionID, beforeState, room.durableSnapshot(), delivery); err != nil {
+							stored, re := a.DuplexStore.LookupReceipt(ctx, tk.StudentID, lessonID, receipt.DecisionID)
+							var runtimeSnapshot store.RuntimeRecord
+							se := a.DB.WithContext(ctx).First(&runtimeSnapshot, "key = ?", "snapshot/"+strconv.FormatInt(lessonID, 10)).Error
+							want, _ := json.Marshal(room.durableSnapshot())
+							if re == nil && se == nil && stored.Status == "committed" && runtimeSnapshot.Value == string(want) {
+								a.Log.WarnCtx(ctx, "duplex", "commit_outcome_recovered", map[string]any{"lesson_id": lessonID, "decision_id": receipt.DecisionID})
+							} else {
+								if re == nil && stored.Status != "committed" {
+									_ = room.restoreMutationSnapshot(beforeRoom)
+								} else {
+									room.mu.Lock()
+									room.retired = true
+									room.mu.Unlock()
+								}
+								_ = client.Send(Msg{"type": "voice_stream_error", "event_id": envelope.EventID, "reason": "commit_pending_recovery", "utterance_id": shadowIdentity.Utterance})
+								return
+							}
 						}
 						// flushDeferredEffects broadcasts through Room.emitLocked. Its
 						// returned frames are for REST/tests and must not be sent again
@@ -635,9 +719,16 @@ func (a *App) handleWS(c *gin.Context) {
 					if a.DuplexStore != nil {
 						confirmed["commit_receipt"] = receipt.DecisionID
 					}
+					if feedbackAfterCommit != nil {
+						confirmed["submission_id"] = feedbackAfterCommit.SubmissionID
+					}
 					_ = client.Send(confirmed)
 					shadowSession = nil
+					commitAccepted = true
 				}()
+				if commitAccepted && feedbackAfterCommit != nil {
+					go a.deliverDuplexFeedback(ctx, tk.StudentID, lessonID, client, feedbackEventID)
+				}
 			case "resume":
 				room.resumeClient(ctx, client)
 			}

@@ -73,6 +73,7 @@ test('WS duplex shadow requires explicit confirmation before classroom progress'
     // sending immediately from that snapshot catches stale-turn initialization.
     let eventIndex = 0
     const sendClassroomEvent = async (event: string) => {
+      for (let attempt = 0; attempt < 4; attempt++) {
       const eventId = `duplex-class-${++eventIndex}`
       const processed = new Promise<void>((resolve, reject) => {
         const timer = setTimeout(() => {
@@ -89,13 +90,17 @@ test('WS duplex shadow requires explicit confirmation before classroom progress'
           } else if (frame.type === 'event_rejected') {
             clearTimeout(timer)
             ws.removeEventListener('message', handler)
-            reject(new Error(`event_rejected:${frame.reason || 'unknown'}:${event}`))
+            reject(Object.assign(new Error(`event_rejected:${frame.reason || 'unknown'}:${event}`), { context: frame.context }))
           }
         }
         ws.addEventListener('message', handler)
       })
       ws.send(JSON.stringify({ type: 'student_event', event, context: liveContext, event_id: eventId }))
-      await processed
+      try { await processed; return } catch (error: any) {
+        if (!error.context || attempt === 3) throw error
+        liveContext = error.context
+      }
+      }
     }
     await sendClassroomEvent('word_clicked')
     await sendClassroomEvent('tts_finished')
@@ -137,12 +142,18 @@ test('WS duplex shadow requires explicit confirmation before classroom progress'
         phaseChanges: frames.slice(previewIndex + 1, confirmedIndex).filter(frame => frame.type === 'phase_changed').map(frame => frame.phase) }
     }
     const attempts = [await recognizeAndConfirm(1), await recognizeAndConfirm(2)]
+    const feedback = await recognizeAndConfirm(3)
     ws.close()
     const last = attempts[attempts.length - 1]
     return { confirmed: last.confirmed, transcript: last.final.text, attempts,
+      feedback: { confirmed: feedback.confirmed, transcript: feedback.final.text, postConfirmActions: feedback.postConfirmActions, phaseChanges: feedback.phaseChanges },
       acceptedAfterSnapshot: acceptedAfterSnapshot.map(frame => frame.type === 'ui_action' ? frame.action?.type : frame.type), staleAfterSnapshot,
       phases: frames.filter(frame => frame.type === 'phase_changed').map(frame => frame.phase), frames: frames.map(frame => frame.type) }
   }, { lessonId, ticket: entered.ticket, context: entered.snapshot.context })
+  const analyses = await api(request, `/student/lessons/${lessonId}/teacher-analysis`, f.student.token, undefined, 'GET')
+  const feedbackID = result.feedback.confirmed.submission_id
+  expect(feedbackID, 'confirmed voice feedback must include its idempotency key').toMatch(/^duplex_[A-Za-z0-9_-]+$/)
+  const feedbackRecord = await api(request, `/feedbacks/submissions/${feedbackID}`, f.student.token, undefined, 'GET')
 
   expect(result.confirmed.type).toBe('voice_confirmed')
   expect(result.confirmed.commit_receipt).toBeTruthy()
@@ -163,6 +174,13 @@ test('WS duplex shadow requires explicit confirmation before classroom progress'
   for (const attempt of result.attempts) expect(attempt.actionCountAfterConfirm).toBeGreaterThanOrEqual(attempt.actionCountBeforeConfirm)
   expect(result.frames).toContain('voice_confirmation_required')
   expect(result.frames).toContain('voice_confirmed')
+  expect(result.feedback.confirmed.command).toBe('feedback', `feedback transcript was ${result.feedback.transcript}`)
+  expect(feedbackRecord.submission_id).toBe(feedbackID)
+  expect(feedbackRecord.text).toContain('每天')
+  expect(result.feedback.postConfirmActions).toEqual([], 'feedback capture must not mutate or advance the classroom')
+  expect(result.feedback.phaseChanges).toEqual([])
+  expect(analyses.some((row: any) => row.transcript === 'banana' && row.failure_type === 'target_mismatch'),
+    'confirmed repeat mismatch should enqueue exactly the diagnostic source after the commit').toBe(true)
   expect(result.staleAfterSnapshot).toEqual([], 'Join recovery frames must not be discarded as stale after the snapshot')
   expect(result.acceptedAfterSnapshot).toContain('play_tts', 'the client must consume the initial recovered playback action')
 })

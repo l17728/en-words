@@ -346,16 +346,41 @@ func TestDuplexCommitSnapshotAtomicallyPublishesStateAndReceipt(t *testing.T) {
 	_, err := r.PrepareReceipt(ctx, in)
 	require.NoError(t, err)
 	require.NoError(t, db.Create(&RuntimeRecord{Key: "snapshot/2", Value: `{"phase":"before"}`}).Error)
-	require.NoError(t, r.CommitSnapshot(ctx, 1, 2, in.DecisionID, map[string]any{"phase": "before"}, map[string]any{"phase": "wait_answer"}))
+	delivery := &DuplexFeedbackDelivery{SubmissionID: "duplex_utterance-snapshot", StudentID: 1, LessonID: 2, Text: "请减少每天词量"}
+	require.NoError(t, r.CommitSnapshot(ctx, 1, 2, in.DecisionID, map[string]any{"phase": "before"}, map[string]any{"phase": "wait_answer"}, delivery))
 	var row RuntimeRecord
 	require.NoError(t, db.First(&row, "key=?", "snapshot/2").Error)
 	require.JSONEq(t, `{"phase":"wait_answer"}`, row.Value)
 	got, err := r.LookupReceipt(ctx, 1, 2, in.DecisionID)
 	require.NoError(t, err)
 	require.Equal(t, "committed", got.Status)
+	pending, err := r.PendingFeedbackDeliveries(ctx, 1, 2)
+	require.NoError(t, err)
+	require.Len(t, pending, 1, "feedback delivery intent commits with the room snapshot")
+	require.Equal(t, delivery.SubmissionID, pending[0].SubmissionID)
+	require.Equal(t, delivery.Text, pending[0].Text)
 	require.ErrorIs(t, r.CommitSnapshot(ctx, 1, 2, in.DecisionID, map[string]any{"phase": "wait_answer"}, map[string]any{"phase": "evil"}), ErrDuplexConflict, "a committed receipt cannot overwrite a snapshot")
 	require.NoError(t, db.First(&row, "key=?", "snapshot/2").Error)
 	require.JSONEq(t, `{"phase":"wait_answer"}`, row.Value)
+}
+
+func TestDuplexCommitSnapshotCanReturnErrorAfterDurableCommit(t *testing.T) {
+	r, db := duplexRepo(t)
+	ctx := context.Background()
+	require.NoError(t, db.Where("lesson_id=?", 2).Delete(&DuplexCheckpoint{}).Error)
+	in := DuplexReceipt{DecisionID: "decision-uncertain", LessonID: 2, StudentID: 1, Epoch: "epoch-uncertain", InputRevision: 9, UtteranceID: "utterance-uncertain", Status: "committing"}
+	_, err := r.PrepareReceipt(ctx, in)
+	require.NoError(t, err)
+	require.NoError(t, db.Create(&RuntimeRecord{Key: "snapshot/2", Value: `{"phase":"before"}`}).Error)
+	r.afterSnapshotCommit = func() error { return errors.New("simulated lost commit acknowledgement") }
+	err = r.CommitSnapshot(ctx, 1, 2, in.DecisionID, map[string]any{"phase": "before"}, map[string]any{"phase": "after"})
+	require.Error(t, err)
+	var snapshot RuntimeRecord
+	require.NoError(t, db.First(&snapshot, "key=?", "snapshot/2").Error)
+	require.JSONEq(t, `{"phase":"after"}`, snapshot.Value)
+	got, err := r.LookupReceipt(ctx, 1, 2, in.DecisionID)
+	require.NoError(t, err)
+	require.Equal(t, "committed", got.Status)
 }
 
 func TestDuplexLegacySnapshotCASRejectsStaleRoomWriter(t *testing.T) {
