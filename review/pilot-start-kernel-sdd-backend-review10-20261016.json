@@ -1,0 +1,31 @@
+﻿{
+  "review": "pilot-start-kernel-sdd-backend-review10",
+  "date": "2026-10-16",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "scope": "read-only backend review of ExecuteTool permit, sidecar, SQLite recovery, schema and build tags",
+  "code_modified": false,
+  "docs_modified": false,
+  "tests_run": false,
+  "verdict": "BLOCK",
+  "findings": [
+    {"id":"BE10-1","severity":"P1","status":"open","title":"Opaque PilotToolPermit is copyable and has no specified atomic consumption gate","recommendation":"Route Registry invocation through a one-shot PermitExecutor/closure or Registry wrapper that consumes permit atomically before handler entry; prevent adapter access to a bypass Registry.Call."}
+  ],
+  "reviewed_areas": {
+    "planner_prepare_execute_tool": "PASS",
+    "sidecar_attempt_order": "PASS_WITH_IMPLEMENTATION_GATE",
+    "sqlite_writer_receipt_recovery": "PASS_WITH_IMPLEMENTATION_GATE",
+    "schema_mixed_lifecycle": "PASS",
+    "build_tag_package_boundary": "PASS",
+    "task_trace_decision_association": "PASS",
+    "BE8_1": "CLOSED",
+    "BE8_2": "CLOSED",
+    "BE8_3": "CLOSED",
+    "BE6_BE7": "CLOSED_WITH_EXISTING_IMPLEMENTATION_GATES"
+  },
+  "implementation_gates": [
+    "Specify and implement a non-bypassable, atomically consumed one-shot permit boundary before Registry handler entry.",
+    "Test copied/reused/mismatched permits are rejected before handler execution.",
+    "Implement pinned-connection rollback_proven typed outcome without promoting uncertainty to rollback proof.",
+    "Verify tagged and default Go build graphs exclude/include the intended adapter and harness packages."
+  ]
+}

@@ -1,0 +1,4 @@
+﻿Command: go vet -tags pilot_e2e ./...
+Working directory: D:\en-words\server
+Exit: 0
+Diagnostics: none. No copylocks findings.

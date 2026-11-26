@@ -1,0 +1,25 @@
+﻿{
+  "review": "pilot-start-kernel-sdd-architecture-review13",
+  "date": "2026-10-16",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "comparison": "architecture-review11 isolated-start approval and review12 catalog-generation finding",
+  "domain": "architecture",
+  "verdict": "PASS",
+  "tests_run": false,
+  "review12_finding": {
+    "topic": "cross-case catalog generation serialization",
+    "status": "CLOSED",
+    "evidence_sections": [42, 93]
+  },
+  "reviewed_areas": {
+    "case_then_catalog_lock_order": "PASS",
+    "catalog_lock_does_not_wait_for_case_lock": "PASS",
+    "generation_read_append_sync_atomicity": "PASS",
+    "lock_scope_excludes_planner_database_deletion_network": "PASS",
+    "two_case_concurrent_restart_chain_test": "PASS",
+    "cleanup_quarantine_restart_semantics": "PASS",
+    "store_api_production_isolation": "PASS",
+    "receipt_first_and_writer_transaction_contract": "PASS"
+  },
+  "open_findings": []
+}

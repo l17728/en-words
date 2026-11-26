@@ -1,0 +1,29 @@
+test_binding_and_expiry_use_distinct_provenance (review.test_pilot_runroot_manifest.QuotaJournalManifestTests.test_binding_and_expiry_use_distinct_provenance) ... ok
+test_durable_order_and_duplicate_replay_are_explicit (review.test_pilot_runroot_manifest.QuotaJournalManifestTests.test_durable_order_and_duplicate_replay_are_explicit) ... ERROR
+test_journal_failure_and_corruption_fail_closed (review.test_pilot_runroot_manifest.QuotaJournalManifestTests.test_journal_failure_and_corruption_fail_closed) ... ok
+test_manifest_sources_are_exact_and_current (review.test_pilot_runroot_manifest.QuotaJournalManifestTests.test_manifest_sources_are_exact_and_current) ... ok
+test_quota_cases_have_complete_unique_barriers_and_remain_design_only (review.test_pilot_runroot_manifest.QuotaJournalManifestTests.test_quota_cases_have_complete_unique_barriers_and_remain_design_only) ... ok
+test_browser_mutations_require_bearer_and_trusted_origin (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_browser_mutations_require_bearer_and_trusted_origin) ... ok
+test_close_tuple_conflict_separates_http_and_internal_fault_entry (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_close_tuple_conflict_separates_http_and_internal_fault_entry) ... ok
+test_each_quota_dimension_has_an_isolated_case (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_each_quota_dimension_has_an_isolated_case) ... ok
+test_every_product_case_remains_design_only (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_every_product_case_remains_design_only) ... ok
+test_intent_mint_limits_are_server_side_and_fail_closed (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_intent_mint_limits_are_server_side_and_fail_closed) ... ok
+test_manifest_binds_exact_existing_design_sources (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_manifest_binds_exact_existing_design_sources) ... ok
+test_manifest_matches_full_documented_case_inventory (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_manifest_matches_full_documented_case_inventory) ... ok
+test_nonce_contention_barrier_has_single_owner_and_observed_waiters (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_nonce_contention_barrier_has_single_owner_and_observed_waiters) ... ok
+test_route_authentication_denials_are_separate_cases (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_route_authentication_denials_are_separate_cases) ... ok
+test_schema_fault_prerequisite_count_and_hash_are_current (review.test_pilot_runroot_manifest.RunRootProductManifestTests.test_schema_fault_prerequisite_count_and_hash_are_current) ... ok
+
+======================================================================
+ERROR: test_durable_order_and_duplicate_replay_are_explicit (review.test_pilot_runroot_manifest.QuotaJournalManifestTests.test_durable_order_and_duplicate_replay_are_explicit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\en-words\review\test_pilot_runroot_manifest.py", line 196, in test_durable_order_and_duplicate_replay_are_explicit
+    self.assertLess(self.spec.index("appends and syncs `PERMIT`"), self.spec.index("then reserves and syncs the keyring nonce"))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: substring not found
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.036s
+
+FAILED (errors=1)

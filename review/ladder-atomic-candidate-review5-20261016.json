@@ -1,0 +1,253 @@
+{
+  "review": "ladder-atomic-candidate-review5",
+  "date": "2026-10-16",
+  "mode": "read_only_static_no_tests_build_services_or_source_edit",
+  "status": "passed_for_isolated_validation",
+  "manifest_sha256": "89278ad233bb02adbc36a5b31e466e00962b3a1fd51486de8993381bd4d85764",
+  "expected_manifest_sha256": "89278ad233bb02adbc36a5b31e466e00962b3a1fd51486de8993381bd4d85764",
+  "hash_verification": {
+    "files": [
+      {
+        "path": "server/internal/api/agenttools.go",
+        "sha256": "14531080b368cb82f4541891043257b24bd81d6e21a3761e43b81f03e6e94519",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/api/agenttransaction.go",
+        "sha256": "9bfa3164b42a036bee111dd8bdbf74b6ae129ae0b92fd9a2f66a4ea38336c1a9",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/api/app.go",
+        "sha256": "f075e9e48ccd7e44a4aac1a008ce2df62699d41c1d8e95fc994393dde3ab4afe",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/api/configmutation.go",
+        "sha256": "eb2b40f0d6d62c69e09a662f2291808704adecf25a3ffa6b400800aa9b97e79a",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/api/configroutes.go",
+        "sha256": "7ff8073e2b3b7500208bb599afe5c4a5efed43c573432ba239848e8a24a4f78c",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/api/extra.go",
+        "sha256": "f16eb367ad6327a0a59e1e41bd4a4eb1bff4f771229f0cb182e2473ce33b4113",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/api/feedbackexecution.go",
+        "sha256": "7b9d3fb1440a715e8c0227be8710c52a148551b8f2d412f62050acd982219cc0",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/api/feedbackstorage.go",
+        "sha256": "6e0063fc3e2543d8c8b970e8910c9a1660790100259272f46ee74ae523843458",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/api/hub.go",
+        "sha256": "3239252fb4496cc8a7d8ba86b3df8b7400a3eb723b1d589f193fa991403fef42",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/api/ladder_atomic_regression_test.go",
+        "sha256": "627e2655b88269fd7fd7f34672281711e73cae875bf326d28fa0f7275b83c5e9",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/api/ladder_concurrency_regression_test.go",
+        "sha256": "7b0a0820a40e6ea68ce8ceec075278bee5fd3f02ba69b8d44ecd996d030572f9",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/api/ladder_consumer_regression_test.go",
+        "sha256": "610ee936c395e1edcfc04e90f60ba4f9dbcfdffa88c384884850cc96818ba122",
+        "manifest_match": true,
+        "unchanged_since_review4": false
+      },
+      {
+        "path": "server/internal/api/ladder_failure_regression_test.go",
+        "sha256": "45a72a5ea71b43f2189639fd2eaf542ee92b4901bb1ca401186dbd8d0d07814b",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/api/ladder_review_regression_test.go",
+        "sha256": "d707459173c8641fe7825ff4be0ddf8e339f7049349c9813a1f725235cfd8173",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/api/ladder_routes_regression_test.go",
+        "sha256": "8c37d01a4e5ee815b4d9512a8fa256c60a0afcf93ae965f17c1a20f3666e3bb6",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/api/ladder_work_boundary_test.go",
+        "sha256": "65785968d81d0723563cdbfe457a7301b6ae9e6448475e05e150024f5d2a99fe",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/api/lessonexecution.go",
+        "sha256": "47fbeded9137aab5613fee190c8f961f66cbd9c235a1ca002b8d1dab4fd1a690",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/api/router.go",
+        "sha256": "cd7d21458a7f61ab339962db0fc5b2d0453733242afe96157982aa808cf2e990",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/config/config.go",
+        "sha256": "d53bad3696efcab84ec65171e5577fbe97afa099c75cd4f22e1c33985a188ef6",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/config/effective_view_test.go",
+        "sha256": "dd13c949327b8ad4877ba3a8ad5914808183479b72cceb31bb7c7c315fc3ade9",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/config/mutation.go",
+        "sha256": "56b4998f81c7485a0d474cf16af96f3d8b2985b50dd324d6d438473c1d8d1a1b",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/scheduler/ladder_scope.go",
+        "sha256": "d0c132d925e17a81848a9ae456942dc3f4bd37add65b330d8bf757fd126a0bb3",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/scheduler/scheduler.go",
+        "sha256": "65f14d1241f85cd71ef7fe98a8159519ab39fe79560c3654dafe5f3805f5081b",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/scheduler/settlement.go",
+        "sha256": "63c5c79ef1f6d2e4c4f9e9f5757de7458c30da386c1f15fe447fac64a56e966d",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/store/config_atomic.go",
+        "sha256": "c68f47a7227252805fe77c4791bb29bb38d37d36fe7530f396e1dae03f498d17",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "server/internal/store/config_atomic_regression_test.go",
+        "sha256": "d24100494cec40904baecf1ccc98134f254ae9f338a11f51a82610d6a95ec011",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "web/e2e/ladder-config.spec.ts",
+        "sha256": "3b44435bcd765d0e932f4e25c1ffb1a4198cdfc0619e3dd3b0299a7dca103ebf",
+        "manifest_match": true,
+        "unchanged_since_review4": false
+      },
+      {
+        "path": "web/e2e/recovery-server.ts",
+        "sha256": "2de8e3fa62c38222f45f009a7e762c5e25333b035839645d4fbc38dc18d3b5e4",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "web/playwright.ladder.config.ts",
+        "sha256": "ddd64090f95f42aa2daee113fccc65e81e5e3bee6a6fb0520bc34e4c665764eb",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "web/src/api/client.ts",
+        "sha256": "7a6eb344cc2449136e1f0bf435f44cf8b55ddd61f73021345c4e2db1e6e4d387",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "web/src/components/LadderSettings.tsx",
+        "sha256": "1338e5a86d740936fa728a837f8f8e3a734be39fa44e6373be067e7e35d58291",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "web/src/interaction/config-reconciliation.ts",
+        "sha256": "9b23a515a03b90584320d1efecf205337567fbfb9af2cd52ff7323f0bbb1546d",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "web/src/pages/Admin.tsx",
+        "sha256": "118c22adf4204f64a864bee54c602e1aa7eaec56857100804d737a954f51509d",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      },
+      {
+        "path": "web/tests/config-reconciliation.test.ts",
+        "sha256": "43dab403c98b63eb88ab5462f62209326176edee05f9011496e320b31c0bfc58",
+        "manifest_match": true,
+        "unchanged_since_review4": true
+      }
+    ],
+    "count": 34,
+    "matched": 34,
+    "changed_since_review4": [
+      "server/internal/api/ladder_consumer_regression_test.go",
+      "web/e2e/ladder-config.spec.ts"
+    ]
+  },
+  "blocking": [],
+  "required_before_test": [],
+  "reviewed_closures": [
+    {
+      "area": "real_remaining_word_fixture",
+      "evidence": "server/internal/api/ladder_consumer_regression_test.go:17 ladderRemainingNewWord",
+      "conclusion": "ImportBatch inserts real same-book elephant after existing lesson batch; ListEntries resolves actual ID and BookID; EnableBook builds card. StatusNew, non-boost, LastReviewAt nil, exclusion from original batch and unchanged batch are asserted. No arbitrary nonexistent word ID or SQL card creation."
+    },
+    {
+      "area": "reload_consumer",
+      "conclusion": "TestMode explicitly false. Existing stale-cache/RefreshPending/new-Room72h configuration checks remain; original taught cards retain72h due interval and next lesson must contain remaining word with72h measured from actual FinishedAt. This fixes missing-eligible-content prerequisite without changing planner24h selection window."
+    },
+    {
+      "area": "memory_linearization",
+      "conclusion": "Separate race/config_first/settlement_first subtests use fresh fixtures. Completion channels establish deterministic whole-operation order; race remains ungated. All taught-card intervals must match, deterministic cases require72h/24h respectively, race permits only those values; next lesson interval must match same value and contain new word. Final configuration, old Room frozen configuration and single notification remain asserted. No mixed due/schedule outcome accepted."
+    },
+    {
+      "area": "browser_real_consumption",
+      "conclusion": "A initially schedules single cat; only afterwards real admin import adds elephant and real student enable creates card. Owned DB reads assert new/non-boost/unreviewed same-book card, excluded from unchanged current batch. Existing actual A classroom completion now queries only taught cat card, verifies5day due, and next scheduled lesson contains elephant with5day OpenAt-FinishedAt. Controlled active B isolation and fault finally cleanup retained."
+    }
+  ],
+  "nonblocking_notes": [
+    "Fixture unassigned evidence is exclusion from the sole initial lesson and unchanged batch; explicitly asserting NextDueAt nil would be additional useful redundancy but is not needed to make the new-word eligibility real.",
+    "Deterministic subtests prove each serial order, while the single race subtest checks an allowed linearizable result; static review does not assert repeated scheduler interleaving coverage.",
+    "Prior review4 timing boundaries remain: repeating wait includes initial media, B has legitimate60s repeat timeout; preserve any precondition failure evidence and do not raise product limits to force green."
+  ],
+  "validation_boundaries": [
+    "Original r1 failures must remain recorded; this review approves test correction, not a production planner change.",
+    "No tests were run. Exact compilation, authored tests, broad coverage/race and browser execution remain pending gates.",
+    "No real model/audio or Pilot classroom integration claim."
+  ]
+}

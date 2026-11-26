@@ -1,0 +1,96 @@
+{
+  "review_date": "2026-10-16",
+  "status": "approved_for_frozen_acceptance_execution",
+  "blocking_findings": 0,
+  "reviewer": "architecture/security/test-contract",
+  "execution": "Read-only review of actual source, test cases, reported hashes and existing logs. No tests/build/discovery/browser executed by reviewer.",
+  "previous_review": "review/frozen-browser145-architecture-review-20261016.json",
+  "files": [
+    {
+      "path": "review/run_frozen_browser_acceptance.py",
+      "sha256": "f69e7d4c632893b1b26b4811033ed311a51a9557793cb9a6545cd5945c6eea6a",
+      "actual_sha256": "f69e7d4c632893b1b26b4811033ed311a51a9557793cb9a6545cd5945c6eea6a",
+      "matches_report": true
+    },
+    {
+      "path": "review/test_frozen_browser_acceptance.py",
+      "sha256": "4a11d96834ef5184b280674188cd3614fb0949d75e3eca5d491a1b2319dae94e",
+      "actual_sha256": "4a11d96834ef5184b280674188cd3614fb0949d75e3eca5d491a1b2319dae94e",
+      "matches_report": true
+    },
+    {
+      "path": "web/playwright.frozen.config.ts",
+      "sha256": "b0c2a39d8ad5bb1818e63c24f195c225645d52aab2229239b8490350abed886b",
+      "actual_sha256": "b0c2a39d8ad5bb1818e63c24f195c225645d52aab2229239b8490350abed886b",
+      "matches_report": true
+    },
+    {
+      "path": "web/e2e/frozen-build.ts",
+      "sha256": "09a57099368090f8de9abc03a3c8a2dd8396d37a0b5686af1d509922e5d9e946",
+      "actual_sha256": "09a57099368090f8de9abc03a3c8a2dd8396d37a0b5686af1d509922e5d9e946",
+      "matches_report": true
+    },
+    {
+      "path": "web/tests/frozen-build.test.ts",
+      "sha256": "7e09ac4c4456beeb2392524cf0940c6ce5a6d09a27427a8272d397bba47891f8",
+      "actual_sha256": "7e09ac4c4456beeb2392524cf0940c6ce5a6d09a27427a8272d397bba47891f8",
+      "matches_report": true
+    }
+  ],
+  "tool_report_sha256": "0dfb16958a89349606002ef6b3a0edcc8138eed008364dbf05283866485f7616",
+  "handoff": {
+    "path": "review/pilot-r17-browser-handoff-20261016.json",
+    "actual_sha256": "a9050f5392407c5a151c555de83f60e0113489048f9e44d0df421f9830b95a9a",
+    "matches_pinned_runner_and_report": true
+  },
+  "closure": [
+    {
+      "id": "F145-A01",
+      "status": "closed",
+      "evidence": "validate_handoff pins approved manifest SHA, enforces exact five-role set/path/hash, current-role source_kind and Go hash, and exact current Go/mod/sum file hashes. Runs before any tests/build. Main regression rejects swapped binary and changed source before run_command."
+    },
+    {
+      "id": "F145-A02",
+      "status": "closed",
+      "evidence": "finalize_manifest collects each final field best-effort, records unknown/error and failed status without replacing existing failure, and writes complete not_completed_suites via atomic replacement. Popen is inside try; process finally records launch failure. Main regression deletes binary then fails final source inventory and verifies original failure retained. Final dependency drift also changes status and return code to nonzero."
+    },
+    {
+      "id": "F145-A03",
+      "status": "closed",
+      "evidence": "run_command handles BaseException after launch, attempts bounded owned-tree cleanup for nonterminal parent, falls back to parent.kill and15s wait, preserves original exception and explicitly leaves descendant termination unproven. Regression injects KeyboardInterrupt plus tree-kill error and unresolved wait."
+    }
+  ],
+  "dependency_integrity": {
+    "status": "accepted_with_explicit_bounded_contract",
+    "contract": "Installed web node_modules and resolved global npm: full byte hashes before/finally, full path/size/mtime each stage; Node executable/npm entry hash each stage; only top-level .tmp/.vite excluded. Not continuous byte monitoring or tamper-proof attestation.",
+    "regression": "Actual temporary dependency content changed with same size/mtime; metadata deliberately remains equal while final byte check rejects passed status.",
+    "limits": "Initial and final hashes cannot prove absence of transient content modification that is later restored. Excluded generated caches are outside package-byte guarantee. This follows the parent-approved bounded monitoring contract, not broader full continuous immutability."
+  },
+  "existing_evidence_checked": {
+    "python": {
+      "log": ".test-artifacts/frozen-browser145-tools-20261016/python-r3.log",
+      "tests": 12,
+      "result": "OK",
+      "seconds": 0.386
+    },
+    "node": {
+      "log": ".test-artifacts/frozen-browser145-tools-20261016/node-final.log",
+      "tests": 2,
+      "passed": 2,
+      "failed": 0
+    }
+  },
+  "retained_acceptance_contracts": [
+    "145-ID actual discovery still required; no existing results substituted.",
+    "SUB03 prerequisite2 separate from denominator; exact recovery six groups of7 and exact42 disjoint union.",
+    "Each accepted result exactly one pass/retry0/no skip/flaky/unexpected.",
+    "Only exact frontend command replaced; unchanged ordinary backend configs and timing gates.",
+    "Historical fifth binary restricted by current startup test call sites to old database creation."
+  ],
+  "limitations": [
+    "No claim that build, discovery, SUB03 or145 cases have passed.",
+    "Failure to write evidence due to unavailable output storage cannot be guaranteed away by atomic replacement; this is not crash-durable fsync journaling.",
+    "Cleanup reports parent outcome and descendant uncertainty, not proof all descendants stopped.",
+    "Original COMMIT long-tail incidents and voice/Pilot application readiness remain separate."
+  ]
+}

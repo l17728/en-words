@@ -1,0 +1,93 @@
+{
+  "review_id": "pilot-legacy-fence-sdd-security-review-20261016",
+  "date": "2026-10-16",
+  "reviewer_domain": "security",
+  "target": "docs/41-试点关闭态旧课堂保护接线SDD.md",
+  "references": [
+    "docs/36-全双工课堂统一提交接线设计.md §§15-18",
+    "server/internal/store/pilot_store.go",
+    "server/internal/store/pilot_identity.go",
+    "server/internal/store/pilot_schema.go",
+    "server/internal/store/pilot_legacy_bridge.go",
+    "server/internal/store/pilot_scope.go",
+    "server/internal/api/hub.go",
+    "server/internal/store/scheduler_repo.go"
+  ],
+  "review_type": "read-only design review",
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "not_approved_for_implementation",
+  "summary": "The fail-closed direction and closed-pilot boundary are appropriate, but security-critical contracts remain underspecified for writer ownership, unmigrated bridge serialization, authorization, cross-process deletion retirement, and old-binary deployment gating.",
+  "findings": [
+    {
+      "id": "SEC41-01",
+      "severity": "P1",
+      "blocker": true,
+      "title": "Writer acquisition proof and tx-bound guard contract are unresolved",
+      "location": "docs/41 §9; §§3-4",
+      "risk": "A deferred/read transaction or a guard result that survives rollback, commit, or pool changes could be mistaken for a serialized authorization check, allowing a legacy side effect after a competing mode change.",
+      "required_revision": "Freeze the exact SQLite writer-acquisition operation and transaction owner; use a transaction-bound capability that cannot outlive or cross its transaction/pool; recheck current scope under the writer; make all errors fail closed. Align with docs/36 §§15.3, 16, 17."
+    },
+    {
+      "id": "SEC41-02",
+      "severity": "P1",
+      "blocker": true,
+      "title": "Unmigrated legacy bridge and migration race behavior is implicit",
+      "location": "docs/41 §§4-5; docs/36 §17",
+      "risk": "Without the shared-writer bridge contract, a legacy reservation in a no-v2 database may not be visible to a concurrent migration/pilot creation, permitting incompatible mode facts across processes.",
+      "required_revision": "Specify bridge key/value and validation, writer acquisition/recheck order, atomic bridge insertion and COMMIT publication, migration import/retention, and fail-closed handling of malformed/unknown bridge data."
+    },
+    {
+      "id": "SEC41-03",
+      "severity": "P1",
+      "blocker": true,
+      "title": "Authorization principals and global/multi-scope authority are not frozen",
+      "location": "docs/41 §§3-4, 9; question 1",
+      "risk": "A mode-fence receipt could be misused as authorization, or a global administrator/config operation could mutate all students' teaching state without an explicit per-scope authority contract.",
+      "required_revision": "Add a caller/principal matrix for direct service, tool, REST/WS, and workers; bind each requested student/book to current authorization; distinguish trusted system principals; enumerate global operation scopes before any effect and reject atomically if any scope is pilot, unknown, or unavailable."
+    },
+    {
+      "id": "SEC41-04",
+      "severity": "P1",
+      "blocker": true,
+      "title": "DeleteBook retirement does not define a durable cross-process callback fence",
+      "location": "docs/41 §4 P3; §9 question 3; docs/36 §§16-17",
+      "risk": "A process-local Room/task cancellation cannot prevent a different App process or late worker from recreating runtime state after cleanup, causing stale writes or data resurrection.",
+      "required_revision": "Define a persistent retirement generation/claim (or equivalent DB fence) checked by Enter/Join, workers, and every late callback; serialize deletion and in-flight effects; keep failed retirement closed for safe idempotent retry; freeze replay tombstone/retention before destructive cleanup."
+    },
+    {
+      "id": "SEC41-05",
+      "severity": "P1",
+      "blocker": true,
+      "title": "Old-binary exclusion is not an enforceable activation gate",
+      "location": "docs/41 §8; docs/36 §17",
+      "risk": "A previously deployed writer can ignore persistent mode markers and write into a pilot scope after a newer version enables it.",
+      "required_revision": "Define a verifiable version/instance gate or stop-and-verify procedure before migration/pilot activation, and specify evidence required to unlock activation. If it cannot be enforced, keep migration and pilot permanently closed for that deployment."
+    },
+    {
+      "id": "SEC41-06",
+      "severity": "P2",
+      "blocker": false,
+      "title": "Unkeyed student scope hashes may be enumerable",
+      "location": "docs/41 §6",
+      "risk": "Student identifiers drawn from a small domain can be recovered from an ordinary hash; raw book IDs may also reveal usage patterns.",
+      "required_revision": "Use access-controlled audit fields with retention limits, or keyed/rotating HMAC identifiers, and minimize raw scope identifiers in general logs."
+    },
+    {
+      "id": "SEC41-07",
+      "severity": "P2",
+      "blocker": false,
+      "title": "Commit-unknown resolution must require fresh durable proof",
+      "location": "docs/41 §§3, 5",
+      "risk": "A pre-commit typed receipt or blind retry could cause callers to proceed without knowing whether the legacy reservation committed.",
+      "required_revision": "Resolve commit-unknown by rereading the exact scope/bridge under a fresh writer transaction; only observed durable matching state permits success. Otherwise return a fixed unknown/retryable error without allowing business effects."
+    }
+  ],
+  "blocker_count": 5,
+  "residual_issue_count": 7,
+  "limitations": [
+    "This review evaluates design text and selected current boundary definitions only.",
+    "No code changes, tests, runtime experiments, deployment inventory, or authorization-path execution were performed.",
+    "A design review does not establish that current product paths are protected or that any pilot is ready."
+  ]
+}

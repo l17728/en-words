@@ -1,0 +1,3 @@
+﻿pilot-tags: exit 0; log pilot-start-kernel-validation-20261017-final-pilot-tags.log
+production-test: exit 0; log pilot-start-kernel-validation-20261017-final-production-test.log
+production-vet: exit 0; log pilot-start-kernel-validation-20261017-final-production-vet.log

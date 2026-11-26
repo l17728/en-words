@@ -1,0 +1,9 @@
+=== RUN   TestPilotVFSRuntimeCandidateGeneration
+    pilot_vfs_trace_candidate_test.go:622: golden_candidate fixture_group=sqlite3451-vfs-flags status=CANDIDATE artifact=sqlite3451-vfs-flags.candidate.json
+    pilot_vfs_trace_candidate_test.go:622: golden_candidate fixture_group=sqlite3451-unix-lock-trace status=CANDIDATE artifact=sqlite3451-unix-lock-trace.candidate.json
+    pilot_vfs_trace_candidate_test.go:622: golden_candidate fixture_group=sqlite3451-shm-lock-trace status=CANDIDATE artifact=sqlite3451-shm-lock-trace.candidate.json
+    pilot_vfs_trace_candidate_test.go:622: golden_candidate fixture_group=sqlite3451-pager-delete-trace status=CANDIDATE artifact=sqlite3451-pager-delete-trace.candidate.json
+    pilot_vfs_trace_candidate_test.go:624: raw_trace_files=16 harness_sha256=ba3a06a3c8b8adc9ac15d9e854c2eb0a973c70bf05ecfe8bdceef8704e771260 status=CANDIDATE_ONLY
+--- PASS: TestPilotVFSRuntimeCandidateGeneration (1.02s)
+PASS
+ok  	enwords/internal/pilotcontrol	1.052s

@@ -1,0 +1,26 @@
+{
+  "review": "pilot-start-kernel-sdd-backend-review19",
+  "date": "2026-10-16",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "scope": "read-only review of lifecycle lock duration, cleanup ordering, and bounded cleanup-wins/opener-wins interleavings",
+  "code_modified": false,
+  "docs_modified": false,
+  "tests_run": false,
+  "verdict": "PASS_WITH_IMPLEMENTATION_GATES",
+  "findings": [],
+  "checks": {
+    "lifecycle_lock_held_through_all_handles_closed": "PASS",
+    "cleanup_lock_covers_quarantine_delete_parent_sync_tombstone": "PASS",
+    "cleanup_wins_stale_opener_rechecks_and_does_not_open_db": "PASS",
+    "opener_wins_cleanup_waits_until_resources_closed": "PASS",
+    "catalog_lock_short_and_lock_order_acyclic": "PASS",
+    "review17_stale_snapshot_finding": "CLOSED",
+    "new_design_blockers": "NONE"
+  },
+  "implementation_gates": [
+    "Exercise both races with two independent OS processes and bounded waits on Windows and POSIX.",
+    "Verify opener-wins prevents cleanup quarantine/deletion until all SQLite and file handles close.",
+    "Verify cleanup-wins produces durable tombstone before stale opener's second check and DB-open count remains zero.",
+    "Verify cancellation/panic/error paths close resources before releasing case lock and respect catalog Sync barriers."
+  ]
+}

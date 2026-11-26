@@ -1,0 +1,63 @@
+{
+  "review_id": "pilot-start-kernel-sdd-security-review2-20261016",
+  "date": "2026-10-16",
+  "reviewer_domain": "security",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_type": "read-only design review",
+  "compared_against": "review/pilot-start-kernel-sdd-security-review-20261016.json",
+  "focus": [
+    "owner authorization and receipt replay",
+    "test harness artifact isolation",
+    "commit-unknown recovery and log redaction",
+    "execution capability boundary"
+  ],
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "approved_for_narrow_test_only_slice_with_nonblocking_conditions",
+  "summary": "The revised SDD resolves all first-round P1 blockers. Security approves the isolated test-only Start design, subject to implementation conditions for capability expiry, harness path validation, fingerprint exposure, and fixed executor wiring.",
+  "first_round_dispositions": [
+    {
+      "finding_id": "PSK-SEC-01",
+      "disposition": "approved",
+      "basis": "The revised SDD binds commits and receipt lookups to a verified actor, separates owner student identity from the server-created teacher task capability, rechecks owner/account/task scope/reservation, and rejects owner-string authentication and cross-owner existence disclosure."
+    },
+    {
+      "finding_id": "PSK-SEC-02",
+      "disposition": "approved",
+      "basis": "A separate pilot_e2e-tagged harness artifact, absent from the default server dependency graph, uses a private temporary database, loopback ephemeral port, in-process token and no overrides; production routes are checked absent."
+    },
+    {
+      "finding_id": "PSK-SEC-03",
+      "disposition": "approved",
+      "basis": "Absent/unreachable receipt lookup returns pending_unknown; it cannot imply rollback or authorize a new ID/effect. Recovery uses the same ID/fingerprint/version/generation and writer serialization; not_committed requires proven rollback."
+    },
+    {
+      "finding_id": "PSK-SEC-04",
+      "disposition": "approved",
+      "basis": "The canonical fingerprint now binds kind, checkpoint/auth generation, owner/lesson/create fingerprint, plan version and exact candidate; actor authorization precedes receipt replay and replay never executes effects."
+    },
+    {
+      "finding_id": "PSK-SEC-05",
+      "disposition": "approved_with_nonblocking_condition",
+      "basis": "Log and persisted payload allowlists, no stable student/lesson IDs in logs, and database/log leak assertions are specified. Keep the candidate-derived SHA-256 fingerprint out of public responses/logs or treat it as guessable metadata; use keyed MAC if it crosses trust boundaries."
+    }
+  ],
+  "additional_finding": {
+    "id": "PSK-SEC2-01",
+    "severity": "P2",
+    "blocker": false,
+    "title": "Fixed wiring and purity of PilotStartExecutor must be preserved",
+    "disposition": "approved_with_nonblocking_condition",
+    "basis": "The interface is typed and lacks database access, is test-only, allowlisted to classroom.say and constrained to pure bounded behavior. Go cannot enforce interface purity; implementation must use one fixed non-configurable implementation and prove failures create no rows/effects."
+  },
+  "conditions": [
+    "Enforce capability expiry on commit and receipt lookup.",
+    "Reject Windows reparse points when validating harness temporary paths.",
+    "Do not emit candidate-derived fingerprints to ordinary logs; avoid exposing them in receipts or use keyed protection across trust boundaries.",
+    "Wire only the fixed test-only executor; test error/panic and bounded execution behavior."
+  ],
+  "limitations": [
+    "No code changes, tests, runtime checks, build artifact inspection, or deployment validation were performed.",
+    "Approval is limited to the test-only created-to-active slice and does not establish implementation correctness or classroom readiness."
+  ]
+}

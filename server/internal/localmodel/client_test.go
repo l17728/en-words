@@ -186,6 +186,31 @@ func TestEnglishSpeechUsesDedicatedLocalRoute(t *testing.T) {
 	require.Equal(t, wav, got)
 }
 
+func TestSynthesizeForPinsApprovedServiceModelAndVoice(t *testing.T) {
+	wav := pcmWAVFixture()
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/tts-en/speech" {
+			t.Errorf("unexpected route %s", r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		var body map[string]any
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		require.Equal(t, "approved-model", body["model"])
+		require.Equal(t, "en-GB-teacher", body["voice"])
+		_, _ = w.Write(wav)
+	}))
+	defer s.Close()
+	c, err := New(s.URL, nil)
+	require.NoError(t, err)
+	c.Services["approved-service"] = Service{ID: "approved-service", Model: "approved-model", Capabilities: []string{"tts"}}
+	got, err := c.SynthesizeFor(context.Background(), "approved-service", "approved-model", "en-GB-teacher", "teacher", "en")
+	require.NoError(t, err)
+	require.Equal(t, wav, got)
+	_, err = c.SynthesizeFor(context.Background(), "approved-service", "different-model", "en-GB-teacher", "teacher", "en")
+	require.Error(t, err, "a worker may not override the approved model")
+}
+
 func TestProfileRoutesRequestsToAssignedServices(t *testing.T) {
 	wav := pcmWAVFixture()
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -255,4 +280,66 @@ func TestConcurrentTranscribeKeepsTraceAndPayloadIsolated(t *testing.T) {
 	mu.Lock()
 	defer mu.Unlock()
 	require.Len(t, seen, 4)
+}
+
+func TestConcurrentTranscribeIsBoundedAndPreservesCancellation(t *testing.T) {
+	var active atomic.Int32
+	var maxActive atomic.Int32
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		current := active.Add(1)
+		for {
+			old := maxActive.Load()
+			if current <= old || maxActive.CompareAndSwap(old, current) {
+				break
+			}
+		}
+		defer active.Add(-1)
+		time.Sleep(10 * time.Millisecond)
+		_, _ = w.Write([]byte(`{"text":"ok"}`))
+	}))
+	defer s.Close()
+	c, err := New(s.URL, nil)
+	require.NoError(t, err)
+	c.Services["asr"] = Service{Model: "fixture", Capabilities: []string{"asr"}}
+	var wg sync.WaitGroup
+	for i := 0; i < 4; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_, _ = c.Transcribe(context.Background(), []byte("audio"), "recording.wav", "en")
+		}()
+	}
+	wg.Wait()
+	require.LessOrEqual(t, maxActive.Load(), int32(4))
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err = c.Transcribe(ctx, []byte("audio"), "recording.wav", "en")
+	require.Error(t, err)
+}
+
+func TestConcurrentSynthesizeIsBounded(t *testing.T) {
+	var active atomic.Int32
+	var maxActive atomic.Int32
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		current := active.Add(1)
+		for {
+			old := maxActive.Load()
+			if current <= old || maxActive.CompareAndSwap(old, current) {
+				break
+			}
+		}
+		defer active.Add(-1)
+		_, _ = w.Write(pcmWAVFixture())
+	}))
+	defer s.Close()
+	c, err := New(s.URL, nil)
+	require.NoError(t, err)
+	c.Services["tts"] = Service{Model: "fixture", Capabilities: []string{"tts"}}
+	var wg sync.WaitGroup
+	for i := 0; i < 4; i++ {
+		wg.Add(1)
+		go func() { defer wg.Done(); _, _ = c.Synthesize(context.Background(), "测试", "zh") }()
+	}
+	wg.Wait()
+	require.LessOrEqual(t, maxActive.Load(), int32(1))
 }

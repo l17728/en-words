@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-19",
+  "status": "BLOCKED",
+  "blocking_count": 1,
+  "scope": "Read-only follow-up on explicit shared health, post-lock checks and waiter test.",
+  "closed_paths": [
+    "Supervisor health is now an explicit required constructor parameter; no silent fresh health fallback.",
+    "Transition poisons before releasing the global lock after persistence failure; a waiting sibling rechecks health after acquiring the lock.",
+    "Snapshot/create/open also recheck health after lock acquisition and reject pre-poisoned constructors.",
+    "Frame/byte append limits poison the shared health.",
+    "The new named-channel waiter test specifically exercises a Transition Sync failure while B waits after its initial health check."
+  ],
+  "findings": [
+    {
+      "id": "CAT-IMPL-01-RELEASE",
+      "severity": "P2",
+      "location": "server/internal/store/pilot_start_catalog.go: openPilotCatalogFromVerifiedHandle and Snapshot, known-error handling around Unlock",
+      "detail": "Both paths release the global lock before poisoning health for an already-known read/Sync/parent-Sync error. A sibling can acquire the released lock, pass its new post-lock health check and perform IO before the failing operation publishes poison. Transition is fixed, but these two equivalent release windows remain.",
+      "required": "Publish poison for an already-known operation error while still holding the global lock, then unlock. Continue classifying an Unlock error after it returns; do not postpone known-error publication until then.",
+      "regression": "Use an Unlock seam that releases the underlying gate and blocks before returning. Fail startup Sync or Snapshot read, let a sibling acquire during this window, and assert poisoned with zero sibling IO. This deterministically distinguishes poison-before-release from poison-after-release."
+    }
+  ],
+  "other_boundaries": [
+    "No additional platform-lock finding in this follow-up; previous cross-process and bounded-supervision acceptance limitations remain.",
+    "Waiter test channels currently rely on the enclosing test process timeout for failure cleanup; bounded waits and joining workers before TempDir cleanup are recommended before wider fault execution."
+  ],
+  "execution": "No tests, builds, services or code modifications."
+}

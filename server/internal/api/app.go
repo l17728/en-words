@@ -38,45 +38,54 @@ type Clock interface {
 
 // App 全量装配。
 type App struct {
-	agentWriteMu         sync.Mutex
-	configRefreshPending bool // guarded by agentWriteMu; never a write-retry receipt
-	completionMu         sync.Mutex
-	atomicWriteObserved  func(context.Context, *gorm.DB, func(*gorm.DB) error, func(store.AtomicConnectionTiming)) error
-	feedbackState        *feedbackMemoryState
-	overdueTasks         map[string]store.OverdueTask
-	completionTargets    map[int64]int
-	completionTasks      map[int64]*lessonCompletion
-	StartupError         error
-	Local                *localmodel.Client
-	DuplexPreflight      bool // Explicit isolated device preflight only; never enables teaching.
-	DuplexShadow         bool // Bounded shadow ASR upload; never mutates teaching state.
-	Auth                 *auth.Service
-	Books                *wordbook.Service
-	Cfg                  *config.Store
-	Sched                *scheduler.Service
-	Judge                *judge.Judge
-	FB                   *feedback.Parser
-	Mem                  *memory.Service
-	Bank                 *scripts.Bank
-	Teacher              *agent.TeacherAgent
-	System               *agent.SystemAgent
-	Tools                *tools.Registry
-	ToolAudit            *tools.MemAuditor
-	Log                  *obs.Logger
-	Clock                Clock
+	agentWriteMu          sync.Mutex
+	duplexCommitFaultOnce sync.Once
+	configRefreshPending  bool // guarded by agentWriteMu; never a write-retry receipt
+	completionMu          sync.Mutex
+	atomicWriteObserved   func(context.Context, *gorm.DB, func(*gorm.DB) error, func(store.AtomicConnectionTiming)) error
+	feedbackState         *feedbackMemoryState
+	overdueTasks          map[string]store.OverdueTask
+	completionTargets     map[int64]int
+	completionTasks       map[int64]*lessonCompletion
+	StartupError          error
+	Local                 *localmodel.Client
+	DuplexPreflight       bool // Explicit isolated device preflight only; never enables teaching.
+	DuplexShadow          bool // Bounded shadow ASR upload; never mutates teaching state.
+	Auth                  *auth.Service
+	Books                 *wordbook.Service
+	Cfg                   *config.Store
+	Sched                 *scheduler.Service
+	Judge                 *judge.Judge
+	FB                    *feedback.Parser
+	Mem                   *memory.Service
+	Bank                  *scripts.Bank
+	Teacher               *agent.TeacherAgent
+	System                *agent.SystemAgent
+	Tools                 *tools.Registry
+	ToolAudit             *tools.MemAuditor
+	Log                   *obs.Logger
+	Clock                 Clock
 
-	Rooms          *Hub
-	generations    *generationCoordinator
-	tickets        map[string]*Ticket          // ticket → 绑定
-	reports        map[int64]*classroom.Result // lessonID → 课报
-	lessonStates   map[int64]*classroom.State  // lessonID → 课堂快照（IT-12）
-	notifications  []Notification
-	nextNotifID    int64
-	feedbackRecs   []FeedbackRecord
-	nextFeedbackID int64
-	TestMode       bool     // -testmode：跳过课程开放时间校验（E2E 用）
-	DB             *gorm.DB // SQLite 持久化句柄（nil=纯内存模式）
-	DuplexStore    *store.DuplexRepo
+	Rooms                 *Hub
+	generations           *generationCoordinator
+	speechMaterialSlots   chan struct{}
+	speechMaterialCtx     context.Context
+	speechMaterialStop    context.CancelFunc
+	speechMaterialMu      sync.Mutex
+	speechMaterialWG      sync.WaitGroup
+	speechMaterialClose   bool
+	speechAgentSchemaOnce sync.Once
+	speechAgentSchemaErr  error
+	tickets               map[string]*Ticket          // ticket → 绑定
+	reports               map[int64]*classroom.Result // lessonID → 课报
+	lessonStates          map[int64]*classroom.State  // lessonID → 课堂快照（IT-12）
+	notifications         []Notification
+	nextNotifID           int64
+	feedbackRecs          []FeedbackRecord
+	nextFeedbackID        int64
+	TestMode              bool     // -testmode：跳过课程开放时间校验（E2E 用）
+	DB                    *gorm.DB // SQLite 持久化句柄（nil=纯内存模式）
+	DuplexStore           *store.DuplexRepo
 	// Pilot is nil unless an operator explicitly enables isolated pilot
 	// persistence. Legacy classroom traffic never uses it implicitly.
 	Pilot *store.PilotStore
@@ -236,23 +245,27 @@ func NewApp(clock Clock, db *gorm.DB) *App {
 		authSvc.EnsureAgentAccounts()
 	}
 	toolAudit := &tools.MemAuditor{}
+	speechCtx, stopSpeech := context.WithCancel(context.Background())
 	app := &App{
-		Auth:        authSvc,
-		Books:       wordbook.NewService(bookRepo),
-		Cfg:         cfgStore,
-		Sched:       sched,
-		Judge:       judge.New(judge.DefaultSynonyms()),
-		FB:          fb,
-		Mem:         mem,
-		Bank:        bank,
-		Teacher:     agent.NewTeacherAgent(bank),
-		System:      agent.NewSystemAgent(bank, mem, fb),
-		Tools:       tools.New(toolAudit),
-		ToolAudit:   toolAudit,
-		Log:         obs.Nop(),
-		Clock:       clock,
-		generations: newGenerationCoordinator(),
-		tickets:     map[string]*Ticket{},
+		Auth:                authSvc,
+		Books:               wordbook.NewService(bookRepo),
+		Cfg:                 cfgStore,
+		Sched:               sched,
+		Judge:               judge.New(judge.DefaultSynonyms()),
+		FB:                  fb,
+		Mem:                 mem,
+		Bank:                bank,
+		Teacher:             agent.NewTeacherAgent(bank),
+		System:              agent.NewSystemAgent(bank, mem, fb),
+		Tools:               tools.New(toolAudit),
+		ToolAudit:           toolAudit,
+		Log:                 obs.Nop(),
+		Clock:               clock,
+		generations:         newGenerationCoordinator(),
+		speechMaterialSlots: make(chan struct{}, 2),
+		speechMaterialCtx:   speechCtx,
+		speechMaterialStop:  stopSpeech,
+		tickets:             map[string]*Ticket{},
 	}
 	app.Judge.OnDecision = func(ctx context.Context, decision judge.Decision) {
 		app.Log.InfoCtx(ctx, "judge", "judge_decision", map[string]any{

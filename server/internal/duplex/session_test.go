@@ -145,6 +145,10 @@ func TestConfirmWithHashBindsDisplayedText(t *testing.T) {
 	require.ErrorIs(t, s.ConfirmWithHash(s.id, 1, "cat", TextHash("dog"), now.Add(4*time.Millisecond)), ErrTextHash)
 	// A mismatch must not consume the confirmation state.
 	require.NoError(t, s.ConfirmWithHash(s.id, 1, "cat", TextHash("cat"), now.Add(5*time.Millisecond)))
+	// The WS transport may retry the same verified confirmation when SQLite's
+	// commit outcome is pending recovery. Only the identical bound text is safe.
+	require.NoError(t, s.ConfirmWithHash(s.id, 1, "cat", TextHash("cat"), now.Add(time.Second)))
+	require.ErrorIs(t, s.ConfirmWithHash(s.id, 1, "dog", TextHash("dog"), now.Add(time.Second)), ErrState)
 }
 
 func TestPreviewMayCompleteAfterAudioEnd(t *testing.T) {

@@ -1,0 +1,33 @@
+{
+  "review": "pilot-catalog-sdd-architecture-r4",
+  "date": "2026-10-19",
+  "source": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "source_sha256": "01d37dafdabd41715a643afe5703c8ed4b18e0a498c78309a70b71758817309c",
+  "status": "PASS",
+  "blocking_count": 0,
+  "scope": "Focused read-only closure review of CAT-R3-01 and CAT-R3-02.",
+  "closed": [
+    {
+      "id": "CAT-R3-01",
+      "evidence_lines": [128, 130, 168],
+      "conclusion": "All supervisor startups acquire the same persistent verified bootstrap OS lock before catalog initialization or validation. The first complete provisioning frame and file/parent Sync occur under that exclusion. A concurrent startup cannot inspect the intermediate empty catalog. The bootstrap lock is explicitly distinct from a case artifact."
+    },
+    {
+      "id": "CAT-R3-02",
+      "evidence_lines": [130, 152, 174],
+      "conclusion": "Every startup re-Syncs the verified catalog and parent before any case authorization. A surviving complete frame after initial parent Sync failure therefore permits provisioning recovery only after a new successful durability barrier; failure stays globally closed."
+    }
+  ],
+  "lock_and_recovery_checks": [
+    "Bootstrap may acquire the catalog lock but is released before any case lock. Ordinary operations never acquire bootstrap; existing case-to-catalog order is unchanged, so the specified lock graph has no cycle.",
+    "Concurrent provisioning recovery must converge on the same atomically created stable case lock before fixed-member inspection, then follow the existing catalog recheck protocol.",
+    "Provisioning recovery never invokes Start, Planner or Registry. Complete verified durable initial members may become ready; otherwise quarantine precedes cleanup.",
+    "Absent catalog with case artifacts, or an empty/partial/invalid catalog, remains an integrity failure. The permanent bootstrap lock alone does not prevent legitimate first initialization."
+  ],
+  "implementation_acceptance_still_required": [
+    "Named-barrier child-process test after CREATE_NEW and before the first frame: second startup waits; release observes provisioning; creator death preserves the empty/partial failure oracle.",
+    "Initial parent Sync failure followed by recovery Sync failure must create zero case locks/directories/members; successful recovery must remain provisioning-only.",
+    "OS lock identity, ACL, parent Sync and process-death release must be validated on each supported platform; this review does not execute them."
+  ],
+  "execution": "No tests, builds, services, source edits or design edits. Review reports only."
+}

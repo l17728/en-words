@@ -1,0 +1,19 @@
+﻿{
+  "review": "pilot-start-kernel-sdd-backend-review11",
+  "date": "2026-10-16",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "scope": "read-only review of one-shot permit closure and backend persistence/build boundaries",
+  "code_modified": false,
+  "docs_modified": false,
+  "tests_run": false,
+  "verdict": "PASS",
+  "implementation_gates_remain": true,
+  "be10_1_status": "CLOSED",
+  "findings": [],
+  "low_risk_interface_note": "Expose a narrow Store-side verify-and-consume method for the API PilotRegistryOnce wrapper; API must not inspect opaque permit fields.",
+  "implementation_gates": [
+    "Verify copied/reused/mismatched permits fail before handler entry and a valid permit enters the Registry exactly once, including panic behavior.",
+    "Verify default build excludes pilot_e2e Store/API/harness files and tagged build compiles the complete package graph.",
+    "Implement pinned-connection rollback_proven outcome and prove unknown commit is never treated as rollback."
+  ]
+}

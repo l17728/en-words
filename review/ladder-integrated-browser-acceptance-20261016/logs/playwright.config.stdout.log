@@ -1,0 +1,14 @@
+
+Running 9 tests using 1 worker
+
+  ✓  1 e2e\legacy-bugs.ts:4:1 › BUG-1+2 immediate selection uses current auth and UTF-8 nickname (3.0s)
+  ✓  2 e2e\legacy-bugs.ts:14:1 › BUG-5 re-placement replaces schedule and retains known words (3.5s)
+  ✓  3 e2e\legacy-bugs.ts:26:1 › BUG-6+8 draft restores and can toggle, return to book square (4.4s)
+  ✓  4 e2e\legacy-bugs.ts:41:1 › BUG-3+4+7 book card enters classroom, word and Chinese survive reentry (4.8s)
+  ✓  5 e2e\legacy-bugs.ts:55:1 › BUG-9 only enabled books, empty schedule gives placement guidance (1.9s)
+  ✓  6 e2e\legacy-bugs.ts:63:1 › D21 five teaching words precede full-pool final quiz, MOCK speech (45.8s)
+  ✓  7 e2e\legacy-bugs.ts:90:1 › BUG-10 local voice selection and four actual MOCK start/end callbacks (9.9s)
+  ✓  8 e2e\legacy-smoke.ts:3:1 › login renders product and account controls (1.0s)
+  ✓  9 e2e\legacy-smoke.ts:10:1 › real login, book selection, placement and dashboard schedule (5.5s)
+
+  9 passed (1.7m)

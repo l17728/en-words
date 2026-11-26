@@ -1,0 +1,56 @@
+{
+  "formal_vs_baseline": {
+    "equal": false,
+    "formal_files": 1008,
+    "copy_files": 1013,
+    "formal_bytes": 33269890,
+    "copy_bytes": 34116718,
+    "missing": [],
+    "extra": [
+      "review/ladder-integrated-go-acceptance-20261016.json",
+      "review/ladder-integrated-go-acceptance-20261016.md",
+      "review/ladder-integrated-startup-race-analysis-20261016.md",
+      "review/startup-dual-pool-race-failure-design-20261016.md",
+      "review/startup-dual-pool-race-failure-review-20261016.json"
+    ],
+    "hash_mismatch": [
+      "review/ladder-integrated-doc-review-20261016.json",
+      "review/ladder-integrated-go-acceptance-20261016.logs/race.log"
+    ]
+  },
+  "snapshot_vs_baseline": {
+    "equal": false,
+    "formal_files": 1008,
+    "copy_files": 1008,
+    "formal_bytes": 33269890,
+    "copy_bytes": 34018417,
+    "missing": [],
+    "extra": [],
+    "hash_mismatch": [
+      "review/ladder-integrated-doc-review-20261016.json",
+      "review/ladder-integrated-go-acceptance-20261016.logs/race.log"
+    ]
+  },
+  "formal_deps_vs_baseline": {
+    "equal": true,
+    "formal_files": 19988,
+    "copy_files": 19988,
+    "formal_bytes": 184028672,
+    "copy_bytes": 184028672,
+    "missing": [],
+    "extra": [],
+    "hash_mismatch": []
+  },
+  "snapshot_deps_vs_baseline": {
+    "equal": true,
+    "formal_files": 19988,
+    "copy_files": 19988,
+    "formal_bytes": 184028672,
+    "copy_bytes": 184028672,
+    "missing": [],
+    "extra": [],
+    "hash_mismatch": []
+  },
+  "package_json_sha256": "9f89379bad59cae8ea90abd0991d0bc77651d1b4de342ec88be157e154b0c48d",
+  "package_lock_sha256": "37bbcd595ef594ef8d6f94b2dcd7761f17fe498fe872869ebfac568fb226b7ca"
+}

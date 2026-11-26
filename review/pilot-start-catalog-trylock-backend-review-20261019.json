@@ -1,0 +1,22 @@
+{
+  "review": "pilot-start-catalog-trylock-backend-review",
+  "date": "2026-10-19",
+  "scope": [
+    "server/internal/store/pilot_start_catalog_lock_unix.go",
+    "server/internal/store/pilot_start_catalog_lock_windows.go",
+    "server/internal/store/pilot_start_catalog_test.go"
+  ],
+  "tests_run": false,
+  "verdict": "PASS_STATIC_REVIEW",
+  "findings": [],
+  "checks": {
+    "same_lock_object_trylock_is_nonblocking": "PASS_STATIC_ONLY",
+    "local_gate_retained_on_success_and_released_on_contention": "PASS",
+    "post_unlock_reacquisition_test": "PASS_STATIC_ONLY",
+    "child_process_wait_is_bounded": "PASS"
+  },
+  "remaining_validation": [
+    "Run pilot_e2e tagged lock tests on Windows CI.",
+    "Run pilot_e2e tagged lock tests on POSIX CI."
+  ]
+}

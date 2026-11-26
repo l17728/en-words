@@ -1,0 +1,3 @@
+--- FAIL: TestPilotVFSChildLockContention (0.01s)
+    pilot_vfs_trace_candidate_test.go:1201: persist final child trace: file exists
+FAIL

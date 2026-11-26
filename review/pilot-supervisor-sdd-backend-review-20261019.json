@@ -1,0 +1,13 @@
+{
+  "document": "docs/42-Pilot隔离运行监督器SDD.md",
+  "sha256": "8FE8F24EDC16D3B7272368EFCDAB25795AA25845A8A01C12FDEEAA4CA6CF7B42",
+  "domain": "backend",
+  "decision": "FAIL",
+  "review_mode": "read_only_static",
+  "tests_run": false,
+  "blockers": [
+    {"id": "B42-01", "sections": ["3", "7", "FI-AUTH-01"], "summary": "Constructor bootstrap creates the first case without a grant, while CreateCase also owns first catalog creation; first request binding and crash lifecycle are undefined."},
+    {"id": "B42-02", "sections": ["3", "9.1", "docs41 section3 sidecar schema"], "summary": "Recovery SQL requires lesson_id, raw command_id and frozen creation references whose trusted source after worker restart is not specified; sidecar contains only command HMACs."}
+  ],
+  "report": "review/pilot-supervisor-sdd-backend-review-20261019.md"
+}

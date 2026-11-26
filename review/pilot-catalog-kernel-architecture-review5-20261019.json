@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-19",
+  "status": "BLOCKED_TEST_EXECUTION",
+  "code_blocking_count": 0,
+  "test_blocking_count": 1,
+  "scope": "Read-only operation-mutex, shared poison, platform-lock and deterministic-test review.",
+  "findings": [
+    {
+      "id": "CAT-TEST-OPERATION-DEADLOCK",
+      "severity": "P2",
+      "locations": [
+        "server/internal/store/pilot_start_catalog_test.go:533 TestPilotCatalogWaiterRechecksSharedPoisonAfterGlobalLock",
+        "server/internal/store/pilot_start_catalog_test.go:573 TestPilotCatalogReadOrStartupFailurePoisonsBeforeUnlock"
+      ],
+      "detail": "The added supervisor operation mutex invalidates both old barrier schedules. In the waiter test, A holds operation while blocked in Sync; B waits on operation and never reaches beforeGate; the main goroutine waits for bWaiting before releasing A. In the unlock-window test, A holds operation while blocked inside Unlock; B waits for operation; the main goroutine waits for bResult before releasing A's unlockWait. Both cycles deterministically deadlock.",
+      "required": "Revise barriers around the new operation serialization. Signal B invocation without requiring entry into its OS lock, release A before awaiting B, and use bounded waits plus cleanup that always releases barriers and joins workers. To lock poison-before-Unlock independently, inspect shared health at the Unlock seam while A is still paused; do not require B to return before A releases operation."
+    }
+  ],
+  "passed": [
+    "All public-to-this-module journal operations acquire shared health.operation before journal mutex and OS lock; create/open use the same operation domain. No reverse acquisition was found in these files.",
+    "Operation is retained until Unlock completes and any Unlock error poisons shared health. A sibling cannot pass admission during the unlock-result publication window. Explicit health and post-lock checks remain.",
+    "Windows/Unix lock wrappers keep per-wrapper serialization, release local gates on failed acquisition, and expose nonblocking OS contention probes without opening paths.",
+    "The revised child test reports an explicit unsuccessful TryLock while the parent holds the lock, then uses TCP control to request blocking acquisition. It no longer infers contention from a 150ms absence window."
+  ],
+  "nonblocking_followups": [
+    "Child process cleanup still uses unbounded Wait after Kill in the defer and timeout branch. Normal completion is bounded, but total cleanup is not strictly bounded if termination fails; retain this limitation or add a bounded join and evidence-preserving cleanup policy.",
+    "TryLock uses a blocking local gate before the nonblocking OS probe. Current child usage has an uncontended local wrapper, so the test is valid; do not advertise this as a generally nonblocking same-wrapper API."
+  ],
+  "limitations": [
+    "No tests/builds/services executed and no code modified.",
+    "No new implementation blocker found within the reviewed catalog slice. The two deterministic test deadlocks block running this test set as currently written.",
+    "OS process-death release, full verified-handle lifecycle and supervisor integration remain separate acceptance gates."
+  ]
+}

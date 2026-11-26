@@ -1,0 +1,267 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\source\\web\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--config",
+      "playwright.continuation.config.ts"
+    ],
+    "configFile": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\source\\web\\playwright.continuation.config.ts",
+    "rootDir": "D:/en-words/review/ladder-browser-missing-suites-20261016/source/web/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/en-words/review/ladder-browser-missing-suites-20261016/source/web/.test-artifacts/closure-1792160129102-8936/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "D:/en-words/review/ladder-browser-missing-suites-20261016/source/web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "continuation-wait.spec.ts"
+        ],
+        "timeout": 180000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\source\\web\\.test-artifacts\\closure-1792160129102-8936\\results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "continuation-wait.spec.ts",
+      "file": "continuation-wait.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "WAIT39 progress keeps local playback waiting separate from delivery and other students",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 17993,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T14:15:44.130Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTkwMTZdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTYwMTQzOTMyLTIyMTIwXFxicm93c2VyXFxjb250aW51YXRpb24td2FpdC1XQUlUMzktcC1jNTE1NC1kZWxpdmVyeS1hbmQtb3RoZXItc3R1ZGVudHNcXHJlY292ZXJ5LmRiIiwibW9kZWwiOnsicGVuZGluZyI6MCwiY2FuY2VsZWQiOjAsImZlZWRiYWNrQ2FsbHMiOjAsImp1ZGdlQ2FsbHMiOjB9LCJleGl0cyI6W3sicGlkIjoxOTAxNiwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8de5ab06db3d7553acd4-7a7cf7993fedb1658205",
+          "file": "continuation-wait.spec.ts",
+          "line": 5,
+          "column": 80
+        },
+        {
+          "title": "WAIT39 disconnect keeps local playback waiting separate from delivery and other students",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6974,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T14:16:02.477Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTMyMDhdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTYwMTQzOTMyLTIyMTIwXFxicm93c2VyXFxjb250aW51YXRpb24td2FpdC1XQUlUMzktZC0wNmRjOC1kZWxpdmVyeS1hbmQtb3RoZXItc3R1ZGVudHNcXHJlY292ZXJ5LmRiIiwibW9kZWwiOnsicGVuZGluZyI6MCwiY2FuY2VsZWQiOjAsImZlZWRiYWNrQ2FsbHMiOjAsImp1ZGdlQ2FsbHMiOjB9LCJleGl0cyI6W3sicGlkIjoxMzIwOCwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8de5ab06db3d7553acd4-fea587ae11d48b31431a",
+          "file": "continuation-wait.spec.ts",
+          "line": 5,
+          "column": 80
+        },
+        {
+          "title": "WAIT39 account keeps local playback waiting separate from delivery and other students",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9099,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T14:16:09.481Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTk5MjBdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItYnJvd3Nlci1taXNzaW5nLXN1aXRlcy0yMDI2MTAxNlxcc291cmNlXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTYwMTQzOTMyLTIyMTIwXFxicm93c2VyXFxjb250aW51YXRpb24td2FpdC1XQUlUMzktYS05ZWI1OS1kZWxpdmVyeS1hbmQtb3RoZXItc3R1ZGVudHNcXHJlY292ZXJ5LmRiIiwibW9kZWwiOnsicGVuZGluZyI6MCwiY2FuY2VsZWQiOjAsImZlZWRiYWNrQ2FsbHMiOjAsImp1ZGdlQ2FsbHMiOjB9LCJleGl0cyI6W3sicGlkIjoxOTkyMCwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8de5ab06db3d7553acd4-8aa271d287c52080e282",
+          "file": "continuation-wait.spec.ts",
+          "line": 5,
+          "column": 80
+        },
+        {
+          "title": "WAIT39 fallback_error keeps local playback waiting separate from delivery and other students",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6866,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T14:16:18.622Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbNTgzMl0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1icm93c2VyLW1pc3Npbmctc3VpdGVzLTIwMjYxMDE2XFxzb3VyY2VcXHdlYlxcLnRlc3QtYXJ0aWZhY3RzXFxjbG9zdXJlLTE3OTIxNjAxNDM5MzItMjIxMjBcXGJyb3dzZXJcXGNvbnRpbnVhdGlvbi13YWl0LVdBSVQzOS1mLTczZWVmLWRlbGl2ZXJ5LWFuZC1vdGhlci1zdHVkZW50c1xccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjU4MzIsImV4aXRDb2RlIjpudWxsLCJzaWduYWxDb2RlIjoiU0lHVEVSTSJ9XX0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8de5ab06db3d7553acd4-43b5a7ed56bd3e8f9d2b",
+          "file": "continuation-wait.spec.ts",
+          "line": 5,
+          "column": 80
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-16T14:15:29.120Z",
+    "duration": 57084.082,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

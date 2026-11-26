@@ -1,0 +1,11 @@
+COMMAND: test -count=1 -timeout=240s -tags=pilot_e2e ./internal/pilotsupervisor
+GO: go version go1.25.14 windows/amd64
+OS: Windows-10-10.0.19045-SP0
+HEAD: e1da932490c7f92ae60b553b52dd47ef8871cf52
+WORKTREE_SHA256:
+eb660564a1ad5f5b83eb07f5ef63a79bcfe9ce4246a87c46aed39360be3c673a  server/internal/pilotsupervisor/peer_windows.go
+6e3e95b7e54d8459331f0dc0354ea0e0e906dbec69aa8d2904efb6a786abc946  server/internal/pilotsupervisor/peer_windows_test.go
+6c69f346a80012455c5d84aa0269cebb18fc582c60ee1d5af0caaa157e433946  server/internal/pilotsupervisor/peer_linux.go
+cad3ed463a98c6a84f2cfd2ceee7f2cdf2a58a01bbda4dbacb4e11b10ae0ce1a  server/internal/pilotsupervisor/peer_linux_test.go
+0eeafaa1cff0cba570db00484e049e95964fdc9f61fc85e5ec78bd8ab231fb38  server/internal/pilotsupervisor/peer.go
+Interrupted on parent request before a final-source run; result is incomplete and must not be counted.

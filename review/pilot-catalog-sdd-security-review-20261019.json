@@ -1,0 +1,51 @@
+{
+  "review_id": "pilot-catalog-sdd-security-review-20261019",
+  "date": "2026-10-19",
+  "reviewer_domain": "security",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md §109",
+  "compared_with": [
+    "docs/41-试点课堂Start持久迁移内核SDD.md §42",
+    "docs/41-试点课堂Start持久迁移内核SDD.md §108"
+  ],
+  "review_type": "read-only design review",
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "blocked_pending_acknowledgment_crash_contract_resolution",
+  "summary": "§109's framing, CRC scope, canonical payload, monotonic generations, state transitions, lock order, and pre-open checks are broadly coherent with §§42/108. One P1 contradiction blocks approval: startup is required to reject any unacknowledged frame, but acknowledgment is the writer's Sync outcome and is not encoded in the append-only frame. A complete frame can remain visible after Sync reports failure, so restart cannot distinguish it from a successfully synced frame. Define recovery from observable evidence or add a separately justified durable acknowledgment protocol.",
+  "findings": [
+    {
+      "finding_id": "PSK-CAT-109-01",
+      "severity": "P1",
+      "status": "blocking",
+      "title": "Catalog replay cannot distinguish a complete unacknowledged frame after Sync error",
+      "locations": [
+        "docs/41-试点课堂Start持久迁移内核SDD.md:126",
+        "docs/41-试点课堂Start持久迁移内核SDD.md:128",
+        "docs/41-试点课堂Start持久迁移内核SDD.md:153"
+      ],
+      "evidence": "The frame stores canonical payload, lengths, CRC and trailer but no Sync acknowledgment fact. Append may write a complete frame and then receive a Sync error. On restart the same complete CRC-valid bytes are replayed whether Sync previously succeeded or failed. A prior process return value is not observable from the catalog file.",
+      "risk": "The implementation cannot satisfy the stated requirement to load only acknowledged append boundaries and globally reject complete-but-unacknowledged frames. It must either make an arbitrary choice or add an unstated external mechanism.",
+      "required_action": "Specify recovery solely from restart-observable state, e.g. validate the complete chain and conservatively recheck underlying DB/sidecar facts for state transitions, while rejecting partial/invalid frames; or design a separate durable acknowledgment mechanism with a complete crash protocol. Remove the claim that the present frame can reveal a past Sync error.",
+      "disposition": "block_until_contract_is_implementable"
+    }
+  ],
+  "control_dispositions": {
+    "catalog_trust_model": "coherent with §42: ACL/verified-handle trust boundary, CRC is not authentication, trusted-account compromise excluded",
+    "wire_format": "deterministic and bounded; strict canonical payload, frame checks, contiguous generations and tombstones",
+    "state_machine": "consistent with durable open_recovery_required, pending_unknown and quarantine semantics in §108",
+    "lock_order": "case lifecycle lock then global catalog lock; catalog holders do not wait for case locks; no cycle apparent",
+    "replay_and_sync_ack": "unimplementable distinction: complete frame does not reveal whether prior Sync returned success",
+    "resource_limits": "explicit global fail-closed exhaustion; compaction requires a separately reviewed protocol",
+    "implementation_status": "catalog/supervisor implementation explicitly not claimed to exist; verified-open, locking, durability and ACL remain implementation gates"
+  },
+  "remaining_blocker_count": 1,
+  "remaining_conditions": [
+    "Resolve the unobservable acknowledged/unacknowledged frame requirement with an implementable restart rule or separate durable acknowledgment protocol.",
+    "Implement and validate supervisor/catalog pre-open authorization, global lock, state transitions, full-chain parsing and platform durability/ACL controls."
+  ],
+  "limitations": [
+    "No tests or runtime validation were performed.",
+    "No implementation, OS lock, filesystem Sync behavior, process restart, or fault injection was examined.",
+    "This report assesses the written protocol only and does not claim implementation readiness."
+  ]
+}

@@ -1,0 +1,31 @@
+﻿{
+  "review": "pilot-start-kernel-sdd-test-review14",
+  "date": "2026-10-16",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "domain": "storage security and test design",
+  "verdict": "BLOCK",
+  "tests_run": false,
+  "review12_findings": [
+    {"topic": "loopback Host/Origin/Fetch Metadata/CSRF/Bearer matrix", "status": "CLOSED", "section": 96},
+    {"topic": "listener binding and token exposure", "status": "CLOSED", "section": 96}
+  ],
+  "reviewed_storage_areas": {
+    "verified_handle_consumed_by_SQLite_VFS": "PASS",
+    "post-verification_path_swap": "PASS",
+    "catalog_global_fail_closed": "PASS_WITH_P2",
+    "cleanup_quarantine_and_deleted_tombstone": "PASS",
+    "CSRF_matrix_retained": "PASS"
+  },
+  "findings": [
+    {
+      "id": "P2-1",
+      "severity": "P2",
+      "status": "open",
+      "title": "Catalog HMAC corruption test has no catalog MAC/key contract",
+      "sections": [42, 93],
+      "evidence": "§93 requires a bad-catalog-HMAC negative. §42 defines only per-case HMAC keys and does not define a catalog key, MAC construction, canonical encoding, rotation/lifetime, or update recovery. A per-case key cannot authenticate the catalog before opening the case and retrieving that key.",
+      "required_change": "Define the supervisor-owned catalog integrity key lifecycle and canonical MAC/update contract with a golden vector, or remove the HMAC-specific test and specify strict schema/file-identity guarantees as the catalog integrity mechanism. Preserve global fail-closed on catalog read/write/Sync failures."
+    }
+  ],
+  "open_findings": ["P2-1"]
+}

@@ -1,0 +1,13 @@
+{
+  "document": "docs/42-Pilot隔离运行监督器SDD.md",
+  "sha256": "12B20F4DDF08129E482DD372320F98BCCC0D90DB243F4847EF44CDDE51D4ACB0",
+  "domain": "backend",
+  "decision": "PASS",
+  "closed_findings": ["B42-01", "B42-02"],
+  "blockers": [],
+  "review_mode": "read_only_static",
+  "tests_run": false,
+  "prior_review": "review/pilot-supervisor-sdd-backend-review-r2-20261019.json",
+  "report": "review/pilot-supervisor-sdd-backend-review-r3-20261019.md",
+  "nonblocking_notes": ["Use actual section/formula references instead of section28/docs41 section43 shorthand.", "Clarify first versus subsequent case-lock summary; detailed section7 governs."]
+}

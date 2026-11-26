@@ -1,0 +1,2 @@
+﻿tagged-test: exit 0; log pilot-start-kernel-validation-20261017-r14-tagged-test.log
+tagged-vet: exit 0; log pilot-start-kernel-validation-20261017-r14-tagged-vet.log

@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-19",
+  "status": "BLOCKED",
+  "blocking_count": 1,
+  "scope": "Read-only catalog codec/replay/journal/generation review, not supervisor integration.",
+  "files": {
+    "server/internal/store/pilot_start_catalog.go": "2790593270040db4c35db48343a8f169c84fa825b20e9c2cfa2b014f75e13e25",
+    "server/internal/store/pilot_start_catalog_test.go": "958042b452a6c48ec5aaeffa1ffe6a0d9ce194cae739f8b891c802ecdc3365c4"
+  },
+  "findings": [
+    {
+      "id": "CAT-IMPL-01",
+      "severity": "P2",
+      "location": "pilot_start_catalog.go:69,178,239; pilot_start_catalog_test.go:367",
+      "detail": "Poison is journal-local, while the supported concurrency test constructs two journal instances in one process. After A writes a complete legal frame and Sync fails, only A is poisoned. B can replay the complete bytes and append another transition. This does not implement the documented supervisor-wide stop after uncertain durability.",
+      "reproduction": "Open A and B on the same catalog; inject one A.Sync failure after its complete ready frame; restore file Sync; B.Transition(open_recovery_required) currently has no shared poison check and can succeed.",
+      "required": "Define and enforce supervisor ownership: use a shared poison state for journals of one supervisor, or enforce one journal per supervisor and make multi-supervisor fault tests represent the distinct recovery boundary explicitly. Check poison after acquiring the global lock as necessary to prevent an already-waiting operation from proceeding after another journal poisons the supervisor.",
+      "regression": "After the first journal's complete-write/Sync failure, a sibling operation in the same supervisor must reject without another write or success; only the explicit new-supervisor startup validation/re-Sync path can authorize recovery."
+    }
+  ],
+  "passed": [
+    "Both supplied files use the pilot_e2e build tag; no untagged call site was found by the scoped reference search.",
+    "CRC-32C framing, repeated length/trailer, canonical re-encoding and contiguous generation validation agree with the reviewed format.",
+    "Transition table matches section 109; deleted IDs cannot re-enter provisioning; invalid transitions append no bytes.",
+    "Startup replay and file/parent Sync hold the supplied global lock. Journal operations hold local mutex then supplied global lock; this layer never takes a case/bootstrap lock.",
+    "Short writes, read/seek failures, Sync failures and unlock errors return fixed errors; no raw I/O error or path is returned.",
+    "Concurrent generation test exercises two journal objects with a shared in-process mutex; this is not cross-process OS-lock or full supervisor proof."
+  ],
+  "test_gaps_before_slice_acceptance": [
+    "Add valid-CRC malformed JSON records for duplicate/unknown/null/trailing/noncanonical number/key/order cases; current broad corruption tests do not specifically lock these codec contracts.",
+    "Add transition-time complete-frame Sync failure and reopen/re-Sync recovery, rather than only bootstrap/startup Sync failures and short writes.",
+    "Fault injection for lock/seek/read/stat paths and bounded concurrent completion remain needed for their claimed error contracts."
+  ],
+  "limitations": [
+    "No tests or builds were executed.",
+    "The test file changed during review to add a platform-lock test; that later addition was not fully reviewed here. Recorded hashes are end-of-read hashes, not a claim of a frozen full-platform review.",
+    "OpenVerified handle identity, bootstrap lock ownership, OS cross-process locks, cleanup and supervisor global failure propagation remain integration responsibilities; comments alone do not implement them."
+  ]
+}

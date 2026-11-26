@@ -1,0 +1,8 @@
+Preflight: uname -srm; go version; id nobody; findmnt -T /tmp/en-words-validation -no SOURCE,FSTYPE; go env CGO_ENABLED
+Coverage x5: go test -count=1 -tags=pilot_e2e -coverprofile=/var/tmp/enwords-pilot-coverage/final-acceptance-20261022/accepted-N.cover ./internal/pilotsupervisor
+Coverage report: go tool cover -func=<accepted-N.cover>
+Targeted x30: go test -tags=pilot_e2e -run 'TestLoggerWaitWithPollRetriesEINTRAndRejectsPollError|TestConnectHostLoggerClientOnceWaitFailureClosesSocket|TestRunRootLedgerCancellationTakesPrecedenceOverLateSQLiteBusy|TestRunRootLedgerDeadlineTakesPrecedenceOverLateSQLiteBusy|TestRunRootLedgerWALTransitionHonorsContextCancellation|TestRunRootLedgerSQLiteBusyClassificationUsesNativeDriverError' -count=30 ./internal/pilotsupervisor
+Constructor: go test -tags=pilot_e2e -run TestRunRootLedgerConstructorDiscardsConnectionAfterWALInitFailure -count=1 ./internal/pilotsupervisor
+Race: go test -race -count=1 -tags=pilot_e2e ./internal/pilotsupervisor
+Vet: go vet -tags=pilot_e2e ./internal/pilotsupervisor
+No-cgo: CGO_ENABLED=0 go test -count=1 -tags=pilot_e2e ./internal/pilotsupervisor

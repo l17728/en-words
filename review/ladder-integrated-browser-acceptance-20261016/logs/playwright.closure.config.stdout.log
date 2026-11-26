@@ -1,0 +1,11 @@
+
+Running 6 tests using 1 worker
+
+  ✓  1 e2e\closure-regression.spec.js:51:1 › two students: foreign classroom navigation is denied without damaging owner session (6.4s)
+  ✓  2 e2e\closure-regression.spec.js:85:1 › feedback UI shows the actual applied quantity and notification body (3.8s)
+  ✓  3 e2e\closure-regression.spec.js:102:1 › classroom rejects a browser event replay across WS and REST (16.9s)
+  ✓  4 e2e\closure-regression.spec.js:164:1 › student statistics empty state recovers from a real request failure (2.5s)
+  ✓  5 e2e\closure-regression.spec.js:179:1 › playback settings remain private to their student after relogin (4.4s)
+  ✓  6 e2e\closure-regression.spec.js:193:1 › injected pause/resume protocol cancels delay and deduplicates recovery speech (16.2s)
+
+  6 passed (1.1m)

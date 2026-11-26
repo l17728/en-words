@@ -1,0 +1,31 @@
+{
+  "review": "pilot-start-kernel-code-backend-review5-20261017",
+  "date": "2026-10-17",
+  "target": [
+    "server/internal/agent/pilot_start.go",
+    "server/internal/agent/pilot_start_test.go",
+    "server/internal/scripts/pilot_exact.go",
+    "server/internal/store/pilot_start_sidecar.go",
+    "server/internal/store/pilot_start_sidecar_test.go"
+  ],
+  "reference": "docs/41-试点课堂Start持久迁移内核SDD.md §§24,44-46,94,108",
+  "code_modified": false,
+  "tests_run_by_reviewer": false,
+  "validation_evidence": "Existing final validation summary records production and pilot-tag tests passed; no tests were run during this review.",
+  "scope_note": "Coordinator/HTTP harness, cross-process OS lock, OpenVerified, Windows ACL/directory durability, SQLite receipt recovery, and cleanup remain integration gates.",
+  "verdict": "PASS",
+  "findings": [],
+  "resolved": [
+    "BE-CODE-R4-1: terminal_failed is rejected from phases 3/5 when tool_started has no durable tool_result.",
+    "BE-CODE-R4-1: terminal_failed rejects commit_unknown and rollback_proven result classes; these retain their dedicated event types.",
+    "A known tool failure is appendable only after its tool_result and survives close/reopen as a terminal failure.",
+    "Zero-byte/partial write, file Sync, and parent-directory Sync failure injection tests are present."
+  ],
+  "checks": {
+    "unresolved_tool_terminalization": "PASS",
+    "terminal_failure_result_class_mapping": "PASS",
+    "known_tool_failure_append_reopen": "PASS",
+    "durable_io_failure_injection": "PASS_AT_FILE_LAYER",
+    "cross_process_lock_and_verified_open": "NOT_YET_INTEGRATED"
+  }
+}

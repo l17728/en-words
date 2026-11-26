@@ -1,0 +1,45 @@
+{
+  "review_id": "pilot-start-kernel-sdd-security-review17-20261016",
+  "date": "2026-10-16",
+  "reviewer_domain": "security",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_type": "read-only design review",
+  "compared_against": "review/pilot-start-kernel-sdd-security-review16-20261016.json",
+  "focus": [
+    "two-phase catalog authorization and stale snapshot TOCTOU",
+    "case lifecycle lock and catalog lock ordering",
+    "same-case open versus cleanup race coverage"
+  ],
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "blocked_pending_lock_lifetime_contract_and_opener_wins_race_case",
+  "summary": "The two-phase authorization correctly handles cleanup winning: after acquiring the case lifecycle lock, an opener rereads the latest catalog chain under the catalog lock and must reject before DB open if cleanup has quarantined/tombstoned the case. The lock nesting order is acyclic if all paths follow case-before-catalog. A remaining TOCTOU gap is that the SDD does not explicitly require retaining the case lifecycle lock continuously across second authorization and OpenVerified/DB/sidecar/key opening, or retaining it through cleanup's handle closure/deletion/tombstone. The matrix tests only cleanup-wins, not opener-wins contention. Clarify lock lifetime and cover both orderings before approving the guarantee.",
+  "findings": [
+    {
+      "finding_id": "PSK-SEC17-01",
+      "severity": "P1",
+      "status": "blocking",
+      "title": "Lifecycle-lock hold interval and opener-wins cleanup race are unspecified",
+      "evidence": "§3 step 3 releases the catalog lock after reauthorizing, then step 4 performs OpenVerified and opens DB/sidecar/key. Safety in this gap relies on the case lifecycle lock remaining held, but the SDD does not define its continuous hold/release boundary. Cleanup's durable quarantine and deletion likewise need mutual exclusion with active opens/handles. §6 currently specifies only the opener-waits/cleanup-wins branch.",
+      "risk": "If the case lock is released after reauthorization or only protects a short check, cleanup may alter/delete case files between authorization and open or during active use, invalidating the stale-state fencing guarantee.",
+      "required_change": "Specify that the same OS case lifecycle lock is continuously held from before the second catalog read through relevant verified opens and protected operations. Specify cleanup holds it through durable quarantine, closure of active handles, deletion, parent Sync, and tombstone; alternatively define an equivalent active-handle fencing mechanism. Add deterministic opener-wins contention coverage proving cleanup blocks until the protected scope ends, then cleanup completes and all later openers reject before DB open. Cover receipt/restart paths and bounded completion.",
+      "disposition": "block_until_contract_and_matrix_are_updated"
+    }
+  ],
+  "control_dispositions": {
+    "cleanup_wins_stale_snapshot": "closed in planned matrix: opener rereads after acquiring case lock and must reject before DB open",
+    "opener_wins_cleanup_contention": "not covered; lifecycle-lock hold-through-open/use is not explicit",
+    "lock_order": "acyclic under stated case-before-catalog order and no catalog-to-case acquisition; depends on uniform application",
+    "catalog_reauthorization": "correctly closes stale optimistic snapshot only if case lock remains held through subsequent opens"
+  },
+  "remaining_blocker_count": 1,
+  "remaining_conditions": [
+    "Clarify continuous lifecycle-lock ownership through reauthorization and OpenVerified/DB/sidecar/key access, plus cleanup's quarantine/handle-close/deletion/tombstone scope.",
+    "Add deterministic same-case opener-wins contention acceptance coverage in addition to cleanup-wins."
+  ],
+  "limitations": [
+    "No tests or runtime validation were run.",
+    "No OS lock, filesystem, database-open, cleanup, or process contention behavior was exercised.",
+    "This finding concerns the written design and planned coverage, not implementation behavior."
+  ]
+}

@@ -1,0 +1,26 @@
+COMMAND: go test -count=1 -timeout=300s ./...
+GO: go version go1.25.14 windows/amd64
+OS: Windows-10-10.0.19045-SP0
+ok  	enwords/cmd/judge-eval	2.799s
+ok  	enwords/cmd/local-eval	5.586s
+ok  	enwords/cmd/server	7.144s
+ok  	enwords/internal/agent	3.128s
+ok  	enwords/internal/api	132.244s
+ok  	enwords/internal/auth	1.304s
+ok  	enwords/internal/classroom	1.538s
+ok  	enwords/internal/config	2.875s
+ok  	enwords/internal/duplex	2.815s
+ok  	enwords/internal/feedback	4.267s
+ok  	enwords/internal/judge	2.838s
+ok  	enwords/internal/llmzhipu	3.950s
+ok  	enwords/internal/localmodel	6.786s
+ok  	enwords/internal/memory	4.116s
+ok  	enwords/internal/obs	4.723s
+ok  	enwords/internal/remoteprovider	6.638s
+ok  	enwords/internal/scheduler	6.841s
+ok  	enwords/internal/scripts	6.847s
+ok  	enwords/internal/store	70.547s
+ok  	enwords/internal/tools	1.349s
+ok  	enwords/internal/voiceclone	6.531s
+ok  	enwords/internal/voicecmd	4.632s
+ok  	enwords/internal/wordbook	5.479s

@@ -1,0 +1,84 @@
+{
+  "review": "startup-dual-pool-race-test-fix-review",
+  "date": "2026-10-16",
+  "mode": "read_only_actual_diff_no_tests",
+  "file": "server\\internal\\store\\startup_matrix_test.go",
+  "sha256": "e360a045e41032413ed74d6b030014d05a971256e1212c453dad70caf3e38432",
+  "status": "passed_for_targeted_validation",
+  "blockers": [],
+  "required_adjustments": [],
+  "passed": [
+    "One20s readiness deadline and independent20s result watchdog,10s cleanup wait are implemented without extending readiness.",
+    "Normal two-ready release does not immediately cancel; failure paths release/cancel.",
+    "Worker-tagged terminal channel has capacity2 and exactly one send per worker, allowing late worker send after parent exit.",
+    "Barrier is closed in mutually exclusive branches; readiness and terminal IDs are deduplicated.",
+    "Early terminal results are retained, not dropped during ready wait.",
+    "No production startup/SQLite parameters changed; unknown original root cause retained."
+  ],
+  "limitations": [
+    "No compilation/tests/build/services executed.",
+    "This review concerns fixture reliability and diagnostic evidence, not a newly proven production startup defect."
+  ],
+  "closed_blockers": [
+    {
+      "id": "STR-CODE-01",
+      "severity": "P1",
+      "lines": [
+        364,
+        557
+      ],
+      "finding": "Function defer removes directory before testing.T.Cleanup closes the reopened pool. On Windows this reintroduces open-file deletion failure; RemoveAll error is ignored.",
+      "fix": "Make reopened-pool close precede directory removal in one ordered cleanup path, including assertion failures. Record close/remove failures instead of silently treating cleanup as successful."
+    },
+    {
+      "id": "STR-CODE-02",
+      "severity": "P2",
+      "lines": [
+        387,
+        409
+      ],
+      "finding": "Worker cleanup only runs in nil-error successful-open branch. Non-nil DB plus error is not closed, yet empty closeCode allows allPoolsClosed=true. Pool ownership is not universally enforced.",
+      "fix": "Independently register cleanup for every nonnil DB before branching on openErr/validation; publish terminal result only after cleanup outcome is known. Close error must prevent directory deletion."
+    },
+    {
+      "id": "STR-CODE-03",
+      "severity": "P2",
+      "lines": [
+        401,
+        547,
+        558
+      ],
+      "finding": "Worker complete-schema validation is only COUNT>0. Reopen comparison counts two enumerations of the same database, so mutually consistent partial schema can pass. Approved contract requires complete expected schema, not merely nonempty/self-consistent objects.",
+      "fix": "Validate winner and reopened database against a known full schema inventory or isolated canonical baseline including tables/indexes/triggers/constraints; worker must return pure structured verification result without testing API. Preserve independent-pool and exactly-one-success/conflict assertions."
+    }
+  ],
+  "followup_verified": [
+    "Worker defer handles every nonnil returned DB and sends terminal result only after close outcome.",
+    "readSchemaSnapshot has no testing API; winner and reopened DB compare complete normalized sqlite_master inventory to separate AutoMigrate+revision-trigger+unique-index reference.",
+    "Reopen pool closed synchronously before directory-removal defer.",
+    "Cleanup-incomplete path copies stage slices under mutex and reports stages; stage durations present.",
+    "Ready/result failure returns after cleanup instead of entering success validation."
+  ],
+  "nonblocking_note": "Previously suggested nonnil+error cleanup is now implemented for expected-schema and reopen pools.",
+  "execution": "Static review complete, zero remaining blockers/required changes. Parent may dispatch targeted validation under approved window. No tests/build/service execution performed by reviewer; original race root cause remains unknown until new evidence.",
+  "closed_adjustments": [
+    {
+      "id": "STR-CODE-06",
+      "severity": "P3",
+      "finding": "appendStage still has no explicit cap although approved design requires bounded per-worker summaries.",
+      "fix": "Use fixed per-worker maximum (e.g.64) and fixed overflow flag, maintaining mutex protection."
+    },
+    {
+      "id": "STR-CODE-07",
+      "severity": "P3",
+      "finding": "Directory RemoveAll failure remains silently ignored; successful pool close does not guarantee filesystem removal.",
+      "fix": "Report fixed cleanup_remove_failed from parent cleanup, preserve retained directory on failure without logging raw paths/SQL."
+    }
+  ],
+  "final_followup_verified": [
+    "Per-worker stage summaries cap64 with mutex-protected overflow flag included in failure diagnostics.",
+    "RemoveAll failure reports fixed cleanup_remove_failed without path or raw error.",
+    "Expected schema helper closes available pool even if connector returns nonnil DB plus error.",
+    "Reopen closes any nonnil DB before final assertions and directory cleanup, independent of Open error."
+  ]
+}

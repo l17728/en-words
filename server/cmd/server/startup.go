@@ -16,14 +16,15 @@ import (
 // A worker timeout leaves the pool to process exit rather than closing it
 // concurrently with a worker that may still be writing.
 type ownedRuntimeCleanup struct {
-	pool     *sql.DB
-	server   *http.Server
-	listener net.Listener
-	cancel   context.CancelFunc
-	done     <-chan struct{}
-	timeout  time.Duration
-	log      *obs.Logger
-	ctx      context.Context
+	pool                *sql.DB
+	server              *http.Server
+	listener            net.Listener
+	cancel              context.CancelFunc
+	done                <-chan struct{}
+	timeout             time.Duration
+	log                 *obs.Logger
+	ctx                 context.Context
+	stopSpeechMaterials func(context.Context) error
 }
 
 func (c *ownedRuntimeCleanup) Close() error {
@@ -39,6 +40,15 @@ func (c *ownedRuntimeCleanup) Close() error {
 			return errors.New("runtime stop incomplete")
 		}
 		c.log.InfoCtx(c.ctx, "main", "runtime_stopped", nil)
+	}
+	if c.stopSpeechMaterials != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+		err := c.stopSpeechMaterials(ctx)
+		cancel()
+		if err != nil {
+			c.log.ErrorCtx(c.ctx, "main", "shutdown_incomplete", map[string]any{"reason": "speech_material_workers_stop_timeout"})
+			return errors.New("speech material workers stop incomplete")
+		}
 	}
 	if c.pool != nil {
 		if err := c.pool.Close(); err != nil {

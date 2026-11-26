@@ -1,0 +1,74 @@
+{
+  "review_id": "pilot-start-kernel-sdd-security-review4-20261016",
+  "date": "2026-10-16",
+  "reviewer_domain": "security",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_type": "read-only design review",
+  "compared_against": "review/pilot-start-kernel-sdd-security-review3-20261016.json",
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "approved_for_narrow_test_only_slice_with_nonblocking_conditions",
+  "summary": "All three round-3 conditions are closed in the revised design. No P1 blocker is apparent. Remaining non-blocking items are Windows reparse-point rejection, explicit public receipt fingerprint handling, and a panic-injection acceptance case.",
+  "round3_dispositions": [
+    {
+      "finding_id": "PSK-SEC3-01",
+      "disposition": "closed",
+      "evidence": "§§3-4 require exact same-lesson frozen word ID/text matching and repeat the check in the store before receipt/outbox writes."
+    },
+    {
+      "finding_id": "PSK-SEC3-02_expiry",
+      "disposition": "closed",
+      "evidence": "§3 requires capability expiry revalidation on every commit and receipt-read call."
+    },
+    {
+      "finding_id": "PSK-SEC3-02_panic",
+      "disposition": "closed_as_design_contract",
+      "evidence": "§3 requires rollback after executor panic/error and fixed redacted HTTP failure without panic value/stack in errors or logs. Explicit panic injection remains a non-blocking test requirement."
+    },
+    {
+      "finding_id": "PSK-SEC3-03_fingerprint",
+      "disposition": "partially_closed",
+      "evidence": "Fingerprint remains excluded from ordinary logs, but persisted receipt includes it and API receipt response policy is unspecified."
+    }
+  ],
+  "regression_checks": {
+    "principal_and_receipt_replay": "no_regression",
+    "test_artifact_isolation": "no_regression",
+    "commit_unknown": "no_regression",
+    "task_local_audit_and_allowlists": "no_regression",
+    "execution_capability": "no_regression"
+  },
+  "remaining_findings": [
+    {
+      "id": "PSK-SEC4-01",
+      "severity": "P2",
+      "blocker": false,
+      "title": "Harness path validation does not explicitly reject Windows reparse points",
+      "location": "docs/41 §5",
+      "risk": "A junction or other reparse point could redirect the supposedly private temporary database path.",
+      "required_revision": "Canonicalize the harness directory and database path and reject all reparse-point components before opening SQLite."
+    },
+    {
+      "id": "PSK-SEC4-02",
+      "severity": "P2",
+      "blocker": false,
+      "title": "Public receipt treatment of the candidate-derived SHA-256 fingerprint is unspecified",
+      "location": "docs/41 §§3-4, 6",
+      "risk": "The stored digest covers low-entropy say text and word data; if returned or leaked, candidate values can be tested offline.",
+      "required_revision": "Exclude the digest from public StartReceipt/lookup responses where possible; otherwise use keyed protection across trust boundaries and document that covered content is non-secret. Keep it out of ordinary logs."
+    },
+    {
+      "id": "PSK-SEC4-03",
+      "severity": "P2",
+      "blocker": false,
+      "title": "No explicit panic-injection acceptance case",
+      "location": "docs/41 §6",
+      "risk": "The SDD promises rollback/redaction on panic but current enumerated injections do not prove no rows, no escaped task audit, safe pinned-connection cleanup, or redacted HTTP/log behavior for a panic.",
+      "required_revision": "Inject deterministic panic from each tool handler and assert all-or-nothing rollback, discarded task-local audit, connection rollback/discard, and no panic value/stack in HTTP/errors/logs. Never recover and continue inside the transaction."
+    }
+  ],
+  "limitations": [
+    "No tests, path validation, build-artifact inspection, panic injection, runtime authorization checks, or database inspection were performed.",
+    "Approval is limited to the isolated test-only Start design and does not establish implementation correctness or classroom readiness."
+  ]
+}

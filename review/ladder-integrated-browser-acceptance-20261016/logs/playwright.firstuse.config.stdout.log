@@ -1,0 +1,6 @@
+
+Running 1 test using 1 worker
+
+  ✓  1 e2e\firstuse-journey.js:5:1 › first use and complete classroom with MOCK browser speech, report and next lesson (1.2m)
+
+  1 passed (1.5m)

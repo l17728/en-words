@@ -1,0 +1,28 @@
+{
+  "review": "pilot-catalog-sdd-backend-review-20261019-r2",
+  "date": "2026-10-19",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md §109",
+  "references": [
+    "docs/41-试点课堂Start持久迁移内核SDD.md §§42,56,109,114"
+  ],
+  "read_only": true,
+  "tests_run": false,
+  "verdict": "PASS",
+  "findings": [],
+  "resolved": [
+    "CAT-BE-1: Sync and any required first-create parent Sync define durable transition linearization; complete valid frames are authoritative on restart and response delivery is not inferred.",
+    "CAT-BE-2: unused ready cases can enter cleanup_quarantined under the lifecycle lock after proving no start attempt or lesson writes."
+  ],
+  "implementation_assessment": {
+    "frame_encoding": "IMPLEMENTABLE",
+    "generation_and_state_machine": "IMPLEMENTABLE",
+    "lock_and_sync_order": "IMPLEMENTABLE_WITH_WINDOWS_POSIX_ACCEPTANCE_GATES",
+    "crash_prefix_oracle": "DETERMINISTIC_AFTER_REVISION",
+    "catalog_or_supervisor_implemented": false
+  },
+  "platform_gates": [
+    "Windows verified-handle OS lock, ACL/file identity, and parent-directory durability.",
+    "POSIX flock/fcntl behavior, owner/mode, file identity, and directory Sync.",
+    "First-create concurrency, Sync-failure poison/restart, and size/frame-count limits via child-process tests."
+  ]
+}

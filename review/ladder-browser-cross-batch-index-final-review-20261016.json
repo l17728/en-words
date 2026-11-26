@@ -1,0 +1,27 @@
+﻿{
+    "review":  "ladder-browser-cross-batch-index-final",
+    "date":  "2026-10-16",
+    "status":  "passed_for_declared_cross_batch_runner_scope",
+    "blockers":  [
+
+                 ],
+    "closed_findings":  [
+                            "INDEX-01: six stdout-only suites are replaced by direct-six-r2 native reports with explicit runner exit0. Original null-exit batch remains superseded/incomplete and excluded."
+                        ],
+    "verified":  [
+                     "Independently traversed all13 accepted native JSON reports covering12 suites. Every case has exactly one passed result, retry0 and expected status; no native global errors found.",
+                     "Suite totals independently recalculated:legacy9 closure6 continuation4 duplex7 feedback26 firstuse1 interaction30 journey1 overdue1 playback1 recovery42 repeat3 =131.",
+                     "There are131 distinct suite-scoped case identities but130 globally distinct raw Playwright IDs. firstuse/playback shared ID is disclosed; no claim of131 distinct raw IDs is made.",
+                     "All four batch manifests have unchanged=true and equal before/after source inventories. All use recorded source fingerprint b8439f15cfd90ed435b17d7d23fd5a4ae0e6b78790a07f0923f09e444dac93d1; every selected suite exit is0.",
+                     "Three batches bind server5164ad7d612d10afbf0e267058080050b53df30d4c84bd5e28fddd430497814a / harness9b1ba542b2a6b53a005e97e507bfccd504e98ef76bd534bd808063e1365be5af. Interaction binds distinct servere75d2ad4100fd79704d6160e8a93a0672434e366dfa1454b80c69ba716076d6a / harnessba469b056d3c5912f909c394eb7c7edf2ba55fa1102c79f2673664112e6eab5a. Index correctly keeps these identities separate.",
+                     "Recovery comprises two complete21-case shards,42 unique within-suite IDs; prior independent discovery-union verification remains applicable.",
+                     "Superseded direct-config-r1 is outside accepted suites/totals; historical raw_batch_rows are retained history only."
+                 ],
+    "scope_limits":  [
+                         "Pass is for12 runner suites/131 suite-case executions across four batches, not a single execution, single binary, or a claim that every separate startup/ladder/real-media acceptance suite is included.",
+                         "Source fingerprint scope is the recorded runner inventory. Matching it does not mean binaries are byte-identical or independently prove identical toolchain/build metadata; actual binary identities remain disclosed.",
+                         "Native fixtures/mock results are not real-model, human-audio or full pilot Room/Agent acceptance. Historical COMMIT latency findings remain open.",
+                         "Only stored evidence was read/recounted. No tests/builds/model requests or source changes performed."
+                     ],
+    "decision":  "Zero remaining blockers for the precisely scoped aggregate claim. ACCEPTANCE-INDEX recommendation and INDEX-01 evidence gap are closed."
+}

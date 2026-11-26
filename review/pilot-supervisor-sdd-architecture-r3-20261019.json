@@ -1,0 +1,34 @@
+{
+  "review": "pilot-supervisor-sdd-architecture-r3-20261019",
+  "date": "2026-10-19",
+  "source": "docs/42-Pilot隔离运行监督器SDD.md",
+  "source_sha256": "FC90528BA994BC999AC27119533EB90784D22599CD25126D70A8622AACB001B0",
+  "comparison_source": "docs/41-试点课堂Start持久迁移内核SDD.md §109",
+  "status": "BLOCKED",
+  "blocking_count": 2,
+  "findings": [
+    {
+      "id": "SUP-SDD-R3-01",
+      "severity": "P2",
+      "location": "docs/42 §8 provisioning recovery; FI-DB-01",
+      "problem": "Provisioning recovery explicitly opens an existing DB read-only and executes PRAGMA database_list plus PRAGMA integrity_check, while FI-DB-01 asserts DB opens=0. The restart branch after a completed durable DB create cannot satisfy both.",
+      "required": "Separate the original create/write failure counters from restart recovery. Recovery may perform at most one identity-verified read-only open and only the two specified PRAGMAs; failures must stop before application SQL. State which injection branches do not enter recovery and therefore assert zero opens.",
+      "acceptance": "Fault tests distinguish same-process creation failure from restart recovery and assert exact open/SQL counts for each boundary."
+    },
+    {
+      "id": "SUP-SDD-R3-02",
+      "severity": "P2",
+      "location": "docs/41 §109.2 cleanup transitions; docs/42 FI-CLEAN-01",
+      "problem": "docs/41 permits cleanup_quarantined from ready, open_recovery_required, committed, terminal_failed, and quarantined, but FI-CLEAN-01 only states the restart case where catalog remains quarantined. It does not define zero-byte/no-frame cleanup-transition recovery for the other valid source states. The implementation must neither infer an interrupted cleanup request from the old state nor treat it as already quarantined.",
+      "required": "For each legal source state, specify that no complete cleanup_quarantined frame means the old state remains authoritative and requires a new explicit cleanup request; a complete frame permits cleanup resume; partial frame fails globally. Assert no member deletion before durable cleanup_quarantined.",
+      "acceptance": "Per-source crash tests cover zero-byte, complete-frame, and partial-frame outcomes and verify exact state, authorization, and deletion counters."
+    }
+  ],
+  "passed": [
+    "The catalog journal file handle is the unique global catalog lock object; bootstrap lock serializes first creation and startup, with no lock-order cycle against normal operations.",
+    "Two-phase authorization is snapshot under catalog lock, release, stable case lock, catalog re-read under lock, release, then OpenVerified; same-case writers use the case lock.",
+    "State-specific capabilities and recovery rules match docs/41 §109, including receipt-only committed reads and no Planner/Registry replay during recovery.",
+    "Permanent external case-lock identity and cleanup-resume semantics are coherent; no new impossible lock-order or frame-recovery contradiction was found outside the two FI clarifications."
+  ],
+  "execution": "Read-only focused architecture review. No design/code changes and no tests/builds run."
+}

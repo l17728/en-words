@@ -1,0 +1,25 @@
+[
+  {
+    "suite": "repeat",
+    "exit": 0,
+    "reports": [
+      {
+        "path": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\evidence\\repeat-only-r1\\repeat-results.json",
+        "stats": {
+          "startTime": "2026-10-16T14:04:03.385Z",
+          "duration": 94929.693,
+          "expected": 3,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "test_ids": [
+          "8d0111c44aa423cce2c0-67824cdf500923a127c5:",
+          "8d0111c44aa423cce2c0-5a3db3134c3366f4176a:",
+          "8d0111c44aa423cce2c0-94c53d96f65b707aa515:"
+        ]
+      }
+    ],
+    "expected_ids": null
+  }
+]

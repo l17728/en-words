@@ -1,0 +1,175 @@
+[
+  {
+    "suite": "legacy",
+    "exit": 0,
+    "reports": [
+      {
+        "path": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\evidence\\direct-six-r2\\legacy-results.json",
+        "stats": {
+          "startTime": "2026-10-16T14:12:50.427Z",
+          "duration": 89934.361,
+          "expected": 9,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "test_ids": [
+          "306384d2e0116321e537-6a90a8562f44beddec87:",
+          "306384d2e0116321e537-68a748572fe6faa81e3e:",
+          "306384d2e0116321e537-5a2664a61d2987c7992e:",
+          "306384d2e0116321e537-7c371fcc2c8c82e983fa:",
+          "306384d2e0116321e537-c5e86c541d2f3424d08f:",
+          "306384d2e0116321e537-fabdcd8c871d4356d39e:",
+          "306384d2e0116321e537-97e94a6b124c59740f84:",
+          "4219922fea2e2bd3c691-1f31091a414367fa5e37:",
+          "4219922fea2e2bd3c691-524390f7267cfb882a47:"
+        ]
+      }
+    ],
+    "expected_ids": null
+  },
+  {
+    "suite": "closure",
+    "exit": 0,
+    "reports": [
+      {
+        "path": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\evidence\\direct-six-r2\\closure-results.json",
+        "stats": {
+          "startTime": "2026-10-16T14:14:22.146Z",
+          "duration": 65223.85799999999,
+          "expected": 6,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "test_ids": [
+          "f9c6b8a6fbecc443b75d-6dd2d51ebac0cbf1c676:",
+          "f9c6b8a6fbecc443b75d-6c696a959d642ece5b7c:",
+          "f9c6b8a6fbecc443b75d-1b17c21ab1cd798da2ef:",
+          "f9c6b8a6fbecc443b75d-d92a1bade57c29cdefbc:",
+          "f9c6b8a6fbecc443b75d-a4df0b2f777c829f7a35:",
+          "f9c6b8a6fbecc443b75d-25e355cde34c19ad346d:"
+        ]
+      }
+    ],
+    "expected_ids": null
+  },
+  {
+    "suite": "continuation",
+    "exit": 0,
+    "reports": [
+      {
+        "path": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\evidence\\direct-six-r2\\continuation-results.json",
+        "stats": {
+          "startTime": "2026-10-16T14:15:29.120Z",
+          "duration": 57084.082,
+          "expected": 4,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "test_ids": [
+          "8de5ab06db3d7553acd4-7a7cf7993fedb1658205:",
+          "8de5ab06db3d7553acd4-fea587ae11d48b31431a:",
+          "8de5ab06db3d7553acd4-8aa271d287c52080e282:",
+          "8de5ab06db3d7553acd4-43b5a7ed56bd3e8f9d2b:"
+        ]
+      }
+    ],
+    "expected_ids": null
+  },
+  {
+    "suite": "duplex",
+    "exit": 0,
+    "reports": [
+      {
+        "path": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\evidence\\direct-six-r2\\duplex-results.json",
+        "stats": {
+          "startTime": "2026-10-16T14:16:28.014Z",
+          "duration": 39513.769,
+          "expected": 7,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "test_ids": [
+          "1d112b2b61473ce594ce-71124209ebf9b8ed7d2f:",
+          "1d112b2b61473ce594ce-1ca555cae1a50e25a3c3:",
+          "1d112b2b61473ce594ce-26f92bab8d0211f49e8b:",
+          "1d112b2b61473ce594ce-c006af15bbe12b8f3389:",
+          "1d112b2b61473ce594ce-844ec9ff1a442d732b93:",
+          "1d112b2b61473ce594ce-af8f0a1017562efe34a4:",
+          "1d112b2b61473ce594ce-3c0fa7fdd15b15045e0b:"
+        ]
+      }
+    ],
+    "expected_ids": null
+  },
+  {
+    "suite": "feedback",
+    "exit": 0,
+    "reports": [
+      {
+        "path": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\evidence\\direct-six-r2\\feedback-results.json",
+        "stats": {
+          "startTime": "2026-10-16T14:17:09.432Z",
+          "duration": 214448.80099999998,
+          "expected": 26,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "test_ids": [
+          "14be73979fd90895dc45-ab99b8775cf119fbb078:",
+          "14be73979fd90895dc45-3383bc87c5297f7cf1e3:",
+          "14be73979fd90895dc45-14cb1e0e1a48ca1db112:",
+          "14be73979fd90895dc45-a717ce5d099b26f61049:",
+          "14be73979fd90895dc45-a26a60a4f166f545936d:",
+          "14be73979fd90895dc45-7403c3fd807f23cb4550:",
+          "14be73979fd90895dc45-6ae67f0e16b99e11fd44:",
+          "14be73979fd90895dc45-baf42ac93445f7308513:",
+          "14be73979fd90895dc45-3b6e93bedb69aa47e45b:",
+          "14be73979fd90895dc45-d1d57564d96a7e3e5753:",
+          "14be73979fd90895dc45-620920fdde5fede6a3e0:",
+          "14be73979fd90895dc45-3a2a3ea3b1578f9e96f0:",
+          "14be73979fd90895dc45-07f5fb2d32c22a329244:",
+          "14be73979fd90895dc45-9bf4e10b8e6af6113966:",
+          "14be73979fd90895dc45-ee46fda7e8b048b47a6a:",
+          "14be73979fd90895dc45-b7205f5db8a7b6a1e735:",
+          "14be73979fd90895dc45-c7762c6fc9ba8983198d:",
+          "14be73979fd90895dc45-e413ded4c99bdbe2d9df:",
+          "14be73979fd90895dc45-3c4b47386852c63a15e5:",
+          "14be73979fd90895dc45-2c9c138eef237056a2bd:",
+          "14be73979fd90895dc45-c6fc331a2d1208931188:",
+          "14be73979fd90895dc45-c4b69894283358509458:",
+          "14be73979fd90895dc45-652dec4c25dba63bf96b:",
+          "14be73979fd90895dc45-8bcc2f2952475338b727:",
+          "14be73979fd90895dc45-e068c2a8e18bfca69fab:",
+          "14be73979fd90895dc45-dafbd198ee4cfe7d315f:"
+        ]
+      }
+    ],
+    "expected_ids": null
+  },
+  {
+    "suite": "firstuse",
+    "exit": 0,
+    "reports": [
+      {
+        "path": "D:\\en-words\\review\\ladder-browser-missing-suites-20261016\\evidence\\direct-six-r2\\firstuse-results.json",
+        "stats": {
+          "startTime": "2026-10-16T14:20:45.823Z",
+          "duration": 84139.53899999999,
+          "expected": 1,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "test_ids": [
+          "b1e74dc03d12aa4ab45a-cb03df086ccfb02c66bf:"
+        ]
+      }
+    ],
+    "expected_ids": null
+  }
+]

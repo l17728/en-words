@@ -1,0 +1,28 @@
+{
+  "review": "pilot-supervisor-sdd-security-r3",
+  "date": "2026-10-19",
+  "document": "docs/42-Pilot隔离运行监督器SDD.md",
+  "document_sha256": "4775CF8BE9D5D69314B01F542EA318E5218A2CB482E244F578F06192766F9352",
+  "target_sha_matches_current": true,
+  "scope": ["case inventory/bootstrap", "cleanup absent-directory recovery", "file Close unknown-state", "DB recovery counters"],
+  "mode": "read-only quick confirmation; inherited other R2 PASS clauses; no code review; no tests run",
+  "verdict": "PASS_WITH_P2",
+  "blocking_p1_count": 0,
+  "reviewed_changes": {
+    "case_inventory_bootstrap": "pass: unique initial provisioning/no-lock window and CREATE_NEW/OpenVerified recovery converge on one permanent OS lock identity",
+    "cleanup_absent_directory": "pass: pinned-root absence verification and parent Sync precede deleted tombstone; directory is not recreated",
+    "file_close_unknown_state": "safe no-double-close/poison semantics, but process shutdown/restart is not mandated",
+    "db_recovery_counters": "pass: app and recovery opens are separated; denied paths and second Start require both counters zero"
+  },
+  "findings": [
+    {
+      "id": "SEC-SUP-R3-01",
+      "severity": "P2",
+      "clauses": ["§3.5", "§3.7", "§9.95"],
+      "title": "Unknown close state retains handles until process exit but does not require process exit",
+      "recommendation": "Treat unknown as terminal/non-retryable, emit a fixed fatal event and require host shutdown plus external restart; reserve same-owner retry for still_open. Test no second Close/Unlock or cleanup and verify shutdown is signaled."
+    }
+  ],
+  "inherited_r2": "PASS clauses not touched by the four scoped edits are inherited without re-review",
+  "limitations": ["No implementation reviewed", "No tests executed", "No approval for production integration or real classroom pilot"]
+}

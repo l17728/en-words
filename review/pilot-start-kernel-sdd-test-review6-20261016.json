@@ -1,0 +1,57 @@
+{
+  "review": "pilot-start-kernel-sdd-test-review-6",
+  "date": "2026-10-16",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "tests_run": false,
+  "implementation_approved": false,
+  "findings": [
+    {
+      "id": "PILOT-START-TEST-21",
+      "severity": "P1",
+      "status": "block",
+      "where": "docs/41 execution erratum, Bundle/failed-attempt recovery supplement, sidecar contract, and section 6 crash tests",
+      "problem": "The sidecar event/state machine lacks frozen event enums, schemas, ordering, and legal transitions. Exact fsync boundaries for terminal_failed and rollback_proven are unclear, so recovery can classify the same crash differently. Torn final JSONL handling is also unspecified.",
+      "required_action": "Define versioned event/transition tables and durable-before-reply/retry boundaries; enumerate crash boundaries and fail closed on torn/invalid sidecar records; add table-driven restart tests."
+    },
+    {
+      "id": "PILOT-START-TEST-22",
+      "severity": "P1",
+      "status": "block",
+      "where": "docs/41 sidecar recovery prose in section 3 and Bundle/failed-attempt supplement",
+      "problem": "The text says a restart with no receipt and lost bundle remains permanently pending_unknown, but also says terminal_failed or rollback_proven without a bundle returns not_committed. It does not clearly state whether rollback_proven is the exception or whether same-ID retry is permitted.",
+      "required_action": "Specify the precedence and permissible follow-up command for each durable sidecar state; receipt absence or partial attempt records must never produce not_committed."
+    },
+    {
+      "id": "PILOT-START-TEST-23",
+      "severity": "P1",
+      "status": "block",
+      "where": "docs/41 fingerprint and sidecar command-HMAC contracts",
+      "problem": "The sidecar command HMAC inputs/version are unspecified and not explicitly compared with the canonical fingerprint/bundle digest during recovery. A same command ID with mutated semantic fields could be conflated with an existing attempt marker.",
+      "required_action": "Define sidecar HMAC domain/version and immutable inputs; require exact recovered fingerprint/context match and test semantic-field mutations across restart."
+    },
+    {
+      "id": "PILOT-START-TEST-24",
+      "severity": "P2",
+      "status": "block",
+      "where": "docs/41 section 6 T-01 planning/bundle tests",
+      "problem": "Failure handling before Registry calls is not explicitly tested despite durable attempt_started being written before Teacher.Decide and RenderLessonStartT01.",
+      "required_action": "Test Teacher.Decide errors, Bank/fallback validation failures, invalid output, and sidecar sync failure; assert terminal category, zero Registry/lifecycle effects, and restart behavior."
+    },
+    {
+      "id": "PILOT-START-TEST-25",
+      "severity": "P2",
+      "status": "block",
+      "where": "docs/41 whole-database and mixed lifecycle verifier tests",
+      "problem": "The mixed A-active/B-created test and orphan receipt case do not explicitly test cross-linked audit/outbox rows or prove one lesson's facts cannot satisfy another lesson's verifier.",
+      "required_action": "Add cross-link corruption fixtures for audit trace and outbox decision/lesson association; assert local and global verifier outcomes."
+    }
+  ],
+  "closed_or_strengthened": [
+    "sidecar intent and per-Registry-attempt sync occur outside SQLite writer lock",
+    "complete bundle digest cache and same-process rollback reuse are specified",
+    "restart with committed receipt and conservative unresolved-attempt behavior are described",
+    "Playwright uses an explicitly test-only HTML/JS harness page and preserves the case directory across supervised restart",
+    "mixed created/active lifecycle verification is separated from global database integrity checks"
+  ],
+  "disposition": "Do not implement until P1 findings 21-23 are resolved and test vectors are added."
+}

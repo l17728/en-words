@@ -1,0 +1,21 @@
+{
+  "cwd": "D:\\en-words",
+  "command": "C:\\Python312\\python.exe -m unittest -v review.test_pilot_runroot_manifest",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.19045-SP0",
+  "PYTHONPATH": "D:\\en-words\\review",
+  "exit_code": 1,
+  "duration_seconds": 0.741,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "a69935ea3681d4d2f20f0bf981ec1c61d1d939ff371649c9a50212f8f9c03acb",
+  "file_hashes": {
+    "review/test_pilot_runroot_manifest.py": "50040bd825b6b07e660bad3c1b1c7b714554d4264483debeeab2ed981581f29c",
+    "review/pilot-runroot-product-orchestration-manifest-20261021.json": "ec1847e63237502005a1d44ce15cb03ca485bda0bf2f16f1d2b99ab14328bca1",
+    "review/pilot-intent-quota-journal-manifest-20261022.json": "5ea42c1d2a9346a01d94109935a8a81af845a337e26a3348b8ef08b2470a22cb",
+    "docs/50-pilot-runroot-product-orchestration-sdd.md": "339988d3b0971c99b66b41743aeea3fc20b2aab0173952ad423fdd7c583a6d05",
+    "docs/51-pilot-control-ledger-v3-sdd.md": "9b678a22885f401b2e51a04359ac42f5504cbf39ad5e9a5970d7a9f02f863954",
+    "docs/52-pilot-control-ledger-v3-physical-model-decisions.md": "eac7115e9fb30c0a2eb2b470dadd24bbf2ba0b2b5b69978298bc64f9b5107cd7",
+    "docs/53-pilot-control-ledger-v3-physical-schema-matrix.md": "7313a227a6e67554253249ed266fcfedb59cafa013e464234971a5364f57d1b8",
+    "docs/63-pilot-intent-quota-journal-sdd.md": "f40f3c7f1be7403ce642ac14e31e4c8237ad23698d734a0baff64f7157ee04da"
+  }
+}

@@ -84,6 +84,7 @@ func run() (runErr error) {
 		}
 	}
 	app.SetLogger(log)
+	owned.stopSpeechMaterials = app.StopSpeechMaterialJobs
 	if *testmode {
 		app.SetTestMode()
 		log.Info("main", "testmode_enabled", nil)

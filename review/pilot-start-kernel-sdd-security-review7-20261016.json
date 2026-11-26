@@ -1,0 +1,64 @@
+{
+  "review_id": "pilot-start-kernel-sdd-security-review7-20261016",
+  "date": "2026-10-16",
+  "reviewer_domain": "security",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_type": "read-only design review",
+  "compared_against": "review/pilot-start-kernel-sdd-security-review6-20261016.json",
+  "focus": [
+    "PSK-SEC6-01 filesystem ACL/mode and key lifecycle closure",
+    "trusted local account threat boundary",
+    "receipt-first integrity claim",
+    "PSK-SEC6-02 failed-case access, retention and cleanup",
+    "plan/task/trace HMAC privacy and protocol consistency"
+  ],
+  "tests_run": false,
+  "code_changed": false,
+  "decision": "blocked_pending_specification_consistency_fix",
+  "summary": "PSK-SEC6-01 and PSK-SEC6-02 are closed in substance: the SDD now specifies restrictive per-open ACL/mode checks, atomic key creation, protected-handle delivery, an explicit trusted-local-account threat boundary, receipt-first scope, and artifact access/retention/cleanup. One conflicting harness phrase still says the key is passed through private runtime parameters, and pre-call tool_started HMAC derivation is underspecified because its stated source includes a Registry AuditEntry that does not exist yet.",
+  "round6_dispositions": [
+    {
+      "finding_id": "PSK-SEC6-01",
+      "disposition": "closed_except_for_harness_parameter_wording",
+      "evidence": "§3 specifies owner-only DACL or POSIX 0700/0600 plus umask 077; per-open ACL checks; owner/ACE/reparse/hard-link/directory replacement rejection; directory-handle-relative opens; CREATE_NEW/O_EXCL; protected inherited handle/anonymous pipe; no argv/environment/log/dump; and an explicit trusted supervisor account boundary. §6 still says '通过私有运行参数传递', conflicting with the no-argv rule."
+    },
+    {
+      "finding_id": "PSK-SEC6-02",
+      "disposition": "closed_in_design",
+      "evidence": "Synthetic-only data, supervisor-only access to pending/degraded cases, immediate success cleanup after evidence persistence, terminal-failure max 24-hour retention, pending/degraded max 7-day retention, grouped deletion of DB/WAL/SHM/journal/sidecar/key, and no reuse after cleanup failure are specified."
+    }
+  ],
+  "findings": [
+    {
+      "finding_id": "PSK-SEC7-01",
+      "severity": "P2",
+      "status": "open_condition",
+      "title": "Pre-call task/trace HMAC derivation conflicts with the stated Registry audit source",
+      "evidence": "§4 requires task_hmac and trace_hmac on every event and says they are derived from the verified capability and Registry AuditEntry. §3/§4 require durable tool_started before invoking Registry, so the AuditEntry is not yet available for that event.",
+      "risk": "Implementers may violate intent-before-effect ordering or use different derivation sources for tool_started and tool_result, weakening event linkage.",
+      "required_revision": "Define tool_started task_hmac from the verified capability and trace_hmac from the server-created decision ID; on tool_result, verify the same HMAC values against the returned Registry AuditEntry."
+    }
+  ],
+  "control_dispositions": {
+    "filesystem_permissions_and_key_creation": "specified; runtime enforcement not verified",
+    "key_delivery": "protected inherited handle/pipe specified in §3; conflicting §6 private-runtime-parameters wording remains",
+    "trusted_local_account_boundary": "explicit; same-account/admin/host compromise excluded",
+    "receipt_first_recovery": "limited to structural consistency under trusted-account boundary; same-account/admin DB tampering explicitly out of scope",
+    "retention_and_cleanup": "specified in design; runtime enforcement not verified",
+    "plan_hmac": "privacy-minimized binding; no greeting/word payload stored in sidecar",
+    "task_trace_hmac": "keyed pseudonyms, intentionally linkable within case; pre-call derivation needs clarification",
+    "per_case_key_isolation": "implied by case-scoped key; explicit independent-key invariant recommended",
+    "production_build_isolation": "specified; binary artifact not inspected"
+  },
+  "remaining_blocker_count": 1,
+  "remaining_conditions": [
+    "Replace §6 private runtime parameters with protected inherited handle/pipe and explicitly exclude the HMAC key from argv/environment.",
+    "Resolve PSK-SEC7-01 before implementation.",
+    "State that each case has a fresh independent HMAC key."
+  ],
+  "limitations": [
+    "No tests or runtime validation were run.",
+    "No ACL/mode, key-transfer, build artifact, database, or recovery path was inspected.",
+    "This review does not approve implementation, production deployment, real student data, or classroom readiness."
+  ]
+}

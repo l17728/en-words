@@ -1,0 +1,212 @@
+{
+  "status": "namespace fix implemented; lightweight tests passed; independent review pending; formal145 not resumed",
+  "first_failed_run": {
+    "manifest": ".test-artifacts\\frozen-browser145-r17-20261016\\manifest.json",
+    "sha256": "443ed43f955f68fe29d31b26d1ebddf3ffaa88de9eee3b52f66019c237807e3a",
+    "failure": {
+      "type": "RuntimeError",
+      "message": "Full discovery must contain 145 unique IDs",
+      "stage": "recovery-discovery"
+    },
+    "not_overwritten": true
+  },
+  "cause": {
+    "raw_key": "b1e74dc03d12aa4ab45a-cb03df086ccfb02c66bf:",
+    "suites": [
+      "playback",
+      "firstuse"
+    ],
+    "file": "firstuse-journey.js",
+    "line": 5,
+    "title": "first use and complete classroom with MOCK browser speech, report and next lesson",
+    "classification": "Runner global identity schema defect; distinct intentionally configured scenarios share raw Playwright identity"
+  },
+  "id_schema": "suite::(spec.id + colon + projectId)",
+  "validation": "Namespaced expected IDs must belong to current suite, then map to raw IDs for existing strict once-pass/no-retry validation. Duplicate within suite still rejected. Recovery partitions use recovery namespace.",
+  "offline_discovery_check": {
+    "scope": "Read existing discovery JSON only; not new discovery or browser execution",
+    "total": 145,
+    "unique": 145,
+    "suites": [
+      {
+        "suite": "continuation",
+        "count": 4,
+        "report": ".test-artifacts\\frozen-browser145-r17-20261016\\continuation-discovery.json",
+        "sha256": "3bb3de5beb96776293a98054fc8191f9ac8237e8074a7f202b9eec4f8f642b60",
+        "binding": {
+          "config": "web/playwright.continuation.config.ts",
+          "sha256": "60294f9a8bbd744acb238e40a98a50c4c6e66773b6006d1bd4cf49641a1e6817",
+          "playback_settings": "0"
+        }
+      },
+      {
+        "suite": "interaction",
+        "count": 30,
+        "report": ".test-artifacts\\frozen-browser145-r17-20261016\\interaction-discovery.json",
+        "sha256": "e0ccf024bdf4c86c93f05a38576b4f7f64e719f3e0a197f19f94280bfd26d17c",
+        "binding": {
+          "config": "web/playwright.interaction.config.ts",
+          "sha256": "993a81142d71b12c4055fe76306e4440b3b73cb1c004cb0ada020dc7e9e2de29",
+          "playback_settings": "0"
+        }
+      },
+      {
+        "suite": "feedback",
+        "count": 26,
+        "report": ".test-artifacts\\frozen-browser145-r17-20261016\\feedback-discovery.json",
+        "sha256": "9ecb905816a80b37a38277827939b6c6d25f81d1bc66e2dfcbd95f5d649d2dc2",
+        "binding": {
+          "config": "web/playwright.feedback.config.ts",
+          "sha256": "e40446395cdb4cdb11a05217141699268a19e5651f519177d5cf6e7dbb624f9e",
+          "playback_settings": "0"
+        }
+      },
+      {
+        "suite": "closure",
+        "count": 6,
+        "report": ".test-artifacts\\frozen-browser145-r17-20261016\\closure-discovery.json",
+        "sha256": "ad496809002ad1611c753ff5423829eee4fc776704a67913312b0382b0c6cd54",
+        "binding": {
+          "config": "web/playwright.closure.config.ts",
+          "sha256": "7a4e57736bfeac590519e62a95bbbccacaaa9fa9296d5dea3ce1ad097628d1db",
+          "playback_settings": "0"
+        }
+      },
+      {
+        "suite": "playback",
+        "count": 1,
+        "report": ".test-artifacts\\frozen-browser145-r17-20261016\\playback-discovery.json",
+        "sha256": "e317e5e871411e54f259098a318d5af7fda99ac4e504eb059b718037ce8b6e40",
+        "binding": {
+          "config": "web/playwright.playback.config.ts",
+          "sha256": "f44e98a1970c3cc96a8a7a150b90a09eb89e977e6e1bbd0f27846a096bb3db08",
+          "playback_settings": "1"
+        }
+      },
+      {
+        "suite": "legacy",
+        "count": 9,
+        "report": ".test-artifacts\\frozen-browser145-r17-20261016\\legacy-discovery.json",
+        "sha256": "83e8c3b3c9cb8d2831770d059f84bf12f1970e128e563d3f8a07e3c23c7258a7",
+        "binding": {
+          "config": "web/playwright.config.ts",
+          "sha256": "a4416e93f573e9a579855cbb6d93bba3c95a007b59830a250d715d0a73c50a2b",
+          "playback_settings": "0"
+        }
+      },
+      {
+        "suite": "journey",
+        "count": 1,
+        "report": ".test-artifacts\\frozen-browser145-r17-20261016\\journey-discovery.json",
+        "sha256": "a34d056c28608e2439f496628e8664bfb94c6b64fd1f4f5069d5bc81246fe70f",
+        "binding": {
+          "config": "web/playwright.journey.config.ts",
+          "sha256": "714a3fce7aa93fcc4f293681e4566e74f58871b2571def1a95284a9ff16ebb8f",
+          "playback_settings": "0"
+        }
+      },
+      {
+        "suite": "firstuse",
+        "count": 1,
+        "report": ".test-artifacts\\frozen-browser145-r17-20261016\\firstuse-discovery.json",
+        "sha256": "5187ee8c471d07b65a7c5e2aaa82bc7e045f18b4688d8f8e01967a51fd27ccb1",
+        "binding": {
+          "config": "web/playwright.firstuse.config.ts",
+          "sha256": "b4a84db07f40dc15809c7e7a209bb7f9423a1c864fc11dccab6255a9f0fd7666",
+          "playback_settings": "0"
+        }
+      },
+      {
+        "suite": "overdue",
+        "count": 1,
+        "report": ".test-artifacts\\frozen-browser145-r17-20261016\\overdue-discovery.json",
+        "sha256": "9d62492b3cb2166040508ced9c98c30c1ae751d61aec453b91afe49b63874002",
+        "binding": {
+          "config": "web/playwright.overdue.config.ts",
+          "sha256": "4b7c38251ca11dd945d0804c1af00f55293af58705f37e6cd10c6e9b84014389",
+          "playback_settings": "0"
+        }
+      },
+      {
+        "suite": "duplex",
+        "count": 7,
+        "report": ".test-artifacts\\frozen-browser145-r17-20261016\\duplex-discovery.json",
+        "sha256": "8964941bc36a0246875ee0307d8d8ae8de4b6f63d52c3c0aafe2f87321614d7b",
+        "binding": {
+          "config": "web/playwright.duplex.config.ts",
+          "sha256": "fe5bf043a935ba80c265d17a36937e55c49166695b2372323393cd939d9dfa14",
+          "playback_settings": "0"
+        }
+      },
+      {
+        "suite": "repeat",
+        "count": 3,
+        "report": ".test-artifacts\\frozen-browser145-r17-20261016\\repeat-discovery.json",
+        "sha256": "874dd2a2dc46ccc3fc36c46ac5e6def85e0db509d0edb85801ff1899a3034788",
+        "binding": {
+          "config": "web/playwright.repeat.config.ts",
+          "sha256": "06cb4caf14d2362cd96baa87d3a1ee8bfded2dd1d436e5b744000b78d066fade",
+          "playback_settings": "0"
+        }
+      },
+      {
+        "suite": "startup",
+        "count": 14,
+        "report": ".test-artifacts\\frozen-browser145-r17-20261016\\startup-discovery.json",
+        "sha256": "ea27cd4df43c0455da0573f9060259369c2bba71e4bf4fc153cd728a4af6439b",
+        "binding": {
+          "config": "web/playwright.startup.config.ts",
+          "sha256": "c0e226d7510cffe8a57a01d9dc6dbeda9a6cb3021ff68f96af0b329e6647e8aa",
+          "playback_settings": "0"
+        }
+      },
+      {
+        "suite": "recovery",
+        "count": 42,
+        "report": ".test-artifacts\\frozen-browser145-r17-20261016\\recovery-discovery.json",
+        "sha256": "dec5634165e330502dae481950cd5712de65399568a35b7d1adddac0b1ec3c6e",
+        "binding": {
+          "config": "web/playwright.recovery.config.ts",
+          "sha256": "bad6a2cdebb9c3685d928855995261d7dbc974cae1ece05fc3b65976c23f39f0",
+          "playback_settings": "0"
+        }
+      }
+    ]
+  },
+  "tests": {
+    "python": {
+      "passed": 27,
+      "exit_code": 0,
+      "log": ".test-artifacts/frozen-browser145-namespace-tools-20261016/python.log"
+    },
+    "node": {
+      "passed": 2,
+      "exit_code": 0,
+      "log": ".test-artifacts/frozen-browser145-namespace-tools-20261016/node.log"
+    }
+  },
+  "files": [
+    {
+      "path": "review/run_frozen_browser_acceptance.py",
+      "sha256": "77ebeba148e9de997280c4fe014273848257e59647a0901db7c9c10a50eb4db8"
+    },
+    {
+      "path": "review/test_frozen_browser_acceptance.py",
+      "sha256": "871a591589d2effd4cba5878445433cede78c856bba3ca7d4143e00b608fdf91"
+    },
+    {
+      "path": "web/playwright.frozen.config.ts",
+      "sha256": "b0c2a39d8ad5bb1818e63c24f195c225645d52aab2229239b8490350abed886b"
+    },
+    {
+      "path": "web/e2e/frozen-build.ts",
+      "sha256": "09a57099368090f8de9abc03a3c8a2dd8396d37a0b5686af1d509922e5d9e946"
+    },
+    {
+      "path": "web/tests/frozen-build.test.ts",
+      "sha256": "7e09ac4c4456beeb2392524cf0940c6ce5a6d09a27427a8272d397bba47891f8"
+    }
+  ],
+  "production_modified": false,
+  "browser_or_build_started": false
+}

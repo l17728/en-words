@@ -1,0 +1,14 @@
+=== RUN   TestProposePinnedVFSCallbackGoldens
+PILOT_CHILD_CLEANUP scenario=VFSFLAGS-SIDECAR-EEXIST-REOPEN role=eexist-child started=true reaped=true cleanup=CLEAN timed_out=false
+PILOT_CHILD_CLEANUP scenario=LOCK-CROSS-PROCESS-CONTEND role=child-B started=true reaped=true cleanup=CLEAN timed_out=false
+PILOT_CHILD_CLEANUP scenario=SHM-CROSS-PROCESS-CONTEND role=child-B started=true reaped=true cleanup=CLEAN timed_out=false
+PILOT_CHILD_CLEANUP scenario=SHM-FINAL-UNMAP-REOPEN role=child-A started=true reaped=true cleanup=CLEAN timed_out=false
+PILOT_CHILD_CLEANUP scenario=PAGER-HOT-ROLLBACK-EXCLUSIVE role=crash-child started=true reaped=true cleanup=CLEAN timed_out=false
+    pilot_vfs_trace_candidate_test.go:648: golden_candidate fixture_group=sqlite3451-vfs-flags status=CANDIDATE artifact=sqlite3451-vfs-flags.candidate.json
+    pilot_vfs_trace_candidate_test.go:648: golden_candidate fixture_group=sqlite3451-unix-lock-trace status=CANDIDATE artifact=sqlite3451-unix-lock-trace.candidate.json
+    pilot_vfs_trace_candidate_test.go:648: golden_candidate fixture_group=sqlite3451-shm-lock-trace status=CANDIDATE artifact=sqlite3451-shm-lock-trace.candidate.json
+    pilot_vfs_trace_candidate_test.go:648: golden_candidate fixture_group=sqlite3451-pager-delete-trace status=CANDIDATE artifact=sqlite3451-pager-delete-trace.candidate.json
+    pilot_vfs_trace_candidate_test.go:650: raw_trace_files=16 harness_sha256=c1e13da288818c90d1d926af2d80b0f1d7a2635e1fb92521fe874dc5e2597cc7 status=CANDIDATE_ONLY
+--- PASS: TestProposePinnedVFSCallbackGoldens (1.01s)
+PASS
+ok  	enwords/internal/pilotcontrol	1.032s

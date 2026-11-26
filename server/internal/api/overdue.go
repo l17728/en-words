@@ -58,6 +58,8 @@ func (a *App) runOverdueLesson(ctx context.Context, l *scheduler.Lesson) error {
 	defer a.Rooms.mu.Unlock()
 	r := a.Rooms.rooms[l.ID]
 	if r != nil {
+		r.mutationMu.Lock()
+		defer r.mutationMu.Unlock()
 		r.mu.Lock()
 		defer r.mu.Unlock()
 		if r.retired {

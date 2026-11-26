@@ -1,0 +1,2 @@
+pilotcontrol|sqlite_nocgo.go||
+exit_code=0

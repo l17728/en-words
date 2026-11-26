@@ -1,0 +1,47 @@
+{
+  "review": "pilot-start-kernel-code-backend-review2-20261017",
+  "date": "2026-10-17",
+  "target": [
+    "server/internal/agent/pilot_start.go",
+    "server/internal/agent/pilot_start_test.go",
+    "server/internal/scripts/pilot_exact.go",
+    "server/internal/store/pilot_start_sidecar.go",
+    "server/internal/store/pilot_start_sidecar_test.go"
+  ],
+  "reference": "docs/41-试点课堂Start持久迁移内核SDD.md §§24,44-46,94,114",
+  "scope_note": "Coordinator/HTTP harness is not yet wired. Cross-process lock, OpenVerified, Windows ACL, and supervisor durability remain integration gates.",
+  "code_modified": false,
+  "tests_run": false,
+  "verdict": "BLOCK",
+  "findings": [
+    {
+      "id": "BE-CODE-R2-1",
+      "severity": "P2",
+      "status": "open",
+      "file": "server/internal/store/pilot_start_sidecar_test.go",
+      "lines": "216-238",
+      "title": "Replay-limit test submits an invalid empty event and never reaches the size guard",
+      "recommendation": "Append a valid event for the current sidecar phase after filling the file to the cap, then assert error, degraded=true, and unchanged file size."
+    }
+  ],
+  "resolved": [
+    "BE-CODE-1: create/reopen split; missing and empty recovery files reject; POSIX parent directory sync is present.",
+    "BE-CODE-2: exact attempt transitions and attempt-2 terminal failure are implemented.",
+    "BE-CODE-3: known plan/bundle HMAC values are required on every later event.",
+    "BE-CODE-4 implementation: append checks replay cap before writing and degrades the sidecar on exhaustion."
+  ],
+  "integration_gates": [
+    "Supervisor must enforce cross-process single-writer OS lifecycle lock for each case.",
+    "Pass a verified sidecar handle/identity after OpenVerified; current helper uses path-based Lstat/OpenFile.",
+    "Supervisor must verify Windows ACL and equivalent parent-directory durability before integration.",
+    "Add I/O fault injection and full event-chain golden/replay coverage before claiming §94 complete."
+  ],
+  "checks": {
+    "create_vs_reopen_and_missing_empty_rejection": "PASS_WITH_PLATFORM_GATES",
+    "commit_attempt_transition_fix": "PASS_WITH_TEST_GAPS",
+    "known_hmac_terminal_binding": "PASS",
+    "prewrite_replay_cap_guard": "PASS",
+    "cap_guard_test": "BLOCK_INVALID_FIXTURE",
+    "cross_process_lock_and_verified_open": "NOT_YET_INTEGRATED"
+  }
+}

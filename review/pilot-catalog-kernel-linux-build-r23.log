@@ -1,0 +1,2 @@
+﻿GOOS=linux GOARCH=amd64 go test -c -tags pilot_e2e -o .test-tools/tmp/pilot-catalog-store-linux-amd64-r23.test ./internal/store
+Harness exceeded 300 seconds without final output. go.exe and output artifact were absent at cleanup; compile result is incomplete, not PASS.

@@ -1,0 +1,26 @@
+COMMAND: web/node_modules/.bin/playwright.cmd test --config=playwright.closure.config.ts
+Node: v25.2.1
+Host OS: Windows-10-10.0.19045-SP0
+Go PATH prepends repository Go toolchain for webServer.
+[WebServer] (node:244) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[WebServer] (node:7768) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 6 tests using 1 worker
+
+(node:13860) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 e2e\closure-regression.spec.js:51:1 › two students: foreign classroom navigation is denied without damaging owner session (8.7s)
+  ✓  2 e2e\closure-regression.spec.js:85:1 › feedback UI shows the actual applied quantity and notification body (4.8s)
+  ✓  3 e2e\closure-regression.spec.js:102:1 › classroom rejects a browser event replay across WS and REST (20.3s)
+  ✓  4 e2e\closure-regression.spec.js:164:1 › student statistics empty state recovers from a real request failure (5.0s)
+  ✓  5 e2e\closure-regression.spec.js:179:1 › playback settings remain private to their student after relogin (5.4s)
+  ✓  6 e2e\closure-regression.spec.js:193:1 › injected pause/resume protocol cancels delay and deduplicates recovery speech (17.5s)
+
+  6 passed (2.5m)

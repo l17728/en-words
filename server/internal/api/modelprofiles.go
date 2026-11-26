@@ -3,10 +3,13 @@ package api
 import (
 	"errors"
 	"net/http"
+	"slices"
+	"sort"
 	"strings"
 
 	"enwords/internal/auth"
 	"enwords/internal/localmodel"
+	"enwords/internal/speechagent"
 	"enwords/internal/store"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -29,17 +32,25 @@ func (a *App) ensureDefaultModelProfile() (store.ModelProfile, error) {
 		return p, nil
 	}
 	if row.TextService == "" {
-		id, created := row.ID, row.CreatedAt
+		id, created, active := row.ID, row.CreatedAt, row.Active
 		row = p
-		row.ID, row.CreatedAt = id, created
+		row.ID, row.CreatedAt, row.Active = id, created, active
 		if err := a.DB.Save(&row).Error; err != nil {
 			return row, err
 		}
 	}
 	if !row.Active {
 		var active store.ModelProfile
-		if err := a.DB.Where("active = ?", true).Order("id ASC").First(&active).Error; err == nil {
+		err := a.DB.Where("active = ?", true).Order("id ASC").First(&active).Error
+		if err == nil {
 			return active, nil
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return row, err
+		}
+		row.Active = true
+		if err := a.DB.Save(&row).Error; err != nil {
+			return row, err
 		}
 	}
 	return row, nil
@@ -55,14 +66,42 @@ func (a *App) applyModelProfile(row store.ModelProfile) error {
 func (a *App) registerModelProfileRoutes(g *gin.RouterGroup) {
 	admin := g.Group("/admin", a.roleMW(auth.RoleAdmin))
 	admin.GET("/model-services", func(c *gin.Context) {
-		if a.Local == nil {
-			c.JSON(http.StatusOK, ok([]localmodel.Service{}))
-			return
+		servicesByKey := map[string]localmodel.Service{}
+		if a.Local != nil {
+			for _, s := range a.Local.Services {
+				servicesByKey[s.ID+"\x00"+s.Model] = s
+			}
 		}
-		services := make([]localmodel.Service, 0, len(a.Local.Services))
-		for _, s := range a.Local.Services {
-			services = append(services, s)
+		if a.DB != nil && a.DB.Migrator().HasTable(&store.SpeechAgent{}) {
+			var agents []store.SpeechAgent
+			if a.DB.Where("enabled = ? AND revoked_at IS NULL", true).Find(&agents).Error == nil {
+				for _, agent := range agents {
+					caps, err := speechagent.DecodeCapabilities(agent.CapabilitiesJSON)
+					if err != nil {
+						continue
+					}
+					for _, cap := range caps {
+						service := servicesByKey[cap.ServiceID+"\x00"+cap.Model]
+						service.ID, service.Model = cap.ServiceID, cap.Model
+						capName := "tts"
+						if !slices.Contains(service.Capabilities, capName) {
+							service.Capabilities = append(service.Capabilities, capName)
+						}
+						servicesByKey[cap.ServiceID+"\x00"+cap.Model] = service
+					}
+				}
+			}
 		}
+		services := make([]localmodel.Service, 0, len(servicesByKey))
+		for _, service := range servicesByKey {
+			services = append(services, service)
+		}
+		sort.Slice(services, func(i, j int) bool {
+			if services[i].ID != services[j].ID {
+				return services[i].ID < services[j].ID
+			}
+			return services[i].Model < services[j].Model
+		})
 		c.JSON(http.StatusOK, ok(services))
 	})
 	admin.GET("/model-profiles", func(c *gin.Context) {

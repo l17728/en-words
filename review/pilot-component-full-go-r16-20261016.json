@@ -1,0 +1,299 @@
+{
+  "status": "coverage_gate_failed",
+  "summary": {
+    "exit": 0,
+    "vet_exit": 0,
+    "elapsed_seconds": 703.14,
+    "tests": {
+      "run": 1450,
+      "output": 2959,
+      "pass": 1441,
+      "skip": 9,
+      "pause": 4,
+      "cont": 4
+    },
+    "top_level_tests": {
+      "run": 575,
+      "output": 1160,
+      "pass": 566,
+      "skip": 9
+    },
+    "packages": {
+      "start": 23,
+      "output": 69,
+      "pass": 23
+    },
+    "skips": [
+      "TestOptInProductionFB001Diagnostic",
+      "TestStartupCleanupHarness",
+      "TestBrowserOverdueHarness",
+      "TestOptInIndependentASRThroughOwnedProductRoute",
+      "TestChatReal",
+      "TestChatJSONReal",
+      "TestChatRefuseLongInput",
+      "TestOptInLocalSpeechQuality",
+      "TestStartupFailureHarness"
+    ],
+    "failures": [],
+    "source_sha256": "8b1810dc95671aa77eff40589e740203219a96b646ad3976159bf3e71e53c30a",
+    "source_unchanged": true,
+    "coverage": {
+      "enwords/internal/agent": {
+        "hit": 151,
+        "total": 155,
+        "percent": 97.42
+      },
+      "enwords/internal/api": {
+        "hit": 3288,
+        "total": 4063,
+        "percent": 80.93
+      },
+      "enwords/internal/auth": {
+        "hit": 143,
+        "total": 159,
+        "percent": 89.94
+      },
+      "enwords/internal/classroom": {
+        "hit": 462,
+        "total": 506,
+        "percent": 91.3
+      },
+      "enwords/internal/config": {
+        "hit": 238,
+        "total": 266,
+        "percent": 89.47
+      },
+      "enwords/internal/duplex": {
+        "hit": 163,
+        "total": 167,
+        "percent": 97.6
+      },
+      "enwords/internal/feedback": {
+        "hit": 417,
+        "total": 440,
+        "percent": 94.77
+      },
+      "enwords/internal/judge": {
+        "hit": 159,
+        "total": 161,
+        "percent": 98.76
+      },
+      "enwords/internal/llmzhipu": {
+        "hit": 41,
+        "total": 41,
+        "percent": 100.0
+      },
+      "enwords/internal/localmodel": {
+        "hit": 152,
+        "total": 168,
+        "percent": 90.48
+      },
+      "enwords/internal/memory": {
+        "hit": 135,
+        "total": 145,
+        "percent": 93.1
+      },
+      "enwords/internal/obs": {
+        "hit": 50,
+        "total": 54,
+        "percent": 92.59
+      },
+      "enwords/internal/remoteprovider": {
+        "hit": 145,
+        "total": 150,
+        "percent": 96.67
+      },
+      "enwords/internal/scheduler": {
+        "hit": 636,
+        "total": 703,
+        "percent": 90.47
+      },
+      "enwords/internal/scripts": {
+        "hit": 108,
+        "total": 115,
+        "percent": 93.91
+      },
+      "enwords/internal/store": {
+        "hit": 1349,
+        "total": 1742,
+        "percent": 77.44
+      },
+      "enwords/internal/tools": {
+        "hit": 150,
+        "total": 160,
+        "percent": 93.75
+      },
+      "enwords/internal/voiceclone": {
+        "hit": 53,
+        "total": 56,
+        "percent": 94.64
+      },
+      "enwords/internal/voicecmd": {
+        "hit": 50,
+        "total": 52,
+        "percent": 96.15
+      },
+      "enwords/internal/wordbook": {
+        "hit": 280,
+        "total": 306,
+        "percent": 91.5
+      }
+    }
+  },
+  "component": {
+    "per_file": {
+      "server/internal/store/pilot_schema.go": {
+        "hit": 254,
+        "total": 331,
+        "percent": 76.74
+      },
+      "server/internal/store/pilot_schema_verifier.go": {
+        "hit": 90,
+        "total": 122,
+        "percent": 73.77
+      },
+      "server/internal/store/pilot_legacy_audit.go": {
+        "hit": 83,
+        "total": 190,
+        "percent": 43.68
+      },
+      "server/internal/store/pilot_legacy_bridge.go": {
+        "hit": 57,
+        "total": 61,
+        "percent": 93.44
+      },
+      "server/internal/store/pilot_scope.go": {
+        "hit": 1,
+        "total": 28,
+        "percent": 3.57
+      },
+      "server/internal/store/pilot_created_codec.go": {
+        "hit": 44,
+        "total": 47,
+        "percent": 93.62
+      },
+      "server/internal/store/pilot_creation_plan.go": {
+        "hit": 49,
+        "total": 67,
+        "percent": 73.13
+      },
+      "server/internal/store/pilot_identity.go": {
+        "hit": 171,
+        "total": 224,
+        "percent": 76.34
+      },
+      "server/internal/store/pilot_created_audit.go": {
+        "hit": 78,
+        "total": 91,
+        "percent": 85.71
+      },
+      "server/internal/store/pilot_store.go": {
+        "hit": 8,
+        "total": 9,
+        "percent": 88.89
+      }
+    },
+    "aggregate": {
+      "hit": 835,
+      "total": 1170,
+      "percent": 71.37
+    },
+    "declared_top_level": [
+      "TestPilotLegacyBridgeStrictCodec",
+      "TestPilotLegacyBridgeDurabilityIdempotencyAndCorruption",
+      "TestPilotLegacyBridgeFailedCommitPublishesNoPermission",
+      "TestPilotGuardSavepointMustReestablishReservationDraft",
+      "TestPilotGuardFinishedTransactionNeverAuthorizesDraft",
+      "TestPilotVerifierUncommittedCookieProofIsNotPublishedDraft",
+      "TestPilotVerifierRejectsAnotherPoolEvenForSameDatabaseDraft",
+      "TestPilotCreatedBaselineStrictDraft",
+      "TestPilotCreationTwoPoolsDraft",
+      "TestPilotCreationReplayRejectsFrozenIdentityDamageDraft",
+      "TestPilotCreationReplayRejectsScopeDamageDraft",
+      "TestPilotCreationAndNonceReplayFreezeDraft",
+      "TestPilotCreationRejectsOwnerAndConfigABADraft",
+      "TestPilotCreationCommitFailurePublishesNoReceiptDraft",
+      "TestPilotCreationObserverClassificationAndPrivacyDraft",
+      "TestPilotCreationReplayRejectsCorruptCheckpointDraft",
+      "TestPilotSchemaDefaultOpenUnchangedAndCompleteMigrationDraft",
+      "TestPilotSchemaConcurrentTwoPoolsPrivateMigrationDraft",
+      "TestPilotSchemaRealDeferredCommitFailureLeavesOriginalDatabaseDraft",
+      "TestPilotSchemaPermanentScopeTriggersRejectEveryReplacementDraft",
+      "TestPilotSchemaCorruptionNeverFallsBackLegacyDraft",
+      "TestPilotSchemaStartupCompatibilityAndExplicitMigrationGateDraft",
+      "TestPilotSchemaCreatedDataAuditOnNewFacadeDraft",
+      "TestPilotSchemaUppercaseObjectsCannotHideFromInspectionDraft",
+      "TestPilotSchemaWarmUppercaseG1FactsRejectedWithoutCookieChangeDraft",
+      "TestPilotPersistedPlanRejectsAmbiguityAndInvalidDataDraft",
+      "TestPilotCreatedAuditUsesHistoricalFreezeNotCurrentAvailabilityDraft",
+      "TestPilotCreatedAuditRejectsFingerprintAndNonceDamageDraft",
+      "TestPilotCreatedAuditRejectsActiveAndLegacyAttachedStatesDraft",
+      "TestPilotCreatedAuditScopeBijectionDraft",
+      "TestPilotCreatedAuditRejectsFKValidFutureFactsDraft"
+    ],
+    "missing_passed": [],
+    "overall_store": {
+      "hit": 1349,
+      "total": 1742,
+      "percent": 77.44
+    }
+  },
+  "component_function_coverage": [
+    "enwords/internal/store/pilot_created_audit.go:12:\tdecodePilotPersistedPlan\t\t93.8%",
+    "enwords/internal/store/pilot_created_audit.go:37:\tvalidatePilotPlanData\t\t\t91.3%",
+    "enwords/internal/store/pilot_created_audit.go:74:\tvalidatePilotFrozenConfig\t\t76.5%",
+    "enwords/internal/store/pilot_created_audit.go:110:\tauditPilotCreatedDataTx\t\t\t82.9%",
+    "enwords/internal/store/pilot_created_codec.go:30:\tnewPilotCreatedBaseline\t\t\t100.0%",
+    "enwords/internal/store/pilot_created_codec.go:41:\tdecodePilotCreatedBaseline\t\t100.0%",
+    "enwords/internal/store/pilot_created_codec.go:67:\tpilotStrictNullableObject\t\t91.4%",
+    "enwords/internal/store/pilot_creation_plan.go:46:\tpilotCanonicalHash\t\t\t80.0%",
+    "enwords/internal/store/pilot_creation_plan.go:57:\tPreparePilotCreationPlan\t\t75.0%",
+    "enwords/internal/store/pilot_creation_plan.go:94:\treadPilotConfigSnapshotTx\t\t72.7%",
+    "enwords/internal/store/pilot_creation_plan.go:129:\tverifyPilotPlanConfigTx\t\t\t68.8%",
+    "enwords/internal/store/pilot_identity.go:31:\t\tBindPilotSystemPrincipal\t\t66.7%",
+    "enwords/internal/store/pilot_identity.go:64:\t\tCreateIsolatedPilotLesson\t\t76.6%",
+    "enwords/internal/store/pilot_identity.go:284:\t\tverifyPilotCreatedReplayTx\t\t76.3%",
+    "enwords/internal/store/pilot_identity.go:372:\t\tpilotCreationReceiptFor\t\t\t100.0%",
+    "enwords/internal/store/pilot_identity.go:377:\t\tloadPilotFrozenWordsTx\t\t\t75.0%",
+    "enwords/internal/store/pilot_legacy_audit.go:18:\tauditPilotLegacyRuntimeTx\t\t52.2%",
+    "enwords/internal/store/pilot_legacy_audit.go:52:\tpilotDecodeLegacy\t\t\t88.9%",
+    "enwords/internal/store/pilot_legacy_audit.go:67:\tpilotRejectLegacyScalarNull\t\t56.9%",
+    "enwords/internal/store/pilot_legacy_audit.go:154:\tpilotRequired\t\t\t\t0.0%",
+    "enwords/internal/store/pilot_legacy_audit.go:168:\tauditPilotLegacyPayload\t\t\t0.0%",
+    "enwords/internal/store/pilot_legacy_audit.go:292:\tpilotAuditJSON\t\t\t\t79.1%",
+    "enwords/internal/store/pilot_legacy_bridge.go:26:\tpilotLegacyBridgeKey\t\t\t100.0%",
+    "enwords/internal/store/pilot_legacy_bridge.go:35:\tdecodePilotLegacyBridge\t\t\t95.0%",
+    "enwords/internal/store/pilot_legacy_bridge.go:100:\treserveLegacyBridgeUnmigratedTx\t\t88.9%",
+    "enwords/internal/store/pilot_schema.go:261:\t\tinspectPilotSchema\t\t\t87.5%",
+    "enwords/internal/store/pilot_schema.go:289:\t\tmigratePilotSchema\t\t\t67.6%",
+    "enwords/internal/store/pilot_schema.go:364:\t\tinspectPilotSchemaTx\t\t\t79.5%",
+    "enwords/internal/store/pilot_schema.go:503:\t\tauditPilotDataTx\t\t\t66.7%",
+    "enwords/internal/store/pilot_schema.go:544:\t\tcheckPilotIndexesAndForeignKeysTx\t87.5%",
+    "enwords/internal/store/pilot_schema.go:628:\t\tloadPilotLegacyBridgesTx\t\t50.0%",
+    "enwords/internal/store/pilot_schema.go:645:\t\tcollectPilotLegacyScopesTx\t\t55.6%",
+    "enwords/internal/store/pilot_schema.go:686:\t\tpilotStrictObject\t\t\t71.4%",
+    "enwords/internal/store/pilot_schema.go:727:\t\tpilotQuote\t\t\t\t100.0%",
+    "enwords/internal/store/pilot_schema.go:733:\t\tpilotASCIIName\t\t\t\t100.0%",
+    "enwords/internal/store/pilot_schema.go:743:\t\tpilotOwnedNamespace\t\t\t100.0%",
+    "enwords/internal/store/pilot_schema.go:755:\t\tpilotSQLTokens\t\t\t\t85.7%",
+    "enwords/internal/store/pilot_schema_verifier.go:25:\tnewPilotSchemaVerifier\t\t\t66.7%",
+    "enwords/internal/store/pilot_schema_verifier.go:40:\tAuditCommitted\t\t\t\t82.8%",
+    "enwords/internal/store/pilot_schema_verifier.go:84:\tpilotSchemaCookieTx\t\t\t66.7%",
+    "enwords/internal/store/pilot_schema_verifier.go:99:\tinspectWriterTx\t\t\t\t100.0%",
+    "enwords/internal/store/pilot_schema_verifier.go:105:\tinspectCurrentTx\t\t\t86.7%",
+    "enwords/internal/store/pilot_schema_verifier.go:132:\tcheckPilotCurrentSchemaDataTx\t\t68.4%",
+    "enwords/internal/store/pilot_schema_verifier.go:197:\tnewPilotLegacyTxGuard\t\t\t73.3%",
+    "enwords/internal/store/pilot_schema_verifier.go:221:\tReserve\t\t\t\t\t58.3%",
+    "enwords/internal/store/pilot_scope.go:20:\t\tTableName\t\t\t\t100.0%",
+    "enwords/internal/store/pilot_scope.go:33:\t\treserveLegacyScopeAfterSchemaTx\t\t0.0%",
+    "enwords/internal/store/pilot_store.go:60:\t\tSetObserver\t\t\t\t100.0%",
+    "enwords/internal/store/pilot_store.go:63:\t\tobserve\t\t\t\t\t100.0%",
+    "enwords/internal/store/pilot_store.go:69:\t\tnewPilotStore\t\t\t\t83.3%"
+  ],
+  "race": "not_run",
+  "artifact_sha256": {
+    "final-runtime-coverage-r16-summary.json": "97477c14cbdfc3344b96b109a10b94b20121184e0248b641d64b607cd7470919",
+    "final-runtime-coverage-r16-component.json": "7f094b27b305b6c0d2caa2a5347690c4cce87d576ce14d02abc02585744b23c4",
+    "final-runtime-coverage-r16-functions.txt": "298f22f06d3eca446a93dc840371525611fd3579a6f5a6822a2a3186be5b3bf2"
+  }
+}

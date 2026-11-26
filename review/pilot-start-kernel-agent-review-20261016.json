@@ -1,0 +1,65 @@
+﻿{
+  "review_id": "pilot-start-kernel-agent-review-20261016",
+  "domain": "ai_agent_teaching_strategy",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_type": "read_only_design_review",
+  "code_modified": false,
+  "tests_run": false,
+  "decision": "block",
+  "summary": "隔离及 D-15 工具边界设计方向正确，但当前草案未保证 T-01 首课话术自我介绍、show_word 的创建时中文释义、可信首课判定，不能进入实现。",
+  "approved_points": [
+    "测试专用隔离、没有默认产品入口或媒体/outbox执行，未将 start 描述为可用课堂",
+    "Teacher Decide/Render 与 PlanEffects/Registry 的工具调用方向符合 Agent 决策、平台授权和持久化边界",
+    "say 后 show_word 顺序符合 T-01，receipt 重放前核 owner 授权",
+    "未隐式授予答题机会或声称已播放"
+  ],
+  "findings": [
+    {
+      "id": "AGENT-START-01",
+      "priority": "P1",
+      "status": "blocking",
+      "title": "T-01 首课话术不保证自我介绍与称呼",
+      "evidence": "docs/04 §2 T-01 要求自我介绍+称呼昵称；当前 TeacherAgent.Decide 只返回 open，Render 可生成 OP-1 或 OP-3，均不保证‘我是叮当老师’。fallback 不构成正常渲染保证。SDD 只检查 category 和 rune 长度。",
+      "required_change": "冻结合规模板集合/选择规则，所有正常渲染及 fallback 均满足自我介绍、合成昵称、≤60 rune 和事实边界；增加固定黄金正反例，不能只测 category=open。"
+    },
+    {
+      "id": "AGENT-START-02",
+      "priority": "P1",
+      "status": "blocking",
+      "title": "T-01 的中文释义没有进入冻结计划与效果",
+      "evidence": "docs/04 §2 要求 show_word(词1,中英对照)，但 SDD 命令和 frozen-word 检查只有 word_id/word；没有证明 frozen meaning 进入工具结果和 outbox。",
+      "required_change": "冻结创建时释义及多义项选择/排序/空释义规则，并贯穿 plan/fingerprint/tool/outbox；或给出有 schema 和 fixture 支持的严格产品语义解释。禁止 live lookup。"
+    },
+    {
+      "id": "AGENT-START-03",
+      "priority": "P1",
+      "status": "blocking",
+      "title": "T-01 首课判定没有可信事实绑定",
+      "evidence": "SDD 固定样例称首课但没有指定不可变创建事实作依据；当前 Decide 对任何 lesson_started 都选 open，不能区分 T-01/T-02。",
+      "required_change": "定义可信创建事实中的首课判定，绑定候选和 fingerprint；非首课 fail closed/明确排除，不能从客户端字段或 harness label 获得授权。"
+    },
+    {
+      "id": "AGENT-START-04",
+      "priority": "P2",
+      "status": "implementation_gate",
+      "title": "工具预算和 task capability 上限不够精确",
+      "evidence": "SDD 要求共享预算与受信 task，但未说明本事件具体预算/重试是否重置。现有 newAgentTaskContext 使用共享8-call budget。",
+      "required_change": "固定本片预算、错误调用消耗规则、task lesson/event binding、expiry、不可客户端构造和不可重置；验收 say/show_word 两次按序通过且无 direct handler 绕行。"
+    },
+    {
+      "id": "AGENT-START-05",
+      "priority": "P2",
+      "status": "implementation_gate",
+      "title": "Agent effect 与领域状态转换的审计关系需冻结",
+      "evidence": "Machine.Start 是 state transition，不是 Agent tool；其 ActShowWord 经 PlanEffects 映射为 classroom.show_word。SDD 尚未充分区分状态转换与受限工具调用及其唯一审计来源。",
+      "required_change": "明确 Machine.Start 仅是领域事实，PlanEffects 输出逐项绑定经 Teacher 批准的动作，Registry 是唯一工具审计源；store 不伪造 tool audit，也不改写 action 内容。"
+    }
+  ],
+  "out_of_scope_checks": {
+    "no_audio_or_model_execution": "pass",
+    "no_default_product_entry": "pass",
+    "no_answer_or_settlement_side_effect": "pass",
+    "real_classroom_pilot_approval": "not_granted"
+  },
+  "retest_required": true
+}

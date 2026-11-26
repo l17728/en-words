@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "run_id": "9ce1ac87ebce853e9a00484d899eb476",
+  "status": "PASS_CANDIDATE",
+  "scope": "callback candidates only; process-level lock syscalls are supplemental and are not joined to file_handle_id/inode",
+  "process_record": {
+    "file": "process_record.json",
+    "sha256": "be5da83680e23c63715005b29bea39a9c44dd8b2652682679a0652e297ef6e39"
+  },
+  "candidate_files": [
+    {
+      "file": "sqlite3451-pager-delete-trace.candidate.json",
+      "sha256": "c4104efeaa75023d9c8be8030989781e7e9df85fecad0d28d64371110d4d91c0"
+    },
+    {
+      "file": "sqlite3451-shm-lock-trace.candidate.json",
+      "sha256": "8a47d690228b185a56b8788734a51b3a0fa0b5a342a25d6b88a31e15650d8f21"
+    },
+    {
+      "file": "sqlite3451-unix-lock-trace.candidate.json",
+      "sha256": "0d9b1f25d4bc61c3517ce21d8cb21d7634524cf686690845e668a42c72c549d9"
+    },
+    {
+      "file": "sqlite3451-vfs-flags.candidate.json",
+      "sha256": "cee8b420a15ac253453169e523c3d4f6ead4bddb0aaa370472e32e22470707a9"
+    }
+  ],
+  "proposal_files": [
+    {
+      "file": "sqlite3451-pager-delete-trace.golden.proposal.json",
+      "sha256": "00d26c4ea30f5a66633f16178b39d33436d8b7ba79f94b009135f3ba0269d24d"
+    },
+    {
+      "file": "sqlite3451-shm-lock-trace.golden.proposal.json",
+      "sha256": "e79ba6401a96bd392d7057e02447ca83c76cd2a681a01aebc639883ef8942755"
+    },
+    {
+      "file": "sqlite3451-unix-lock-trace.golden.proposal.json",
+      "sha256": "fd4c2cedcd59beafff4e230d0f8d64dc08678908c21fb40ad5edabe999c91ec3"
+    },
+    {
+      "file": "sqlite3451-vfs-flags.golden.proposal.json",
+      "sha256": "ca93a68137acdfe001ea49b1a5a6a0d20311f6d73c04f6723aacfc1ebba8543e"
+    }
+  ]
+}

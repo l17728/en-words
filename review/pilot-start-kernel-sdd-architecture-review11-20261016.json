@@ -1,0 +1,15 @@
+{
+  "review":"pilot-start-kernel-sdd-architecture-review11",
+  "date":"2026-10-16",
+  "source":"docs/41-试点课堂Start持久迁移内核SDD.md",
+  "source_sha256":"a9ecef9281ff04871370108030159d0a6886e8bcfc0f1931045aad15ca73110f",
+  "scope":"Close review10 remaining content-versus-audit wording P3",
+  "status":"PASS",
+  "architecture_design_gate":"converged_for_isolated_start_slice",
+  "blocker_count":0,
+  "remaining_review_findings":0,
+  "closed":"Frozen word/meanings belong to command and show_word outbox; show_word index-only args and metadata-only audit remain explicit",
+  "limits":["Design approval only", "Implementation and quality gates still required", "No default App/Room/routes, output dispatch, real model or human audio approval"],
+  "execution":{"tests":false,"builds":false,"services":false,"spec_or_source_edits":false},
+  "report":"review/pilot-start-kernel-sdd-architecture-review11-20261016.md"
+}

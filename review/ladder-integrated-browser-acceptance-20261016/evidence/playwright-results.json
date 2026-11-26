@@ -1,0 +1,114 @@
+﻿[
+    {
+        "config":  "playwright.config.ts",
+        "ports":  [
+                      18080,
+                      15173
+                  ],
+        "started_at":  "2026-10-16T19:55:04.3712269+08:00",
+        "finished_at":  "2026-10-16T19:56:51.1826587+08:00",
+        "pid":  5888,
+        "exit_code":  null,
+        "duration_seconds":  106.76,
+        "status":  "failed",
+        "busy_ports":  [
+
+                       ]
+    },
+    {
+        "config":  "playwright.headless.config.ts",
+        "ports":  [
+                      18080,
+                      15173
+                  ],
+        "started_at":  "2026-10-16T19:56:51.4374765+08:00",
+        "finished_at":  "2026-10-16T19:58:26.7325479+08:00",
+        "pid":  16104,
+        "exit_code":  null,
+        "duration_seconds":  95.29,
+        "status":  "failed",
+        "busy_ports":  [
+
+                       ]
+    },
+    {
+        "config":  "playwright.closure.config.ts",
+        "ports":  [
+                      18080,
+                      15173
+                  ],
+        "started_at":  "2026-10-16T19:58:26.7394370+08:00",
+        "finished_at":  "2026-10-16T19:59:36.2585040+08:00",
+        "pid":  21740,
+        "exit_code":  null,
+        "duration_seconds":  69.52,
+        "status":  "failed",
+        "busy_ports":  [
+
+                       ]
+    },
+    {
+        "config":  "playwright.continuation.config.ts",
+        "ports":  [
+                      18081,
+                      15174
+                  ],
+        "started_at":  "2026-10-16T19:59:36.2697010+08:00",
+        "finished_at":  "2026-10-16T20:00:39.3239897+08:00",
+        "pid":  6960,
+        "exit_code":  null,
+        "duration_seconds":  63.05,
+        "status":  "failed",
+        "busy_ports":  [
+
+                       ]
+    },
+    {
+        "config":  "playwright.duplex.config.ts",
+        "ports":  [
+                      18081,
+                      15174
+                  ],
+        "started_at":  "2026-10-16T20:00:39.3274014+08:00",
+        "finished_at":  "2026-10-16T20:01:18.8906763+08:00",
+        "pid":  22308,
+        "exit_code":  null,
+        "duration_seconds":  39.56,
+        "status":  "failed",
+        "busy_ports":  [
+
+                       ]
+    },
+    {
+        "config":  "playwright.feedback.config.ts",
+        "ports":  [
+                      18080,
+                      15173
+                  ],
+        "started_at":  "2026-10-16T20:01:18.8966789+08:00",
+        "finished_at":  "2026-10-16T20:05:01.2903725+08:00",
+        "pid":  15256,
+        "exit_code":  null,
+        "duration_seconds":  222.39,
+        "status":  "failed",
+        "busy_ports":  [
+
+                       ]
+    },
+    {
+        "config":  "playwright.firstuse.config.ts",
+        "ports":  [
+                      18080,
+                      15173
+                  ],
+        "started_at":  "2026-10-16T20:05:01.2943735+08:00",
+        "finished_at":  "2026-10-16T20:06:30.9969566+08:00",
+        "pid":  16796,
+        "exit_code":  null,
+        "duration_seconds":  89.7,
+        "status":  "failed",
+        "busy_ports":  [
+
+                       ]
+    }
+]

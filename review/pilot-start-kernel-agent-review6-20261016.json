@@ -1,0 +1,37 @@
+﻿{
+  "review_id": "pilot-start-kernel-agent-review6-20261016",
+  "domain": "ai_agent_teaching_strategy",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "review_type": "read_only_design_rereview",
+  "code_modified": false,
+  "document_modified": false,
+  "tests_run": false,
+  "decision": "block",
+  "summary": "AGENT-START-12/13 已在设计层闭合：plan_ready 在 Registry 前绑定最终 Agent 计划，逐次工具有 started/result 事件及受信 provenance；但 SDD 把 T-01 自我介绍写成‘叮叮老师’，与 docs/04、Golden 和 fallback 的‘叮当老师’矛盾。",
+  "prior_findings": [
+    {"id":"AGENT-START-12","status":"closed_design_only"},
+    {"id":"AGENT-START-13","status":"closed_design_only"}
+  ],
+  "findings": [
+    {
+      "id":"AGENT-START-14",
+      "priority":"P1",
+      "status":"blocking",
+      "section":"docs/41 §3 T-01 utterance assertion",
+      "title":"Teacher-name assertion contradicts the golden and fallback",
+      "evidence":"The SDD says the rendered opener must contain ‘叮叮老师’, whereas docs/04 OP-1, the SDD golden sentence, and its fallback all say ‘叮当老师’. An implementation following the assertion rejects its own required golden/fallback; one following the golden violates the assertion.",
+      "required_change":"Use the decided product name ‘叮当老师’ consistently in assertion, OP-1, fallback, and tests; cross-check docs/04, docs/41, and scripts seed/template text."
+    }
+  ],
+  "checklist": {
+    "plan_ready_precedes_registry":"pass_design",
+    "tool_started_result_crash_recovery_no_replay":"pass_design",
+    "trusted_actor_scope_risk_hmac_provenance":"pass_design",
+    "failed_attempt_separate_from_success_receipt":"pass_design",
+    "render_lesson_start_t01_and_fallback":"pass_except_name_typo",
+    "prepare_execute_and_event_budget":"pass_design",
+    "stable_output_and_no_replanning_tests":"pass_design",
+    "product_or_real_pilot_authorization":"no"
+  },
+  "retest_required": true
+}

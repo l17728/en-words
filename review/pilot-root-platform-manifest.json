@@ -1,0 +1,1998 @@
+{
+  "schema_version": 1,
+  "rows": [
+    {
+      "expected_error": null,
+      "id": "ROOT-01",
+      "parent": "TestVerifiedRoot",
+      "fixture": "fresh isolated root; exact OS mutation; preflight failure blocks the job",
+      "runner": "native supported filesystem only; Linux ext4/XFS; Windows NTFS and fixed Worker SID",
+      "artifact": ".test-artifacts/pilot-root/ROOT-01/",
+      "side_effect_oracle": "No SQLite/catalog/Coordinator/Planner/Registry calls.",
+      "targets": [],
+      "status": "planned_or_blocked",
+      "subtests": [],
+      "expected_outcome": "accept",
+      "expected_assertions": [
+        "Pinned identities equal same-handle OS metadata; ReadNames succeeds; Close once succeeds."
+      ]
+    },
+    {
+      "expected_error": "symlink/reparse/magic-link/\u7a7f\u8d8a=`verified_path_invalid`\uff1b\u672a\u77e5enum=`verified_member_invalid`\uff1b\u989d\u5916\u9879/\u5927\u5c0f\u5199\u91cd\u590d=`verified_policy_mismatch`\uff1b\u989d\u5916\u9879\u5b58\u5728\u65f6\uff0cOpenVerifiedRoot\u53ca\u76f4\u63a5OpenDirectory/OpenMember\u5747\u62d2\u7edd\u4e14\u4e0d\u8fd4\u56de\u53e5\u67c4\uff1b\u4e0d\u5f97\u6253\u5f00\u9003\u9038\u76ee\u6807",
+      "id": "ROOT-02",
+      "parent": "TestVerifiedRoot",
+      "fixture": "fresh isolated root; exact OS mutation; preflight failure blocks the job",
+      "runner": "native supported filesystem only; Linux ext4/XFS; Windows NTFS and fixed Worker SID",
+      "artifact": ".test-artifacts/pilot-root/ROOT-02/",
+      "side_effect_oracle": "no handle publication on rejection; escape sentinel unchanged; downstream DB/Planner/Registry=0",
+      "targets": [
+        "linux/amd64",
+        "linux/arm64",
+        "windows/amd64"
+      ],
+      "status": "planned_or_blocked",
+      "subtests": [
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_path_invalid",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-02/symlink",
+          "artifact": ".test-artifacts/pilot-root/ROOT-02/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-02/symlink: assert reject; exact error=verified_path_invalid; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "windows/amd64"
+          ],
+          "expected_error": "verified_path_invalid",
+          "runner": [
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-02/reparse",
+          "artifact": ".test-artifacts/pilot-root/ROOT-02/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-02/reparse: assert reject; exact error=verified_path_invalid; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_path_invalid",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-02/magic_link",
+          "artifact": ".test-artifacts/pilot-root/ROOT-02/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-02/magic_link: assert reject; exact error=verified_path_invalid; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_path_invalid",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-02/path_traversal",
+          "artifact": ".test-artifacts/pilot-root/ROOT-02/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-02/path_traversal: assert reject; exact error=verified_path_invalid; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_member_invalid",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-02/unknown_enum",
+          "artifact": ".test-artifacts/pilot-root/ROOT-02/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-02/unknown_enum: assert reject; exact error=verified_member_invalid; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-02/extra_root_entry",
+          "artifact": ".test-artifacts/pilot-root/ROOT-02/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-02/extra_root_entry: assert reject; exact error=verified_policy_mismatch; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "windows/amd64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-02/case_variant",
+          "artifact": ".test-artifacts/pilot-root/ROOT-02/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-02/case_variant: assert reject; exact error=verified_policy_mismatch; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-02/extra_entry_open_root",
+          "artifact": ".test-artifacts/pilot-root/ROOT-02/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-02/extra_entry_open_root: assert reject; exact error=verified_policy_mismatch; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-02/extra_entry_open_directory",
+          "artifact": ".test-artifacts/pilot-root/ROOT-02/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-02/extra_entry_open_directory: assert reject; exact error=verified_policy_mismatch; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-02/extra_entry_open_member",
+          "artifact": ".test-artifacts/pilot-root/ROOT-02/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-02/extra_entry_open_member: assert reject; exact error=verified_policy_mismatch; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        }
+      ]
+    },
+    {
+      "expected_error": "`verified_policy_mismatch`\uff1b\u76ee\u5f55link count\u4e0d\u4f5c\u4e3a\u62d2\u7edd\u4f9d\u636e\uff1b\u4e0d\u5f97\u521b\u5efa\u3001\u5199\u5165\u6216SQLite open",
+      "id": "ROOT-03",
+      "parent": "TestVerifiedRoot",
+      "fixture": "fresh isolated root; exact OS mutation; preflight failure blocks the job",
+      "runner": "native supported filesystem only; Linux ext4/XFS; Windows NTFS and fixed Worker SID",
+      "artifact": ".test-artifacts/pilot-root/ROOT-03/",
+      "side_effect_oracle": "no handle publication on rejection; escape sentinel unchanged; downstream DB/Planner/Registry=0",
+      "targets": [
+        "linux/amd64",
+        "linux/arm64",
+        "windows/amd64"
+      ],
+      "status": "planned_or_blocked",
+      "subtests": [
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-03/hardlink",
+          "artifact": ".test-artifacts/pilot-root/ROOT-03/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-03/hardlink: assert reject; exact error=verified_policy_mismatch; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-03/wrong_type",
+          "artifact": ".test-artifacts/pilot-root/ROOT-03/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-03/wrong_type: assert reject; exact error=verified_policy_mismatch; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-03/wrong_owner",
+          "artifact": ".test-artifacts/pilot-root/ROOT-03/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-03/wrong_owner: assert reject; exact error=verified_policy_mismatch; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-03/wrong_mode",
+          "artifact": ".test-artifacts/pilot-root/ROOT-03/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-03/wrong_mode: assert reject; exact error=verified_policy_mismatch; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "windows/amd64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-03/dacl_extra_or_inherited",
+          "artifact": ".test-artifacts/pilot-root/ROOT-03/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-03/dacl_extra_or_inherited: assert reject; exact error=verified_policy_mismatch; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-03/wrong_gid",
+          "artifact": ".test-artifacts/pilot-root/ROOT-03/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-03/wrong_gid: assert reject; exact error=verified_policy_mismatch; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        }
+      ]
+    },
+    {
+      "expected_error": "mount/volume\u8d8a\u754c=`verified_path_invalid`\uff1b\u6587\u4ef6\u7cfb\u7edf\u7c7b\u578b\u67e5\u8be2\u5931\u8d25=`verified_io_failed`\uff1b\u53ef\u8bc6\u522b\u4f46\u4e0d\u652f\u6301\u7c7b\u578b=`verified_policy_mismatch`\uff1b\u652f\u6301fs\u4e0a\u7684mount ID/statx\u80fd\u529b\u67e5\u8be2\u5931\u8d25=`verified_io_failed`\uff1bopenat2\u548c\u5f3a\u5236statx fallback\u5206\u652f\u5206\u522b\u8986\u76d6",
+      "id": "ROOT-04",
+      "parent": "TestVerifiedRoot",
+      "fixture": "fresh isolated root; exact OS mutation; preflight failure blocks the job",
+      "runner": "native supported filesystem only; Linux ext4/XFS; Windows NTFS and fixed Worker SID",
+      "artifact": ".test-artifacts/pilot-root/ROOT-04/",
+      "side_effect_oracle": "no handle publication on rejection; escape sentinel unchanged; downstream DB/Planner/Registry=0",
+      "targets": [
+        "linux/amd64",
+        "linux/arm64",
+        "windows/amd64"
+      ],
+      "status": "planned_or_blocked",
+      "subtests": [
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64"
+          ],
+          "expected_error": "verified_path_invalid",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-04/bind_mount",
+          "artifact": ".test-artifacts/pilot-root/ROOT-04/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Bind-mount crossing is detected from handle mount identity; no target handle is published."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64"
+          ],
+          "expected_error": "verified_io_failed",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-04/mount_id_unavailable",
+          "artifact": ".test-artifacts/pilot-root/ROOT-04/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Required handle-based mount-ID query failure is closed."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-04/unsupported_fs",
+          "artifact": ".test-artifacts/pilot-root/ROOT-04/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Recognized but unsupported filesystem type is rejected."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_io_failed",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-04/required_capability_unavailable",
+          "artifact": ".test-artifacts/pilot-root/ROOT-04/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Required mount/identity capability absence fails closed."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_io_failed",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-04/fs_type_query_error",
+          "artifact": ".test-artifacts/pilot-root/ROOT-04/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Filesystem-type query error is classified as I/O failure."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_path_invalid",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-04/cross_volume",
+          "artifact": ".test-artifacts/pilot-root/ROOT-04/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Cross-volume target is rejected before handle publication."
+          ]
+        },
+        {
+          "side_effect_oracle": "Only the validated metadata handle is published; SQLite/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64"
+          ],
+          "expected_error": null,
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-04/openat2_native",
+          "artifact": ".test-artifacts/pilot-root/ROOT-04/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "accept",
+          "expected_assertions": [
+            "Assert native openat2 was invoked with RESOLVE_NO_XDEV and the valid root handle is published."
+          ]
+        },
+        {
+          "side_effect_oracle": "Only the validated metadata handle is published; SQLite/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64"
+          ],
+          "expected_error": null,
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-04/forced_statx_fallback",
+          "artifact": ".test-artifacts/pilot-root/ROOT-04/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "accept",
+          "expected_assertions": [
+            "Force openat2 unavailable; assert statx mount-ID fallback was invoked and valid root handle is published."
+          ]
+        }
+      ]
+    },
+    {
+      "expected_error": "\u5b50\u7528\u4f8b\u5206\u522b\u5728root/member\u8fd4\u56dehandle\u540e\u3001\u9996\u6b21snapshot\u524d\u548csnapshot\u540e/\u7236\u7ed1\u5b9a\u590d\u6838\u524d\u7ecfbarrier\u6362\u7ed1\uff1b\u65ad\u8a00\u4e0d\u53d1\u5e03\u9519\u8befidentity\u3001\u6b63\u786e\u62d2\u7edd\u9003\u9038\uff0c\u4e14\u8c03\u7528\u4e8b\u4ef6\u987a\u5e8f\u8bc1\u660ebarrier\u843d\u70b9",
+      "id": "ROOT-05a",
+      "parent": "TestVerifiedRoot",
+      "fixture": "fresh isolated root; exact OS mutation; preflight failure blocks the job",
+      "runner": "native supported filesystem only; Linux ext4/XFS; Windows NTFS and fixed Worker SID",
+      "artifact": ".test-artifacts/pilot-root/ROOT-05a/",
+      "side_effect_oracle": "no handle publication on rejection; escape sentinel unchanged; downstream DB/Planner/Registry=0",
+      "targets": [
+        "linux/amd64",
+        "linux/arm64",
+        "windows/amd64"
+      ],
+      "status": "planned_or_blocked",
+      "subtests": [
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_path_invalid",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-05a/preopen_escape",
+          "artifact": ".test-artifacts/pilot-root/ROOT-05a/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-05a/preopen_escape: assert reject; exact error=verified_path_invalid; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_identity_changed",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-05a/root_open_before_snapshot_swap",
+          "artifact": ".test-artifacts/pilot-root/ROOT-05a/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-05a/root_open_before_snapshot_swap: assert reject; exact error=verified_identity_changed; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_identity_changed",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-05a/root_open_before_publish_swap",
+          "artifact": ".test-artifacts/pilot-root/ROOT-05a/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-05a/root_open_before_publish_swap: assert reject; exact error=verified_identity_changed; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_identity_changed",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-05a/member_open_before_snapshot_swap",
+          "artifact": ".test-artifacts/pilot-root/ROOT-05a/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-05a/member_open_before_snapshot_swap: assert reject; exact error=verified_identity_changed; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_identity_changed",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-05a/member_open_before_publish_swap",
+          "artifact": ".test-artifacts/pilot-root/ROOT-05a/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-05a/member_open_before_publish_swap: assert reject; exact error=verified_identity_changed; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        }
+      ]
+    },
+    {
+      "expected_error": "\u5206\u522b\u9501\u5b9aPOSIX directory/file \u7236\u540d\u590d\u6838\u53caWindows directory/file \u4e0d\u5171\u4eabDELETE\uff1b\u62d2\u7edd\u66ff\u6362\u6216VerifyIdentity\u62a5identity_changed\u3002\u9996\u6b21open\u524d\u540c\u8d26\u53f7\u4ee5\u540c\u7b56\u7565\u6587\u4ef6\u66ff\u6362\u53ea\u80fdpin\u5b9e\u9645\u5bf9\u8c61",
+      "id": "ROOT-05b",
+      "parent": "TestVerifiedRoot",
+      "fixture": "fresh isolated root; exact OS mutation; preflight failure blocks the job",
+      "runner": "native supported filesystem only; Linux ext4/XFS; Windows NTFS and fixed Worker SID",
+      "artifact": ".test-artifacts/pilot-root/ROOT-05b/",
+      "side_effect_oracle": "no handle publication on rejection; escape sentinel unchanged; downstream DB/Planner/Registry=0",
+      "targets": [
+        "linux/amd64",
+        "linux/arm64",
+        "windows/amd64"
+      ],
+      "status": "planned_or_blocked",
+      "subtests": [
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64"
+          ],
+          "expected_error": "verified_identity_changed",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-05b/posix_directory_swap",
+          "artifact": ".test-artifacts/pilot-root/ROOT-05b/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-05b/posix_directory_swap: assert reject; exact error=verified_identity_changed; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64"
+          ],
+          "expected_error": "verified_identity_changed",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-05b/posix_file_swap",
+          "artifact": ".test-artifacts/pilot-root/ROOT-05b/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-05b/posix_file_swap: assert reject; exact error=verified_identity_changed; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "Validated handle/API behavior only; SQLite/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "windows/amd64"
+          ],
+          "expected_error": "ERROR_SHARING_VIOLATION",
+          "runner": [
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-05b/windows_directory_no_share_delete",
+          "artifact": ".test-artifacts/pilot-root/ROOT-05b/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "mutation_denied",
+          "expected_assertions": [
+            "ROOT-05b/windows_directory_no_share_delete: assert mutation_denied; exact error=ERROR_SHARING_VIOLATION; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "Validated handle/API behavior only; SQLite/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "windows/amd64"
+          ],
+          "expected_error": "ERROR_SHARING_VIOLATION",
+          "runner": [
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-05b/windows_file_no_share_delete",
+          "artifact": ".test-artifacts/pilot-root/ROOT-05b/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "mutation_denied",
+          "expected_assertions": [
+            "ROOT-05b/windows_file_no_share_delete: assert mutation_denied; exact error=ERROR_SHARING_VIOLATION; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        }
+      ]
+    },
+    {
+      "expected_error": "verified_identity_changed",
+      "id": "ROOT-06",
+      "parent": "TestVerifiedRoot",
+      "fixture": "fresh isolated root; exact OS mutation; preflight failure blocks the job",
+      "runner": "native supported filesystem only; Linux ext4/XFS; Windows NTFS and fixed Worker SID",
+      "artifact": ".test-artifacts/pilot-root/ROOT-06/",
+      "side_effect_oracle": "No SQLite/catalog/Coordinator/Planner/Registry calls.",
+      "targets": [],
+      "status": "planned_or_blocked",
+      "subtests": [],
+      "expected_outcome": "reject",
+      "expected_assertions": [
+        "Identity drift poisons root and prevents sibling/downstream calls."
+      ]
+    },
+    {
+      "expected_error": "\u679a\u4e3e/\u8eab\u4efd\u9519\u8bef\u7a33\u5b9a\u5206\u7c7b\uff1bdrain timeout\u6620\u5c04`close_pending`\u4e14\u65e0OS close\uff0c\u540c\u4e00owner\u53ef\u91cd\u8bd5\uff1bclose unknown\u6620\u5c04`restart_required`\u3001\u4e0d\u518d\u6b21\u5173\u95ed\u4e14\u4fdd\u7559\u53e5\u67c4\uff1bclose\u6210\u529f\u91cd\u590d\u8c03\u7528\u4e0d\u4e8c\u6b21syscall",
+      "id": "ROOT-07",
+      "parent": "TestVerifiedRoot",
+      "fixture": "fresh isolated root; exact OS mutation; preflight failure blocks the job",
+      "runner": "native supported filesystem only; Linux ext4/XFS; Windows NTFS and fixed Worker SID",
+      "artifact": ".test-artifacts/pilot-root/ROOT-07/",
+      "side_effect_oracle": "no handle publication on rejection; escape sentinel unchanged; downstream DB/Planner/Registry=0",
+      "targets": [
+        "linux/amd64",
+        "linux/arm64",
+        "windows/amd64"
+      ],
+      "status": "planned_or_blocked",
+      "subtests": [
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_io_failed",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-07/enumerate_error",
+          "artifact": ".test-artifacts/pilot-root/ROOT-07/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-07/enumerate_error: assert reject; exact error=verified_io_failed; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_io_failed",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-07/identity_error",
+          "artifact": ".test-artifacts/pilot-root/ROOT-07/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-07/identity_error: assert reject; exact error=verified_io_failed; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_close_unknown",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-07/close_unknown",
+          "artifact": ".test-artifacts/pilot-root/ROOT-07/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-07/close_unknown: assert reject; exact error=verified_close_unknown; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_close_unknown",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-07/binding_close_unknown_stops_root_close",
+          "artifact": ".test-artifacts/pilot-root/ROOT-07/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-07/binding_close_unknown_stops_root_close: assert reject; exact error=verified_close_unknown; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_close_unknown",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-07/close_drain_observes_unknown_close",
+          "artifact": ".test-artifacts/pilot-root/ROOT-07/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-07/close_drain_observes_unknown_close: assert reject; exact error=verified_close_unknown; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_close_unknown",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-07/child_close_drain_observes_unknown_close",
+          "artifact": ".test-artifacts/pilot-root/ROOT-07/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-07/child_close_drain_observes_unknown_close: assert reject; exact error=verified_close_unknown; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_close_unknown",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-07/partial_open_close_unknown",
+          "artifact": ".test-artifacts/pilot-root/ROOT-07/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-07/partial_open_close_unknown: assert reject; exact error=verified_close_unknown; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "Validated handle/API behavior only; SQLite/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": null,
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-07/concurrent_enumerate_close",
+          "artifact": ".test-artifacts/pilot-root/ROOT-07/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "accept",
+          "expected_assertions": [
+            "ROOT-07/concurrent_enumerate_close: assert accept; exact error=none; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "Validated handle/API behavior only; SQLite/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": null,
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-07/repeated_close",
+          "artifact": ".test-artifacts/pilot-root/ROOT-07/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "accept",
+          "expected_assertions": [
+            "ROOT-07/repeated_close: assert accept; exact error=none; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_timeout",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-07/close_drain_pending_retry",
+          "artifact": ".test-artifacts/pilot-root/ROOT-07/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject_then_accept",
+          "expected_assertions": [
+            "ROOT-07/close_drain_pending_retry: assert reject_then_accept; exact error=verified_timeout; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        }
+      ]
+    },
+    {
+      "expected_error": "`go list ./...`\u4e0d\u542bpilotsupervisor\u5305\uff1b\u672c\u5207\u7247\u6e90\u7801\u5747\u5e26`pilot_e2e` tag\uff1b\u654f\u611f\u54e8\u5175\u4e0d\u51fa\u73b0\u5728\u65e5\u5fd7\uff0c\u4e8b\u4ef6\u5b57\u6bb5\u5b8c\u6574",
+      "id": "ROOT-08",
+      "parent": "TestVerifiedRoot",
+      "fixture": "fresh isolated root; exact OS mutation; preflight failure blocks the job",
+      "runner": "native supported filesystem only; Linux ext4/XFS; Windows NTFS and fixed Worker SID",
+      "artifact": ".test-artifacts/pilot-root/ROOT-08/",
+      "side_effect_oracle": "no handle publication on rejection; escape sentinel unchanged; downstream DB/Planner/Registry=0",
+      "targets": [
+        "linux/amd64",
+        "linux/arm64",
+        "windows/amd64"
+      ],
+      "status": "planned_or_blocked",
+      "subtests": [
+        {
+          "side_effect_oracle": "Validated handle/API behavior only; SQLite/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": null,
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-08/structured_log_fields",
+          "artifact": ".test-artifacts/pilot-root/ROOT-08/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "accept",
+          "expected_assertions": [
+            "ROOT-08/structured_log_fields: assert accept; exact error=none; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        }
+      ]
+    },
+    {
+      "expected_error": "regular file\u5fc5\u987bnlink/linkcount=1\uff1b\u76ee\u5f55\u4e0d\u4ee5link count\u62d2\u7edd\uff1b\u5df2\u53d1\u73b0\u989d\u5916ACL=`verified_policy_mismatch`\uff0c\u67e5\u8be2unsupported/denied=`verified_io_failed`\uff1bWindows ACE\u4e3b\u4f53/flags/mask/\u7ee7\u627f\u6309\u7cbe\u786eallowlist\u6838\u5bf9",
+      "id": "ROOT-09",
+      "parent": "TestVerifiedRoot",
+      "fixture": "fresh isolated root; exact OS mutation; preflight failure blocks the job",
+      "runner": "native supported filesystem only; Linux ext4/XFS; Windows NTFS and fixed Worker SID",
+      "artifact": ".test-artifacts/pilot-root/ROOT-09/",
+      "side_effect_oracle": "no handle publication on rejection; escape sentinel unchanged; downstream DB/Planner/Registry=0",
+      "targets": [
+        "linux/amd64",
+        "linux/arm64",
+        "windows/amd64"
+      ],
+      "status": "planned_or_blocked",
+      "subtests": [
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-09/file_link_count",
+          "artifact": ".test-artifacts/pilot-root/ROOT-09/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-09/file_link_count: assert reject; exact error=verified_policy_mismatch; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "Validated handle/API behavior only; SQLite/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": null,
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-09/directory_link_count",
+          "artifact": ".test-artifacts/pilot-root/ROOT-09/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "accept",
+          "expected_assertions": [
+            "ROOT-09/directory_link_count: assert accept; exact error=none; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "Validated handle/API behavior only; SQLite/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": null,
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-09/acl_absent",
+          "artifact": ".test-artifacts/pilot-root/ROOT-09/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "accept",
+          "expected_assertions": [
+            "ROOT-09/acl_absent: assert accept; exact error=none; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-09/acl_extra",
+          "artifact": ".test-artifacts/pilot-root/ROOT-09/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-09/acl_extra: assert reject; exact error=verified_policy_mismatch; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_io_failed",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-09/acl_query_error",
+          "artifact": ".test-artifacts/pilot-root/ROOT-09/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-09/acl_query_error: assert reject; exact error=verified_io_failed; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "Validated handle/API behavior only; SQLite/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "windows/amd64"
+          ],
+          "expected_error": null,
+          "runner": [
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-09/dacl_exact",
+          "artifact": ".test-artifacts/pilot-root/ROOT-09/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "accept",
+          "expected_assertions": [
+            "ROOT-09/dacl_exact: assert accept; exact error=none; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        }
+      ]
+    },
+    {
+      "expected_error": "\u6d4b\u8bd5fixture\u72ec\u5360\u521b\u5efa\u5e76\u9a8c\u8bc1anchor\uff1bOpen\u8fd4\u56de\u540eanchor\u4ecd\u6709\u6548\uff1b\u5931\u8d25\u6309\u9006\u5e8f\u5173\u95ed\u65b0handle\uff1bclose unknown\u8981\u6c42worker\u9000\u51fa",
+      "id": "ROOT-10",
+      "parent": "TestVerifiedRoot",
+      "fixture": "fresh isolated root; exact OS mutation; preflight failure blocks the job",
+      "runner": "native supported filesystem only; Linux ext4/XFS; Windows NTFS and fixed Worker SID",
+      "artifact": ".test-artifacts/pilot-root/ROOT-10/",
+      "side_effect_oracle": "no handle publication on rejection; escape sentinel unchanged; downstream DB/Planner/Registry=0",
+      "targets": [
+        "linux/amd64",
+        "linux/arm64",
+        "windows/amd64"
+      ],
+      "status": "planned_or_blocked",
+      "subtests": [
+        {
+          "side_effect_oracle": "Validated handle/API behavior only; SQLite/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": null,
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-10/borrowed_anchor",
+          "artifact": ".test-artifacts/pilot-root/ROOT-10/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "accept",
+          "expected_assertions": [
+            "ROOT-10/borrowed_anchor: assert accept; exact error=none; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "injected_open_error",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-10/reverse_rollback",
+          "artifact": ".test-artifacts/pilot-root/ROOT-10/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "error_preserved",
+          "expected_assertions": [
+            "ROOT-10/reverse_rollback: assert error_preserved; exact error=injected_open_error; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        }
+      ]
+    },
+    {
+      "expected_error": "Linux\u68c0\u67e5fd `F_GETFL`\u542bO_RDONLY\u4e14API\u65e0\u6587\u4ef6\u5185\u5bb9\u8bfb\u53d6/\u5199/\u5220/ACL\u53d8\u66f4\u65b9\u6cd5\uff1bWindows\u4ee5Worker token\u5c1d\u8bd5read-data/write/delete/WRITE_DAC\u5747\u88abOS\u62d2\u7edd\uff1b\u53ea\u9a8c\u8bc1ReadNames\u679a\u4e3e\uff0c\u4e0d\u63d0\u4f9b\u6587\u4ef6\u5185\u5bb9\u8bfb\u53d6\u65b9\u6cd5\u3002\u540c\u53ef\u4fe1POSIX owner\u53e6\u884copen/chmod\u4e0d\u5728\u672c\u5207\u7247\u5a01\u80c1\u6a21\u578b\u5185",
+      "id": "ROOT-11",
+      "parent": "TestVerifiedRoot",
+      "fixture": "fresh isolated root; exact OS mutation; preflight failure blocks the job",
+      "runner": "native supported filesystem only; Linux ext4/XFS; Windows NTFS and fixed Worker SID",
+      "artifact": ".test-artifacts/pilot-root/ROOT-11/",
+      "side_effect_oracle": "no handle publication on rejection; escape sentinel unchanged; downstream DB/Planner/Registry=0",
+      "targets": [
+        "linux/amd64",
+        "linux/arm64",
+        "windows/amd64"
+      ],
+      "status": "planned_or_blocked",
+      "subtests": [
+        {
+          "side_effect_oracle": "Validated handle/API behavior only; SQLite/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64"
+          ],
+          "expected_error": null,
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-11/posix_readonly_fd",
+          "artifact": ".test-artifacts/pilot-root/ROOT-11/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "accept",
+          "expected_assertions": [
+            "ROOT-11/posix_readonly_fd: assert accept; exact error=none; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "Validated handle/API behavior only; SQLite/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "windows/amd64"
+          ],
+          "expected_error": "ERROR_ACCESS_DENIED",
+          "runner": [
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-11/windows_read_mask",
+          "artifact": ".test-artifacts/pilot-root/ROOT-11/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "mutation_denied",
+          "expected_assertions": [
+            "ROOT-11/windows_read_mask: assert mutation_denied; exact error=ERROR_ACCESS_DENIED; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        }
+      ]
+    },
+    {
+      "expected_error": "\u652f\u6301\u77e9\u9635\u4e25\u683c\u4e3aLinux ext4/XFS\u3001Windows NTFS\uff1bLinux\u5728\u4e13\u7528runner\u771f\u5b9e\u6302\u8f7dNFS/SMB/FUSE/tmpfs/btrfs/zfs\u53caunknown fs\u5e76\u65ad\u8a00\u62d2\u7edd\uff0cWindows\u5728\u9884\u7f6eReFS\u5377\u65ad\u8a00\u62d2\u7edd\uff1bmount ID/statx\u6216DACL\u67e5\u8be2\u80fd\u529b\u7f3a\u5931\u5747fail closed\u3002runner\u6216\u76ee\u6807\u6587\u4ef6\u7cfb\u7edf\u7f3a\u5931\u5219BLOCKED\uff0c\u4e0d\u5f97skip\u8ba1PASS",
+      "id": "ROOT-12",
+      "parent": "TestVerifiedRoot",
+      "fixture": "fresh isolated root; exact OS mutation; preflight failure blocks the job",
+      "runner": "native supported filesystem only; Linux ext4/XFS; Windows NTFS and fixed Worker SID",
+      "artifact": ".test-artifacts/pilot-root/ROOT-12/",
+      "side_effect_oracle": "no handle publication on rejection; escape sentinel unchanged; downstream DB/Planner/Registry=0",
+      "targets": [
+        "linux/amd64",
+        "linux/arm64",
+        "windows/amd64"
+      ],
+      "status": "planned_or_blocked",
+      "subtests": [
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-12/nfs",
+          "artifact": ".test-artifacts/pilot-root/ROOT-12/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Real NFS fixture is identified as unsupported; root is not published."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-12/smb",
+          "artifact": ".test-artifacts/pilot-root/ROOT-12/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Real SMB fixture is identified as unsupported; root is not published."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-12/fuse",
+          "artifact": ".test-artifacts/pilot-root/ROOT-12/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Real FUSE fixture is identified as unsupported; root is not published."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-12/tmpfs",
+          "artifact": ".test-artifacts/pilot-root/ROOT-12/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Real tmpfs fixture is identified as unsupported; root is not published."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-12/btrfs",
+          "artifact": ".test-artifacts/pilot-root/ROOT-12/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Real btrfs fixture is identified as unsupported; root is not published."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-12/zfs",
+          "artifact": ".test-artifacts/pilot-root/ROOT-12/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Real ZFS fixture is identified as unsupported; root is not published."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-12/unknown_fs",
+          "artifact": ".test-artifacts/pilot-root/ROOT-12/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Unknown filesystem type is rejected; root is not published."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "windows/amd64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-12/refs",
+          "artifact": ".test-artifacts/pilot-root/ROOT-12/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Real ReFS fixture is identified as unsupported; root is not published."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64"
+          ],
+          "expected_error": "verified_io_failed",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-12/statx_unavailable",
+          "artifact": ".test-artifacts/pilot-root/ROOT-12/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Required statx/mount-ID query unavailable is classified as I/O failure."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "windows/amd64"
+          ],
+          "expected_error": "verified_io_failed",
+          "runner": [
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-12/dacl_query_unavailable",
+          "artifact": ".test-artifacts/pilot-root/ROOT-12/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Required DACL/identity query unavailable is classified as I/O failure."
+          ]
+        }
+      ]
+    },
+    {
+      "expected_error": "\u9996\u679a\u4e3e\u2192\u9010\u9879handle\u9a8c\u8bc1/\u5173\u95ed\u2192\u672b\u679a\u4e3e\uff1b\u65ad\u8a00\u6070\u4e24\u6b21\u679a\u4e3e\u3001\u7f3a\u5931\u9879\u53ef\u9009\u3001RootEntry\u56fa\u5b9a\u987a\u5e8f\u3002\u65b0\u589e/\u5220\u9664\u548c\u590d\u6838\u524d\u66ff\u6362\u8fd4\u56de\u9519\u8bef\u4e14nil\u7ed3\u679c\uff1b\u5173\u95edunknown\u8981\u6c42restart_required\u3002\u77ed\u6682handle\u5173\u95ed\u540e\u540c\u540d\u66ff\u6362\u4e0d\u4fdd\u8bc1\u53d1\u73b0\uff1b\u8fd4\u56de\u96c6\u5408\u4e0d\u6388\u6743",
+      "id": "ROOT-13",
+      "parent": "TestVerifiedRoot",
+      "fixture": "fresh isolated root; exact OS mutation; preflight failure blocks the job",
+      "runner": "native supported filesystem only; Linux ext4/XFS; Windows NTFS and fixed Worker SID",
+      "artifact": ".test-artifacts/pilot-root/ROOT-13/",
+      "side_effect_oracle": "no handle publication on rejection; escape sentinel unchanged; downstream DB/Planner/Registry=0",
+      "targets": [
+        "linux/amd64",
+        "linux/arm64",
+        "windows/amd64"
+      ],
+      "status": "planned_or_blocked",
+      "subtests": [
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_identity_changed",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-13/add_during_scan",
+          "artifact": ".test-artifacts/pilot-root/ROOT-13/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Second enumeration differs; result is nil and root is poisoned."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_identity_changed",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-13/remove_during_scan",
+          "artifact": ".test-artifacts/pilot-root/ROOT-13/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Second enumeration differs; result is nil and root is poisoned."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_identity_changed",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-13/replace_before_parent_recheck",
+          "artifact": ".test-artifacts/pilot-root/ROOT-13/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Parent-name identity recheck fails; result is nil and root is poisoned."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_close_unknown",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-13/short_handle_close_unknown",
+          "artifact": ".test-artifacts/pilot-root/ROOT-13/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "Short-lived handle close unknown aborts enumeration with nil result; no second close."
+          ]
+        },
+        {
+          "side_effect_oracle": "Only the validated metadata handle is published; SQLite/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": null,
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-13/stable_nameset",
+          "artifact": ".test-artifacts/pilot-root/ROOT-13/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "accept",
+          "expected_assertions": [
+            "Exactly two enumerations match; all entries validate; complete sorted RootEntry set is returned."
+          ]
+        }
+      ]
+    },
+    {
+      "expected_error": "nil/closed anchor\u3001\u574fepoch/enum\u3001\u7f3a\u5931\u9879\u3001\u65e0\u6587\u4ef6\u5185\u5bb9\u8bfb\u53d6\u65b9\u6cd5\u3001closed handle\uff1b\u9010\u9879\u65ad\u8a00errors.Is",
+      "id": "ROOT-14",
+      "parent": "TestVerifiedRoot",
+      "fixture": "fresh isolated root; exact OS mutation; preflight failure blocks the job",
+      "runner": "native supported filesystem only; Linux ext4/XFS; Windows NTFS and fixed Worker SID",
+      "artifact": ".test-artifacts/pilot-root/ROOT-14/",
+      "side_effect_oracle": "no handle publication on rejection; escape sentinel unchanged; downstream DB/Planner/Registry=0",
+      "targets": [
+        "linux/amd64",
+        "linux/arm64",
+        "windows/amd64"
+      ],
+      "status": "planned_or_blocked",
+      "subtests": [
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_anchor_invalid",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-14/nil_anchor",
+          "artifact": ".test-artifacts/pilot-root/ROOT-14/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-14/nil_anchor: assert reject; exact error=verified_anchor_invalid; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_anchor_invalid",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-14/zero_value_anchor",
+          "artifact": ".test-artifacts/pilot-root/ROOT-14/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-14/zero_value_anchor: assert reject; exact error=verified_anchor_invalid; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_anchor_invalid",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-14/closed_anchor",
+          "artifact": ".test-artifacts/pilot-root/ROOT-14/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-14/closed_anchor: assert reject; exact error=verified_anchor_invalid; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_path_invalid",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-14/bad_epoch",
+          "artifact": ".test-artifacts/pilot-root/ROOT-14/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-14/bad_epoch: assert reject; exact error=verified_path_invalid; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_member_invalid",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-14/unknown_enum",
+          "artifact": ".test-artifacts/pilot-root/ROOT-14/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-14/unknown_enum: assert reject; exact error=verified_member_invalid; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_member_invalid",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-14/missing_member",
+          "artifact": ".test-artifacts/pilot-root/ROOT-14/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-14/missing_member: assert reject; exact error=verified_member_invalid; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "Validated handle/API behavior only; SQLite/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": null,
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-14/no_content_read_method",
+          "artifact": ".test-artifacts/pilot-root/ROOT-14/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "accept",
+          "expected_assertions": [
+            "ROOT-14/no_content_read_method: assert accept; exact error=none; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_member_invalid",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-14/closed_member",
+          "artifact": ".test-artifacts/pilot-root/ROOT-14/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-14/closed_member: assert reject; exact error=verified_member_invalid; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_anchor_invalid",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-14/nil_root_open_directory",
+          "artifact": ".test-artifacts/pilot-root/ROOT-14/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-14/nil_root_open_directory: assert reject; exact error=verified_anchor_invalid; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "verified_anchor_invalid",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-14/nil_root_open_member",
+          "artifact": ".test-artifacts/pilot-root/ROOT-14/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-14/nil_root_open_member: assert reject; exact error=verified_anchor_invalid; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        }
+      ]
+    },
+    {
+      "expected_error": "\u6bcf\u79cdpoison\u540e\u6240\u6709\u4e1a\u52a1API\u62d2\u7edd\uff1b\u4ec5owner Close\u53ef\u6267\u884c\u6e05\u7406/\u91cd\u8bd5\uff1bclose syscall\u6700\u591a\u4e00\u6b21\uff1b\u5ef6\u8fdfenumeration/identity\u89e6\u53d1\u56fa\u5b9a\u9884\u7b97\uff0c\u7236harness\u7ec8\u6b62\u5e76\u57285\u79d2\u5185reap\uff0c\u65e0\u66ff\u4ee3root",
+      "id": "ROOT-15",
+      "parent": "TestVerifiedRoot",
+      "fixture": "fresh isolated root; exact OS mutation; preflight failure blocks the job",
+      "runner": "native supported filesystem only; Linux ext4/XFS; Windows NTFS and fixed Worker SID",
+      "artifact": ".test-artifacts/pilot-root/ROOT-15/",
+      "side_effect_oracle": "no handle publication on rejection; escape sentinel unchanged; downstream DB/Planner/Registry=0",
+      "targets": [
+        "linux/amd64",
+        "linux/arm64",
+        "windows/amd64"
+      ],
+      "status": "planned_or_blocked",
+      "subtests": [
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "parent:restart_required",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-15/enumeration_watchdog",
+          "artifact": ".test-artifacts/pilot-root/ROOT-15/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "process_reaped",
+          "expected_assertions": [
+            "ROOT-15/enumeration_watchdog: assert process_reaped; exact error=parent:restart_required; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "parent:restart_required",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-15/identity_watchdog",
+          "artifact": ".test-artifacts/pilot-root/ROOT-15/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "process_reaped",
+          "expected_assertions": [
+            "ROOT-15/identity_watchdog: assert process_reaped; exact error=parent:restart_required; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "parent:restart_required",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-15/close_drain_watchdog",
+          "artifact": ".test-artifacts/pilot-root/ROOT-15/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "process_reaped",
+          "expected_assertions": [
+            "ROOT-15/close_drain_watchdog: assert process_reaped; exact error=parent:restart_required; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "poisoned-root sentinel",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-15/poison_rejects_all",
+          "artifact": ".test-artifacts/pilot-root/ROOT-15/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject_poisoned",
+          "expected_assertions": [
+            "ROOT-15/poison_rejects_all: assert reject_poisoned; exact error=poisoned-root sentinel; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        },
+        {
+          "side_effect_oracle": "No invalid handle publication or escape; DB/catalog/Coordinator/Planner/Registry=0.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64"
+          ],
+          "expected_error": "poisoned-root sentinel",
+          "runner": [
+            "native ext4/XFS; CAP_SYS_ADMIN only for mount fixtures",
+            "SYSTEM-owned NTFS; trusted launcher with fixed Worker SID"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-15/queued_operation_stops_after_poison",
+          "artifact": ".test-artifacts/pilot-root/ROOT-15/",
+          "fixture": "fresh isolated root; named mutation; runner preflight required",
+          "expected_outcome": "reject_poisoned",
+          "expected_assertions": [
+            "ROOT-15/queued_operation_stops_after_poison: assert reject_poisoned; exact error=poisoned-root sentinel; also enforce fixture-specific contract in docs/44 ?5."
+          ]
+        }
+      ]
+    },
+    {
+      "expected_error": null,
+      "id": "ROOT-16",
+      "parent": "TestVerifiedRoot",
+      "fixture": "Reaper-owned 0710 anchor; worker-owned 0700 root; native credentials",
+      "runner": "native Linux ext4/XFS only",
+      "artifact": ".test-artifacts/pilot-root/ROOT-16/",
+      "side_effect_oracle": "No sibling access or business side effect.",
+      "targets": [
+        "linux/amd64",
+        "linux/arm64"
+      ],
+      "status": "planned_or_blocked",
+      "subtests": [
+        {
+          "side_effect_oracle": "No sibling root is listed or changed; no worker/catalog/Coordinator/Planner/Registry action.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS dedicated mount namespace with Reaper and worker credentials"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-16/reaper_anchor_owner_mode_acl",
+          "artifact": ".test-artifacts/pilot-root/ROOT-16/reaper_anchor_owner_mode_acl/",
+          "fixture": "Reaper-owned 0710 anchor and worker-owned 0700 epoch root; exact ownership and ACL preflight",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-16/reaper_anchor_owner_mode_acl: verify exact UID/GID/mode/ACL and that worker is limited to traversal of the known run-root name; sibling mutation/list attempts must not succeed."
+          ]
+        },
+        {
+          "side_effect_oracle": "No sibling root is listed or changed; no worker/catalog/Coordinator/Planner/Registry action.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64"
+          ],
+          "expected_error": null,
+          "runner": [
+            "native ext4/XFS dedicated mount namespace with Reaper and worker credentials"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-16/worker_anchor_traverse_only",
+          "artifact": ".test-artifacts/pilot-root/ROOT-16/worker_anchor_traverse_only/",
+          "fixture": "Reaper-owned 0710 anchor and worker-owned 0700 epoch root; exact ownership and ACL preflight",
+          "expected_outcome": "accept",
+          "expected_assertions": [
+            "ROOT-16/worker_anchor_traverse_only: verify exact UID/GID/mode/ACL and that worker is limited to traversal of the known run-root name; sibling mutation/list attempts must not succeed."
+          ]
+        },
+        {
+          "side_effect_oracle": "No sibling root is listed or changed; no worker/catalog/Coordinator/Planner/Registry action.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64"
+          ],
+          "expected_error": "permission_denied",
+          "runner": [
+            "native ext4/XFS dedicated mount namespace with Reaper and worker credentials"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-16/worker_cannot_list_or_mutate_siblings",
+          "artifact": ".test-artifacts/pilot-root/ROOT-16/worker_cannot_list_or_mutate_siblings/",
+          "fixture": "Reaper-owned 0710 anchor and worker-owned 0700 epoch root; exact ownership and ACL preflight",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-16/worker_cannot_list_or_mutate_siblings: verify exact UID/GID/mode/ACL and that worker is limited to traversal of the known run-root name; sibling mutation/list attempts must not succeed."
+          ]
+        },
+        {
+          "side_effect_oracle": "No sibling root is listed or changed; no worker/catalog/Coordinator/Planner/Registry action.",
+          "goos": [
+            "linux/amd64",
+            "linux/arm64"
+          ],
+          "expected_error": "verified_policy_mismatch",
+          "runner": [
+            "native ext4/XFS dedicated mount namespace with Reaper and worker credentials"
+          ],
+          "test_name": "TestVerifiedRoot/ROOT-16/epoch_root_worker_owner_mode",
+          "artifact": ".test-artifacts/pilot-root/ROOT-16/epoch_root_worker_owner_mode/",
+          "fixture": "Reaper-owned 0710 anchor and worker-owned 0700 epoch root; exact ownership and ACL preflight",
+          "expected_outcome": "reject",
+          "expected_assertions": [
+            "ROOT-16/epoch_root_worker_owner_mode: verify exact UID/GID/mode/ACL and that worker is limited to traversal of the known run-root name; sibling mutation/list attempts must not succeed."
+          ]
+        }
+      ],
+      "expected_outcome": "accept",
+      "expected_assertions": [
+        "Verify separate anchor/root ownership domains and worker traverse-only anchor access."
+      ]
+    }
+  ],
+  "build_tags": [
+    "pilot_e2e"
+  ],
+  "parent_test": "TestVerifiedRoot",
+  "package": "./internal/pilotsupervisor",
+  "source_sdd_path": "docs/44-Pilot\u9a8c\u8bc1\u6839\u4e0e\u6210\u5458\u53e5\u67c4\u5207\u7247SDD.md",
+  "source_sdd_sha256": "284D85B8C0A256A4D5785FB22C2F218ED60ECCE7FC811CCFE8B599E86F107E97",
+  "discovery": "Each required parent and leaf must appear exactly once, PASS, and never SKIP; zero matches or missing fixture is BLOCKED"
+}

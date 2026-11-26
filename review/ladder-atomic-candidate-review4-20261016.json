@@ -1,0 +1,283 @@
+{
+  "review": "ladder-atomic-candidate-review4",
+  "date": "2026-10-16",
+  "mode": "read_only_no_test_compile_service_or_source_edit",
+  "status": "static_review_pass_for_isolated_browser_execution",
+  "manifest_sha256": "ea3af4deb5cdc05f14890e71a2bd9c83d95614a7a5c5387e1914de93216cdfdf",
+  "expected_manifest_sha256": "ea3af4deb5cdc05f14890e71a2bd9c83d95614a7a5c5387e1914de93216cdfdf",
+  "hash_verification": {
+    "count": 34,
+    "matched": 34,
+    "files": [
+      {
+        "path": "server/internal/api/agenttools.go",
+        "sha256": "14531080b368cb82f4541891043257b24bd81d6e21a3761e43b81f03e6e94519",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/api/agenttransaction.go",
+        "sha256": "9bfa3164b42a036bee111dd8bdbf74b6ae129ae0b92fd9a2f66a4ea38336c1a9",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/api/app.go",
+        "sha256": "f075e9e48ccd7e44a4aac1a008ce2df62699d41c1d8e95fc994393dde3ab4afe",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/api/configmutation.go",
+        "sha256": "eb2b40f0d6d62c69e09a662f2291808704adecf25a3ffa6b400800aa9b97e79a",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/api/configroutes.go",
+        "sha256": "7ff8073e2b3b7500208bb599afe5c4a5efed43c573432ba239848e8a24a4f78c",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/api/extra.go",
+        "sha256": "f16eb367ad6327a0a59e1e41bd4a4eb1bff4f771229f0cb182e2473ce33b4113",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/api/feedbackexecution.go",
+        "sha256": "7b9d3fb1440a715e8c0227be8710c52a148551b8f2d412f62050acd982219cc0",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/api/feedbackstorage.go",
+        "sha256": "6e0063fc3e2543d8c8b970e8910c9a1660790100259272f46ee74ae523843458",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/api/hub.go",
+        "sha256": "3239252fb4496cc8a7d8ba86b3df8b7400a3eb723b1d589f193fa991403fef42",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/api/ladder_atomic_regression_test.go",
+        "sha256": "627e2655b88269fd7fd7f34672281711e73cae875bf326d28fa0f7275b83c5e9",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/api/ladder_concurrency_regression_test.go",
+        "sha256": "7b0a0820a40e6ea68ce8ceec075278bee5fd3f02ba69b8d44ecd996d030572f9",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/api/ladder_consumer_regression_test.go",
+        "sha256": "72c5e817178b7624defb252152bec5a7e3ba287846cad999e21841d1b672c6a2",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/api/ladder_failure_regression_test.go",
+        "sha256": "45a72a5ea71b43f2189639fd2eaf542ee92b4901bb1ca401186dbd8d0d07814b",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/api/ladder_review_regression_test.go",
+        "sha256": "d707459173c8641fe7825ff4be0ddf8e339f7049349c9813a1f725235cfd8173",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/api/ladder_routes_regression_test.go",
+        "sha256": "8c37d01a4e5ee815b4d9512a8fa256c60a0afcf93ae965f17c1a20f3666e3bb6",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/api/ladder_work_boundary_test.go",
+        "sha256": "65785968d81d0723563cdbfe457a7301b6ae9e6448475e05e150024f5d2a99fe",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/api/lessonexecution.go",
+        "sha256": "47fbeded9137aab5613fee190c8f961f66cbd9c235a1ca002b8d1dab4fd1a690",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/api/router.go",
+        "sha256": "cd7d21458a7f61ab339962db0fc5b2d0453733242afe96157982aa808cf2e990",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/config/config.go",
+        "sha256": "d53bad3696efcab84ec65171e5577fbe97afa099c75cd4f22e1c33985a188ef6",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/config/effective_view_test.go",
+        "sha256": "dd13c949327b8ad4877ba3a8ad5914808183479b72cceb31bb7c7c315fc3ade9",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/config/mutation.go",
+        "sha256": "56b4998f81c7485a0d474cf16af96f3d8b2985b50dd324d6d438473c1d8d1a1b",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/scheduler/ladder_scope.go",
+        "sha256": "d0c132d925e17a81848a9ae456942dc3f4bd37add65b330d8bf757fd126a0bb3",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/scheduler/scheduler.go",
+        "sha256": "65f14d1241f85cd71ef7fe98a8159519ab39fe79560c3654dafe5f3805f5081b",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/scheduler/settlement.go",
+        "sha256": "63c5c79ef1f6d2e4c4f9e9f5757de7458c30da386c1f15fe447fac64a56e966d",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/store/config_atomic.go",
+        "sha256": "c68f47a7227252805fe77c4791bb29bb38d37d36fe7530f396e1dae03f498d17",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "server/internal/store/config_atomic_regression_test.go",
+        "sha256": "d24100494cec40904baecf1ccc98134f254ae9f338a11f51a82610d6a95ec011",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "web/e2e/ladder-config.spec.ts",
+        "sha256": "13fe5e01afe86080ac18b7e11daa7c49ac01c3d0bbd85f924e06ef8df8268dd9",
+        "manifest_match": true,
+        "unchanged_since_review3": false
+      },
+      {
+        "path": "web/e2e/recovery-server.ts",
+        "sha256": "2de8e3fa62c38222f45f009a7e762c5e25333b035839645d4fbc38dc18d3b5e4",
+        "manifest_match": true,
+        "unchanged_since_review3": false
+      },
+      {
+        "path": "web/playwright.ladder.config.ts",
+        "sha256": "ddd64090f95f42aa2daee113fccc65e81e5e3bee6a6fb0520bc34e4c665764eb",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "web/src/api/client.ts",
+        "sha256": "7a6eb344cc2449136e1f0bf435f44cf8b55ddd61f73021345c4e2db1e6e4d387",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "web/src/components/LadderSettings.tsx",
+        "sha256": "1338e5a86d740936fa728a837f8f8e3a734be39fa44e6373be067e7e35d58291",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "web/src/interaction/config-reconciliation.ts",
+        "sha256": "9b23a515a03b90584320d1efecf205337567fbfb9af2cd52ff7323f0bbb1546d",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "web/src/pages/Admin.tsx",
+        "sha256": "118c22adf4204f64a864bee54c602e1aa7eaec56857100804d737a954f51509d",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      },
+      {
+        "path": "web/tests/config-reconciliation.test.ts",
+        "sha256": "43dab403c98b63eb88ab5462f62209326176edee05f9011496e320b31c0bfc58",
+        "manifest_match": true,
+        "unchanged_since_review3": true
+      }
+    ]
+  },
+  "blocking": [],
+  "required_before_test": [],
+  "closed_gaps": [
+    {
+      "id": "A_actual_configuration_consumption",
+      "evidence": "web/e2e/ladder-config.spec.ts production ladder consumption describe",
+      "assessment": "Admin saves3,4,5; real scheduling creates initial lessons; owned restart preserves configuration. Dedicated productionSchedule removes-testmode, only initial lesson open_at is adjusted while process stopped. A real browser activates WS/media, repeats target and submits quiz answer through UI. Existing Room snapshot stays3,4,5 after admin changes5,6,7; settlement asserts learning/step0/due5days and exactly one scheduled next lesson5days from finished_at, plus committed settlement trace and summary. This distinguishes frozen teaching configuration from fresh settlement/scheduling consumption."
+    },
+    {
+      "id": "B_active_classroom_isolation",
+      "assessment": "B separate browser context receives actual WebSocket play_tts/start_repeat and completes four controlled-media segments. It is visibly connected/repeating/not paused, with real persisted card baseline. A completion must leave B cards and current context unchanged and B still connected/repeating. This closes Dashboard-only/dormant Enter weakness. Does not claim B answer/completion or real acoustic playback."
+    },
+    {
+      "id": "bounded_fault_cleanup",
+      "assessment": "Python normal operations are bounded10s with SQLite3s lock timeout and explicit error/signal/status checks. Fault wrapper uses finally DROP TRIGGER IF EXISTS; separate authored test exercises cleanup after assertion failure and timeout. Contexts close in finally. No new automatic mutation retry or product deadline change."
+    }
+  ],
+  "fixture_review": {
+    "productionSchedule": "Defaultfalse preserves other suites. Explicittrue only removes-testmode from ordinary owned server args. No scheduler production implementation changed; initial lesson fixture time update is isolated and future cards/lessons are read-only observations.",
+    "integrity": "Other32 prior candidate files retain review3 hashes; delta is ladder spec and added recovery-server option. Full manifest matches34files.",
+    "UI_and_protocol": "Admin mutation and learner answer UI are real; target repetition uses existing authenticated REST fallback helper, media provider is controlled mock. SQLite observation checks real persisted effects, not fabricated outcomes."
+  },
+  "nonblocking_observations": [
+    {
+      "location": "first repeating waits in production consumption journey",
+      "detail": "Visible repeating is awaited before completed-count polling, so its default assertion window includes the initial four media segments. If execution fails before target stage, preserve evidence and use already-established per-stage synchronization rather than increasing product/individual test limits. This cannot manufacture a false pass."
+    },
+    {
+      "location": "B active interval",
+      "detail": "timeoutRepeatS60 is a valid explicit fixture configuration. The invariant requires A journey to finish before B legitimately times out. A slow-run failure would need distinction from cross-student mutation; no frozen server clock or suppressed B frames is used."
+    },
+    {
+      "location": "withConfigFault cleanup",
+      "detail": "A cleanup failure can replace the primary assertion exception in JavaScript finally. It still fails closed and leaves test-owned DB evidence; dual-error preservation would improve diagnosis but is not a production or acceptance-integrity blocker."
+    }
+  ],
+  "line_evidence": {
+    "16": "async function withConfigFault(db: string, body: () => Promise<void>) {",
+    "134": "await withConfigFault(server.db, async () => {",
+    "154": "test.use({ productionSchedule: true })",
+    "160": "scope: 'student', studentId: f.student.user_id, key: 'timeoutRepeatS', value: 60, reason: 'bounded concurrent classroom fixture',",
+    "179": "await selectFirst(); await saveLadder('3,4,5')",
+    "208": "const peerBefore = await peerState(); const peerCardsBefore = peerCards()",
+    "209": "expect(peerBefore.phase).toBe('repeating')",
+    "210": "expect(peerBefore.paused).toBe(false)",
+    "218": "const frozenLadder = () => JSON.parse(query(server.db, 'SELECT value FROM runtime_records WHERE key=?', [`snapshot/${aid}`])[0].value).Config.Ladder",
+    "219": "expect(frozenLadder()).toEqual([3, 4, 5])",
+    "220": "await saveLadder('5,6,7')",
+    "221": "expect(frozenLadder()).toEqual([3, 4, 5])",
+    "229": "const cards = query(server.db, 'SELECT status,ladder_step,julianday(next_due_at)-julianday(last_review_at) AS interval_days FROM memory_cards WHERE student_id=? AND book_id=?', [firstID, first.book.ID])",
+    "232": "expect(cards[0].interval_days).toBeCloseTo(5, 5)",
+    "233": "const next = query(server.db, \"SELECT n.id,julianday(n.open_at)-julianday(f.finished_at) AS interval_days FROM lessons n JOIN lessons f ON f.id=? WHERE n.student_id=? AND n.book_id=? AND n.status='scheduled'\", [aid, firstID, first.book.ID])",
+    "234": "expect(next).toHaveLength(1); expect(next[0].interval_days).toBeCloseTo(5, 5)",
+    "235": "expect(frozenLadder()).toEqual([3, 4, 5])",
+    "236": "expect(await peerState()).toEqual(peerBefore); expect(peerCards()).toEqual(peerCardsBefore)",
+    "243": "await info.attach('ladder-production-consumption', { body: JSON.stringify({ aid, bid, oldRoomLadder: frozenLadder(), cards, next, peerBefore, peerAfter: await peerState(), peerCardsBefore, peerCardsAfter: peerCards() }), contentType: 'application/json' })",
+    "248": "test('fault trigger is removed after assertion failure and Python timeout', async ({ server }) => {",
+    "250": "await expect(withConfigFault(server.db, async () => {"
+  },
+  "acceptance_boundaries": [
+    "No runtime result is claimed. Candidate must still compile and pass isolated Go/Node/build/browser gates with reviewed frozen inputs.",
+    "Controlled-media mock classroom is not real audio/model quality evidence.",
+    "Active-peer assertion covers B maintaining repeating state and cards, not full simultaneous two-student completion.",
+    "Historic COMMIT long tails and Pilot Room/Agent integration remain outside this change."
+  ]
+}

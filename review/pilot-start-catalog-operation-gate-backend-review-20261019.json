@@ -1,0 +1,25 @@
+{
+  "review": "pilot-start-catalog-operation-gate-backend-review",
+  "date": "2026-10-19",
+  "scope": [
+    "server/internal/store/pilot_start_catalog.go",
+    "server/internal/store/pilot_start_catalog_test.go",
+    "server/internal/store/pilot_start_catalog_lock_unix.go",
+    "server/internal/store/pilot_start_catalog_lock_windows.go"
+  ],
+  "tests_run": false,
+  "verdict": "PASS_STATIC_REVIEW",
+  "findings": [],
+  "checks": {
+    "operation_mutex_fences_poison_and_local_operations": "PASS",
+    "lock_order_and_error_paths": "PASS",
+    "sync_and_unlock_boundaries": "PASS",
+    "poison_waiter_and_unlock_window_barriers": "PASS",
+    "unix_windows_lock_implementations": "PASS_STATIC_ONLY",
+    "child_process_lock_contention_test": "PASS_STATIC_ONLY"
+  },
+  "remaining_validation": [
+    "Run pilot_e2e tagged tests on Windows CI.",
+    "Run pilot_e2e tagged tests on POSIX CI."
+  ]
+}

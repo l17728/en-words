@@ -1,0 +1,5 @@
+﻿Command: go test ./internal/api -run '^TestFirstAudioMatrixWindowsRejectsUnprotectedRunRoot$' -count=1 -v
+Result: PASS
+Test: TestFirstAudioMatrixWindowsRejectsUnprotectedRunRoot (0.02s)
+Package: enwords/internal/api (1.963s)
+Exit code: 0

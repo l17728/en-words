@@ -1,0 +1,1488 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\en-words\\review\\ladder-ix10-harness-retest-20261016\\source-verified\\web\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--config",
+      "playwright.interaction.config.ts"
+    ],
+    "configFile": "D:\\en-words\\review\\ladder-ix10-harness-retest-20261016\\source-verified\\web\\playwright.interaction.config.ts",
+    "rootDir": "D:/en-words/review/ladder-ix10-harness-retest-20261016/source-verified/web/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/en-words/review/ladder-ix10-harness-retest-20261016/source-verified/web/.test-artifacts/closure-1792154161038-13360/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "D:/en-words/review/ladder-ix10-harness-retest-20261016/source-verified/web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "interaction-regression.spec.ts",
+          "interaction-boundaries.spec.ts",
+          "interaction-import.spec.ts"
+        ],
+        "timeout": 180000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "D:\\en-words\\review\\ladder-ix10-harness-retest-20261016\\source-verified\\web\\.test-artifacts\\closure-1792154161038-13360\\results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "interaction-boundaries.spec.ts",
+      "file": "interaction-boundaries.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "IX05 ordinary HTTP without randomUUID supports login feedback and classroom answers",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 15259,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:36:17.196Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "persistent-tool-stage-timing",
+                      "contentType": "application/json",
+                      "body": "W3sidG9vbCI6ImNsYXNzcm9vbS5zYXkiLCJ0cmFjZV9pZCI6Imxlc3Nvbi0xIiwibG9ja193YWl0X21zIjowLCJ0cmFuc2FjdGlvbl9tcyI6ODAsImJlZ2luX3dhaXRfbXMiOjEsImNvbmZpZ19sb2FkX21zIjowLCJhdWRpdF93cml0ZV9tcyI6MCwiZmluYWxpemVfbXMiOjc4LCJyb2xsYmFja19hdWRpdF93cml0ZV9tcyI6MH0seyJ0b29sIjoiY2xhc3Nyb29tLnNob3dfd29yZCIsInRyYWNlX2lkIjoibGVzc29uLTEiLCJsb2NrX3dhaXRfbXMiOjAsInRyYW5zYWN0aW9uX21zIjo0NiwiYmVnaW5fd2FpdF9tcyI6MSwiY29uZmlnX2xvYWRfbXMiOjAsImF1ZGl0X3dyaXRlX21zIjowLCJmaW5hbGl6ZV9tcyI6NDUsInJvbGxiYWNrX2F1ZGl0X3dyaXRlX21zIjowfSx7InRvb2wiOiJjbGFzc3Jvb20ucGxheV90dHMiLCJ0cmFjZV9pZCI6Imxlc3Nvbi0xIiwibG9ja193YWl0X21zIjowLCJ0cmFuc2FjdGlvbl9tcyI6MTY1LCJiZWdpbl93YWl0X21zIjowLCJjb25maWdfbG9hZF9tcyI6MCwiYXVkaXRfd3JpdGVfbXMiOjAsImZpbmFsaXplX21zIjoxNjMsInJvbGxiYWNrX2F1ZGl0X3dyaXRlX21zIjowfSx7InRvb2wiOiJjbGFzc3Jvb20ucGxheV90dHMiLCJ0cmFjZV9pZCI6Imxlc3Nvbi0xIiwibG9ja193YWl0X21zIjowLCJ0cmFuc2FjdGlvbl9tcyI6MTEsImJlZ2luX3dhaXRfbXMiOjAsImNvbmZpZ19sb2FkX21zIjowLCJhdWRpdF93cml0ZV9tcyI6MCwiZmluYWxpemVfbXMiOjEwLCJyb2xsYmFja19hdWRpdF93cml0ZV9tcyI6MH0seyJ0b29sIjoiY2xhc3Nyb29tLnBsYXlfdHRzIiwidHJhY2VfaWQiOiJsZXNzb24tMSIsImxvY2tfd2FpdF9tcyI6MCwidHJhbnNhY3Rpb25fbXMiOjkzLCJiZWdpbl93YWl0X21zIjowLCJjb25maWdfbG9hZF9tcyI6MCwiYXVkaXRfd3JpdGVfbXMiOjAsImZpbmFsaXplX21zIjo5Miwicm9sbGJhY2tfYXVkaXRfd3JpdGVfbXMiOjB9LHsidG9vbCI6ImNsYXNzcm9vbS5wbGF5X3R0cyIsInRyYWNlX2lkIjoibGVzc29uLTEiLCJsb2NrX3dhaXRfbXMiOjAsInRyYW5zYWN0aW9uX21zIjozNzMsImJlZ2luX3dhaXRfbXMiOjAsImNvbmZpZ19sb2FkX21zIjowLCJhdWRpdF93cml0ZV9tcyI6MCwiZmluYWxpemVfbXMiOjM3Miwicm9sbGJhY2tfYXVkaXRfd3JpdGVfbXMiOjB9LHsidG9vbCI6ImNsYXNzcm9vbS5zdGFydF9yZXBlYXQiLCJ0cmFjZV9pZCI6Imxlc3Nvbi0xIiwibG9ja193YWl0X21zIjowLCJ0cmFuc2FjdGlvbl9tcyI6MTM4LCJiZWdpbl93YWl0X21zIjowLCJjb25maWdfbG9hZF9tcyI6MCwiYXVkaXRfd3JpdGVfbXMiOjAsImZpbmFsaXplX21zIjoxMzcsInJvbGxiYWNrX2F1ZGl0X3dyaXRlX21zIjowfSx7InRvb2wiOiJjbGFzc3Jvb20uc3RhcnRfcXVpeiIsInRyYWNlX2lkIjoibGVzc29uLTEiLCJsb2NrX3dhaXRfbXMiOjAsInRyYW5zYWN0aW9uX21zIjoxOSwiYmVnaW5fd2FpdF9tcyI6MCwiY29uZmlnX2xvYWRfbXMiOjAsImF1ZGl0X3dyaXRlX21zIjowLCJmaW5hbGl6ZV9tcyI6MTksInJvbGxiYWNrX2F1ZGl0X3dyaXRlX21zIjowfSx7InRvb2wiOiJjbGFzc3Jvb20uc3RhcnRfcXVpeiIsInRyYWNlX2lkIjoibGVzc29uLTEiLCJsb2NrX3dhaXRfbXMiOjAsInRyYW5zYWN0aW9uX21zIjo4NywiYmVnaW5fd2FpdF9tcyI6MCwiY29uZmlnX2xvYWRfbXMiOjAsImF1ZGl0X3dyaXRlX21zIjowLCJmaW5hbGl6ZV9tcyI6ODYsInJvbGxiYWNrX2F1ZGl0X3dyaXRlX21zIjowfSx7InRvb2wiOiJjbGFzc3Jvb20uc2F5IiwidHJhY2VfaWQiOiJsZXNzb24tMSIsImxvY2tfd2FpdF9tcyI6MCwidHJhbnNhY3Rpb25fbXMiOjExNiwiYmVnaW5fd2FpdF9tcyI6MCwiY29uZmlnX2xvYWRfbXMiOjAsImF1ZGl0X3dyaXRlX21zIjowLCJmaW5hbGl6ZV9tcyI6MTE1LCJyb2xsYmFja19hdWRpdF93cml0ZV9tcyI6MH0seyJ0b29sIjoiY2xhc3Nyb29tLmp1ZGdlX2Fuc3dlciIsInRyYWNlX2lkIjoibGVzc29uLTEiLCJsb2NrX3dhaXRfbXMiOjAsInRyYW5zYWN0aW9uX21zIjo0MiwiYmVnaW5fd2FpdF9tcyI6MCwiY29uZmlnX2xvYWRfbXMiOjAsImF1ZGl0X3dyaXRlX21zIjowLCJmaW5hbGl6ZV9tcyI6NDEsInJvbGxiYWNrX2F1ZGl0X3dyaXRlX21zIjowfSx7InRvb2wiOiJjbGFzc3Jvb20uc2hvd19mZWVkYmFja191aSIsInRyYWNlX2lkIjoibGVzc29uLTEiLCJsb2NrX3dhaXRfbXMiOjAsInRyYW5zYWN0aW9uX21zIjoxMzgsImJlZ2luX3dhaXRfbXMiOjAsImNvbmZpZ19sb2FkX21zIjoxLCJhdWRpdF93cml0ZV9tcyI6MCwiZmluYWxpemVfbXMiOjEzNywicm9sbGJhY2tfYXVkaXRfd3JpdGVfbXMiOjB9LHsidG9vbCI6ImNsYXNzcm9vbS5zYXkiLCJ0cmFjZV9pZCI6Imxlc3Nvbi0xIiwibG9ja193YWl0X21zIjowLCJ0cmFuc2FjdGlvbl9tcyI6OTIsImJlZ2luX3dhaXRfbXMiOjAsImNvbmZpZ19sb2FkX21zIjowLCJhdWRpdF93cml0ZV9tcyI6MCwiZmluYWxpemVfbXMiOjkxLCJyb2xsYmFja19hdWRpdF93cml0ZV9tcyI6MH1d"
+                    },
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMjEzMjhdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaXgxMC1oYXJuZXNzLXJldGVzdC0yMDI2MTAxNlxcc291cmNlLXZlcmlmaWVkXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU0MTc3MDkwLTc5MDRcXGJyb3dzZXJcXGludGVyYWN0aW9uLWJvdW5kYXJpZXMtSVgwLTM4MTQ2LWRiYWNrLWFuZC1jbGFzc3Jvb20tYW5zd2Vyc1xccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjIxMzI4LCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "711a63dc09f8e4d2f1ae-9244999eb20bf5fb92c6",
+          "file": "interaction-boundaries.spec.ts",
+          "line": 14,
+          "column": 1
+        },
+        {
+          "title": "IX11 closed report never reopens from a late response and a fresh report can be read",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 14212,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:36:33.585Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTM4NDBdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaXgxMC1oYXJuZXNzLXJldGVzdC0yMDI2MTAxNlxcc291cmNlLXZlcmlmaWVkXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU0MTc3MDkwLTc5MDRcXGJyb3dzZXJcXGludGVyYWN0aW9uLWJvdW5kYXJpZXMtSVgxLTUzNmQzLS1hLWZyZXNoLXJlcG9ydC1jYW4tYmUtcmVhZFxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjEzODQwLCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "711a63dc09f8e4d2f1ae-44716bd6ee73e139760f",
+          "file": "interaction-boundaries.spec.ts",
+          "line": 25,
+          "column": 1
+        },
+        {
+          "title": "IX12 administrator refresh rejects an older initial wordbook response",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5768,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:36:47.830Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMjE1NjBdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaXgxMC1oYXJuZXNzLXJldGVzdC0yMDI2MTAxNlxcc291cmNlLXZlcmlmaWVkXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU0MTc3MDkwLTc5MDRcXGJyb3dzZXJcXGludGVyYWN0aW9uLWJvdW5kYXJpZXMtSVgxLWI4ZjVlLXItaW5pdGlhbC13b3JkYm9vay1yZXNwb25zZVxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjIxNTYwLCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "711a63dc09f8e4d2f1ae-9064502c503467934c5b",
+          "file": "interaction-boundaries.spec.ts",
+          "line": 34,
+          "column": 1
+        },
+        {
+          "title": "IX08 large wordbook enters a classroom without affecting another student",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 11643,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:37:07.356Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTMyNzJdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaXgxMC1oYXJuZXNzLXJldGVzdC0yMDI2MTAxNlxcc291cmNlLXZlcmlmaWVkXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU0MTc3MDkwLTc5MDRcXGJyb3dzZXJcXGludGVyYWN0aW9uLWJvdW5kYXJpZXMtSVgwLTZmNDA4LXQtYWZmZWN0aW5nLWFub3RoZXItc3R1ZGVudFxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjEzMjcyLCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "711a63dc09f8e4d2f1ae-2bc3c7fafe81214592fa",
+          "file": "interaction-boundaries.spec.ts",
+          "line": 50,
+          "column": 1
+        },
+        {
+          "title": "IX06 failed synthesis is not cached and changing students cannot reuse prior classroom media",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 15503,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:37:33.581Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTc1ODRdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaXgxMC1oYXJuZXNzLXJldGVzdC0yMDI2MTAxNlxcc291cmNlLXZlcmlmaWVkXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU0MTc3MDkwLTc5MDRcXGJyb3dzZXJcXGludGVyYWN0aW9uLWJvdW5kYXJpZXMtSVgwLTQ2ZDM0LXJldXNlLXByaW9yLWNsYXNzcm9vbS1tZWRpYVxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjE3NTg0LCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "711a63dc09f8e4d2f1ae-039b1087425efc360597",
+          "file": "interaction-boundaries.spec.ts",
+          "line": 64,
+          "column": 1
+        },
+        {
+          "title": "IX11 recording status follows actual start then conversion and late callbacks cannot revive it after exit",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 12080,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:37:49.121Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbNTg0NF0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1peDEwLWhhcm5lc3MtcmV0ZXN0LTIwMjYxMDE2XFxzb3VyY2UtdmVyaWZpZWRcXHdlYlxcLnRlc3QtYXJ0aWZhY3RzXFxjbG9zdXJlLTE3OTIxNTQxNzcwOTAtNzkwNFxcYnJvd3NlclxcaW50ZXJhY3Rpb24tYm91bmRhcmllcy1JWDEtNjk5OGYtY2Fubm90LXJldml2ZS1pdC1hZnRlci1leGl0XFxyZWNvdmVyeS5kYiIsIm1vZGVsIjp7InBlbmRpbmciOjAsImNhbmNlbGVkIjowLCJmZWVkYmFja0NhbGxzIjowLCJqdWRnZUNhbGxzIjowfSwiZXhpdHMiOlt7InBpZCI6NTg0NCwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "711a63dc09f8e4d2f1ae-44515ee1e434d7d0df96",
+          "file": "interaction-boundaries.spec.ts",
+          "line": 75,
+          "column": 1
+        },
+        {
+          "title": "IX01 changing placement book abandons the old pending save without locking the new book",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5286,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:38:01.233Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMjEyMTJdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaXgxMC1oYXJuZXNzLXJldGVzdC0yMDI2MTAxNlxcc291cmNlLXZlcmlmaWVkXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU0MTc3MDkwLTc5MDRcXGJyb3dzZXJcXGludGVyYWN0aW9uLWJvdW5kYXJpZXMtSVgwLTIxZmFjLWl0aG91dC1sb2NraW5nLXRoZS1uZXctYm9va1xccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjIxMjEyLCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "711a63dc09f8e4d2f1ae-c608cb6d2f86f0114361",
+          "file": "interaction-boundaries.spec.ts",
+          "line": 89,
+          "column": 1
+        },
+        {
+          "title": "P02 cold login exposes an enabled form and records its measured delivery cost",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6476,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:38:06.566Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "cold-login-measurement",
+                      "contentType": "application/json",
+                      "body": "eyJzY29wZSI6ImZpdmUgaXNvbGF0ZWQgQ2hyb21pdW0gY29udGV4dHM7IGV4aXN0aW5nIHByZXZpZXcvYmFja2VuZDsgbm8gc2VydmljZSBvciBtb2RlbCBjaGFuZ2VzIiwic2FtcGxlcyI6W3siaW50ZXJhY3RpdmVfbXMiOjY4NC4yOTk5OTk5ODIxMTg2LCJzY3JpcHRzIjpbeyJwYXRoIjoiL2Fzc2V0cy9pbmRleC1DT25uaVpWYy5qcyIsInRyYW5zZmVyX2J5dGVzIjozNzMyMzQsImRlY29kZWRfYnl0ZXMiOjExNjk5MzcsImR1cmF0aW9uX21zIjo4My44MDAwMDAwMTE5MjA5M31dfSx7ImludGVyYWN0aXZlX21zIjo2NTIuMDk5OTk5OTk0MDM5NSwic2NyaXB0cyI6W3sicGF0aCI6Ii9hc3NldHMvaW5kZXgtQ09ubmlaVmMuanMiLCJ0cmFuc2Zlcl9ieXRlcyI6MzczMjM0LCJkZWNvZGVkX2J5dGVzIjoxMTY5OTM3LCJkdXJhdGlvbl9tcyI6OTAuNzAwMDAwMDE3ODgxNH1dfSx7ImludGVyYWN0aXZlX21zIjo2NTYsInNjcmlwdHMiOlt7InBhdGgiOiIvYXNzZXRzL2luZGV4LUNPbm5pWlZjLmpzIiwidHJhbnNmZXJfYnl0ZXMiOjM3MzIzNCwiZGVjb2RlZF9ieXRlcyI6MTE2OTkzNywiZHVyYXRpb25fbXMiOjc5LjY5OTk5OTk4ODA3OTA3fV19LHsiaW50ZXJhY3RpdmVfbXMiOjYzMS40MDAwMDAwMDU5NjA1LCJzY3JpcHRzIjpbeyJwYXRoIjoiL2Fzc2V0cy9pbmRleC1DT25uaVpWYy5qcyIsInRyYW5zZmVyX2J5dGVzIjozNzMyMzQsImRlY29kZWRfYnl0ZXMiOjExNjk5MzcsImR1cmF0aW9uX21zIjo4Ni41fV19LHsiaW50ZXJhY3RpdmVfbXMiOjYwOCwic2NyaXB0cyI6W3sicGF0aCI6Ii9hc3NldHMvaW5kZXgtQ09ubmlaVmMuanMiLCJ0cmFuc2Zlcl9ieXRlcyI6MzczMjM0LCJkZWNvZGVkX2J5dGVzIjoxMTY5OTM3LCJkdXJhdGlvbl9tcyI6ODMuNX1dfV0sInA1MF9tcyI6NjUyLjA5OTk5OTk5NDAzOTUsInNhbXBsZV9wOTVfbXMiOjY4NC4yOTk5OTk5ODIxMTg2fQ=="
+                    },
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbODg2MF0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1peDEwLWhhcm5lc3MtcmV0ZXN0LTIwMjYxMDE2XFxzb3VyY2UtdmVyaWZpZWRcXHdlYlxcLnRlc3QtYXJ0aWZhY3RzXFxjbG9zdXJlLTE3OTIxNTQxNzcwOTAtNzkwNFxcYnJvd3NlclxcaW50ZXJhY3Rpb24tYm91bmRhcmllcy1QMDItODEwZDktLWl0cy1tZWFzdXJlZC1kZWxpdmVyeS1jb3N0XFxyZWNvdmVyeS5kYiIsIm1vZGVsIjp7InBlbmRpbmciOjAsImNhbmNlbGVkIjowLCJmZWVkYmFja0NhbGxzIjowLCJqdWRnZUNhbGxzIjowfSwiZXhpdHMiOlt7InBpZCI6ODg2MCwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "711a63dc09f8e4d2f1ae-4ad6cdbe1f5e988ec080",
+          "file": "interaction-boundaries.spec.ts",
+          "line": 100,
+          "column": 1
+        }
+      ],
+      "suites": [
+        {
+          "title": "IX07 slow semantic judge",
+          "file": "interaction-boundaries.spec.ts",
+          "line": 42,
+          "column": 6,
+          "specs": [
+            {
+              "title": "heartbeat remains responsive while judgment is pending and leaving cancels the owned model request",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13691,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-16T12:36:53.631Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "model-platform-transport",
+                          "contentType": "application/json",
+                          "body": "W3siZXZlbnQiOiJjb25uZWN0Iiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjoxMDMzfSx7ImV2ZW50IjoiZmluaXNoIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjoxMDUzfSx7ImV2ZW50IjoiZW5kIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjoxMDU0fSx7ImV2ZW50IjoiZW5kIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjoxMDU3fSx7ImV2ZW50IjoiZmluaXNoIiwic29ja2V0IjoxLCJlbGFwc2VkX21zIjoxMDU3fSx7ImV2ZW50IjoiY2xvc2UiLCJzb2NrZXQiOjEsImVsYXBzZWRfbXMiOjcwNjl9LHsiZXZlbnQiOiJjb25uZWN0Iiwic29ja2V0IjoyLCJlbGFwc2VkX21zIjoxMzA3OH0seyJldmVudCI6ImVuZCIsInNvY2tldCI6MiwiZWxhcHNlZF9tcyI6MTMwNzl9LHsiZXZlbnQiOiJjbG9zZSIsInNvY2tldCI6MiwiZWxhcHNlZF9tcyI6MTM0MjZ9XQ=="
+                        },
+                        {
+                          "name": "owned-process-evidence",
+                          "contentType": "application/json",
+                          "body": "eyJwaWRzIjpbMTE1OTZdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaXgxMC1oYXJuZXNzLXJldGVzdC0yMDI2MTAxNlxcc291cmNlLXZlcmlmaWVkXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU0MTc3MDkwLTc5MDRcXGJyb3dzZXJcXGludGVyYWN0aW9uLWJvdW5kYXJpZXMtSVgwLTYwZWY3LWVscy10aGUtb3duZWQtbW9kZWwtcmVxdWVzdFxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjoxLCJjYW5jZWxlZCI6MSwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjExNTk2LCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "711a63dc09f8e4d2f1ae-6752b7bb7fafc7a47d55",
+              "file": "interaction-boundaries.spec.ts",
+              "line": 42,
+              "column": 75
+            }
+          ]
+        },
+        {
+          "title": "IX10 finished-room persistence",
+          "file": "interaction-boundaries.spec.ts",
+          "line": 57,
+          "column": 6,
+          "specs": [
+            {
+              "title": "finished timeout sweep performs zero writes and completed report remains readable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 14514,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-16T12:37:19.027Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "model-platform-transport",
+                          "contentType": "application/json",
+                          "body": "W10="
+                        },
+                        {
+                          "name": "owned-process-evidence",
+                          "contentType": "application/json",
+                          "body": "eyJwaWRzIjpbMjk5Ml0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1peDEwLWhhcm5lc3MtcmV0ZXN0LTIwMjYxMDE2XFxzb3VyY2UtdmVyaWZpZWRcXC50ZXN0LWFydGlmYWN0c1xcb3ZlcmR1ZS0xNzkyMTU0MjM5MDU0LTc5MDQuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjI5OTIsImV4aXRDb2RlIjowLCJzaWduYWxDb2RlIjpudWxsfV19"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "711a63dc09f8e4d2f1ae-9dc6c68bb1a71153a6a4",
+              "file": "interaction-boundaries.spec.ts",
+              "line": 57,
+              "column": 85
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "interaction-import.spec.ts",
+      "file": "interaction-import.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "IX14 real 1000-word import selection and repeated selection preserve learned cards with another classroom active",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 53278,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:38:13.123Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "single-run-bulk-ui-timing",
+                      "contentType": "application/json",
+                      "body": "eyJuIjoxLCJpbXBvcnRfbXMiOjQ1NywiZW5hYmxlX21zIjo1MzUsInNjb3BlIjoicmVhbCBhZG1pbmlzdHJhdG9yIGFuZCBzdHVkZW50IFVJOyBub3Qgc3RhdGlzdGljYWwgcDk1In0="
+                    },
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTk3Nl0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1peDEwLWhhcm5lc3MtcmV0ZXN0LTIwMjYxMDE2XFxzb3VyY2UtdmVyaWZpZWRcXHdlYlxcLnRlc3QtYXJ0aWZhY3RzXFxjbG9zdXJlLTE3OTIxNTQxNzcwOTAtNzkwNFxcYnJvd3NlclxcaW50ZXJhY3Rpb24taW1wb3J0LUlYMTQtcmUtODI1NGYtdGgtYW5vdGhlci1jbGFzc3Jvb20tYWN0aXZlXFxyZWNvdmVyeS5kYiIsIm1vZGVsIjp7InBlbmRpbmciOjAsImNhbmNlbGVkIjowLCJmZWVkYmFja0NhbGxzIjowLCJqdWRnZUNhbGxzIjowfSwiZXhpdHMiOlt7InBpZCI6MTk3NiwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "da9b511028e96919cce4-2cbd8b49f5363648d18f",
+          "file": "interaction-import.spec.ts",
+          "line": 36,
+          "column": 1
+        },
+        {
+          "title": "IX14 import storage failure rolls back earlier chunks and user can retry manually",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 18517,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:39:06.436Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMjI1MTZdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaXgxMC1oYXJuZXNzLXJldGVzdC0yMDI2MTAxNlxcc291cmNlLXZlcmlmaWVkXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU0MTc3MDkwLTc5MDRcXGJyb3dzZXJcXGludGVyYWN0aW9uLWltcG9ydC1JWDE0LWltLWUzZGFhLWFuZC11c2VyLWNhbi1yZXRyeS1tYW51YWxseVxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjIyNTE2LCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "da9b511028e96919cce4-400300a77ff0a73ae68f",
+          "file": "interaction-import.spec.ts",
+          "line": 52,
+          "column": 43
+        },
+        {
+          "title": "IX14 enable storage failure rolls back earlier chunks and user can retry manually",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 17456,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:39:24.988Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTY5NzZdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaXgxMC1oYXJuZXNzLXJldGVzdC0yMDI2MTAxNlxcc291cmNlLXZlcmlmaWVkXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU0MTc3MDkwLTc5MDRcXGJyb3dzZXJcXGludGVyYWN0aW9uLWltcG9ydC1JWDE0LWVuLTFiMmI2LWFuZC11c2VyLWNhbi1yZXRyeS1tYW51YWxseVxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjE2OTc2LCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "da9b511028e96919cce4-8ac25d07424c3b763589",
+          "file": "interaction-import.spec.ts",
+          "line": 52,
+          "column": 43
+        },
+        {
+          "title": "IX15 placement draft storage failure rolls back cards and keeps the user selection for manual recovery",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8821,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:39:42.480Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTA3MjhdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaXgxMC1oYXJuZXNzLXJldGVzdC0yMDI2MTAxNlxcc291cmNlLXZlcmlmaWVkXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU0MTc3MDkwLTc5MDRcXGJyb3dzZXJcXGludGVyYWN0aW9uLWltcG9ydC1JWDE1LXBsLTFkOWM5LWxlY3Rpb24tZm9yLW1hbnVhbC1yZWNvdmVyeVxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjEwNzI4LCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "da9b511028e96919cce4-13da1c0f8a4bd1ecd8ea",
+          "file": "interaction-import.spec.ts",
+          "line": 69,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "interaction-regression.spec.ts",
+      "file": "interaction-regression.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "IX06 repeated Chinese reuses successful media while playing and captioning every segment",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 11771,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:39:51.373Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTU3ODRdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaXgxMC1oYXJuZXNzLXJldGVzdC0yMDI2MTAxNlxcc291cmNlLXZlcmlmaWVkXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU0MTc3MDkwLTc5MDRcXGJyb3dzZXJcXGludGVyYWN0aW9uLXJlZ3Jlc3Npb24tSVgwLWUyYTVhLW5kLWNhcHRpb25pbmctZXZlcnktc2VnbWVudFxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjE1Nzg0LCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31fcef471d8e010abb99-8eac899901978debe6ec",
+          "file": "interaction-regression.spec.ts",
+          "line": 6,
+          "column": 1
+        },
+        {
+          "title": "IX01 placement save success stays on page until confirmed",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5158,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:40:03.178Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTUyMjRdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaXgxMC1oYXJuZXNzLXJldGVzdC0yMDI2MTAxNlxcc291cmNlLXZlcmlmaWVkXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU0MTc3MDkwLTc5MDRcXGJyb3dzZXJcXGludGVyYWN0aW9uLXJlZ3Jlc3Npb24tSVgwLTY2YTNiLWF5cy1vbi1wYWdlLXVudGlsLWNvbmZpcm1lZFxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjE1MjI0LCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31fcef471d8e010abb99-729ceacf31d41362684f",
+          "file": "interaction-regression.spec.ts",
+          "line": 33,
+          "column": 47
+        },
+        {
+          "title": "IX01 placement save failure stays on page until confirmed",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3621,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:40:08.368Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbOTM0MF0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1peDEwLWhhcm5lc3MtcmV0ZXN0LTIwMjYxMDE2XFxzb3VyY2UtdmVyaWZpZWRcXHdlYlxcLnRlc3QtYXJ0aWZhY3RzXFxjbG9zdXJlLTE3OTIxNTQxNzcwOTAtNzkwNFxcYnJvd3NlclxcaW50ZXJhY3Rpb24tcmVncmVzc2lvbi1JWDAtODFlZWItYXlzLW9uLXBhZ2UtdW50aWwtY29uZmlybWVkXFxyZWNvdmVyeS5kYiIsIm1vZGVsIjp7InBlbmRpbmciOjAsImNhbmNlbGVkIjowLCJmZWVkYmFja0NhbGxzIjowLCJqdWRnZUNhbGxzIjowfSwiZXhpdHMiOlt7InBpZCI6OTM0MCwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31fcef471d8e010abb99-7b144f837d0ba0182713",
+          "file": "interaction-regression.spec.ts",
+          "line": 33,
+          "column": 47
+        },
+        {
+          "title": "IX03 dashboard does not call a pending or failed course list empty",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4085,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:40:12.020Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbNTgyNF0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1peDEwLWhhcm5lc3MtcmV0ZXN0LTIwMjYxMDE2XFxzb3VyY2UtdmVyaWZpZWRcXHdlYlxcLnRlc3QtYXJ0aWZhY3RzXFxjbG9zdXJlLTE3OTIxNTQxNzcwOTAtNzkwNFxcYnJvd3NlclxcaW50ZXJhY3Rpb24tcmVncmVzc2lvbi1JWDAtYmRiOWItb3ItZmFpbGVkLWNvdXJzZS1saXN0LWVtcHR5XFxyZWNvdmVyeS5kYiIsIm1vZGVsIjp7InBlbmRpbmciOjAsImNhbmNlbGVkIjowLCJmZWVkYmFja0NhbGxzIjowLCJqdWRnZUNhbGxzIjowfSwiZXhpdHMiOlt7InBpZCI6NTgyNCwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31fcef471d8e010abb99-a91909a6b4a9a46554ac",
+          "file": "interaction-regression.spec.ts",
+          "line": 54,
+          "column": 1
+        },
+        {
+          "title": "IX04 pending feedback freezes the original draft and does not clear a later edit",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6027,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:40:16.139Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbNDQxMl0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1peDEwLWhhcm5lc3MtcmV0ZXN0LTIwMjYxMDE2XFxzb3VyY2UtdmVyaWZpZWRcXHdlYlxcLnRlc3QtYXJ0aWZhY3RzXFxjbG9zdXJlLTE3OTIxNTQxNzcwOTAtNzkwNFxcYnJvd3NlclxcaW50ZXJhY3Rpb24tcmVncmVzc2lvbi1JWDAtMjgyZjItZG9lcy1ub3QtY2xlYXItYS1sYXRlci1lZGl0XFxyZWNvdmVyeS5kYiIsIm1vZGVsIjp7InBlbmRpbmciOjAsImNhbmNlbGVkIjowLCJmZWVkYmFja0NhbGxzIjowLCJqdWRnZUNhbGxzIjowfSwiZXhpdHMiOlt7InBpZCI6NDQxMiwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31fcef471d8e010abb99-50b1db45707d0e3a1a52",
+          "file": "interaction-regression.spec.ts",
+          "line": 67,
+          "column": 1
+        },
+        {
+          "title": "IX05 a stalled response body expires visibly and retry reads real statistics",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3580,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:40:22.198Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbNjU1Nl0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1peDEwLWhhcm5lc3MtcmV0ZXN0LTIwMjYxMDE2XFxzb3VyY2UtdmVyaWZpZWRcXHdlYlxcLnRlc3QtYXJ0aWZhY3RzXFxjbG9zdXJlLTE3OTIxNTQxNzcwOTAtNzkwNFxcYnJvd3NlclxcaW50ZXJhY3Rpb24tcmVncmVzc2lvbi1JWDAtOTZjYTgtcmV0cnktcmVhZHMtcmVhbC1zdGF0aXN0aWNzXFxyZWNvdmVyeS5kYiIsIm1vZGVsIjp7InBlbmRpbmciOjAsImNhbmNlbGVkIjowLCJmZWVkYmFja0NhbGxzIjowLCJqdWRnZUNhbGxzIjowfSwiZXhpdHMiOlt7InBpZCI6NjU1NiwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31fcef471d8e010abb99-829b560c5397dd8917d1",
+          "file": "interaction-regression.spec.ts",
+          "line": 77,
+          "column": 1
+        },
+        {
+          "title": "IX11 answer immediately becomes pending and blocks repeated click and Enter before server frames",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13354,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:40:25.810Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMjUzMl0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1peDEwLWhhcm5lc3MtcmV0ZXN0LTIwMjYxMDE2XFxzb3VyY2UtdmVyaWZpZWRcXHdlYlxcLnRlc3QtYXJ0aWZhY3RzXFxjbG9zdXJlLTE3OTIxNTQxNzcwOTAtNzkwNFxcYnJvd3NlclxcaW50ZXJhY3Rpb24tcmVncmVzc2lvbi1JWDEtZTdhZDAtLUVudGVyLWJlZm9yZS1zZXJ2ZXItZnJhbWVzXFxyZWNvdmVyeS5kYiIsIm1vZGVsIjp7InBlbmRpbmciOjAsImNhbmNlbGVkIjowLCJmZWVkYmFja0NhbGxzIjowLCJqdWRnZUNhbGxzIjowfSwiZXhpdHMiOlt7InBpZCI6MjUzMiwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31fcef471d8e010abb99-97b5eb813925a283d53a",
+          "file": "interaction-regression.spec.ts",
+          "line": 88,
+          "column": 1
+        },
+        {
+          "title": "IX09 missing heartbeat ACK makes the classroom offline then reconnects without replaying an answer",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 11565,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:40:39.200Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMjIyNjhdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaXgxMC1oYXJuZXNzLXJldGVzdC0yMDI2MTAxNlxcc291cmNlLXZlcmlmaWVkXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU0MTc3MDkwLTc5MDRcXGJyb3dzZXJcXGludGVyYWN0aW9uLXJlZ3Jlc3Npb24tSVgwLTJmYjczLXdpdGhvdXQtcmVwbGF5aW5nLWFuLWFuc3dlclxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjIyMjY4LCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31fcef471d8e010abb99-c935d4e954219dac2066",
+          "file": "interaction-regression.spec.ts",
+          "line": 103,
+          "column": 1
+        },
+        {
+          "title": "IX05 media body deadline visibly fails without pretending playback or ACK success",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8999,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:40:50.798Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbODIwNF0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1peDEwLWhhcm5lc3MtcmV0ZXN0LTIwMjYxMDE2XFxzb3VyY2UtdmVyaWZpZWRcXHdlYlxcLnRlc3QtYXJ0aWZhY3RzXFxjbG9zdXJlLTE3OTIxNTQxNzcwOTAtNzkwNFxcYnJvd3NlclxcaW50ZXJhY3Rpb24tcmVncmVzc2lvbi1JWDAtNDM3NTItaW5nLXBsYXliYWNrLW9yLUFDSy1zdWNjZXNzXFxyZWNvdmVyeS5kYiIsIm1vZGVsIjp7InBlbmRpbmciOjAsImNhbmNlbGVkIjowLCJmZWVkYmFja0NhbGxzIjowLCJqdWRnZUNhbGxzIjowfSwiZXhpdHMiOlt7InBpZCI6ODIwNCwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31fcef471d8e010abb99-b8d5f39fe6cb383aaa46",
+          "file": "interaction-regression.spec.ts",
+          "line": 113,
+          "column": 1
+        },
+        {
+          "title": "IX12 books failure retries and concurrent choices stay locked through confirmation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5385,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:40:59.825Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTY1MzJdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaXgxMC1oYXJuZXNzLXJldGVzdC0yMDI2MTAxNlxcc291cmNlLXZlcmlmaWVkXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU0MTc3MDkwLTc5MDRcXGJyb3dzZXJcXGludGVyYWN0aW9uLXJlZ3Jlc3Npb24tSVgxLWY1MDE2LWxvY2tlZC10aHJvdWdoLWNvbmZpcm1hdGlvblxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjE2NTMyLCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31fcef471d8e010abb99-d1a77c9a94a6a81a1187",
+          "file": "interaction-regression.spec.ts",
+          "line": 134,
+          "column": 1
+        },
+        {
+          "title": "IX12 administrator pending action freezes inputs and shows only that operation busy",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3732,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:41:05.243Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTYzNjhdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaXgxMC1oYXJuZXNzLXJldGVzdC0yMDI2MTAxNlxcc291cmNlLXZlcmlmaWVkXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU0MTc3MDkwLTc5MDRcXGJyb3dzZXJcXGludGVyYWN0aW9uLXJlZ3Jlc3Npb24tSVgxLWJmZjIzLXdzLW9ubHktdGhhdC1vcGVyYXRpb24tYnVzeVxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjE2MzY4LCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31fcef471d8e010abb99-38be6f929cf972b29285",
+          "file": "interaction-regression.spec.ts",
+          "line": 143,
+          "column": 1
+        },
+        {
+          "title": "IX11 placement keyboard selection persists and a failed notification can be retried",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7012,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:41:09.008Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMzEwOF0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1peDEwLWhhcm5lc3MtcmV0ZXN0LTIwMjYxMDE2XFxzb3VyY2UtdmVyaWZpZWRcXHdlYlxcLnRlc3QtYXJ0aWZhY3RzXFxjbG9zdXJlLTE3OTIxNTQxNzcwOTAtNzkwNFxcYnJvd3NlclxcaW50ZXJhY3Rpb24tcmVncmVzc2lvbi1JWDEtZGMzNDYtbm90aWZpY2F0aW9uLWNhbi1iZS1yZXRyaWVkXFxyZWNvdmVyeS5kYiIsIm1vZGVsIjp7InBlbmRpbmciOjAsImNhbmNlbGVkIjowLCJmZWVkYmFja0NhbGxzIjowLCJqdWRnZUNhbGxzIjowfSwiZXhpdHMiOlt7InBpZCI6MzEwOCwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31fcef471d8e010abb99-dbe1eeaa866a8417c6c5",
+          "file": "interaction-regression.spec.ts",
+          "line": 153,
+          "column": 1
+        },
+        {
+          "title": "IX13 oversized login is rejected visibly and legitimate credentials still work",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3468,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:41:16.047Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMjA4NTJdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaXgxMC1oYXJuZXNzLXJldGVzdC0yMDI2MTAxNlxcc291cmNlLXZlcmlmaWVkXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU0MTc3MDkwLTc5MDRcXGJyb3dzZXJcXGludGVyYWN0aW9uLXJlZ3Jlc3Npb24tSVgxLTdkYmFhLW1hdGUtY3JlZGVudGlhbHMtc3RpbGwtd29ya1xccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjIwODUyLCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31fcef471d8e010abb99-edc82c6ab0c47e36f749",
+          "file": "interaction-regression.spec.ts",
+          "line": 161,
+          "column": 1
+        },
+        {
+          "title": "IX12 deleting a book after a lost response queries the result without repeating the mutation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5223,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:41:19.542Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbNTg0MF0sImRiIjoiRDpcXGVuLXdvcmRzXFxyZXZpZXdcXGxhZGRlci1peDEwLWhhcm5lc3MtcmV0ZXN0LTIwMjYxMDE2XFxzb3VyY2UtdmVyaWZpZWRcXHdlYlxcLnRlc3QtYXJ0aWZhY3RzXFxjbG9zdXJlLTE3OTIxNTQxNzcwOTAtNzkwNFxcYnJvd3NlclxcaW50ZXJhY3Rpb24tcmVncmVzc2lvbi1JWDEtYWRiMDYtaG91dC1yZXBlYXRpbmctdGhlLW11dGF0aW9uXFxyZWNvdmVyeS5kYiIsIm1vZGVsIjp7InBlbmRpbmciOjAsImNhbmNlbGVkIjowLCJmZWVkYmFja0NhbGxzIjowLCJqdWRnZUNhbGxzIjowfSwiZXhpdHMiOlt7InBpZCI6NTg0MCwiZXhpdENvZGUiOm51bGwsInNpZ25hbENvZGUiOiJTSUdURVJNIn1dfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31fcef471d8e010abb99-512e2180db5662588c8d",
+          "file": "interaction-regression.spec.ts",
+          "line": 166,
+          "column": 1
+        },
+        {
+          "title": "IX12 leaving a delete confirmation destroys its authority without sending DELETE",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5075,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:41:24.789Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTIwMzZdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaXgxMC1oYXJuZXNzLXJldGVzdC0yMDI2MTAxNlxcc291cmNlLXZlcmlmaWVkXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU0MTc3MDkwLTc5MDRcXGJyb3dzZXJcXGludGVyYWN0aW9uLXJlZ3Jlc3Npb24tSVgxLWU4OGQ1LXJpdHktd2l0aG91dC1zZW5kaW5nLURFTEVURVxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjEyMDM2LCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31fcef471d8e010abb99-0f697ac2d60049830c0f",
+          "file": "interaction-regression.spec.ts",
+          "line": 173,
+          "column": 1
+        },
+        {
+          "title": "IX12 administrator late completion after leaving cannot refresh or toast the next page",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4880,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-16T12:41:29.898Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "model-platform-transport",
+                      "contentType": "application/json",
+                      "body": "W10="
+                    },
+                    {
+                      "name": "owned-process-evidence",
+                      "contentType": "application/json",
+                      "body": "eyJwaWRzIjpbMTc2OTJdLCJkYiI6IkQ6XFxlbi13b3Jkc1xccmV2aWV3XFxsYWRkZXItaXgxMC1oYXJuZXNzLXJldGVzdC0yMDI2MTAxNlxcc291cmNlLXZlcmlmaWVkXFx3ZWJcXC50ZXN0LWFydGlmYWN0c1xcY2xvc3VyZS0xNzkyMTU0MTc3MDkwLTc5MDRcXGJyb3dzZXJcXGludGVyYWN0aW9uLXJlZ3Jlc3Npb24tSVgxLWMxMjRlLXJlc2gtb3ItdG9hc3QtdGhlLW5leHQtcGFnZVxccmVjb3ZlcnkuZGIiLCJtb2RlbCI6eyJwZW5kaW5nIjowLCJjYW5jZWxlZCI6MCwiZmVlZGJhY2tDYWxscyI6MCwianVkZ2VDYWxscyI6MH0sImV4aXRzIjpbeyJwaWQiOjE3NjkyLCJleGl0Q29kZSI6bnVsbCwic2lnbmFsQ29kZSI6IlNJR1RFUk0ifV19"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31fcef471d8e010abb99-50e02c972e5dfe47991b",
+          "file": "interaction-regression.spec.ts",
+          "line": 179,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-16T12:36:01.062Z",
+    "duration": 338490.694,
+    "expected": 30,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "review": "pilot-start-kernel-sdd-test-review-7",
+  "date": "2026-10-16",
+  "document": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "tests_run": false,
+  "result": "BLOCK",
+  "implementation_approved": false,
+  "prior_findings": [
+    {
+      "id": "crash-state-matrix",
+      "status": "closed",
+      "reason": "The SDD enumerates restart outcomes across intent, tool, bundle, writer, commit, terminal-sync, malformed sidecar, and receipt recovery boundaries."
+    },
+    {
+      "id": "planner-bank-failure-matrix",
+      "status": "closed",
+      "reason": "Agent API construction failure, missing OP-1 fallback, Registry error/budget/panic, sidecar sync failure, and restart recovery are included."
+    },
+    {
+      "id": "cross-lesson-verifier-isolation",
+      "status": "closed",
+      "reason": "Global integrity plus per-lesson checks, mixed created/active state, and cross-linked audit/outbox corruption tests are specified."
+    },
+    {
+      "id": "playwright-harness-closure",
+      "status": "closed",
+      "reason": "The test-only page and handler, post-COMMIT response drop, supervised restart with preserved sidecar, pending-unknown UI, T-01/fallback, and production-route absence checks are specified."
+    }
+  ],
+  "blockers": [
+    {
+      "id": "PILOT-START-TEST-31",
+      "severity": "P1",
+      "where": "docs/41 sidecar command_hmac and event transition protocol",
+      "problem": "attempt_started must be synced before Planner/Bank runs, but command_hmac is defined over the canonical fingerprint containing the planner-rendered say and frozen show-word fields. The event schema requires command_hmac and does not define a null/late-binding protocol compatible with append-only records.",
+      "required_action": "Define two-stage intent/semantic binding or freeze fingerprint inputs before intent; specify recovery comparison and test crashes and changed fingerprints at each binding stage."
+    },
+    {
+      "id": "PILOT-START-TEST-32",
+      "severity": "P1",
+      "where": "docs/41 sidecar JSONL event_seq/prev_event_hmac and per-lesson single-flight",
+      "problem": "A single chained sidecar is shared across lessons, but only per-lesson single-flight is specified. Concurrent different lessons can race global sequence allocation, previous-HMAC selection, append, and sync.",
+      "required_action": "Specify sidecar-wide append serialization and global chain/sequence ownership; test concurrent two-lesson appends and restart verification."
+    },
+    {
+      "id": "PILOT-START-TEST-33",
+      "severity": "P2",
+      "where": "docs/41 sidecar event hashing and result_class",
+      "problem": "Canonical sidecar event bytes (field order, escaping, nulls) and allowed result_class enum are not frozen, so independent verifiers cannot implement the HMAC check or exact failure audit assertions deterministically.",
+      "required_action": "Specify exact sidecar canonical encoding and result-class values, with hash golden vectors covering terminal and failure events."
+    }
+  ],
+  "disposition": "Resolve P1 findings 31-32 before implementation; close P2 finding 33 for deterministic sidecar verification."
+}

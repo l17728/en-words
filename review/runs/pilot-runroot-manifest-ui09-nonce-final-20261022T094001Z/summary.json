@@ -1,0 +1,32 @@
+{
+  "classification": "PYTHON_MANIFEST_REGRESSION_ONLY_NOT_PILOTQUOTA_GO_OR_PLAYWRIGHT",
+  "command": [
+    "C:\\Python312\\python.exe",
+    "-m",
+    "unittest",
+    "-v",
+    "review.test_pilot_runroot_manifest"
+  ],
+  "cwd": "D:\\en-words",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "exit_code": 0,
+  "elapsed_seconds": 0.516,
+  "stdout_bytes": 0,
+  "stderr_bytes": 2291,
+  "tracked_hashes_stable": true,
+  "source_hash_pins_before": {
+    "total": 35,
+    "passed": 35,
+    "failures": []
+  },
+  "source_hash_pins_after": {
+    "total": 35,
+    "passed": 35,
+    "failures": []
+  },
+  "product_case_count": 117,
+  "product_ids_unique": true,
+  "api26_test_passed": true,
+  "ui09_test_passed": true,
+  "candidate_execution_invoked": false
+}

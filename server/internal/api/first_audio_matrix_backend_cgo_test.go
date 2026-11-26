@@ -1467,7 +1467,7 @@ func firstAudioLoginToken(t *testing.T, origin, username, password string) strin
 
 func firstAudioEnterLesson(t *testing.T, origin, token string, lessonID int64) string {
 	t.Helper()
-	request, err := http.NewRequest(http.MethodPost, origin+"/api/v1/classroom/lessons/"+strconv.FormatInt(lessonID, 10)+"/enter", strings.NewReader(`{}`))
+	request, err := http.NewRequest(http.MethodPost, origin+"/api/v1/classroom/lessons/"+strconv.FormatInt(lessonID, 10)+"/enter?e2e=1", strings.NewReader(`{}`))
 	if err != nil {
 		t.Fatal(err)
 	}

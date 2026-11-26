@@ -38,3 +38,15 @@ server/.test-artifacts/
 /review/regression-*.log
 server/data/cache/tts/
 **/data/cache/tts/
+
+/review/**/cache/
+/review/**/node_modules/
+/review/**/go-build/
+/review/**/source/
+/review/**/source-verified/
+/review/**/bin/
+/review/**/tmp/
+/review/**/gocache/
+/review/**/go-cached/
+/review/**/gomodcache/
+/review/**/gopath/

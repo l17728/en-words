@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-19",
+  "source": "docs/43-Pilot授权幂等与父进程身份绑定SDD.md",
+  "source_sha256": "0c82201559a2b0c54b0f189771856a7175ee20888f3f9eec3a48036adf3c468b",
+  "status": "BLOCK",
+  "blocking_count": 1,
+  "scope": "Focused architecture review of CreatePinnedCaseRoot, ExecutePinnedCleanup, receipt/terminal CAS, cleanup anchor and principal binding against ledger/saga recovery. No implementation or native-platform certification.",
+  "findings": [
+    {
+      "id": "AUTH-ARCH-01",
+      "severity": "P2",
+      "location": "Section 2.4 line 72, ExecutePinnedCleanup execution sequence",
+      "detail": "The sequence still permits 'unlink/确认初始即absent' followed by a completed cleanup-fs receipt and terminal CAS. Sections 2.2 line 55 and 2.3 line 64 explicitly forbid first-observed absence as successful no-op: the anchor must identify a present object and initial/final both absent is illegal. This leaves two contradictory implementations of the same operation.",
+      "required": "Remove the initial-absence success branch. For a new execution, require current present identity equal to the immutable creation anchor before persisting initial witness and unlinking. Recovery may accept absence only by referencing the already-durable initial-present witness for this same operation/owner/anchor; it must not replace initial state with a fresh absence observation.",
+      "acceptance": "Keep the existing missing-before-initial-witness-indeterminate and recovery-after-durable-initial-present-and-unlink tests as distinct cases, asserting no completed receipt/CAS in the first case."
+    }
+  ],
+  "passed_in_reviewed_scope": [
+    "CreatePinnedCaseRoot accepts operation/owner identifiers rather than caller paths or selectors; Reaper resolves immutable intent, generates selector and records catalog/member identity before receipt acknowledgement.",
+    "Create's effect, durable receipt and terminal CAS are explicitly separate saga steps; HTTP success waits for both durable receipt and terminal acknowledgement. CommitOperation verifies immutable receipt fields without pretending external stores participate in the ledger transaction.",
+    "Cleanup anchor receipt, source identity and expected object identity are copied into immutable prepared intent from trusted creation records. Missing or cross-principal anchors reject before prepared insertion; administrator status does not implicitly authorize cross-principal cleanup.",
+    "Cleanup takes the resource lock before target observation, rechecks executing owner and anchor inside the ledger transaction, and persists the initial witness before unlink. Replacement identity is not adopted as a new expected identity.",
+    "Normal cleanup evidence and run compensation evidence are distinct. Reaper-owned immutable recovery journal precedes compensation deletion and prevents later absence from being relabelled as the original business effect.",
+    "Run finalization is a separate transaction after per-operation reconciliation, required receipts and containment/cleanup evidence; unresolved operations do not release the lease. Cross-epoch error mapping does not rewrite immutable operation outcomes or return old run-local results."
+  ],
+  "limitations": [
+    "Exact requested source hash was verified before review.",
+    "No tests, builds, services, remote calls or code/spec edits were performed.",
+    "This review does not approve the feasibility or completed implementation of the new SQLite VFS, native Windows/Linux containment, ACL/handle APIs, or full Gateway/Supervisor integration.",
+    "No real classroom, model or audio readiness claim."
+  ]
+}

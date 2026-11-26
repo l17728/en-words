@@ -3,6 +3,9 @@ import { recordingToWav } from './wav'
 import { playAudio } from './playback'
 import { speechCache } from './speech-cache'
 import { withMediaDeadline } from './media-request'
+import { localCaptureConstraints } from './capture-constraints'
+
+export { localCaptureConstraints } from './capture-constraints'
 
 export interface Capabilities { local: boolean; asr: boolean; tts_zh: boolean; tts_en: boolean }
 export const capabilities = () => api.get<Capabilities>('/providers')
@@ -52,7 +55,7 @@ function session(signal: AbortSignal) {
 // A finite capture, with cancellation releasing both recording and microphone tracks.
 export async function recordLocal(lessonId: string, language: string, signal: AbortSignal, onStage?: (stage: 'recording' | 'transcribing') => void, maxDurationMs = 4000): Promise<string> {
   const identity = session(signal)
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: localCaptureConstraints })
   let audioContext: AudioContext | undefined
   let vadTimer: ReturnType<typeof setInterval> | undefined
   try {
@@ -60,9 +63,17 @@ export async function recordLocal(lessonId: string, language: string, signal: Ab
     const recorder = new MediaRecorder(stream)
     const chunks: Blob[] = []
     const audio = await new Promise<Blob>((resolve, reject) => {
-      const cleanup = () => { clearTimeout(timer); if (vadTimer) clearInterval(vadTimer); signal.removeEventListener('abort', abort); void audioContext?.close().catch(() => undefined) }
+      let watchdogTimer: ReturnType<typeof setTimeout> | undefined
+      const cleanup = () => { clearTimeout(timer); if (watchdogTimer) clearTimeout(watchdogTimer); if (vadTimer) clearInterval(vadTimer); signal.removeEventListener('abort', abort); void audioContext?.close().catch(() => undefined) }
       const abort = () => { cleanup(); if (recorder.state !== 'inactive') recorder.stop(); reject(new DOMException('Aborted', 'AbortError')) }
       const timer = setTimeout(() => { if (recorder.state !== 'inactive') recorder.stop() }, maxDurationMs)
+      // MediaRecorder can occasionally miss its stop event when several
+      // AudioContexts are active. Never leave the classroom in RECORDING.
+      watchdogTimer = setTimeout(() => {
+        if (recorder.state === 'inactive') return
+        try { recorder.stop() } catch { abort(); return }
+        setTimeout(() => { if (recorder.state !== 'inactive') abort() }, 750)
+      }, maxDurationMs + 500)
       recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data) }
       recorder.onstart = () => {
         if (recorder.state !== 'recording') return

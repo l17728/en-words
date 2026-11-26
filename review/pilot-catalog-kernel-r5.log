@@ -1,0 +1,9 @@
+Command: go test -tags pilot_e2e ./internal/store -run PilotCatalog -count=1
+GOCACHE=D:\en-words\.test-tools\gocache
+GOMODCACHE=D:\en-words\.test-tools\gomodcache
+
+--- FAIL: TestPilotCatalogConcurrentJournalsKeepOneGlobalGenerationChain (0.03s)
+    pilot_start_catalog_test.go:399: pilot catalog transition rejected
+FAIL
+FAIL	enwords/internal/store	8.235s
+FAIL

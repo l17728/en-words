@@ -1,0 +1,17 @@
+test_api26_separates_permit_and_issued_failure_side_effects (review.test_pilot_runroot_manifest.ManifestTests.test_api26_separates_permit_and_issued_failure_side_effects) ... ok
+test_product_manifest_inventory_hashes_and_design_state (review.test_pilot_runroot_manifest.ManifestTests.test_product_manifest_inventory_hashes_and_design_state) ... ok
+test_schema_manifest_hashes_and_design_state (review.test_pilot_runroot_manifest.ManifestTests.test_schema_manifest_hashes_and_design_state) ... ok
+test_denial_and_recovery_cases_scan_sensitive_logs (review.test_pilot_runroot_manifest.QuotaJournalManifestTests.test_denial_and_recovery_cases_scan_sensitive_logs) ... ok
+test_every_case_has_explicit_sensitive_log_oracle (review.test_pilot_runroot_manifest.QuotaJournalManifestTests.test_every_case_has_explicit_sensitive_log_oracle) ... ok
+test_ipc_peer_identity_resource_caps_and_recovery_are_locked (review.test_pilot_runroot_manifest.QuotaJournalManifestTests.test_ipc_peer_identity_resource_caps_and_recovery_are_locked) ... ok
+test_ipc_v1_golden_frames_are_complete_and_exact (review.test_pilot_runroot_manifest.QuotaJournalManifestTests.test_ipc_v1_golden_frames_are_complete_and_exact) ... ok
+test_qj03_barrier_and_qj06_fake_clock_contract (review.test_pilot_runroot_manifest.QuotaJournalManifestTests.test_qj03_barrier_and_qj06_fake_clock_contract) ... ok
+test_qj10_fault_matrix_covers_all_record_kinds (review.test_pilot_runroot_manifest.QuotaJournalManifestTests.test_qj10_fault_matrix_covers_all_record_kinds) ... ok
+test_receipt_canonical_vector_and_anchor_contract (review.test_pilot_runroot_manifest.QuotaJournalManifestTests.test_receipt_canonical_vector_and_anchor_contract) ... ok
+test_sources_hash_and_case_inventory (review.test_pilot_runroot_manifest.QuotaJournalManifestTests.test_sources_hash_and_case_inventory) ... ok
+test_watchdog_and_boundaries_are_explicit (review.test_pilot_runroot_manifest.QuotaJournalManifestTests.test_watchdog_and_boundaries_are_explicit) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.022s
+
+OK

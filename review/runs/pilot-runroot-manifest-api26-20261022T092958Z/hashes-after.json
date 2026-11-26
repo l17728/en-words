@@ -1,0 +1,27 @@
+{
+  "tracked": {
+    "review/test_pilot_runroot_manifest.py": {
+      "size": 7303,
+      "sha256": "4362f5c1d81011e5c89fc6556a7317e315173e8c5381574808e3039cc0578197"
+    },
+    "review/pilot-intent-quota-journal-manifest-20261022.json": {
+      "size": 40186,
+      "sha256": "63df3f11706c6bfc48ea2ec0192eee96c1957f801557e0ede8a2d38588afd8c3"
+    },
+    "review/pilot-runroot-product-orchestration-manifest-20261021.json": {
+      "size": 82426,
+      "sha256": "2567d846dc3d2c10ffff459bd32bc41e4b71ee58c68dfadfd8d621e0e51a65f5"
+    },
+    "review/pilot-control-ledger-v3-schema-fault-manifest-20261021.json": {
+      "size": 35903,
+      "sha256": "bf6d42b1d6e8592746558f8eedc6e21073362f9a4d7470055f45de0f6189f47e"
+    },
+    "docs/50-pilot-runroot-product-orchestration-sdd.md": {
+      "size": 59766,
+      "sha256": "04755687397f5c1e7fd53e3b213d8d903475f36fc82817bccb16d31644ec429a"
+    }
+  },
+  "pin_count": 35,
+  "pin_match_count": 35,
+  "pin_mismatches": []
+}

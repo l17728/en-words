@@ -1,0 +1,2 @@
+--- FAIL: TestPilotVFSChildSHMContention (0.01s)
+    pilot_vfs_trace_candidate_test.go:1314: persist SHM child terminal trace: file exists

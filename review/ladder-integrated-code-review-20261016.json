@@ -1,0 +1,330 @@
+{
+  "review": "ladder-integrated-code-review",
+  "date": "2026-10-16",
+  "mode": "read_only_no_tests_build_or_code_changes",
+  "status": "code_review_pass_documentation_sync_required_before_final_acceptance",
+  "code_blockers": [],
+  "hash_verification": {
+    "files": 34,
+    "iso_exact_matches": 34,
+    "manifest_matches": 34,
+    "details": [
+      {
+        "path": "server/internal/api/agenttools.go",
+        "sha256": "14531080b368cb82f4541891043257b24bd81d6e21a3761e43b81f03e6e94519",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/api/agenttransaction.go",
+        "sha256": "9bfa3164b42a036bee111dd8bdbf74b6ae129ae0b92fd9a2f66a4ea38336c1a9",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/api/app.go",
+        "sha256": "f075e9e48ccd7e44a4aac1a008ce2df62699d41c1d8e95fc994393dde3ab4afe",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/api/configmutation.go",
+        "sha256": "eb2b40f0d6d62c69e09a662f2291808704adecf25a3ffa6b400800aa9b97e79a",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/api/configroutes.go",
+        "sha256": "7ff8073e2b3b7500208bb599afe5c4a5efed43c573432ba239848e8a24a4f78c",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/api/extra.go",
+        "sha256": "f16eb367ad6327a0a59e1e41bd4a4eb1bff4f771229f0cb182e2473ce33b4113",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/api/feedbackexecution.go",
+        "sha256": "7b9d3fb1440a715e8c0227be8710c52a148551b8f2d412f62050acd982219cc0",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/api/feedbackstorage.go",
+        "sha256": "6e0063fc3e2543d8c8b970e8910c9a1660790100259272f46ee74ae523843458",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/api/hub.go",
+        "sha256": "3239252fb4496cc8a7d8ba86b3df8b7400a3eb723b1d589f193fa991403fef42",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/api/ladder_atomic_regression_test.go",
+        "sha256": "627e2655b88269fd7fd7f34672281711e73cae875bf326d28fa0f7275b83c5e9",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/api/ladder_concurrency_regression_test.go",
+        "sha256": "7b0a0820a40e6ea68ce8ceec075278bee5fd3f02ba69b8d44ecd996d030572f9",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/api/ladder_consumer_regression_test.go",
+        "sha256": "610ee936c395e1edcfc04e90f60ba4f9dbcfdffa88c384884850cc96818ba122",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/api/ladder_failure_regression_test.go",
+        "sha256": "45a72a5ea71b43f2189639fd2eaf542ee92b4901bb1ca401186dbd8d0d07814b",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/api/ladder_review_regression_test.go",
+        "sha256": "d707459173c8641fe7825ff4be0ddf8e339f7049349c9813a1f725235cfd8173",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/api/ladder_routes_regression_test.go",
+        "sha256": "8c37d01a4e5ee815b4d9512a8fa256c60a0afcf93ae965f17c1a20f3666e3bb6",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/api/ladder_work_boundary_test.go",
+        "sha256": "65785968d81d0723563cdbfe457a7301b6ae9e6448475e05e150024f5d2a99fe",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/api/lessonexecution.go",
+        "sha256": "47fbeded9137aab5613fee190c8f961f66cbd9c235a1ca002b8d1dab4fd1a690",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/api/router.go",
+        "sha256": "cd7d21458a7f61ab339962db0fc5b2d0453733242afe96157982aa808cf2e990",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/config/config.go",
+        "sha256": "d53bad3696efcab84ec65171e5577fbe97afa099c75cd4f22e1c33985a188ef6",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/config/effective_view_test.go",
+        "sha256": "dd13c949327b8ad4877ba3a8ad5914808183479b72cceb31bb7c7c315fc3ade9",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/config/mutation.go",
+        "sha256": "56b4998f81c7485a0d474cf16af96f3d8b2985b50dd324d6d438473c1d8d1a1b",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/scheduler/ladder_scope.go",
+        "sha256": "d0c132d925e17a81848a9ae456942dc3f4bd37add65b330d8bf757fd126a0bb3",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/scheduler/scheduler.go",
+        "sha256": "65f14d1241f85cd71ef7fe98a8159519ab39fe79560c3654dafe5f3805f5081b",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/scheduler/settlement.go",
+        "sha256": "63c5c79ef1f6d2e4c4f9e9f5757de7458c30da386c1f15fe447fac64a56e966d",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/store/config_atomic.go",
+        "sha256": "c68f47a7227252805fe77c4791bb29bb38d37d36fe7530f396e1dae03f498d17",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "server/internal/store/config_atomic_regression_test.go",
+        "sha256": "d24100494cec40904baecf1ccc98134f254ae9f338a11f51a82610d6a95ec011",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "web/e2e/ladder-config.spec.ts",
+        "sha256": "3b44435bcd765d0e932f4e25c1ffb1a4198cdfc0619e3dd3b0299a7dca103ebf",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "web/e2e/recovery-server.ts",
+        "sha256": "2de8e3fa62c38222f45f009a7e762c5e25333b035839645d4fbc38dc18d3b5e4",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "web/playwright.ladder.config.ts",
+        "sha256": "ddd64090f95f42aa2daee113fccc65e81e5e3bee6a6fb0520bc34e4c665764eb",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "web/src/api/client.ts",
+        "sha256": "7a6eb344cc2449136e1f0bf435f44cf8b55ddd61f73021345c4e2db1e6e4d387",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "web/src/components/LadderSettings.tsx",
+        "sha256": "1338e5a86d740936fa728a837f8f8e3a734be39fa44e6373be067e7e35d58291",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "web/src/interaction/config-reconciliation.ts",
+        "sha256": "9b23a515a03b90584320d1efecf205337567fbfb9af2cd52ff7323f0bbb1546d",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "web/src/pages/Admin.tsx",
+        "sha256": "118c22adf4204f64a864bee54c602e1aa7eaec56857100804d737a954f51509d",
+        "iso_match": true,
+        "manifest_match": true
+      },
+      {
+        "path": "web/tests/config-reconciliation.test.ts",
+        "sha256": "43dab403c98b63eb88ab5462f62209326176edee05f9011496e320b31c0bfc58",
+        "iso_match": true,
+        "manifest_match": true
+      }
+    ]
+  },
+  "context": "Inspected git status and actual tracked diffs together with new untracked coordinator/config/scheduler/store files. Formal working tree also contains previously reviewed continuation-wait, recovery tooling and private Pilot components; this report does not claim those unrelated files are newly validated by ladder isolated tests.",
+  "passed_invariants": [
+    {
+      "area": "transaction_ownership",
+      "evidence": [
+        "server/internal/store/config_atomic.go:13",
+        "server/internal/store/atomic_connection.go:18",
+        "server/internal/api/configmutation.go:129",
+        "server/internal/api/agenttransaction.go:58",
+        "server/internal/api/feedbackstorage.go:100",
+        "server/internal/api/lessonexecution.go:168"
+      ],
+      "finding": "Outer safe transaction pins physical connection, obtains writer before reading configuration/card facts, and performs cleanup/discard after failed commit. Existing work factories use same owner, not nested transactions. Configuration/revision/card clamp/audit commit together; notifications/cache publication occur after commit."
+    },
+    {
+      "area": "effective_scope_and_card_safety",
+      "evidence": [
+        "server/internal/api/configmutation.go:44",
+        "server/internal/store/config_atomic.go:24",
+        "server/internal/scheduler/ladder_scope.go"
+      ],
+      "finding": "Affected students are selected by actual effective-ladder difference including goalMode inheritance and overrides. Only ladder_step is clamped. Due/status/review fields are not rewritten by configuration mutation. Protected scopes without cards are included; main/temp object aliases and malformed schema fail closed."
+    },
+    {
+      "area": "refresh_and_consumption",
+      "evidence": [
+        "server/internal/api/configmutation.go:175",
+        "server/internal/api/configmutation.go:216",
+        "server/internal/api/app.go:362",
+        "server/internal/api/hub.go:98",
+        "server/internal/api/lessonexecution.go:186"
+      ],
+      "finding": "Commit plus Reload failure returns committed/refresh_pending without replaying write. Fresh durable work supplies placement, new room and settlement consumers; existing/restored Room keeps frozen configuration. Native memory completion view retains settlement-owner metadata and uses App serialization. No cross-process cache push is claimed."
+    },
+    {
+      "area": "API_security_and_schema",
+      "evidence": [
+        "server/internal/api/router.go:395",
+        "server/internal/api/configroutes.go:16",
+        "server/internal/config/mutation.go"
+      ],
+      "finding": "Admin middleware protects effective/set/delete endpoints. Strict target/scope plus exact field allowlist/duplicate rejection/null rejection/body cap/EOF checks cover current scalar and int-array configuration values. Not a generic recursive JSON-schema validator. System Agent key permissions are unchanged; no new Pilot endpoint or default migration."
+    },
+    {
+      "area": "UI_unknown_delivery",
+      "evidence": [
+        "web/src/components/LadderSettings.tsx",
+        "web/src/interaction/config-reconciliation.ts"
+      ],
+      "finding": "Unknown POST outcome and failed follow-up read retain identity-bound mutation lock; successful same-target effective+revision read reconciles. No automatic write retry; controlled known rejection can release. Late identity callbacks cannot overwrite current target."
+    },
+    {
+      "area": "logging",
+      "evidence": [
+        "server/internal/api/configmutation.go:111",
+        "server/internal/api/configmutation.go:94"
+      ],
+      "finding": "Fixed trace-correlated mutation summaries record started/rolled_back/refresh_pending/committed; persistent audit shares transaction. No raw configuration values or free-form reason are added to operational summary logs."
+    }
+  ],
+  "general_findings": [
+    {
+      "id": "LAD-INT-D01",
+      "severity": "P2",
+      "category": "current_document_contract",
+      "file": "docs/02-SDD.md",
+      "line": 433,
+      "finding": "Current SDD still states ladder updates clamp all memory_cards, contradicting effective student-scope implementation. docs03 R2-02 line149 repeats all-card language.",
+      "required_change": "Update current rule to effective-value affected students only, retain student overrides and delete/goalMode fallback semantics, and state only ladder_step changes without due/status rewrite. This is required before final documentation gate."
+    },
+    {
+      "id": "LAD-INT-D02",
+      "severity": "P2",
+      "category": "API_and_observability_documentation",
+      "file": "docs/02-SDD.md",
+      "finding": "Current canonical SDD does not yet enumerate GET /api/v1/config/effective and changed mutation result fields or the new config_mutation events; design document contains the new contract but cannot replace canonical API/log index.",
+      "required_change": "Add endpoint/admin authorization/target validation/effective source and both revisions, committed/refresh_pending distinction and four fixed mutation events/summary fields. Add acceptance mappings to docs03 without treating old145 as covering this feature."
+    },
+    {
+      "id": "LAD-INT-D03",
+      "severity": "P3",
+      "category": "status_accuracy",
+      "file": "review/ladder-atomic-coordinator-design-20261016.md",
+      "line": 3,
+      "finding": "Top and final status still say not coded or waiting to start; formal integration and isolated successful runs now exist.",
+      "required_change": "Preserve design as historical baseline and append dated actual integration/isolated evidence status. Distinguish isolated passed from formal combined regression pending."
+    }
+  ],
+  "existing_evidence_read": {
+    "isolated_go_result": ".test-tools/ladder-implementation-20261016/_baseline/go-validation-r2/RESULT.md",
+    "reported_full_go": {
+      "top_level_passed": 595,
+      "including_subtests_passed": 1506,
+      "opt_in_skips": 9,
+      "coverage_seconds": 132.09,
+      "vet_seconds": 11.42,
+      "race_seconds": 442.92,
+      "store_percent": 83.96,
+      "config_percent": 91.18,
+      "scheduler_percent": 90.42
+    },
+    "interpretation": "Read existing result, did not execute or rederive coverage.34 exact file equality transfers reviewed implementation identity but does not replace combined formal-tree acceptance. Parent reports3 dedicated ladder E2E passed; this review does not independently certify that browser raw result."
+  },
+  "remaining_gates": [
+    "Resolve current documentation findings before final stage acceptance.",
+    "Use actual formal integrated source/input/binary hashes for final regression and browser acceptance; do not combine historical145 with new3 as if one unchanged candidate.",
+    "Preserve original failed fixture evidence and independent corrected validation histories."
+  ],
+  "limitations": [
+    "No code edits, tests, builds, runtime services or model calls performed.",
+    "No claim of real acoustic/model quality, deployed concurrency performance, Pilot unified Room/Agent commit, or closure of historical COMMIT long tails."
+  ]
+}

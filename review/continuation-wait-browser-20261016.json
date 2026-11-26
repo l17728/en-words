@@ -1,0 +1,97 @@
+{
+  "status": "WAIT39 targeted passed; SUB03 incomplete; full candidate acceptance pending",
+  "source_sha256": "fc16869dfb13a9ad4cdba0a3d63208a35f3f6d29be16bad7fc8079739717cf83",
+  "server_sha256": "9496f4e18cf648541896f187ba43ab057e5691adb5f7eb10d27a021069c28063",
+  "harness_sha256": "64788d2f58ccb529173e2d307802b2bfc97a6c1d9fe781960140e2196d0c3d41",
+  "scope": "Frontend-only legacy API binary; independent build and preview times do not close original combined-startup failure.",
+  "source_unchanged": true,
+  "inputs_unchanged": true,
+  "dist_unchanged": true,
+  "manifest": ".test-artifacts\\continuation-wait-20261016\\frozen-build\\manifest.json",
+  "build": {
+    "name": "build",
+    "elapsed_ms": 27532,
+    "exit_code": 0
+  },
+  "node": {
+    "passed": 81,
+    "failed": 0,
+    "log": ".test-artifacts/continuation-wait-20261016/node-observability.log"
+  },
+  "lint": {
+    "exit_code": 0,
+    "log": ".test-artifacts/continuation-wait-20261016/lint-observability.log"
+  },
+  "runner_unit": {
+    "passed": 7
+  },
+  "suites": [
+    {
+      "name": "wait39",
+      "stats": {
+        "startTime": "2026-10-16T06:41:11.577Z",
+        "duration": 65270.835,
+        "expected": 4,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "ids": [
+        {
+          "id": "8de5ab06db3d7553acd4-7a7cf7993fedb1658205",
+          "title": "WAIT39 progress keeps local playback waiting separate from delivery and other students"
+        },
+        {
+          "id": "8de5ab06db3d7553acd4-fea587ae11d48b31431a",
+          "title": "WAIT39 disconnect keeps local playback waiting separate from delivery and other students"
+        },
+        {
+          "id": "8de5ab06db3d7553acd4-8aa271d287c52080e282",
+          "title": "WAIT39 account keeps local playback waiting separate from delivery and other students"
+        },
+        {
+          "id": "8de5ab06db3d7553acd4-43b5a7ed56bd3e8f9d2b",
+          "title": "WAIT39 fallback_error keeps local playback waiting separate from delivery and other students"
+        }
+      ],
+      "report": ".test-artifacts\\continuation-wait-20261016\\frozen-build\\wait39.json",
+      "sha256": "46ad85db5b6653d7750f2e46596096e37ab9cba3dbae545e9853ced8ee4cbe91"
+    },
+    {
+      "name": "sub03",
+      "stats": {
+        "startTime": "2026-10-16T06:42:21.104Z",
+        "duration": 45219.710999999996,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "ids": [
+        {
+          "id": "35ea996143c87e645b34-be1d1340b9cea6457535",
+          "title": "SUB03 phase snapshot cancels old playback and captions without affecting another student"
+        },
+        {
+          "id": "35ea996143c87e645b34-9a45187a6d8fad11edb0",
+          "title": "SUB03 pause snapshot cancels old playback and captions without affecting another student"
+        }
+      ],
+      "report": ".test-artifacts\\continuation-wait-20261016\\frozen-build\\sub03.json",
+      "sha256": "0070bcdf31f3ced394d21aa203ac68320075a7170a100507a6ded0933030cbdb"
+    }
+  ],
+  "history": {
+    "old_ui_red": ".test-artifacts/continuation-wait-20261016/old-ui-red.json",
+    "first_non_logging_green": ".test-artifacts/continuation-wait-20261016/before-observability.json",
+    "combined_build_preview_180s_failure": ".test-artifacts/continuation-wait-20261016/build-preview-failure.json"
+  },
+  "limitations": [
+    "Existing legacy API binary used for frontend-only acceptance; not validation of newly integrated Go components.",
+    "B completed a real mocked-media classroom and retained its result; not simultaneous active audio isolation.",
+    "Original SUB02 post-ACK COMMIT 21678ms performance failure remains open.",
+    "Original combined build/preview timeout is preserved; split successful build does not establish its root cause."
+  ],
+  "cleanup": "Owned en-words Node/server absent; ports15174/18081 absent after completion; heavy window handed to backend.",
+  "sub03_failure": "phase case failed before snapshot injection at recovery-regression.spec.ts:821: clock.pauseAt host new Date was in browser clock past. pause case passed; no automatic rerun."
+}

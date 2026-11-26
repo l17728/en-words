@@ -1,0 +1,13 @@
+﻿# Integrated Playwright browser acceptance — 2026-10-16
+
+The formal tree was copied to an isolated snapshot after the reviewed documentation correction. Post-copy SHA-256 comparison passed: 1,013 source files (34,116,718 bytes) and 19,988 `web/node_modules` files excluding `.vite` (184,028,672 bytes) matched exactly. `package.json` and lockfile hashes also matched. The Playwright browser cache was read-only with downloads disabled; formal dependencies and shared services were not changed.
+
+The server binary was compiled from the frozen snapshot with Go 1.25.14 (SHA-256 `E75D2AD4100FD79704D6160E8A93A0672434E366DFA1454B80C69BA716076D6A`). Headless Chromium suites ran serially with retries disabled and `reuseExistingServer: false`. All build, cache, temporary, and test outputs were isolated under `review/ladder-integrated-browser-acceptance-20261016/`.
+
+The first seven configurations passed all 62 tests: `playwright.config.ts` 9, `playwright.headless.config.ts` 9, `playwright.closure.config.ts` 6, `playwright.continuation.config.ts` 4, `playwright.duplex.config.ts` 7, `playwright.feedback.config.ts` 26, and `playwright.firstuse.config.ts` 1. Each had zero skips, unexpected results, or flaky results.
+
+The eighth configuration, `playwright.interaction.config.ts`, completed 30 entries: 29 passed and one failed during fixture setup. This is a test-runner configuration omission, not a product failure; IX10 did not execute its browser steps. Call chain: `playwright.interaction.config.ts` imports `playwright.recovery.config.ts`; `interaction-boundaries.spec.ts:57` sets `overdueHarness:true`; `recovery-server.ts:16` then reads `E2E_HARNESS_BINARY`. The runner supplied only `E2E_SERVER_BINARY`, so the fixture threw at `recovery-server.ts:17`. The exception text is hardcoded to say `E2E_SERVER_BINARY` even in the overdue-harness branch. No source fix or rerun was made.
+
+After the first suite failure, the suite loop was stopped and no further config was launched. Nine direct configurations and the frozen aggregate harness remain unrun; real model-backed media acceptance was not reached. All owned browser/test processes exited, and ports 18080–18083 and 15173–15175 were free afterward.
+
+The PowerShell wrapper returned a null `ExitCode` property. Final counts above use Playwright native JSON and captured stdout; the original wrapper metadata is retained for audit. Raw output, native JSON, IX10 error context, and trace are in [the logs directory](ladder-integrated-browser-acceptance-20261016.logs/). See the [machine-readable report](ladder-integrated-browser-acceptance-20261016.json) and [snapshot hash evidence](ladder-integrated-browser-acceptance-20261016/evidence/final-hash-check.json).

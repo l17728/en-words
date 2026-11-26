@@ -1,0 +1,1896 @@
+{
+    "docs42_sha256":  "C804B14B2088448937F306E43CAAD647E3F013BC827A9DBECDAF2172B427E27E",
+    "schema_version":  1,
+    "parent_test":  "TestPilotSupervisorFaultInjection",
+    "docs44_sha256":  "7FFD26641063634B96D6E4882EB1A981ACFF056AF3ECF0AD32CDC591DE7FEB80",
+    "status":  "design_contract_only",
+    "rows":  [
+                 {
+                     "side_effect_oracle":  "case dirs/locks/catalog=0；全部业务计数=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "构造失败，`case_integrity_error`；supervisor 不可用",
+                     "recovery_oracle":  "crash before CREATE_NEW leaves root absent; crash after CREATE_NEW but before ACL/owner/mode/identity/parent Sync are all verified leaves an abandoned epoch that cannot resume or be repaired. A worker resume is allowed only for a fully initialized root with matching run_epoch and worker_generation after prior worker reap. New Gateway uses a fresh epoch/root. Unknown permissions always reject.",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-ROOT-01/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-ROOT-01/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream payload write boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-ROOT-01/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-ROOT-01/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-ROOT-01/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-ROOT-01/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-ROOT-01/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-ROOT-01/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "root create / ACL / owner-mode verify",
+                     "fi_id":  "FI-ROOT-01"
+                 },
+                 {
+                     "side_effect_oracle":  "新root catalog独立且为空；旧selector对新run不可见；失败时不打开catalog/case成员，业务计数=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "`mode=new`仅在anchor下CREATE_NEW；epoch目录已存在即fail closed；`mode=resume`只接受同一live Gateway签名epoch/root且旧worker PID已reap",
+                     "recovery_oracle":  "新Gateway必须生成不同epoch和新root；abandoned epoch永不resume；未知mode、格式错误epoch、跨Gateway/旧PID仍存活均拒绝",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-ROOT-02/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-ROOT-02/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream payload write boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-ROOT-02/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-ROOT-02/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-ROOT-02/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-ROOT-02/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-ROOT-02/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-ROOT-02/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "run epoch create / resume",
+                     "fi_id":  "FI-ROOT-02"
+                 },
+                 {
+                     "side_effect_oracle":  "case members=0；catalog 未成功 bootstrap 时不得读写；DB/业务计数=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "create/Sync不确定→`io_uncertain`+global poison；竞争超时→`lock_timeout`且不 poison",
+                     "recovery_oracle":  "各 create/write/Sync 前后 kill：锁缺失仅可重新 CREATE_NEW；合法锁存在时必须复用同一 file ID；未知项 global fail",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-BOOT-01/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-BOOT-01/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream payload write boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-BOOT-01/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-BOOT-01/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-BOOT-01/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-BOOT-01/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-BOOT-01/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-BOOT-01/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "bootstrap lock create / file Sync / root Sync / TryLock",
+                     "fi_id":  "FI-BOOT-01"
+                 },
+                 {
+                     "side_effect_oracle":  "case dir/DB/sidecar/key=0；generation=0仅表示无有效frame sentinel，首条完整frame必须为generation=1",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "冲突时持锁 OpenVerified+完整 replay；short/错误 write→poison；未 Sync 不返回 ready",
+                     "recovery_oracle":  "CREATE_NEW前=无catalog且可bootstrap；创建后空文件/partial frame=global `recovery_integrity_error`；完整帧在 file+parent Sync 后=精确首帧 provisioning；目录 Sync 未完成时 contender不可读",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CAT-01/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CAT-01/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CAT-01/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CAT-01/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CAT-01/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CAT-01/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CAT-01/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CAT-01/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "catalog CREATE_NEW / initial frame write",
+                     "fi_id":  "FI-CAT-01"
+                 },
+                 {
+                     "side_effect_oracle":  "错误调用不回成功；SQL/receipt/Planner/Registry=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "write前失败、short write、完整frame后返回error均→`io_uncertain`+global poison",
+                     "recovery_oracle":  "fresh replay接受完整CRC frame并推进唯一状态；部分尾帧全局拒绝，不截断；完整frame尚未Sync不视作当前确认",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CAT-02a/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CAT-02a/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CAT-02a/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CAT-02a/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CAT-02a/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CAT-02a/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CAT-02a/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CAT-02a/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "append frame bytes before/inside/after write",
+                     "fi_id":  "FI-CAT-02a"
+                 },
+                 {
+                     "side_effect_oracle":  "错误调用不回ready/committed/deleted；业务副作用=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "Sync成功才确认迁移；返回错误→`io_uncertain`+global poison，不在本进程重试",
+                     "recovery_oracle":  "fresh replay：完整合法frame则接受；无frame保留前一durable state；partial/CRC错则全局拒绝",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CAT-02b/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CAT-02b/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CAT-02b/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CAT-02b/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CAT-02b/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CAT-02b/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CAT-02b/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CAT-02b/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "catalog file Sync after complete frame",
+                     "fi_id":  "FI-CAT-02b"
+                 },
+                 {
+                     "side_effect_oracle":  "未确认目录项前不得读取/打开case；业务副作用=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "仅首次catalog CREATE需parent Sync；失败→`io_uncertain`+global poison，append不涉及parent Sync",
+                     "recovery_oracle":  "新进程若catalog缺失且无其他artifacts可重新bootstrap；若存在则完整replay，身份/格式异常全局拒绝",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CAT-02c/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CAT-02c/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CAT-02c/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CAT-02c/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CAT-02c/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CAT-02c/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CAT-02c/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CAT-02c/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "initial catalog parent-directory Sync",
+                     "fi_id":  "FI-CAT-02c"
+                 },
+                 {
+                     "side_effect_oracle":  "未有reservation不得建case dir/member；业务计数=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "文件或目录Sync未知→global poison；TryLock timeout按context映射错误码",
+                     "recovery_oracle":  "CREATE前无entry；CREATE后只允许永久合法32hex orphan或catalog同ID；崩溃后复用原file ID，不unlink/recreate",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-LOCK-01/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-LOCK-01/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream payload write boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-LOCK-01/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-LOCK-01/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-LOCK-01/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-LOCK-01/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-LOCK-01/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-LOCK-01/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "stable case-lock CREATE_NEW / lock-root Sync / acquisition",
+                     "fi_id":  "FI-LOCK-01"
+                 },
+                 {
+                     "side_effect_oracle":  "DB应用SQL/receipt/Planner/Registry=0；仅状态授权的只读recovery可打开成员",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "CREATE明确失败且确认目录不存在→durably quarantine并返回`case_integrity_error`；ACL/identity不符→case quarantine+`case_integrity_error`；directory Sync error→global `io_uncertain`",
+                     "recovery_oracle":  "CREATE前/后分别重启：仅原目录身份+权限合格可继续；坏权限/身份/未知entry只转quarantine，不清空、不替换；Sync未知重启重新枚举固定目录",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-PROV-01/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-PROV-01/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-PROV-01/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-PROV-01/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-PROV-01/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-PROV-01/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-PROV-01/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-PROV-01/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "case directory CREATE / ACL / identity / directory Sync",
+                     "fi_id":  "FI-PROV-01"
+                 },
+                 {
+                     "side_effect_oracle":  "`db_template_bytes`完整copy后精确等于模板size；重启恢复的ready前必须恰有一次DB handle Sync及一次case-dir Sync，任一失败则不ready；所有SQLite连接和业务SQL计数=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "CREATE明确失败且目录项不存在→durable quarantine/`case_integrity_error`；任意write/Sync error或短写→global `io_uncertain` poison",
+                     "recovery_oracle":  "CREATE前=无DB；强杀/重启仅完整模板SHA+原identity后，DB handle Sync与case目录Sync均成功且身份复核通过才可恢复ready；Sync error/unknown→poison/`io_uncertain`，empty/partial/extra bytes quarantine且绝不重写覆盖",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-DB-01a/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-DB-01a/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-DB-01a/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-DB-01a/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-DB-01a/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-DB-01a/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-DB-01a/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-DB-01a/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "db.sqlite CREATE_NEW + embedded template byte copy",
+                     "fi_id":  "FI-DB-01a"
+                 },
+                 {
+                     "side_effect_oracle":  "`db_open_ro_recovery\u003c=1`；schema计数恰为固定schema清单条数，数据计数恰为所走R-*固定查询数且包含lesson discovery及bounded transition查询；`db_application_sql=0`，Planner/Registry=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "`provisioning`下只读检查模板SHA；`open_recovery_required`与`committed`允许§9 schema SQL及§9.1 R-*只读恢复SQL；缺失/重复marker、缺失/额外对象、错误marker/DDL/digest或receipt/audit/outbox/frozen事实篡改：前者持锁durable quarantine，后者保持committed、返回`recovery_integrity_error`、不返回receipt且不写catalog/sidecar；前者quarantine journal失败则global poison。R-LESSON发现查询0/2行拒绝，R-TRANSITION以lesson_id读出command_id后验证sidecar `command_key_hmac`；注入第二条receipt、错lesson或错HMAC均停止后续R-*",
+                     "recovery_oracle":  "强杀后新进程重复同一ro查询；有效schema且状态允许→仅按§8恢复；非法schema按来源状态裁决，不运行AutoMigrate",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-DB-01b/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-DB-01b/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-DB-01b/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-DB-01b/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-DB-01b/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-DB-01b/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-DB-01b/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-DB-01b/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "readonly PilotCaseSchemaV2 recovery verification",
+                     "fi_id":  "FI-DB-01b"
+                 },
+                 {
+                     "side_effect_oracle":  "template bytes不变；`db_open_rw=db_open_ro_recovery=db_schema_validation_sql=db_recovery_data_sql=db_application_sql=0`",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "mismatch→case durable quarantine（journal正常时）并返回`case_integrity_error`；identity读取不确定→global poison+`io_uncertain`",
+                     "recovery_oracle":  "重启对不可信对象不得以路径重新绑定；quarantine仅允许cleanup，不允许SQLite打开该对象",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-DB-01c/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-DB-01c/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-DB-01c/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-DB-01c/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-DB-01c/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-DB-01c/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-DB-01c/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-DB-01c/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "DB owner/mode/link/OS identity verification before driver open",
+                     "fi_id":  "FI-DB-01c"
+                 },
+                 {
+                     "side_effect_oracle":  "`sidecar_open_app=0`; recovery至多1个只读验证open；append/业务副作用=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "确认不存在且create失败→durable quarantine/`case_integrity_error`；对象可能已创建或write uncertain→poison/`io_uncertain`",
+                     "recovery_oracle":  "重启只允许原identity、空合法链；内容/identity偏离则quarantine，不补建、不截断",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-SIDE-01a/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-SIDE-01a/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-SIDE-01a/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-SIDE-01a/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-SIDE-01a/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-SIDE-01a/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-SIDE-01a/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-SIDE-01a/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "attempts.jsonl CREATE_NEW / empty write",
+                     "fi_id":  "FI-SIDE-01a"
+                 },
+                 {
+                     "side_effect_oracle":  "append=0；`db_open_rw=0`；receipt/Planner/Registry=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "Sync uncertain→global poison/`io_uncertain`；identity mismatch→case quarantine/`case_integrity_error`",
+                     "recovery_oracle":  "重启空合法链先重-sync后可继续provisioning；partial/非空/替换则quarantine",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-SIDE-01b/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-SIDE-01b/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-SIDE-01b/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-SIDE-01b/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-SIDE-01b/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-SIDE-01b/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-SIDE-01b/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-SIDE-01b/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "sidecar Sync / identity",
+                     "fi_id":  "FI-SIDE-01b"
+                 },
+                 {
+                     "side_effect_oracle":  "`key_open_app=0`; recovery最多1次只读元数据open；key export/日志泄漏=0，业务计数=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "明确创建失败→durable quarantine/`case_integrity_error`；short/write/Sync uncertain→global poison/`io_uncertain`",
+                     "recovery_oracle":  "重启只允许同identity且32 bytes；不匹配quarantine，不补key、不向子进程交付",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-KEY-01a/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-KEY-01a/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-KEY-01a/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-KEY-01a/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-KEY-01a/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-KEY-01a/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-KEY-01a/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-KEY-01a/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "case.key CREATE_NEW / 32-byte write / Sync",
+                     "fi_id":  "FI-KEY-01a"
+                 },
+                 {
+                     "side_effect_oracle":  "key bytes read=0；DB应用SQL/receipt/Planner/Registry=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "mismatch→case quarantine/`case_integrity_error`；身份能力未知→global poison/`io_uncertain`",
+                     "recovery_oracle":  "不向任何子进程打开；重启仍不符只cleanup",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-KEY-01b/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-KEY-01b/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-KEY-01b/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-KEY-01b/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-KEY-01b/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-KEY-01b/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-KEY-01b/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-KEY-01b/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "key owner/mode/ACL/identity verify",
+                     "fi_id":  "FI-KEY-01b"
+                 },
+                 {
+                     "side_effect_oracle":  "ready未durable时DB业务SQL/Planner/Registry=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "不返回 ReadyCase；uncertain→global poison",
+                     "recovery_oracle":  "replay 仅可见完整 `ready` 或前一 `provisioning`；partial frame全局拒绝",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-PROV-02/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-PROV-02/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-PROV-02/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-PROV-02/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-PROV-02/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-PROV-02/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-PROV-02/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-PROV-02/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "ready append各write/Sync",
+                     "fi_id":  "FI-PROV-02"
+                 },
+                 {
+                     "side_effect_oracle":  "无case/member open及业务副作用",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "`context.Canceled`=`operation_canceled`；deadline/cap=`lock_timeout`；非超时OS错误→global poison",
+                     "recovery_oracle":  "无catalog读取/授权；fresh process重新取得同一锁对象后全量replay",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-OPEN-01a/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-OPEN-01a/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-OPEN-01a/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-OPEN-01a/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-OPEN-01a/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-OPEN-01a/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-OPEN-01a/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-OPEN-01a/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "catalog lock acquisition / TryLock",
+                     "fi_id":  "FI-OPEN-01a"
+                 },
+                 {
+                     "side_effect_oracle":  "DB/sidecar/key open、SQL/receipt/Planner/Registry=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "任意read/seek/stat/identity或格式/CRC错误→global poison；CRC/格式→`recovery_integrity_error`，I/O/identity uncertainty→`io_uncertain`",
+                     "recovery_oracle":  "未修改journal；新进程全量replay；坏链/截断/身份不符仍global fail closed，不用缓存状态",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-OPEN-01b/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-OPEN-01b/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-OPEN-01b/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-OPEN-01b/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-OPEN-01b/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-OPEN-01b/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-OPEN-01b/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-OPEN-01b/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "catalog read / seek / stat / identity / frame decode / CRC",
+                     "fi_id":  "FI-OPEN-01b"
+                 },
+                 {
+                     "side_effect_oracle":  "拒绝时DB/sidecar/key open=0；业务计数=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "context按§9映射；第二次catalog失败按FI-OPEN-01b",
+                     "recovery_oracle":  "C2/C3 schedule只能按锁内最新状态；变为非ready则拒绝",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-OPEN-02/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-OPEN-02/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-OPEN-02/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-OPEN-02/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-OPEN-02/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-OPEN-02/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-OPEN-02/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-OPEN-02/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "case lock / second catalog read / state recheck",
+                     "fi_id":  "FI-OPEN-02"
+                 },
+                 {
+                     "side_effect_oracle":  "no duplicate CreateCase for concurrent retry; no duplicate case in active root; abandoned root never reopened; exact mapping, catalog, and process logs retained",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "ready durable but IPC selector response lost→Gateway kills/reaps worker, marks entire run/root abandoned and never retries/reuses it. Within one session, same Idempotency-Key+same payload coalesces concurrent requests into one IPC/CreateCase and returns the same bound selector on retry after HTTP response loss; same key with changed payload/scope conflicts before IPC. Same raw key in a different session is independently scoped and cannot read/reuse the first session\u0027s selector. Scope-conflict fixture is internal Gateway/IPC-adapter coverage because browser create always uses `create` scope. Missing/duplicate/empty/whitespace-wrapped/non-ASCII/illegal/short/long Idempotency-Key returns `invalid_idempotency_key` before request_id allocation or IPC.",
+                     "recovery_oracle":  "worker restart after known result uses parent mapping; uncertain create always aborts run; new run has distinct epoch/root/catalog and cannot see old selector",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-IPC-01/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-IPC-01/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-IPC-01/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-IPC-01/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44",
+                                          "fault_point":  "signed worker IPC response frame write, before Gateway HTTP response serialization"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-IPC-01/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-IPC-01/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-IPC-01/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-IPC-01/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "create result/response boundary",
+                     "fi_id":  "FI-IPC-01"
+                 },
+                 {
+                     "side_effect_oracle":  "all rejects have `CreateCase/member/DB/sidecar/key open=0`; no receipt/Planner/Registry effects or existence side channel; every boundary has a named clock/barrier fixture",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "reject uniformly before Supervisor dispatch; expiry oracle: `expires_at_ms==now` rejects; `now+1ms` and `now+60s` accept; `now+60s+1ms` rejects; a valid-on-receipt grant delayed in IPC until `now\u003e=expires_at_ms` rejects at dequeue. No raw selector reaches supervisor.",
+                     "recovery_oracle":  "child restart under same live gateway preserves valid owner binding; gateway/run restart invalidates old capabilities and aborts the run",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-AUTH-01/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-AUTH-01/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream payload write boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-AUTH-01/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-AUTH-01/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-AUTH-01/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-AUTH-01/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-AUTH-01/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-AUTH-01/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "forged, stale, cross-run, wrong-scope, payload-mismatched, or expired grant",
+                     "fi_id":  "FI-AUTH-01"
+                 },
+                 {
+                     "side_effect_oracle":  "`db_open_rw=1`,`db_schema_validation_sql=1`,`db_application_sql=0`,receipt/Planner/Registry=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "成功open计数后发现path mismatch→立即Close、case quarantine、`case_integrity_error`；Close error则`restart_required`",
+                     "recovery_oracle":  "重启按quarantined禁止普通打开，须cleanup；不比较/宣称OS file ID",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-OPEN-03/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-OPEN-03/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-OPEN-03/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-OPEN-03/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-OPEN-03/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-OPEN-03/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-OPEN-03/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-OPEN-03/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "SQLite canonical path mismatch after first `PRAGMA database_list`",
+                     "fi_id":  "FI-OPEN-03"
+                 },
+                 {
+                     "side_effect_oracle":  "exact golden equality; sidecar Sync delays excluded; no audit/receipt on unresolved tool result",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "`tool_started` Sync precedes handler; Registry raw AuditEntry.TS comes from sealed permit; DurationMs is monotonic handler elapsed only",
+                     "recovery_oracle":  "inject wall-clock jump and delays before/after handler; rebuild audit-to-sidecar match from logical `TS` and `TS+DurationMs`",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-AUDIT-01/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-AUDIT-01/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-AUDIT-01/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-AUDIT-01/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-AUDIT-01/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-AUDIT-01/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-AUDIT-01/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-AUDIT-01/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "logical time and Registry timing injection",
+                     "fi_id":  "FI-AUDIT-01"
+                 },
+                 {
+                     "side_effect_oracle":  "两支Planner/Registry/新命令=0；schema SQL按固定清单计数；前缀损坏时`db_recovery_data_sql=0`且R-AUDIT未运行；suffix损坏时各R-*语句精确计数且R-AUDIT通过；key只由Supervisor读取",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "损坏严格在完整有效的两条tool_result记录之后的suffix→DB全量R-*复核后仅`sidecar_degraded`；之前或其中任何read/CRC/JSON/HMAC错误：`open_recovery_required`→`quarantined`；`committed`保持原catalog状态并返回`recovery_integrity_error`、不返回receipt",
+                     "recovery_oracle":  "重启：仅完整有效前缀后的suffix损坏可返回degraded；前缀损坏时，`open_recovery_required`可按合法迁移quarantine，`committed`保持原状态、不返回receipt且不写catalog/sidecar；从未允许not_committed推断或重放",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-REC-01/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-REC-01/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-REC-01/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-REC-01/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-REC-01/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-REC-01/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-REC-01/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-REC-01/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "receipt/sidecar/key bounded read, short read, CRC/HMAC",
+                     "fi_id":  "FI-REC-01"
+                 },
+                 {
+                     "side_effect_oracle":  "迁移前成员inventory不变；Planner/Registry=0；DB仅来源态授权核验可只读访问",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "任一write/Sync error均返回`io_uncertain`并poison，绝不删除成员；完整成功才继续cleanup",
+                     "recovery_oracle":  "零字节记录：重启保持精确来源状态，重新做来源特有授权校验后可重试transition；完整frame：恢复为cleanup_quarantined并resume；partial frame：global integrity failure",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLEAN-01/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLEAN-01/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLEAN-01/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLEAN-01/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLEAN-01/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLEAN-01/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLEAN-01/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLEAN-01/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "cleanup_quarantined append/write/Sync（来源限docs/41 §109.2允许的ready/open_recovery_required/committed/terminal_failed/quarantined，且满足对应授权条件）",
+                     "fi_id":  "FI-CLEAN-01"
+                 },
+                 {
+                     "side_effect_oracle":  "DB SQL/receipt/Planner/Registry=0；目录中只允许剩余固定名单项",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "单项失败=`cleanup_pending`，catalog保持cleanup_quarantined；不改名、不glob、不继续删除后续项",
+                     "recovery_oracle":  "每个member逐项 kill前/后，重启只删除名单内仍存在且identity重新验证一致的成员；未知/替换项则停在cleanup_pending",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLEAN-02/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLEAN-02/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLEAN-02/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLEAN-02/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLEAN-02/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLEAN-02/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLEAN-02/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLEAN-02/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "每一个固定成员 unlink（DB、WAL、SHM、journal、sidecar、key）",
+                     "fi_id":  "FI-CLEAN-02"
+                 },
+                 {
+                     "side_effect_oracle":  "不创建DB/member；deleted前Start/open永远拒绝",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "remove/Sync失败=`cleanup_pending`；无 deleted tombstone",
+                     "recovery_oracle":  "kill前后：目录仍在则只按同锁恢复；目录已删除而 tombstone 尚未追加时，catalog 仍为 cleanup_quarantined，stable case-lock仍在；重启核验目标目录确实不存在后直接追加 deleted，不重建目录或成员",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLEAN-03/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLEAN-03/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLEAN-03/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLEAN-03/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLEAN-03/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLEAN-03/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLEAN-03/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLEAN-03/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "case dir remove / parent Sync",
+                     "fi_id":  "FI-CLEAN-03"
+                 },
+                 {
+                     "side_effect_oracle":  "case ID/lock永不复用，所有业务计数=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "未确认durable=`io_uncertain`+global poison",
+                     "recovery_oracle":  "重启完整deleted帧→永久拒绝；完整前一cleanup_quarantined→继续cleanup；partial frame→global fail",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLEAN-04/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLEAN-04/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLEAN-04/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLEAN-04/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLEAN-04/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLEAN-04/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLEAN-04/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLEAN-04/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "deleted append/write/Sync",
+                     "fi_id":  "FI-CLEAN-04"
+                 },
+                 {
+                     "side_effect_oracle":  "no catalog/case/member DB/Planner/Registry; key never exported",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "Exact partial allowlist can resume creation; partial key/line resets only entire logs subtree before catalog/cases exist",
+                     "recovery_oracle":  "kill after every dir/file create/write/file Sync/parent Sync: restart retains valid full members or resets/recreates; partial event never accepted",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-LOG-01a/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-LOG-01a/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-LOG-01a/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-LOG-01a/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-LOG-01a/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-LOG-01a/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-LOG-01a/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-LOG-01a/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "partial logs with empty bootstrap inventory",
+                     "fi_id":  "FI-LOG-01a"
+                 },
+                 {
+                     "side_effect_oracle":  "DB/receipt/Planner/Registry=0；key不导出",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "任一缺件、partial/invalid/identity drift→global `recovery_integrity_error`；不创建/不截断",
+                     "recovery_oracle":  "restart同样拒绝，catalog/case保持原状态",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-LOG-01b/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-LOG-01b/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-LOG-01b/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-LOG-01b/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-LOG-01b/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-LOG-01b/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-LOG-01b/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-LOG-01b/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "logs missing/corrupt after catalog or case artifact",
+                     "fi_id":  "FI-LOG-01b"
+                 },
+                 {
+                     "side_effect_oracle":  "log mutex串行追踪reservations；副作用前预留start+terminal；拒绝时业务计数=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "`current_length+outstanding_reservations+new_reservation+8192==67108864`允许；仅`\u003e` start前拒绝=`io_uncertain`+poison，不写拒绝事件；每行≤4096 bytes",
+                     "recovery_oracle":  "start与唯一terminal的完整编码在副作用前一并预留；cap精确边界允许，cap+1拒绝；终态不得超预留、不覆盖、不轮换",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-LOG-02/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-LOG-02/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-LOG-02/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-LOG-02/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-LOG-02/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-LOG-02/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-LOG-02/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-LOG-02/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "reservation / exact 67108864-byte boundary",
+                     "fi_id":  "FI-LOG-02"
+                 },
+                 {
+                     "side_effect_oracle":  "错误期间case lock保持；无新lease/DB query/Planner/Registry",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "success确认closed后继续；任意error均unknown，停止后续关闭，poison并返回`restart_required`，请求child有界退出",
+                     "recovery_oracle":  "不重试Close；harness确认PID退出后OS回收句柄/锁，新child只按catalog恢复",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01a/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01a/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01a/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01a/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01a/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01a/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01a/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01a/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "database/sql DB.Close",
+                     "fi_id":  "FI-CLOSE-01a"
+                 },
+                 {
+                     "side_effect_oracle":  "DB已closed；错误期间case lock保持；无业务操作",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "success确认closed后继续；任意error均unknown并`restart_required`",
+                     "recovery_oracle":  "不重试Close；harness确认PID退出后OS回收，新child重验证成员identity",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01b/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01b/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01b/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01b/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01b/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01b/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01b/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01b/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "sidecar file Close",
+                     "fi_id":  "FI-CLOSE-01b"
+                 },
+                 {
+                     "side_effect_oracle":  "错误期间case lock保持；无key export/DB/Planner/Registry",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "success确认closed后继续并清零key内存；任意error先清零key内存、unknown并`restart_required`",
+                     "recovery_oracle":  "不重试Close；harness确认PID退出后新进程只在状态授权时重读key",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01c/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01c/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01c/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01c/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01c/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01c/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01c/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01c/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "key file Close",
+                     "fi_id":  "FI-CLOSE-01c"
+                 },
+                 {
+                     "side_effect_oracle":  "错误期间不cleanup、不释放case lock、不新开能力",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "success确认closed后继续；任意error均unknown并`restart_required`",
+                     "recovery_oracle":  "不重试Close；harness确认PID退出后重启重新pin目录和identity",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01d/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01d/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01d/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01d/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01d/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01d/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01d/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01d/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "case directory handle Close",
+                     "fi_id":  "FI-CLOSE-01d"
+                 },
+                 {
+                     "side_effect_oracle":  "不再读写case/catalog；业务计数=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "Windows UnlockFileEx error→unknown/restart_required且不调用Close；POSIX flock unlock与fd Close为同一syscall，独立Unlock注入N/A",
+                     "recovery_oracle":  "harness确认PID退出/reap后OS回收；fresh owner只能在所有case业务句柄关闭后工作",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01e/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01e/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01e/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01e/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01e/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01e/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01e/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01e/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "case OS lock Unlock",
+                     "fi_id":  "FI-CLOSE-01e"
+                 },
+                 {
+                     "side_effect_oracle":  "A不再声称持锁/接收请求；DB/sidecar/key已closed",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "Windows Unlock成功后CloseHandle error→unknown/restart_required；POSIX该close已在01e注入",
+                     "recovery_oracle":  "不重试Close；PID exit/reap后OS回收；其他owner不得在A尚有业务资源时打开case",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01f/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01f/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01f/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01f/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01f/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01f/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01f/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01f/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "case OS lock handle Close after confirmed Unlock",
+                     "fi_id":  "FI-CLOSE-01f"
+                 },
+                 {
+                     "side_effect_oracle":  "停服所有case；无DB/Planner/Registry",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "Windows UnlockFileEx error→global unknown/restart_required；POSIX unlock与fd Close同调用，独立Unlock注入N/A",
+                     "recovery_oracle":  "child退出/reap后fresh process重开catalog identity并replay",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01g/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01g/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01g/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01g/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01g/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01g/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01g/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01g/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "catalog lock Unlock",
+                     "fi_id":  "FI-CLOSE-01g"
+                 },
+                 {
+                     "side_effect_oracle":  "所有case停服；无新DB/Planner/Registry",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "Windows Unlock成功后CloseHandle error→global unknown/restart_required；POSIX该close已在01g注入",
+                     "recovery_oracle":  "不重试Close；PID exit/reap后fresh process复核catalog identity/replay",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01h/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01h/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01h/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01h/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01h/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01h/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01h/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01h/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "catalog lock handle Close after confirmed Unlock",
+                     "fi_id":  "FI-CLOSE-01h"
+                 },
+                 {
+                     "side_effect_oracle":  "错误期间不创建/打开case；业务计数=0",
+                     "status":  "planned_not_implemented",
+                     "expected_error":  "任意Close error→unknown/restart_required；不得cleanup",
+                     "recovery_oracle":  "harness确认PID退出/reap后重启并逐级验证root/control identity",
+                     "variants":  [
+                                      {
+                                          "id":  "syscall_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01i/syscall_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01i/syscall_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "short_write",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no byte-stream write",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01i/short_write",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01i/short_write/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "post_write_sync_error",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "operation has no durability Sync boundary",
+                                          "applicable":  false,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01i/post_write_sync_error",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01i/post_write_sync_error/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      },
+                                      {
+                                          "id":  "named_barrier_kill",
+                                          "fixture":  "fresh isolated run root; named IPC barrier; OS-specific security fixture where row requires it",
+                                          "reason_na":  "",
+                                          "applicable":  true,
+                                          "test_name":  "TestPilotSupervisorFaultInjection/FI-CLOSE-01i/named_barrier_kill",
+                                          "artifact":  ".test-artifacts/pilot-supervisor-fault/FI-CLOSE-01i/named_barrier_kill/",
+                                          "runner":  "native Windows and Linux; platform applicability from docs/44"
+                                      }
+                                  ],
+                     "title":  "bootstrap/root handle Close",
+                     "fi_id":  "FI-CLOSE-01i"
+                 }
+             ]
+}

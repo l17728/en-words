@@ -1,0 +1,14 @@
+{
+  "review":"pilot-start-kernel-sdd-architecture-review10",
+  "date":"2026-10-16",
+  "source":"docs/41-试点课堂Start持久迁移内核SDD.md",
+  "source_sha256":"619eae549b5ac43dbf56cfc9f1f47a20b92b6777333a7400aea501859aeb942e",
+  "status":"PASS",
+  "blocker_count":0,
+  "blockers":[],
+  "closed":["START9-01 per-tool durable barrier via Coordinator ExecuteTool and opaque permit", "Pending recovery includes plan_ready/tool_started", "Teacher name typo", "Obsolete single-record-per-attempt assertion"],
+  "nonblocking":[{"severity":"P3","location":"section3 line24","finding":"Broad wording still says tool args/audit carry word and meanings, unlike index-only args and summary audit","suggestion":"Limit literal content to frozen context and typed outbox, with command fingerprint binding"}],
+  "implementation_checks":["Permit consumption must resist copied-value reuse", "Both calls share one task and budget rather than resetting per invocation", "Before-Sync failure invokes zero handlers; after-Sync failure invokes no next handler"],
+  "execution":{"tests":false,"builds":false,"services":false,"spec_or_source_edits":false},
+  "report":"review/pilot-start-kernel-sdd-architecture-review10-20261016.md"
+}

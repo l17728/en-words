@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
@@ -56,4 +57,43 @@ func TestFeedbackHTTPTokenSwitchKeepsHistoryNotificationsAndWritesOwned(t *testi
 		require.Len(t, notices, 1)
 		require.Equal(t, tc.sid, notices[0].UserID)
 	}
+
+	// Reading one student's durable feedback notice must not mark another
+	// student's notice read, even when both used the same submission ID.
+	noticesA, err := a.NotificationsContext(context.Background(), sid)
+	require.NoError(t, err)
+	require.Len(t, noticesA, 1)
+	require.Negative(t, noticesA[0].ID)
+	require.NoError(t, a.MarkNotificationReadContext(context.Background(), sid, noticesA[0].ID))
+	noticesA, err = a.NotificationsContext(context.Background(), sid)
+	require.NoError(t, err)
+	require.True(t, noticesA[0].Read)
+	noticesB, err := a.NotificationsContext(context.Background(), other.ID)
+	require.NoError(t, err)
+	require.False(t, noticesB[0].Read)
+
+	// Older lesson/report notifications live in the runtime record. Marking
+	// that record read must preserve the newer feedback notice and ownership.
+	a.Notify(sid, "课报", "已完成")
+	allA, err := a.NotificationsContext(context.Background(), sid)
+	require.NoError(t, err)
+	require.Len(t, allA, 2)
+	var legacyID int64
+	for _, notice := range allA {
+		if notice.ID > 0 {
+			legacyID = notice.ID
+		}
+	}
+	require.Positive(t, legacyID)
+	require.NoError(t, a.MarkNotificationReadContext(context.Background(), sid, legacyID))
+	reopened := NewApp(a.Clock, a.DB)
+	allA, err = reopened.NotificationsContext(context.Background(), sid)
+	require.NoError(t, err)
+	for _, notice := range allA {
+		require.True(t, notice.Read)
+	}
+	require.NoError(t, reopened.MarkNotificationReadContext(context.Background(), other.ID, 0))
+	noticesB, err = reopened.NotificationsContext(context.Background(), other.ID)
+	require.NoError(t, err)
+	require.True(t, noticesB[0].Read)
 }

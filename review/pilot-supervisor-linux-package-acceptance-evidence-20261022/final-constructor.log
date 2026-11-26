@@ -1,0 +1,5 @@
+=== RUN   TestRunRootLedgerConstructorDiscardsConnectionAfterWALInitFailure
+    runroot_busy_barrier_test.go:689: test_id=runroot.constructor_discard initial_mode=delete holder_mode=delete contender_mode=delete busy_callback_count=35 busy_callback_reached=true busy_callback_returned_false=true wal_result="first-error:database is locked" wal_busy=true outcome=wal_lock_rejected connection_discarded=true final_mode=delete ledger_schema_objects=0
+--- PASS: TestRunRootLedgerConstructorDiscardsConnectionAfterWALInitFailure (5.01s)
+PASS
+ok  	enwords/internal/pilotsupervisor	5.012s

@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-19",
+  "status": "BLOCKED_TEST_ACCEPTANCE",
+  "code_blocking_count": 0,
+  "test_acceptance_blocking_count": 1,
+  "closed": {
+    "id": "CAT-IMPL-01-RELEASE",
+    "conclusion": "openPilotCatalogFromVerifiedHandle and Snapshot now publish known operation failure to shared health before Unlock. Explicit mandatory health, post-lock recheck and constructor rejection remain intact. The new startup-sync and snapshot-read tests hold the failed operation inside Unlock after releasing its gate, proving a sibling rejects during the formerly unsafe window."
+  },
+  "findings": [
+    {
+      "id": "CAT-TEST-PROCESS-01",
+      "severity": "P2",
+      "location": "server/internal/store/pilot_start_catalog_test.go:686 TestPilotCatalogFileLockSerializesChildProcess",
+      "detail": "The child writes ready before calling Lock, and the parent interprets no acquired file for 150ms as exclusion. A descheduled child can make a no-op lock pass this check. This is timing evidence, not the named-barrier contention proof required by section 109. The final command.Wait is also unbounded; deferred Kill cannot run while Wait itself is stuck.",
+      "required": "Obtain an explicit child contention result while the parent still holds the same lock, for example a platform nonblocking exclusive-lock probe returning the expected contention class, followed by release and successful real blocking acquisition. Give process completion a bounded wait and owned kill/join cleanup before TempDir removal. Preserve actual child exit/error evidence.",
+      "scope": "Test acceptance blocker; not evidence that the platform lock implementation is broken."
+    }
+  ],
+  "limits": [
+    "No tests or builds executed.",
+    "No additional code blocker found in the reviewed health or platform-lock changes.",
+    "Bootstrap/verified-handle/ACL, process-death lock release and full supervisor integration remain separate unproved gates."
+  ]
+}

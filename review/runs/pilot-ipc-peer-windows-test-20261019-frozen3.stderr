@@ -1,0 +1,2 @@
+# enwords/internal/pilotsupervisor [enwords/internal/pilotsupervisor.test]
+internal\pilotsupervisor\peer_windows_test.go:292:11: no new variables on left side of :=

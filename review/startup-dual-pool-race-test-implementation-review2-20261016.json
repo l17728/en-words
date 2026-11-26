@@ -1,0 +1,30 @@
+﻿{
+    "review":  "startup-dual-pool-race-test-implementation-followup",
+    "date":  "2026-10-16",
+    "status":  "passed_for_background_validation",
+    "source":  "server/internal/store/startup_matrix_test.go",
+    "source_sha256":  "10cfb7ab46b64b9adca9b3a16dfa529fbe7c94de2a653260e770acb9c9d8818d",
+    "blockers":  [
+
+                 ],
+    "required_adjustments":  [
+
+                             ],
+    "closed_findings":  [
+                            "SR-TEST-01: deterministic actual typed-driver BUSY and wrapped-error positive coverage is now present."
+                        ],
+    "evidence":  [
+                     "TestStartupSQLiteBusyErrorRecognizesWrappedDriverError opens two independent database/sql pools against one temporary SQLite database, each capped at one connection.",
+                     "A successful table creation followed by an uncommitted INSERT in blocker transaction establishes an actual writer lock before contender INSERT, without timing sleeps or scheduling assumptions.",
+                     "Both DSNs specify busy_timeout=0 through the actual driver-supported _pragma option, so contender fails immediately rather than waiting for a timeout race.",
+                     "The actual resulting error and fmt.Errorf wrapping are both passed through the production-under-test typed errors.As classifier. Lookalike Code and string errors remain rejected; numeric family tests include517 and excludeLOCKED/constraint/nonpositive codes.",
+                     "Deferred rollback is registered after pool closes and therefore runs first; contender then blocker pools close before TempDir cleanup. All fatal assertions after transaction acquisition retain these defers.",
+                     "fmt import is present. No production change or wider BUSY allowlist introduced."
+                 ],
+    "limitations":  [
+                        "Read-only source review; no tests or builds executed. Background validation must supply actual pass evidence.",
+                        "This fixture locks ordinary BUSY and wrapped concrete-driver recognition;517 is covered by numeric classification, not a newly executed BUSY_SNAPSHOT scenario.",
+                        "Prior startup race root cause remains unknown."
+                    ],
+    "decision":  "Zero blockers. The scoped regression gap is closed in test code; hand off to background targeted validation."
+}

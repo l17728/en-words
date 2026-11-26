@@ -1,0 +1,19 @@
+=== RUN   TestPinnedSQLiteRuntimeIdentity
+    pilot_golden_manifest_test.go:54: sqlite_runtime_identity version=3.45.1 number=3045001 source_id=2024-01-30 16:01:20 e876e51a0ed5c5b3126f52e532044363a014bc594cfefa87ffb5b82257cc467a status=PASS
+--- PASS: TestPinnedSQLiteRuntimeIdentity (0.00s)
+=== RUN   TestPinnedVFSCallbackManifestIntegrityAndNotRunStatus
+    pilot_golden_manifest_test.go:106: manifest=testdata/vfs-callback-cases.json cases=61 unique=61 source_sdd_sha256=4386d1f6f3e272a1d0db213ca81708767e89fd471facb12e91baf3d58b883451 integrity=PASS
+    pilot_golden_manifest_test.go:131: callback_behavior_status=NOT RUN cases=61 artifact=vfs-callback-status-not-run.json
+--- PASS: TestPinnedVFSCallbackManifestIntegrityAndNotRunStatus (0.00s)
+=== RUN   TestPilotVFSRuntimeCandidateGeneration
+    pilot_vfs_trace_candidate_test.go:277: golden_candidate fixture_group=sqlite3451-vfs-flags status=CANDIDATE artifact=sqlite3451-vfs-flags.candidate.json
+    pilot_vfs_trace_candidate_test.go:277: golden_candidate fixture_group=sqlite3451-unix-lock-trace status=NOT RUN artifact=sqlite3451-unix-lock-trace.candidate.json
+    pilot_vfs_trace_candidate_test.go:277: golden_candidate fixture_group=sqlite3451-shm-lock-trace status=NOT RUN artifact=sqlite3451-shm-lock-trace.candidate.json
+    pilot_vfs_trace_candidate_test.go:277: golden_candidate fixture_group=sqlite3451-pager-delete-trace status=NOT RUN artifact=sqlite3451-pager-delete-trace.candidate.json
+    pilot_vfs_trace_candidate_test.go:279: raw_trace_files=4 harness_sha256=0848f1ec227870fee13acb9c6c97af69bdd0e08a1206e0dc5f730dd03bf4f849 status=CANDIDATE_ONLY
+--- PASS: TestPilotVFSRuntimeCandidateGeneration (0.01s)
+=== RUN   TestPilotTraceBufferOverflowSignal
+--- PASS: TestPilotTraceBufferOverflowSignal (0.00s)
+PASS
+ok  	enwords/internal/pilotcontrol	0.020s
+exit_code=0

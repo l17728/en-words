@@ -1,0 +1,739 @@
+{
+  "manifest_version": 1,
+  "status": "DRAFT_CANONICAL_EXECUTION_POLICY_NOT_EVIDENCE",
+  "source_fault_manifest": "review/pilot-control-ledger-v3-schema-fault-manifest-20261021.json",
+  "cases": [
+    {
+      "case_id": "SCHEMA-01",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-01",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-01.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-02",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-02",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-02.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-03",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-03",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-03.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-04",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-04",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-04.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-05",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-05",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-05.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-06",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-06",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-06.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-07",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-07",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-07.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-08",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-08",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-08.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-09",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-09",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-09.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-10",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-10",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-10.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-11",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-11",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-11.json",
+      "execution_class": "BLOCKED_CRYPTO_VECTOR_HARNESS",
+      "prerequisites": [
+        "Frozen docs/52 vectors and test-only keys; no live authority"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-12",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-12",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-12.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-13",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-13",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-13.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-14",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-14",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-14.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-15",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-15",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-15.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-16",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-16",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-16.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-17",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-17",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-17.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-18",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-18",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-18.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-19",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-19",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-19.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-20",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-20",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-20.json",
+      "execution_class": "BLOCKED_STAGE_B_LEDGER_IMPLEMENTATION",
+      "prerequisites": [
+        "Typed ledger transaction path and durable store implementation"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-21",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-21",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-21.json",
+      "execution_class": "BLOCKED_STAGE_B_LEDGER_IMPLEMENTATION",
+      "prerequisites": [
+        "RunRoot receipt/outbox ledger implementation"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-22",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-22",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-22.json",
+      "execution_class": "BLOCKED_STAGE_B_LEDGER_IMPLEMENTATION",
+      "prerequisites": [
+        "Shared writer reservation and outbox authorization implementation"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-23",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-23",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-23.json",
+      "execution_class": "BLOCKED_STAGE_B_LEDGER_IMPLEMENTATION",
+      "prerequisites": [
+        "No-root terminal transaction implementation"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-24",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-24",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-24.json",
+      "execution_class": "BLOCKED_PROCESS_CRASH_HARNESS",
+      "prerequisites": [
+        "Disposable DB fixture; subprocess fault boundary; crash/reopen harness"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-25",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-25",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-25.json",
+      "execution_class": "BLOCKED_DETERMINISTIC_CONCURRENCY_HARNESS",
+      "prerequisites": [
+        "Explicit named barriers",
+        "Independent physical connections",
+        "Race-enabled Linux run (-race)",
+        "Disposable synthetic database"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "CAP-01",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/CAP-01",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/CAP-01.json",
+      "execution_class": "BLOCKED_PRODUCTION_CAPACITY_HELPER",
+      "prerequisites": [
+        "Reviewed production capacity helper and fixture policy"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "CAP-02",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/CAP-02",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/CAP-02.json",
+      "execution_class": "BLOCKED_PRODUCTION_CAPACITY_HELPER",
+      "prerequisites": [
+        "Same shared production helper; explicit 32-party barrier"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "CAP-03",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/CAP-03",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/CAP-03.json",
+      "execution_class": "BLOCKED_PRODUCTION_CAPACITY_HELPER",
+      "prerequisites": [
+        "Production replay/admission/close paths"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "PERF-01",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaPerf/PERF-01",
+      "runner_command": "CGO_ENABLED=1 go test -json -count=1 -tags=pilot_schema_gate,pilot_schema_perf -run ^TestPilotSchemaPerf$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/PERF-01.json",
+      "execution_class": "DEFERRED_REFERENCE_HOST",
+      "prerequisites": [
+        "Declared 4-vCPU/16-GiB/NVMe Linux x86-64 reference profile; independent performance command"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite perf --matrix-cell linux-amd64-reference --approved-contract-sha256 <same-out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>",
+      "harness_layer": "PERFORMANCE_REFERENCE_HOST",
+      "platform_requirement": "Linux x86-64 reference host profile in case setup; ordinary matrix does not run this case"
+    },
+    {
+      "case_id": "CAP-04",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/CAP-04",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/CAP-04.json",
+      "execution_class": "BLOCKED_PRODUCTION_CAPACITY_HELPER",
+      "prerequisites": [
+        "Capacity reconciliation implementation and durable allocation rows"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-31",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-31",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-31.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-32",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-32",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-32.json",
+      "execution_class": "BLOCKED_NATIVE_JOURNAL_DURABILITY_HARNESS",
+      "prerequisites": [
+        "Disposable native filesystem; fdatasync/parent-fsync fault injection; ext4/XFS"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-33",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-33",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-33.json",
+      "execution_class": "BLOCKED_SYNTHETIC_RESTORE_MARKER_FIXTURE",
+      "prerequisites": [
+        "Synthetic signed deployment marker and test-only trust anchor; no production restore service"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-34",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-34",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-34.json",
+      "execution_class": "BLOCKED_CGO_DRIVER_HARNESS",
+      "prerequisites": [
+        "Pinned driver ConnectHook fault switch on first and replacement physical connections"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-35",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-35",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-35.json",
+      "execution_class": "BLOCKED_CGO_DRIVER_HARNESS",
+      "prerequisites": [
+        "Pool expansion to eight physical connections; per-connection forbidden SQL attempts"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-36",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-36",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-36.json",
+      "execution_class": "BLOCKED_CGO_DRIVER_HARNESS",
+      "prerequisites": [
+        "Capability cleanup observation after success, returned error, panic and cancellation"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-37",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-37",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-37.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-38",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-38",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-38.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-39",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-39",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-39.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-40",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-40",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-40.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-41",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-41",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-41.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-42",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-42",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-42.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-43",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-43",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-43.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-44",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-44",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-44.json",
+      "execution_class": "BLOCKED_A0_REAPER_SERVICE_DEPENDENCY",
+      "prerequisites": [
+        "Resident Reaper startup integration; not part of prototype schema harness"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-45",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-45",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-45.json",
+      "execution_class": "BLOCKED_A0_REAPER_SERVICE_DEPENDENCY",
+      "prerequisites": [
+        "Control-generation startup service and unarmed-connection negative control"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-46",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-46",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-46.json",
+      "execution_class": "BLOCKED_CROSS_STORE_RECOVERY_DEPENDENCY",
+      "prerequisites": [
+        "Durable ledger+journal recovery implementation; deterministic paired crash fixture"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-47",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-47",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-47.json",
+      "execution_class": "SCHEMA_FIXTURE_HARNESS",
+      "prerequisites": [
+        "Canonical generated schema fixture",
+        "Pinned CGO SQLite driver",
+        "Temporary synthetic database path"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    },
+    {
+      "case_id": "SCHEMA-48",
+      "status": "BLOCKED_NOT_IMPLEMENTED",
+      "implementation_status": "BLOCKED_NOT_IMPLEMENTED",
+      "test_name": "TestPilotSchemaFaultManifest/SCHEMA-48",
+      "runner_command": "CGO_ENABLED=1 go test -json -race -count=1 -tags=pilot_schema_gate -run ^TestPilotSchemaFaultManifest$ ./internal/pilotcontrol",
+      "result_path": "review/artifacts/pilot-schema-gate/<gate_id>/<run_id>/SCHEMA-48.json",
+      "execution_class": "BLOCKED_SIGNED_RECEIPT_IPC_HARNESS",
+      "prerequisites": [
+        "Frozen signature vectors, test-only key, authenticated local test transport; no live key"
+      ],
+      "wrapper_invocation": "python review/run_pilot_schema_gate.py --suite schema --coverage --matrix-cell <linux-amd64-ext4|linux-amd64-xfs|linux-arm64-ext4|linux-arm64-xfs> --approved-contract-sha256 <out-of-band-approved-hash> --server-root server --artifact-root review/artifacts/pilot-schema-gate",
+      "aggregate_invocation": "python review/aggregate_pilot_schema_gate.py --approved-contract-sha256 <same-out-of-band-approved-hash> --run-root review/artifacts/pilot-schema-gate/<gate_id>"
+    }
+  ],
+  "source_fault_manifest_sha256": "cb991c49ba02d0c4f75933519d67ef0c1710059f8187912a8d77d277b1fdcc10"
+}

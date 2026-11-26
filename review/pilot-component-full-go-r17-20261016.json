@@ -1,0 +1,290 @@
+{
+  "status": "backend_gates_passed_browser_pending",
+  "records": {
+    "final-runtime-coverage-r17-summary.json": {
+      "exit": 0,
+      "vet_exit": 0,
+      "elapsed_seconds": 338.17,
+      "tests": {
+        "run": 1482,
+        "output": 3023,
+        "pass": 1473,
+        "skip": 9,
+        "pause": 4,
+        "cont": 4
+      },
+      "top_level_tests": {
+        "run": 579,
+        "output": 1168,
+        "pass": 570,
+        "skip": 9
+      },
+      "packages": {
+        "start": 23,
+        "output": 69,
+        "pass": 23
+      },
+      "skips": [
+        "TestOptInProductionFB001Diagnostic",
+        "TestStartupCleanupHarness",
+        "TestBrowserOverdueHarness",
+        "TestOptInIndependentASRThroughOwnedProductRoute",
+        "TestChatReal",
+        "TestChatJSONReal",
+        "TestChatRefuseLongInput",
+        "TestOptInLocalSpeechQuality",
+        "TestStartupFailureHarness"
+      ],
+      "failures": [],
+      "source_sha256": "b2bac383acace0b1c957cf607f0a785d6e8196f85a78740a145d6eb06a6c5ba2",
+      "source_unchanged": true,
+      "coverage": {
+        "enwords/internal/agent": {
+          "hit": 151,
+          "total": 155,
+          "percent": 97.42
+        },
+        "enwords/internal/api": {
+          "hit": 3288,
+          "total": 4063,
+          "percent": 80.93
+        },
+        "enwords/internal/auth": {
+          "hit": 143,
+          "total": 159,
+          "percent": 89.94
+        },
+        "enwords/internal/classroom": {
+          "hit": 467,
+          "total": 506,
+          "percent": 92.29
+        },
+        "enwords/internal/config": {
+          "hit": 238,
+          "total": 266,
+          "percent": 89.47
+        },
+        "enwords/internal/duplex": {
+          "hit": 163,
+          "total": 167,
+          "percent": 97.6
+        },
+        "enwords/internal/feedback": {
+          "hit": 417,
+          "total": 440,
+          "percent": 94.77
+        },
+        "enwords/internal/judge": {
+          "hit": 159,
+          "total": 161,
+          "percent": 98.76
+        },
+        "enwords/internal/llmzhipu": {
+          "hit": 41,
+          "total": 41,
+          "percent": 100.0
+        },
+        "enwords/internal/localmodel": {
+          "hit": 152,
+          "total": 168,
+          "percent": 90.48
+        },
+        "enwords/internal/memory": {
+          "hit": 135,
+          "total": 145,
+          "percent": 93.1
+        },
+        "enwords/internal/obs": {
+          "hit": 50,
+          "total": 54,
+          "percent": 92.59
+        },
+        "enwords/internal/remoteprovider": {
+          "hit": 145,
+          "total": 150,
+          "percent": 96.67
+        },
+        "enwords/internal/scheduler": {
+          "hit": 636,
+          "total": 703,
+          "percent": 90.47
+        },
+        "enwords/internal/scripts": {
+          "hit": 108,
+          "total": 115,
+          "percent": 93.91
+        },
+        "enwords/internal/store": {
+          "hit": 1459,
+          "total": 1742,
+          "percent": 83.75
+        },
+        "enwords/internal/tools": {
+          "hit": 150,
+          "total": 160,
+          "percent": 93.75
+        },
+        "enwords/internal/voiceclone": {
+          "hit": 53,
+          "total": 56,
+          "percent": 94.64
+        },
+        "enwords/internal/voicecmd": {
+          "hit": 50,
+          "total": 52,
+          "percent": 96.15
+        },
+        "enwords/internal/wordbook": {
+          "hit": 280,
+          "total": 306,
+          "percent": 91.5
+        }
+      }
+    },
+    "final-runtime-coverage-r17-component.json": {
+      "per_file": {
+        "server/internal/store/pilot_schema.go": {
+          "hit": 259,
+          "total": 331,
+          "percent": 78.25
+        },
+        "server/internal/store/pilot_schema_verifier.go": {
+          "hit": 91,
+          "total": 122,
+          "percent": 74.59
+        },
+        "server/internal/store/pilot_legacy_audit.go": {
+          "hit": 165,
+          "total": 190,
+          "percent": 86.84
+        },
+        "server/internal/store/pilot_legacy_bridge.go": {
+          "hit": 57,
+          "total": 61,
+          "percent": 93.44
+        },
+        "server/internal/store/pilot_scope.go": {
+          "hit": 23,
+          "total": 28,
+          "percent": 82.14
+        },
+        "server/internal/store/pilot_created_codec.go": {
+          "hit": 44,
+          "total": 47,
+          "percent": 93.62
+        },
+        "server/internal/store/pilot_creation_plan.go": {
+          "hit": 49,
+          "total": 67,
+          "percent": 73.13
+        },
+        "server/internal/store/pilot_identity.go": {
+          "hit": 171,
+          "total": 224,
+          "percent": 76.34
+        },
+        "server/internal/store/pilot_created_audit.go": {
+          "hit": 78,
+          "total": 91,
+          "percent": 85.71
+        },
+        "server/internal/store/pilot_store.go": {
+          "hit": 8,
+          "total": 9,
+          "percent": 88.89
+        }
+      },
+      "aggregate": {
+        "hit": 945,
+        "total": 1170,
+        "percent": 80.77
+      },
+      "declared_top_level": [
+        "TestPilotLegacyBridgeStrictCodec",
+        "TestPilotLegacyBridgeDurabilityIdempotencyAndCorruption",
+        "TestPilotLegacyBridgeFailedCommitPublishesNoPermission",
+        "TestPilotGuardSavepointMustReestablishReservationDraft",
+        "TestPilotGuardFinishedTransactionNeverAuthorizesDraft",
+        "TestPilotVerifierUncommittedCookieProofIsNotPublishedDraft",
+        "TestPilotVerifierRejectsAnotherPoolEvenForSameDatabaseDraft",
+        "TestPilotCreatedBaselineStrictDraft",
+        "TestPilotCreationTwoPoolsDraft",
+        "TestPilotCreationReplayRejectsFrozenIdentityDamageDraft",
+        "TestPilotCreationReplayRejectsScopeDamageDraft",
+        "TestPilotCreationAndNonceReplayFreezeDraft",
+        "TestPilotCreationRejectsOwnerAndConfigABADraft",
+        "TestPilotCreationCommitFailurePublishesNoReceiptDraft",
+        "TestPilotCreationObserverClassificationAndPrivacyDraft",
+        "TestPilotCreationReplayRejectsCorruptCheckpointDraft",
+        "TestPilotSchemaDefaultOpenUnchangedAndCompleteMigrationDraft",
+        "TestPilotSchemaConcurrentTwoPoolsPrivateMigrationDraft",
+        "TestPilotSchemaRealDeferredCommitFailureLeavesOriginalDatabaseDraft",
+        "TestPilotSchemaPermanentScopeTriggersRejectEveryReplacementDraft",
+        "TestPilotSchemaCorruptionNeverFallsBackLegacyDraft",
+        "TestPilotSchemaStartupCompatibilityAndExplicitMigrationGateDraft",
+        "TestPilotSchemaCreatedDataAuditOnNewFacadeDraft",
+        "TestPilotSchemaUppercaseObjectsCannotHideFromInspectionDraft",
+        "TestPilotSchemaWarmUppercaseG1FactsRejectedWithoutCookieChangeDraft",
+        "TestPilotPersistedPlanRejectsAmbiguityAndInvalidDataDraft",
+        "TestPilotCreatedAuditUsesHistoricalFreezeNotCurrentAvailabilityDraft",
+        "TestPilotCreatedAuditRejectsFingerprintAndNonceDamageDraft",
+        "TestPilotCreatedAuditRejectsActiveAndLegacyAttachedStatesDraft",
+        "TestPilotCreatedAuditScopeBijectionDraft",
+        "TestPilotCreatedAuditRejectsFKValidFutureFactsDraft",
+        "TestPilotLegacyRuntimeValidHistoricalMigration",
+        "TestPilotLegacyRuntimeCorruptionBlocksOnlyExplicitMigration",
+        "TestPilotReadyLegacyScopeDurabilityAndRollback",
+        "TestPilotReadyLegacyScopeRejectsPilotAndFailedWrites"
+      ],
+      "missing_passed": [],
+      "overall_store": {
+        "hit": 1459,
+        "total": 1742,
+        "percent": 83.75
+      }
+    },
+    "final-runtime-race-r17-summary.json": {
+      "exit": 0,
+      "vet_exit": null,
+      "elapsed_seconds": 1519.11,
+      "tests": {
+        "run": 1482,
+        "output": 3023,
+        "pass": 1473,
+        "skip": 9,
+        "pause": 4,
+        "cont": 4
+      },
+      "top_level_tests": {
+        "run": 579,
+        "output": 1168,
+        "pass": 570,
+        "skip": 9
+      },
+      "packages": {
+        "start": 23,
+        "output": 46,
+        "pass": 23
+      },
+      "skips": [
+        "TestOptInProductionFB001Diagnostic",
+        "TestStartupCleanupHarness",
+        "TestBrowserOverdueHarness",
+        "TestOptInIndependentASRThroughOwnedProductRoute",
+        "TestChatReal",
+        "TestChatJSONReal",
+        "TestChatRefuseLongInput",
+        "TestOptInLocalSpeechQuality",
+        "TestStartupFailureHarness"
+      ],
+      "failures": [],
+      "source_sha256": "b2bac383acace0b1c957cf607f0a785d6e8196f85a78740a145d6eb06a6c5ba2",
+      "source_unchanged": true
+    }
+  },
+  "artifact_sha256": {
+    "final-runtime-coverage-r17-summary.json": "167f8fc4a669bcd62acfa55c13a7f9c0e362afa4db65767f5c3fcaf5b6dd3850",
+    "final-runtime-coverage-r17-component.json": "df81bac2ec38657adc382d9491ea240eff943cd53b37b8d761ef7037559b17ce",
+    "final-runtime-race-r17-summary.json": "6dd0159665b774e30bf04638413ba688f1785ff01aad0e6537a4d085d02b76d6"
+  }
+}

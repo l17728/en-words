@@ -1,0 +1,72 @@
+{
+  "status": "namespace fix implemented; lightweight tests passed; independent review pending; formal145 not resumed",
+  "production_source": "fc16869dfb13a9ad4cdba0a3d63208a35f3f6d29be16bad7fc8079739717cf83",
+  "files": [
+    {
+      "path": "review/run_frozen_browser_acceptance.py",
+      "sha256": "77ebeba148e9de997280c4fe014273848257e59647a0901db7c9c10a50eb4db8"
+    },
+    {
+      "path": "review/test_frozen_browser_acceptance.py",
+      "sha256": "871a591589d2effd4cba5878445433cede78c856bba3ca7d4143e00b608fdf91"
+    },
+    {
+      "path": "web/playwright.frozen.config.ts",
+      "sha256": "b0c2a39d8ad5bb1818e63c24f195c225645d52aab2229239b8490350abed886b"
+    },
+    {
+      "path": "web/e2e/frozen-build.ts",
+      "sha256": "09a57099368090f8de9abc03a3c8a2dd8396d37a0b5686af1d509922e5d9e946"
+    },
+    {
+      "path": "web/tests/frozen-build.test.ts",
+      "sha256": "7e09ac4c4456beeb2392524cf0940c6ce5a6d09a27427a8272d397bba47891f8"
+    }
+  ],
+  "python": {
+    "tests": 12,
+    "exit_code": 0,
+    "log": ".test-artifacts/frozen-browser145-tools-20261016/python-r3.log",
+    "duration_seconds": 0.386
+  },
+  "node": {
+    "tests": 2,
+    "passed": 2,
+    "failed": 0,
+    "exit_code": 0,
+    "evidence": "Direct subprocess final helper source; native exit code",
+    "names": [
+      "frozen preview replaces exactly one frontend command and preserves all backend limits",
+      "frozen build verifies current-run provenance, inputs, exact dist and index dependencies"
+    ],
+    "log": "D:\\en-words\\.test-artifacts\\frozen-browser145-tools-20261016\\node-final.log"
+  },
+  "full_test_ids": null,
+  "discovery_status": "Not executed during backend race window; expected145 must be proven by actual complete discovery",
+  "heavy_tasks_started": false,
+  "cli_help_exit_code": 0,
+  "independent_review": "A01/A02/A03 implementation corrected; second actual review requested, not yet accepted.",
+  "handoff_sha256": "a9050f5392407c5a151c555de83f60e0113489048f9e44d0df421f9830b95a9a",
+  "added_main_regressions": [
+    "swapped role/source rejects before process",
+    "build timeout never launches preview",
+    "missing binary plus final source error preserves original failed manifest",
+    "Popen failure records not_spawned",
+    "KeyboardInterrupt plus failed tree kill records bounded unresolved cleanup",
+    "actual dependency bytes changed while size/mtime unchanged rejects final hash check"
+  ],
+  "dependency_contract": "Full content SHA before/finally of web node_modules and actual global npm; top-level .tmp/.vite excluded explicitly; complete path/size/mtime each stage; Node/npm entry SHA each stage. Not continuous byte monitoring.",
+  "actual_handoff_validation": {
+    "passed": true,
+    "sha256": "a9050f5392407c5a151c555de83f60e0113489048f9e44d0df421f9830b95a9a",
+    "go_source_sha256": "b2bac383acace0b1c957cf607f0a785d6e8196f85a78740a145d6eb06a6c5ba2",
+    "roles": 5,
+    "scope": "read-only exact current source and artifact verification; no process started"
+  },
+  "namespace_revision": {
+    "report": "review/frozen-browser145-namespace-fix-20261016.json",
+    "python_passed": 27,
+    "node_passed": 2,
+    "formal_acceptance": "First run failed before full suites at global raw-ID collision; preserved. No new formal run."
+  }
+}

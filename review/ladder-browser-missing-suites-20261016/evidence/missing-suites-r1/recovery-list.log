@@ -1,0 +1,44 @@
+Listing tests:
+  recovery-regression.spec.ts:7:1 › REC12 automatic recognition waits for business readiness and rejects prior-turn callbacks
+  recovery-regression.spec.ts:56:1 › REC11 business question readiness blocks early and blank answers and preserves replayed drafts
+  recovery-regression.spec.ts:102:3 › invalid model schema missing › rejects malformed model intent and visibly applies the original 50-word rule fallback
+  recovery-regression.spec.ts:102:3 › invalid model schema null › rejects malformed model intent and visibly applies the original 50-word rule fallback
+  recovery-regression.spec.ts:118:32 › terminal enter 403 has actionable error, no endless retry
+  recovery-regression.spec.ts:118:32 › terminal enter 404 has actionable error, no endless retry
+  recovery-regression.spec.ts:131:1 › teacher effect error protocol exposes recovery without pretending playback succeeded
+  recovery-regression.spec.ts:154:1 › T3 startup scheduler replaces an overdue lesson once and rejects the retired classroom
+  recovery-regression.spec.ts:180:119 › REC05 controlled L2 provider latency › model cannot override unsafe original input 每天0次
+  recovery-regression.spec.ts:180:119 › REC05 controlled L2 provider latency › model cannot override unsafe original input 课程挪到五月一号或者二号
+  recovery-regression.spec.ts:180:119 › REC05 controlled L2 provider latency › model cannot override unsafe original input 课程改期到五月一号，或者二号
+  recovery-regression.spec.ts:180:119 › REC05 controlled L2 provider latency › model cannot override unsafe original input 课程改期到五月一号；或者二号
+  recovery-regression.spec.ts:180:119 › REC05 controlled L2 provider latency › model cannot override unsafe original input 2027-02-30请假
+  recovery-regression.spec.ts:180:119 › REC05 controlled L2 provider latency › model cannot override unsafe original input 课程改到2027-05-01
+  recovery-regression.spec.ts:200:3 › REC05 controlled L2 provider latency › slow judging does not lock another classroom; actual restart reopens unanswered question
+  recovery-regression.spec.ts:229:1 › REC01 real restart during teaching refreshes ticket, cancels old media, resumes same segment
+  recovery-regression.spec.ts:256:1 › REC02 repeating and wait_answer survive real restart without a fabricated answer
+  recovery-regression.spec.ts:277:1 › REC04 two students and administrator stay isolated while one network disconnects
+  recovery-regression.spec.ts:310:3 › G09 no_voice shows failure and never sends successful playback ACK
+  recovery-regression.spec.ts:310:3 › G09 error shows failure and never sends successful playback ACK
+  recovery-regression.spec.ts:310:3 › G09 throw shows failure and never sends successful playback ACK
+  recovery-regression.spec.ts:310:3 › G09 timeout shows failure and never sends successful playback ACK
+  recovery-regression.spec.ts:332:1 › old recognizer delayed onend cannot restart after reconnect installs a new listener
+  recovery-regression.spec.ts:361:1 › G09 delayed microphone grant after account change releases tracks without upload
+  recovery-regression.spec.ts:396:1 › G09 canceled delayed synthesis body cannot create or play late audio
+  recovery-regression.spec.ts:425:66 › recording conversion bad_decode releases capture and never uploads a stale or invalid result
+  recovery-regression.spec.ts:425:66 › recording conversion exit releases capture and never uploads a stale or invalid result
+  recovery-regression.spec.ts:425:66 › recording conversion account_change releases capture and never uploads a stale or invalid result
+  recovery-regression.spec.ts:483:1 › REC09 corrupt persisted snapshot is visible and traced; repaired restart clears the temporary error
+  recovery-regression.spec.ts:516:1 › REC10 scheduled lesson opens in the idle dashboard when display time reaches its boundary
+  recovery-regression.spec.ts:552:3 › QTY docs26 original quantity constraints › CH030 wrong model category cannot mutate either student and remains safe after replay and refresh
+  recovery-regression.spec.ts:586:3 › QTY docs26 original quantity constraints › legal daily frequency plus absolute words and independent relative reduction remain authorized
+  recovery-regression.spec.ts:606:3 › JDG docs27 verdict provenance › legal model wrong and invalid verdict preserve classroom rules but have distinct lesson trace reasons
+  recovery-regression.spec.ts:633:6 › JD28 semantic routing rejects target tokens without answer meaning › negation reaches L2 and reteaches; full sentence passes while another student stays isolated
+  recovery-regression.spec.ts:633:6 › JD28 semantic routing rejects target tokens without answer meaning › instruction reaches L2 and reteaches; full sentence passes while another student stays isolated
+  recovery-regression.spec.ts:680:1 › SUB01 actual browser start drives bilingual repeated captions, gaps and stale callbacks stay empty
+  recovery-regression.spec.ts:709:46 › SUB02 platform ended shows captions only on playing and invalidates old attempts
+  recovery-regression.spec.ts:709:46 › SUB02 platform fallback shows captions only on playing and invalidates old attempts
+  recovery-regression.spec.ts:755:44 › SUB03 phase snapshot cancels old playback and captions without affecting another student
+  recovery-regression.spec.ts:755:44 › SUB03 pause snapshot cancels old playback and captions without affecting another student
+  recovery-regression.spec.ts:875:1 › SUB04 disconnect and account replacement clear active captions and reject delayed prior media
+  recovery-regression.spec.ts:900:1 › REC13 externally signal-exited owned backend restarts and restores the student classroom
+Total: 42 tests in 1 file

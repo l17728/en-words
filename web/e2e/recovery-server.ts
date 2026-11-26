@@ -6,17 +6,19 @@ import { createServer, type ServerResponse } from 'node:http'
 import { ownedExited, stopOwned, cleanupOwned, detachOwnedOutput } from './owned-process'
 import { applySchemaConnectionPolicy, observePlatformTransport } from './schema-platform'
 
-export const test = base.extend<{ duplexPilot: boolean; duplexShadow: boolean; localModel: boolean; modelSchema: string; overdueHarness: boolean; productionSchedule: boolean; server: { terminate: () => Promise<void>; restart: (whileStopped?: () => void) => Promise<void>; runOverdue: () => void; timeoutFinished: () => void; log: string; pids: number[]; db: string; model: { pending: number; canceled: number; feedbackCalls: number; judgeCalls: number } } }>({
+export const test = base.extend<{ duplexPilot: boolean; duplexShadow: boolean; deferDuplexFeedback: boolean; uncertainDuplexCommit: boolean; localModel: boolean; modelSchema: string; overdueHarness: boolean; productionSchedule: boolean; server: { terminate: () => Promise<void>; restart: (whileStopped?: () => void) => Promise<void>; runOverdue: () => void; timeoutFinished: () => void; log: string; pids: number[]; db: string; model: { pending: number; canceled: number; feedbackCalls: number; judgeCalls: number } } }>({
   duplexPilot: [false, { option: true }],
   duplexShadow: [false, { option: true }],
+  deferDuplexFeedback: [false, { option: true }],
+  uncertainDuplexCommit: [false, { option: true }],
   localModel: [false, { option: true }],
   modelSchema: ['valid', { option: true }],
   overdueHarness: [false, { option: true }],
   productionSchedule: [false, { option: true }],
-  server: [async ({ request, localModel, modelSchema, overdueHarness, duplexPilot, duplexShadow, productionSchedule }, runFixture, info) => {
+  server: [async ({ request, localModel, modelSchema, overdueHarness, duplexPilot, duplexShadow, deferDuplexFeedback, uncertainDuplexCommit, productionSchedule }, runFixture, info) => {
     const binary = overdueHarness ? process.env.E2E_HARNESS_BINARY : process.env.E2E_SERVER_BINARY
     if (!binary) throw new Error('E2E_SERVER_BINARY is required for owned-process restart acceptance')
-    const model = { pending: 0, canceled: 0, feedbackCalls: 0, judgeCalls: 0 }
+    const model = { pending: 0, canceled: 0, feedbackCalls: 0, judgeCalls: 0, asrCalls: 0 }
     const pending = new Set<ServerResponse>()
     const platform = createServer((req, res) => {
       applySchemaConnectionPolicy(modelSchema, res)
@@ -26,7 +28,13 @@ export const test = base.extend<{ duplexPilot: boolean; duplexShadow: boolean; l
       let raw = ''
       req.on('data', chunk => { raw += chunk })
       req.on('end', () => {
-        if (req.url === '/api/asr/transcriptions') { res.end(JSON.stringify({ text: 'cat' })); return }
+        if (req.url === '/api/asr/transcriptions') {
+          model.asrCalls++
+          const text = duplexShadow && model.asrCalls === 1 ? 'banana'
+            : duplexShadow && model.asrCalls === 3 ? '我想反馈每天词太多了' : 'cat'
+          res.end(JSON.stringify({ text }))
+          return
+        }
         if (!raw.trim()) { res.statusCode = 503; res.end(JSON.stringify({ error: 'empty_platform_request' })); return }
         const body = JSON.parse(raw)
         const content = body.messages?.find((m: any) => m.role === 'user')?.content || ''
@@ -102,7 +110,7 @@ export const test = base.extend<{ duplexPilot: boolean; duplexShadow: boolean; l
       const generation = ++processGeneration
       const args = overdueHarness ? ['-test.run=^TestBrowserOverdueHarness$', '-test.timeout=5m'] : [...(productionSchedule ? [] : ['-testmode']), '-port', '18081', '-db', db, '-providers', localModel ? 'local' : 'mock']
       const startedChild = spawn(resolve(binary), args, {
-        cwd: resolve('../server'), windowsHide: true, env: { ...process.env, ENWORDS_DUPLEX_PILOT: duplexPilot ? '1' : '0', ENWORDS_DUPLEX_SHADOW: duplexShadow ? '1' : '0', ENWORDS_MODEL_CONSOLE: `http://127.0.0.1:${platformPort}`, ...(overdueHarness ? { ENWORDS_BROWSER_HARNESS: '1', ENWORDS_BROWSER_DB: db, ENWORDS_BROWSER_PORT: '18081' } : {}) }, stdio: ['pipe', 'pipe', 'pipe'],
+        cwd: resolve('../server'), windowsHide: true, env: { ...process.env, ENWORDS_DUPLEX_PILOT: duplexPilot ? '1' : '0', ENWORDS_DUPLEX_SHADOW: duplexShadow ? '1' : '0', ENWORDS_E2E_DEFER_FEEDBACK_DISPATCH: deferDuplexFeedback ? '1' : '0', ENWORDS_E2E_COMMIT_THEN_ERROR: uncertainDuplexCommit ? '1' : '0', ENWORDS_MODEL_CONSOLE: `http://127.0.0.1:${platformPort}`, ...(overdueHarness ? { ENWORDS_BROWSER_HARNESS: '1', ENWORDS_BROWSER_DB: db, ENWORDS_BROWSER_PORT: '18081' } : {}) }, stdio: ['pipe', 'pipe', 'pipe'],
       })
       child = startedChild
       let generationSpawnErrors: string[] = []

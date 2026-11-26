@@ -1,0 +1,75 @@
+{
+  "review": "startup-dual-pool-race-failure-review",
+  "date": "2026-10-16",
+  "mode": "read_only_design_and_existing_test_no_execution",
+  "source": "review\\startup-dual-pool-race-failure-design-20261016.md",
+  "sha256": "7d824acd71f1ca3c2823563e1d5f3f2c8584c000e49679ba3409bec90c189e2e",
+  "status": "design_passed_for_scoped_test_implementation",
+  "passed": [
+    "Original20s gate is preserved in intent; no production startup/SQLite parameter change or retry-to-green.",
+    "Waiting on results as well as ready distinguishes early failure from true stage stall.",
+    "No DATA RACE report is not proof absence of product synchronization error; plan correctly keeps root cause unknown.",
+    "Real independent pools, successful-schema validation and reopen recovery remain goals.",
+    "Plan correctly separates test-observability/cleanup defects from unproven user-visible startup defects; no invented browser bug claim."
+  ],
+  "existing_code_evidence": {
+    "file": "server/internal/store/startup_matrix_test.go",
+    "function": "TestStartupTwoIndependentPoolsNeverPublishPartialSchema",
+    "observations": [
+      "Current ready loop starts a fresh time.After20s on each iteration.",
+      "Timeout branch releases barrier then Fatal without collecting or closing worker results.",
+      "Success assertion uses require before pool close; cleanup registration should precede assertions.",
+      "Current test only counts one success; it does not actually require loser ErrInitializationConflict. Strengthening this must preserve actual error classification evidence."
+    ]
+  },
+  "execution": "No execution or test edits performed. Scoped test implementation may proceed under parent authorization; actual code and targeted evidence still require review.",
+  "closed_blockers": [
+    {
+      "id": "START-RACE-01",
+      "severity": "P2",
+      "section": "implementation3",
+      "finding": "Unconditional cancellation after releasing the barrier on the successful two-ready path can cancel both OpenContext operations before the intended real initializer race and make unique-winner assertion artificial.",
+      "required_change": "On normal two-ready path release barrier and await actual results without immediate cancel. Cancel on premature return/failure/deadline or after both results finish. Define success-result wait and cleanup budgets explicitly; cleanup budget must not extend the20s ready gate."
+    },
+    {
+      "id": "START-RACE-02",
+      "severity": "P2",
+      "section": "implementation3 / ownership",
+      "finding": "Bounded join and guaranteed all-path worker/pool cleanup are not equivalent. If a worker outlives cleanup deadline, it may later return a DB after the test receiver exits and TempDir cleanup begins. Current plan does not assign ownership for that late DB.",
+      "required_change": "Specify ownership protocol for every nonnil pool, including late results, without blocking worker sends. Prefer worker-owned deferred pool close with coordinated validation release, or explicit acknowledged transfer plus abandoned-result cleanup. Register cleanup before assertions; do not call require/Fatal while unregistered pools or workers remain. On join timeout report cleanup_incomplete honestly, retain owned path for diagnosis or isolate uninterruptible worker in an owned child; do not claim all resources joined."
+    }
+  ],
+  "blockers": [],
+  "implementation_checklist": [
+    {
+      "id": "START-RACE-03",
+      "detail": "Use worker-tagged ready/result records, retain early result already received, collect each worker exactly once. One monotonic timer/deadline should govern whole ready wait instead of resetting20s per notification; state whether this intentionally tightens existing per-iteration implementation."
+    },
+    {
+      "id": "START-RACE-04",
+      "detail": "Stage summaries are read by parent while workers run; use mutex or immutable buffered events, a per-worker cap and copy snapshot. Observer must not call testing Fatal/require or block sending telemetry. Barrier release must be once-only."
+    },
+    {
+      "id": "START-RACE-05",
+      "detail": "Specify numeric bounded cleanup deadline and cancellation behavior while barrier-blocked. Classify errors with fixed code/errors.Is plus stage; do not print raw error strings that could contain DB paths/SQL. Reopen/schema assertions also need owned-pool cleanup registered before assertions."
+    }
+  ],
+  "final_followup": {
+    "result": "Latest on-disk six constraints close cancellation-order and pool-ownership blockers.",
+    "confirmed": [
+      "Single20s ready deadline; independent20s result watchdog does not extend readiness gate.",
+      "Normal two-ready release does not cancel initialization race; early return/deadline releases then cancels.",
+      "Worker owns and closes pool, validates schema without testing API, then returns pure summary. No late bare DB transfer.",
+      "Failure cleanup join bounded10s. MkdirTemp directory removed only after both workers terminate and pools close; otherwise cleanup_incomplete and retained directory.",
+      "Per-worker stage summaries mutex protected and fixed error classification avoids path/SQL leakage.",
+      "Winner/loser/schema/reopen checks preserved and original failure retained; root cause remains unknown."
+    ],
+    "code_review_checks": [
+      "Use once-only barrier close; worker-ID ready/result tracking must consume early result exactly once.",
+      "Result sends must stay nonblocking after parent stops waiting (capacity2 for one terminal summary per worker); retain close errors distinctly.",
+      "No require/schemaSnapshot(t,...) in worker. Worker cleanup must cover any nonnil DB even with an error or local validation failure.",
+      "Interpret join-after-testing restriction as parent-only diagnostics after join attempt; incomplete join needs safe fixed reporting, no worker testing API.",
+      "Reopen pool Close must precede final directory removal; no success cleanup deletion while reopened handle remains alive."
+    ]
+  }
+}

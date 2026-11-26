@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -327,6 +328,42 @@ func TestCov_RealWSRoundtrip(t *testing.T) {
 	require.NoError(t, conn.ReadJSON(&snap))
 	require.Equal(t, "state_snapshot", snap["type"])
 	assert.Equal(t, "cat", snap["word"])
+
+	readRejected := func(eventID string) {
+		t.Helper()
+		for i := 0; i < 32; i++ {
+			var frame Msg
+			require.NoError(t, conn.ReadJSON(&frame))
+			if frame["event_id"] == eventID {
+				require.Equal(t, "event_rejected", frame["type"])
+				return
+			}
+		}
+		t.Fatalf("event_rejected frame %q not received", eventID)
+	}
+	// Invalid envelope and control characters are rejected at the transport
+	// boundary without forwarding input into classroom state transitions.
+	require.NoError(t, conn.WriteJSON(Msg{"type": "student_event", "event": "word_clicked", "event_id": "bad-envelope", "submission_id": nil}))
+	readRejected("bad-envelope")
+	require.NoError(t, conn.WriteJSON(Msg{"type": "voice_text", "text": "bad\u0001text", "event_id": "bad-voice-text"}))
+	readRejected("bad-voice-text")
+	room, ok := app.Rooms.Room(lessonID)
+	require.True(t, ok)
+	beforeUnknownEvent := room.durableSnapshot()
+	require.NoError(t, conn.WriteJSON(Msg{"type": "student_event", "event": "unrecognized", "event_id": "bad-classroom-event"}))
+	require.NoError(t, conn.WriteJSON(Msg{"type": "student_event", "event": "answer_submitted", "text": strings.Repeat("x", 2049), "event_id": "long-event-text"}))
+	readRejected("long-event-text")
+	require.True(t, reflect.DeepEqual(beforeUnknownEvent, room.durableSnapshot()), "unknown events must not mutate classroom state")
+	require.NoError(t, conn.WriteJSON(Msg{"type": "voice_stream_start", "event_id": "duplex-disabled"}))
+	var disabled Msg
+	for i := 0; i < 32; i++ {
+		require.NoError(t, conn.ReadJSON(&disabled))
+		if disabled["event_id"] == "duplex-disabled" {
+			break
+		}
+	}
+	require.Equal(t, "voice_stream_error", disabled["type"])
+	require.Equal(t, "feature_disabled", disabled["reason"])
 
 	// 心跳
 	require.NoError(t, conn.WriteJSON(Msg{"type": "heartbeat"}))

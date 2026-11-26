@@ -1,0 +1,26 @@
+CWD=D:\en-words\server\nARGV=['C:\\Users\\Administrator\\AppData\\Local\\en-words-tools\\go1250-full\\go\\bin\\go.exe', 'test', '-tags=pilot_e2e', '-count=1', '-timeout=10m', './...']\nEXIT_CODE=0\n===== STDOUT (raw bytes) =====\nok  	enwords/cmd/judge-eval	1.980s
+ok  	enwords/cmd/local-eval	1.999s
+ok  	enwords/cmd/server	5.293s
+ok  	enwords/internal/agent	0.838s
+ok  	enwords/internal/api	86.004s
+ok  	enwords/internal/auth	0.783s
+ok  	enwords/internal/classroom	3.087s
+ok  	enwords/internal/config	1.521s
+ok  	enwords/internal/duplex	1.969s
+ok  	enwords/internal/feedback	2.748s
+ok  	enwords/internal/judge	2.132s
+ok  	enwords/internal/llmzhipu	2.022s
+ok  	enwords/internal/localmodel	2.261s
+ok  	enwords/internal/memory	1.530s
+ok  	enwords/internal/obs	1.485s
+?   	enwords/internal/pilotcontrol	[no test files]
+ok  	enwords/internal/pilotsupervisor	36.913s
+ok  	enwords/internal/remoteprovider	4.326s
+ok  	enwords/internal/scheduler	3.501s
+ok  	enwords/internal/scripts	3.524s
+ok  	enwords/internal/store	79.028s
+ok  	enwords/internal/tools	3.705s
+ok  	enwords/internal/voiceclone	2.223s
+ok  	enwords/internal/voicecmd	1.194s
+ok  	enwords/internal/wordbook	3.889s
+\n===== STDERR (raw bytes) =====\n\n===== END LOG =====\n

@@ -63,3 +63,7 @@ func validateWAV(raw []byte) error {
 	}
 	return nil
 }
+
+// ValidateWAV is shared by provider ingress and the durable speech cache so
+// cached assets retain the same complete RIFF/WAV validation as fresh audio.
+func ValidateWAV(raw []byte) error { return validateWAV(raw) }

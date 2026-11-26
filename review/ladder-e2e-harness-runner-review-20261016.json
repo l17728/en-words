@@ -1,0 +1,68 @@
+{
+  "review": "ladder-e2e-harness-runner-review",
+  "date": "2026-10-16",
+  "mode": "read_only_no_execution",
+  "file": "review\\ladder-integrated-browser-acceptance-20261016\\evidence\\run-playwright-full.ps1",
+  "sha256": "3d7a3cfa0218732ec949a315f7727f2528fc222c5c8fa623329527ebc3312cc1",
+  "status": "blocked",
+  "passed": [
+    "From a successfully entered source/server directory, go test -c -o <absolute harness> ./internal/api builds the correct API test package. Finally Pop-Location restores cwd.",
+    "E2E_SERVER_BINARY and E2E_HARNESS_BINARY assignments are absolute report/bin paths and child Node inherits environment. recovery-server selects E2E_HARNESS_BINARY for overdue harness.",
+    "Playwright child WorkingDirectory points at copied source/web; quoted CLI/config argument shape is correct for these paths."
+  ],
+  "blockers": [
+    {
+      "id": "RUN-H01",
+      "lines": [
+        1,
+        23,
+        62
+      ],
+      "finding": "Continue error policy permits Push-Location failure to continue compilation in caller cwd; Start-Process failure may leave null or previous iteration proc and subsequent waits/logging incorrect.",
+      "fix": "Fail closed for directory/process/file operations with Stop; initialize proc per iteration; try/catch/finally persist fixed failure and clean only owned process tree. Native go exit must remain explicitly checked."
+    },
+    {
+      "id": "RUN-H02",
+      "lines": [
+        22,
+        29
+      ],
+      "finding": "Existing harness accepted solely by path existence, without source/build manifest or hash verification. A stale harness can silently validate another candidate. Server binary likewise not validated here.",
+      "fix": "Require reviewed candidate build/handoff hashes and verify both binaries or rebuild explicitly under frozen input manifest; existence is not provenance."
+    },
+    {
+      "id": "RUN-H03",
+      "line": 46,
+      "finding": "Startup suite requires three additional role-specific inputs absent from this runner: E2E_STARTUP_HARNESS_BINARY, E2E_STARTUP_CLEANUP_BINARY, E2E_STARTUP_OLD_BINARY. API harness is not their replacement. Uncontrolled inherited values can also point at another source.",
+      "evidence": "source/web/e2e/startup-acceptance.spec.ts:12,127,256",
+      "fix": "Bind validated cmd/server failure/cleanup test binaries and explicitly approved historical binary; record exact role hashes. Do not silently inherit these env variables."
+    },
+    {
+      "id": "RUN-H04",
+      "lines": [
+        64,
+        67
+      ],
+      "finding": "WaitForExit is unbounded and no owned-tree cleanup runs on interruption/exception. Per-suite failures or skipped_port_busy do not cause final script exit nonzero, so outer process success can misrepresent acceptance.",
+      "fix": "Use declared runner resource deadline with bounded owned-tree termination/wait, preserve interrupted/unknown state, and emit nonzero aggregate exit for any failed/not-run/skipped suite. Keep individual product/test gates unchanged."
+    }
+  ],
+  "additional_notes": [
+    {
+      "finding": "playwright.headless.config.ts re-exports playwright.config.ts; both listed suites run same bugs/smoke tests.",
+      "impact": "Do not sum rows as unique cases; derive suite-qualified test discovery and exact accepted union."
+    },
+    {
+      "finding": "Port probe checks IPv4 loopback only and does not reserve the port; race remains between probe and child binding.",
+      "impact": "Treat readiness/start errors as failures, not evidence services could safely start; do not kill unrelated listeners."
+    },
+    {
+      "finding": "Several listed lanes are real-media/subtitle lanes; setting audio paths alone does not establish prerequisite model/service authorization or availability.",
+      "impact": "Keep deterministic mock acceptance and actual audio lanes explicitly separate in final results."
+    }
+  ],
+  "limits": [
+    "No tests, compilation, service start, file edits to runner, or real-media requests performed.",
+    "This review verifies current script text and copied fixture environment contract, not actual built binary content."
+  ]
+}

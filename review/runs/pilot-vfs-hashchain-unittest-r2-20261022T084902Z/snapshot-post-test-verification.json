@@ -1,0 +1,9 @@
+﻿{
+    "manifest_sha256":  "218ECB96C1C14CC1222C2ACD794F0D20B2A089BF431B5975555E12E113CBC374",
+    "entry_count":  74,
+    "all_entries_match":  true,
+    "mismatch_paths":  [
+
+                       ],
+    "post_test_verification_utc":  "2026-10-22T08:49:19.5826197Z"
+}

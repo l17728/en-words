@@ -1,0 +1,19 @@
+{
+  "review": "pilot-start-kernel-sdd-architecture-review2",
+  "date": "2026-10-16",
+  "status": "blocked",
+  "blocker_count": 1,
+  "source": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "report": "review/pilot-start-kernel-sdd-architecture-review2-20261016.md",
+  "decisions": [
+    {"id":"START-SDD-01","decision":"approve","reason":"active lifecycle and explicit version/generation/receipt/outbox fields fit existing DDL"},
+    {"id":"START-SDD-02","decision":"approve","reason":"current authorization precedes receipt replay; new-transition CAS only follows a missing receipt"},
+    {"id":"START-SDD-03","decision":"approve","reason":"creation-frozen config and words remain authoritative"},
+    {"id":"STATE-CODEC","decision":"approve","reason":"explicit initial codec matches current State and EffectiveSnapshot fields; later active content remains unsupported"},
+    {"id":"START-SDD-04","decision":"block","severity":"P2","sections":["3","4","6"],"reason":"show_word outbox bypasses the existing Teacher.PlanEffects classroom.show_word capability and audit while only classroom.say is executed/audited","evidence":["server/internal/agent/teacher_effects.go:14","server/internal/api/teachereffects.go:36","docs/33-全双工课堂SDD.md:107"],"required":"Execute both allowed capabilities through the restricted registry with frozen facts; atomically record exactly one audit per tool and two outbox rows; update verifier and fault/E2E audit counts without broadening scope"},
+    {"id":"ISOLATION-AUTH-UNKNOWN","decision":"approve","reason":"test-only artifact, current owner authorization, no media dispatch and bounded unknown-result recovery are explicit"}
+  ],
+  "implementation_notes": ["Use actual logical_input_revision and delivery_status column names", "Decode started_at as UTC milliseconds and preserve frozen config", "Orphan audit validation must not reject unrelated legacy audit rows"],
+  "limitations": ["Read-only design review", "No tests/builds/services or SQL execution", "Not approval of complete Room integration, old write gates, outbox dispatch, real models or human audio"],
+  "source_or_design_modified": false
+}

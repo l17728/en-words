@@ -1,0 +1,9 @@
+
+Running 4 tests using 1 worker
+
+  ✓  1 e2e\continuation-wait.spec.ts:5:80 › WAIT39 progress keeps local playback waiting separate from delivery and other students (20.3s)
+  ✓  2 e2e\continuation-wait.spec.ts:5:80 › WAIT39 disconnect keeps local playback waiting separate from delivery and other students (7.2s)
+  ✓  3 e2e\continuation-wait.spec.ts:5:80 › WAIT39 account keeps local playback waiting separate from delivery and other students (8.7s)
+  ✓  4 e2e\continuation-wait.spec.ts:5:80 › WAIT39 fallback_error keeps local playback waiting separate from delivery and other students (6.8s)
+
+  4 passed (1.0m)

@@ -1,0 +1,62 @@
+{
+  "classification": "PYTHON_MANIFEST_REGRESSION_NOT_PILOTQUOTA_GO_PACKAGE",
+  "command": [
+    "C:\\Python312\\python.exe",
+    "-m",
+    "unittest",
+    "-v",
+    "review.test_pilot_runroot_manifest"
+  ],
+  "cwd": "D:\\en-words",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "exit_code": 0,
+  "elapsed_seconds": 0.5,
+  "stdout_bytes": 0,
+  "stderr_bytes": 1931,
+  "before_hashes": {
+    "review/test_pilot_runroot_manifest.py": {
+      "size": 7303,
+      "sha256": "4362f5c1d81011e5c89fc6556a7317e315173e8c5381574808e3039cc0578197"
+    },
+    "review/pilot-intent-quota-journal-manifest-20261022.json": {
+      "size": 40186,
+      "sha256": "19d1cdb430abe1bbb85051a8f04d9ad6a8f7a993ce3f4d1b9107f205dc33fde0"
+    },
+    "review/pilot-runroot-product-orchestration-manifest-20261021.json": {
+      "size": 81920,
+      "sha256": "b1b7c2118115164f424b4327bbb0eb01885f3f87ed154f24b14019015f4c6cba"
+    },
+    "review/pilot-control-ledger-v3-schema-fault-manifest-20261021.json": {
+      "size": 35903,
+      "sha256": "a8f59946f4edaa2adaab08cf1436c2d6d18717e29f65aa4116aba595107988e8"
+    },
+    "docs/50-pilot-runroot-product-orchestration-sdd.md": {
+      "size": 59247,
+      "sha256": "31fdc4fbacc7c736e1ce37ccd12dbfc04b331a3f464e8674a75a21130ee1e1e0"
+    }
+  },
+  "after_hashes": {
+    "review/test_pilot_runroot_manifest.py": {
+      "size": 7303,
+      "sha256": "4362f5c1d81011e5c89fc6556a7317e315173e8c5381574808e3039cc0578197"
+    },
+    "review/pilot-intent-quota-journal-manifest-20261022.json": {
+      "size": 40186,
+      "sha256": "19d1cdb430abe1bbb85051a8f04d9ad6a8f7a993ce3f4d1b9107f205dc33fde0"
+    },
+    "review/pilot-runroot-product-orchestration-manifest-20261021.json": {
+      "size": 81920,
+      "sha256": "b1b7c2118115164f424b4327bbb0eb01885f3f87ed154f24b14019015f4c6cba"
+    },
+    "review/pilot-control-ledger-v3-schema-fault-manifest-20261021.json": {
+      "size": 35903,
+      "sha256": "a8f59946f4edaa2adaab08cf1436c2d6d18717e29f65aa4116aba595107988e8"
+    },
+    "docs/50-pilot-runroot-product-orchestration-sdd.md": {
+      "size": 59247,
+      "sha256": "31fdc4fbacc7c736e1ce37ccd12dbfc04b331a3f464e8674a75a21130ee1e1e0"
+    }
+  },
+  "hashes_stable": true,
+  "candidate_execution_invoked": false
+}

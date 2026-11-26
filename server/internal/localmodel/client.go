@@ -38,6 +38,11 @@ type Client struct {
 	status    map[string]bool
 	profileMu sync.RWMutex
 	profile   Profile
+	// The local ASR model is single-GPU and can return empty/partial results
+	// when several multipart requests are decoded at once. Keep a cancellable
+	// bounded gate; callers still retain their request deadline.
+	asrGate chan struct{}
+	ttsGate chan struct{}
 }
 
 // Profile assigns a model-console service to each product capability. The
@@ -65,8 +70,30 @@ func New(base string, log *obs.Logger) (*Client, error) {
 	return &Client{base: strings.TrimRight(base, "/"), Log: log, Services: map[string]Service{}, profile: Profile{Name: "default", Text: "vl", ASR: "asr", TTSZh: "tts", TTSEn: "tts-en"}, HTTP: &http.Client{
 		Timeout:       20 * time.Second,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
-	}}, nil
+	}, asrGate: make(chan struct{}, 4), ttsGate: make(chan struct{}, 1)}, nil
 }
+
+func (c *Client) acquireASR(ctx context.Context) error {
+	select {
+	case c.asrGate <- struct{}{}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func (c *Client) releaseASR() { <-c.asrGate }
+
+func (c *Client) acquireTTS(ctx context.Context) error {
+	select {
+	case c.ttsGate <- struct{}{}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func (c *Client) releaseTTS() { <-c.ttsGate }
 
 func (c *Client) request(ctx context.Context, path, contentType string, body io.Reader, limit int64) ([]byte, error) {
 	start := time.Now()
@@ -270,6 +297,15 @@ func (c *Client) Transcribe(ctx context.Context, audio []byte, filename, languag
 	if !c.Has(id, "asr") || len(audio) == 0 || len(audio) > MaxAudio {
 		return "", fmt.Errorf("model console: audio unavailable or invalid")
 	}
+	queueStart := time.Now()
+	if err := c.acquireASR(ctx); err != nil {
+		c.Log.ErrorCtx(ctx, "provider", "model_queue_rejected", map[string]any{"task": "asr", "wait_ms": time.Since(queueStart).Milliseconds(), "reason": "canceled_or_timeout"})
+		return "", fmt.Errorf("model console: ASR queue canceled")
+	}
+	defer c.releaseASR()
+	if waited := time.Since(queueStart).Milliseconds(); waited > 0 {
+		c.Log.InfoCtx(ctx, "provider", "model_queue_acquired", map[string]any{"task": "asr", "wait_ms": waited})
+	}
 	var body bytes.Buffer
 	w := multipart.NewWriter(&body)
 	f, err := w.CreateFormFile("file", filename)
@@ -303,19 +339,45 @@ func (c *Client) Transcribe(ctx context.Context, audio []byte, filename, languag
 }
 
 func (c *Client) Synthesize(ctx context.Context, text, lang string) (audio []byte, err error) {
+	id := c.serviceID("tts_zh")
+	if lang == "en" {
+		id = c.serviceID("tts_en")
+	}
+	return c.SynthesizeFor(ctx, id, c.Services[id].Model, "default", text, lang)
+}
+
+// SynthesizeFor performs synthesis through one explicitly pinned discovered
+// service/model/voice. Resident workers use it to honor the server-approved
+// immutable job capability rather than their own mutable default profile.
+func (c *Client) SynthesizeFor(ctx context.Context, serviceID, model, voice, text, lang string) (audio []byte, err error) {
 	ctx = obs.WithChild(ctx, "tts")
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 	start := time.Now()
-	defer func() { c.mediaResult(ctx, "tts", lang, len(audio), start, err) }()
-	id, path := c.serviceID("tts_zh"), "/api/tts/speech"
+	defer func() { c.mediaResultPinned(ctx, "tts", model, lang, len(audio), start, err) }()
+	path := "/api/tts/speech"
 	if lang == "en" {
-		id, path = c.serviceID("tts_en"), "/api/tts-en/speech"
+		path = "/api/tts-en/speech"
 	}
-	if (lang != "en" && lang != "zh") || !c.Has(id, "tts") || len([]rune(text)) > 300 || strings.TrimSpace(text) == "" {
+	if (lang != "en" && lang != "zh") || serviceID == "" || !c.Has(serviceID, "tts") || model == "" || c.Services[serviceID].Model != model || len([]rune(text)) > 300 || strings.TrimSpace(text) == "" {
 		return nil, fmt.Errorf("model console: unsupported speech request")
 	}
-	body, _ := json.Marshal(map[string]any{"model": c.Services[id].Model, "input": text, "voice": "default", "response_format": "wav"})
+	if voice == "" {
+		voice = "default"
+	}
+	if len(voice) > 100 {
+		return nil, fmt.Errorf("model console: unsupported speech voice")
+	}
+	queueStart := time.Now()
+	if err := c.acquireTTS(ctx); err != nil {
+		c.Log.ErrorCtx(ctx, "provider", "model_queue_rejected", map[string]any{"task": "tts", "language": lang, "wait_ms": time.Since(queueStart).Milliseconds(), "reason": "canceled_or_timeout"})
+		return nil, fmt.Errorf("model console: TTS queue canceled")
+	}
+	defer c.releaseTTS()
+	if waited := time.Since(queueStart).Milliseconds(); waited > 0 {
+		c.Log.InfoCtx(ctx, "provider", "model_queue_acquired", map[string]any{"task": "tts", "language": lang, "wait_ms": waited})
+	}
+	body, _ := json.Marshal(map[string]any{"model": model, "input": text, "voice": voice, "response_format": "wav"})
 	raw, err := c.request(ctx, path, "application/json", bytes.NewReader(body), MaxAudio)
 	if err != nil {
 		return nil, err
@@ -345,4 +407,17 @@ func (c *Client) mediaResult(ctx context.Context, task, lang string, bytes int, 
 	} else {
 		c.Log.InfoCtx(ctx, "provider", "model_request_completed", fields)
 	}
+}
+
+func (c *Client) mediaResultPinned(ctx context.Context, task, model, lang string, bytes int, start time.Time, err error) {
+	fields := map[string]any{"task": task, "model": model, "language": lang, "bytes": bytes, "duration_ms": time.Since(start).Milliseconds()}
+	if err != nil {
+		fields["reason"] = "invalid_media_or_provider_failure"
+		if ctx.Err() != nil {
+			fields["reason"] = "canceled_or_timeout"
+		}
+		c.Log.ErrorCtx(ctx, "provider", "model_request_failed", fields)
+		return
+	}
+	c.Log.InfoCtx(ctx, "provider", "model_request_completed", fields)
 }

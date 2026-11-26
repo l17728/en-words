@@ -1,0 +1,311 @@
+{
+  "manifest_sha256": "bf5214c06f709c6fbd92c4d09e09b6dc3513327ea96f1cfe18ee3587762ef152",
+  "overall_status": "NOT RUN",
+  "cases": [
+    {
+      "id": "VFS-FULLPATH-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-FULLPATH-02",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-OPEN-MAIN-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-OPEN-MAIN-02",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-OPEN-SIDECAR-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-OPEN-SIDECAR-03",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-OPEN-SIDECAR-04",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-OPEN-SIDECAR-02",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-OPEN-ROLE-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-ACCESS-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-ACCESS-02",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-ACCESS-03",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-READ-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-READ-02",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-WRITE-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-WRITE-02",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-TRUNCATE-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-FILESIZE-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-SYNC-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-SYNC-02",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-SYNC-03",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-LOCKSTATE-00",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-LOCKSTATE-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-LOCKSTATE-02",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-LOCKSTATE-03",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-LOCKSTATE-04",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-FCNTL-POINTER-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-FCNTL-POINTER-02",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-FCNTL-UNKNOWN-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-DELETE-MISSING-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-DELETE-EMPTY-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-DELETE-NONEMPTY-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-DELETE-SHM-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-DELETE-SYNCDIR-0",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-DELETE-SYNCDIR-1",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-DELETE-DIRFSYNC-ERR",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-SHM-MAP-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-SHM-MAP-02",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-SHM-LOCK-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-SHM-LOCK-02",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-SHM-BARRIER-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-SHM-UNMAP-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-LOCK-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-LOCK-02",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-LOCK-03",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-UNLOCK-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-CHECKRESERVED-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-CHECKRESERVED-02",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-CLOSE-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-SECTOR-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-DEVICE-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-RANDOM-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-SLEEP-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-CLOCK-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-CLOCK64-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-ERROR-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-SYSCALL-AUDIT-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-ABI-NULL-01",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-OPEN-SIDECAR-05",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-OPEN-SIDECAR-06",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "VFS-OPEN-SIDECAR-07",
+      "reason": "private Pilot Control VFS is not implemented; manifest loading is not callback execution",
+      "status": "NOT RUN"
+    }
+  ]
+}

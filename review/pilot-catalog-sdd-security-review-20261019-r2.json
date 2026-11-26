@@ -1,0 +1,33 @@
+{
+  "review_id": "pilot-catalog-sdd-security-review-20261019-r2",
+  "date": "2026-10-19",
+  "artifact": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "scope": ["§109", "§42", "§108"],
+  "review_type": "read-only design security review",
+  "decision": "PASS",
+  "blockers": [],
+  "findings": [
+    {
+      "id": "PSK-CAT-109-01",
+      "prior_severity": "P1",
+      "status": "closed",
+      "reason": "Restart no longer infers an unobservable prior response/acknowledgment. A complete valid frame is authoritative; callers converge by reading catalog state, while partial or invalid frames fail closed. Sync errors poison the current supervisor instance."
+    }
+  ],
+  "checks": {
+    "sync_error_and_restart_semantics": "PASS",
+    "ready_to_cleanup_transition": "PASS",
+    "catalog_authorization_and_replay": "PASS",
+    "lock_order_and_case_cleanup": "PASS",
+    "cross_reference_with_sections_42_and_108": "PASS"
+  },
+  "implementation_gates": [
+    "Enforce catalog size/frame-count bounds before append and during replay.",
+    "Keep second catalog authorization before every DB/sidecar/key open and preserve required case-lock lifetime.",
+    "Test ready cleanup precondition against lesson-state mutation.",
+    "Complete platform ACL, stable identity, sync durability, and cross-process locking acceptance gates."
+  ],
+  "tests_run": false,
+  "code_changed": false,
+  "limitations": "This PASS applies to the written design only. It does not verify catalog/supervisor implementation or filesystem behavior."
+}

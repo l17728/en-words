@@ -1,0 +1,11 @@
+COMMAND: go test -count=1 -timeout=240s -tags=pilot_e2e ./internal/pilotsupervisor
+GO: go version go1.25.14 windows/amd64
+OS: Windows-10-10.0.19045-SP0
+HEAD: e1da932490c7f92ae60b553b52dd47ef8871cf52
+WORKTREE_SHA256:
+3213968006054c6e679aea60b9e07978a7fe92b0174fcdad47f9dac2b1c21985  server/internal/pilotsupervisor/peer_windows.go
+2db5e29da5a38983ee2bf1e07c9280d6a1a3fe118246b9b2703175fead1a3c5d  server/internal/pilotsupervisor/peer_windows_test.go
+c0d673745be4b097a5de6728170b94271cf627ebbcefd81bdf18567ad72ab29d  server/internal/pilotsupervisor/peer_linux.go
+80a4c2b55f1c983a5be8dcdd26d8893871efd2e0ce60a6a148739119b5d78421  server/internal/pilotsupervisor/peer_linux_test.go
+fce7bfea0fdfd2c7f97cfa466c3c7fd15e547a2ebd331bb250a2090ca9d42d4e  server/internal/pilotsupervisor/peer.go
+ok  	enwords/internal/pilotsupervisor	2.854s

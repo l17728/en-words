@@ -1,0 +1,677 @@
+﻿{
+    "artifact_dir":  "review/runs/pilot-vfs-hashchain-unittest-20261022T20261022T084706Z",
+    "manifest_path":  "review/pilot-vfs-source-snapshot-manifest.json",
+    "manifest_sha256":  "218ECB96C1C14CC1222C2ACD794F0D20B2A089BF431B5975555E12E113CBC374",
+    "manifest_status":  "DRAFT_NOT_AUTHORIZED",
+    "entry_count":  74,
+    "matched_count":  74,
+    "mismatch_count":  0,
+    "checks":  [
+                   {
+                       "path":  "docs/55-pilot-control-pinned-sqlite-vfs-sdd.md",
+                       "exists":  true,
+                       "expected_size":  35164,
+                       "actual_size":  35164,
+                       "expected_sha256":  "fa957bfc9b2b039abfa7b7d72d831fc55e616f72074dd8dc8f8e9b4367014dea",
+                       "actual_sha256":  "fa957bfc9b2b039abfa7b7d72d831fc55e616f72074dd8dc8f8e9b4367014dea",
+                       "match":  true
+                   },
+                   {
+                       "path":  "docs/56-pinned-sqlite-golden-harness-delta.md",
+                       "exists":  true,
+                       "expected_size":  46617,
+                       "actual_size":  46617,
+                       "expected_sha256":  "57958e76d7a8a66f957cbe0f49d7a62e5246fa819a2e5e3b8ddae6eed51d803d",
+                       "actual_sha256":  "57958e76d7a8a66f957cbe0f49d7a62e5246fa819a2e5e3b8ddae6eed51d803d",
+                       "match":  true
+                   },
+                   {
+                       "path":  "docs/57-runtime-golden-missing-scenarios-sdd.md",
+                       "exists":  true,
+                       "expected_size":  8027,
+                       "actual_size":  8027,
+                       "expected_sha256":  "c1ba9572f4621831fb1f172d3356545fdf9546a14b9e2b47a3435e30c13aa2b4",
+                       "actual_sha256":  "c1ba9572f4621831fb1f172d3356545fdf9546a14b9e2b47a3435e30c13aa2b4",
+                       "match":  true
+                   },
+                   {
+                       "path":  "docs/58-pilot-vfs-eexist-evidence-layer-sdd.md",
+                       "exists":  true,
+                       "expected_size":  13755,
+                       "actual_size":  13755,
+                       "expected_sha256":  "5c646f2f1306dfbd14c9d5a8bc36a98909854abee81b0f30b3b27e735fd1c5cd",
+                       "actual_sha256":  "5c646f2f1306dfbd14c9d5a8bc36a98909854abee81b0f30b3b27e735fd1c5cd",
+                       "match":  true
+                   },
+                   {
+                       "path":  "docs/62-pilot-vfs-initialization-and-recovery-amendment.md",
+                       "exists":  true,
+                       "expected_size":  24041,
+                       "actual_size":  24041,
+                       "expected_sha256":  "44333074581018d3a98d0b0cf8aab8edaf53d0c195ea3429bb71a33221e04ed8",
+                       "actual_sha256":  "44333074581018d3a98d0b0cf8aab8edaf53d0c195ea3429bb71a33221e04ed8",
+                       "match":  true
+                   },
+                   {
+                       "path":  "review/run_pilot_vfs_candidate.py",
+                       "exists":  true,
+                       "expected_size":  15040,
+                       "actual_size":  15040,
+                       "expected_sha256":  "dbd8185f9ead24544457371668d7573834e2f1783b422db019186c811f411077",
+                       "actual_sha256":  "dbd8185f9ead24544457371668d7573834e2f1783b422db019186c811f411077",
+                       "match":  true
+                   },
+                   {
+                       "path":  "review/test_pilot_vfs_candidate_runner.py",
+                       "exists":  true,
+                       "expected_size":  24343,
+                       "actual_size":  24343,
+                       "expected_sha256":  "36faf3aa87d170899bd0397f80e753b0103ac813f1e8925a3d3f90cbafee751d",
+                       "actual_sha256":  "36faf3aa87d170899bd0397f80e753b0103ac813f1e8925a3d3f90cbafee751d",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/go.mod",
+                       "exists":  true,
+                       "expected_size":  2617,
+                       "actual_size":  2617,
+                       "expected_sha256":  "98948f98dce30315dfeca51a66b6bd91082503f8dac7af51ff1aaa90ab88bfc1",
+                       "actual_sha256":  "98948f98dce30315dfeca51a66b6bd91082503f8dac7af51ff1aaa90ab88bfc1",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/go.sum",
+                       "exists":  true,
+                       "expected_size":  10750,
+                       "actual_size":  10750,
+                       "expected_sha256":  "726e5936e7158dbef090c345c884731bb84020ca614f14b81c840a08fb6c9987",
+                       "actual_sha256":  "726e5936e7158dbef090c345c884731bb84020ca614f14b81c840a08fb6c9987",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/internal/pilotcontrol/pilot_golden_manifest_test.go",
+                       "exists":  true,
+                       "expected_size":  47873,
+                       "actual_size":  47873,
+                       "expected_sha256":  "c92c637e4c975ccf2886da71e6cbd3abd0c1f6969259b63f3e715d07f8723d87",
+                       "actual_sha256":  "c92c637e4c975ccf2886da71e6cbd3abd0c1f6969259b63f3e715d07f8723d87",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/internal/pilotcontrol/pilot_vfs_goldens_linux_test.go",
+                       "exists":  true,
+                       "expected_size":  64061,
+                       "actual_size":  64061,
+                       "expected_sha256":  "166ff3242435491ef6e984614f25223129464be2c2e750c3b449d28262e09430",
+                       "actual_sha256":  "166ff3242435491ef6e984614f25223129464be2c2e750c3b449d28262e09430",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/internal/pilotcontrol/pilot_vfs_missing_scenarios_test.go",
+                       "exists":  true,
+                       "expected_size":  56274,
+                       "actual_size":  56274,
+                       "expected_sha256":  "c9b2de44122992228658107f0b8ecf62b1eae74a12f41762c324ab8b534660e0",
+                       "actual_sha256":  "c9b2de44122992228658107f0b8ecf62b1eae74a12f41762c324ab8b534660e0",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/internal/pilotcontrol/pilot_vfs_trace_candidate_test.go",
+                       "exists":  true,
+                       "expected_size":  156588,
+                       "actual_size":  156588,
+                       "expected_sha256":  "012ecf95fdf2901b7c987d54155aac3e65742a55246be38586d2434fe1ea17dc",
+                       "actual_sha256":  "012ecf95fdf2901b7c987d54155aac3e65742a55246be38586d2434fe1ea17dc",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/internal/pilotcontrol/pilot_vfs_trace_linux.c",
+                       "exists":  true,
+                       "expected_size":  23020,
+                       "actual_size":  23020,
+                       "expected_sha256":  "ed3f81bd03063dcae537211058c1777e9dcb92519b58c9370698bda36656732c",
+                       "actual_sha256":  "ed3f81bd03063dcae537211058c1777e9dcb92519b58c9370698bda36656732c",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/internal/pilotcontrol/pilot_vfs_trace_linux.go",
+                       "exists":  true,
+                       "expected_size":  3208,
+                       "actual_size":  3208,
+                       "expected_sha256":  "83105da85893a30385851a92b49c9a10a23d57fe4b3c22d5427c0ffd02aeb176",
+                       "actual_sha256":  "83105da85893a30385851a92b49c9a10a23d57fe4b3c22d5427c0ffd02aeb176",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/internal/pilotcontrol/schema_inventory_v3.json",
+                       "exists":  true,
+                       "expected_size":  21536,
+                       "actual_size":  21536,
+                       "expected_sha256":  "38173f3c9cddae29e2627505e17058a9a97bab265502cd87d84d78c6fc8af672",
+                       "actual_sha256":  "38173f3c9cddae29e2627505e17058a9a97bab265502cd87d84d78c6fc8af672",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/internal/pilotcontrol/sqlite.go",
+                       "exists":  true,
+                       "expected_size":  21093,
+                       "actual_size":  21093,
+                       "expected_sha256":  "01fb8bdb165139229e899c3752c8f1b848fe39449661984e0a0c720916932294",
+                       "actual_sha256":  "01fb8bdb165139229e899c3752c8f1b848fe39449661984e0a0c720916932294",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/internal/pilotcontrol/sqlite_nocgo.go",
+                       "exists":  true,
+                       "expected_size":  572,
+                       "actual_size":  572,
+                       "expected_sha256":  "32bcebfb075f035234bd27b688c35e3337fe218639d2548da3a08bb5c5615557",
+                       "actual_sha256":  "32bcebfb075f035234bd27b688c35e3337fe218639d2548da3a08bb5c5615557",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/internal/pilotcontrol/sqlite_test.go",
+                       "exists":  true,
+                       "expected_size":  23314,
+                       "actual_size":  23314,
+                       "expected_sha256":  "720206983cea919541edc6fd79f9e0153b08ec179556c02650509f46973d24f7",
+                       "actual_sha256":  "720206983cea919541edc6fd79f9e0153b08ec179556c02650509f46973d24f7",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/internal/pilotcontrol/testdata/pilot-vfs-recovery-cases.json",
+                       "exists":  true,
+                       "expected_size":  35557,
+                       "actual_size":  35557,
+                       "expected_sha256":  "9e4899bac00f448a790d7d34e2fb5d720a74b2d7c839496a52ade948346ed3ea",
+                       "actual_sha256":  "9e4899bac00f448a790d7d34e2fb5d720a74b2d7c839496a52ade948346ed3ea",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/internal/pilotcontrol/testdata/pilot_vfs_eexist_interposer.c",
+                       "exists":  true,
+                       "expected_size":  8304,
+                       "actual_size":  8304,
+                       "expected_sha256":  "a6a969d60a4d4519df9d09981375a82629a4ce534fc913a2f16cdcf26ac0c464",
+                       "actual_sha256":  "a6a969d60a4d4519df9d09981375a82629a4ce534fc913a2f16cdcf26ac0c464",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/internal/pilotcontrol/testdata/vfs-callback-cases.json",
+                       "exists":  true,
+                       "expected_size":  40313,
+                       "actual_size":  40313,
+                       "expected_sha256":  "5030ef30f9e9523c747264fef463d27979f3c037208eb637bcb935b456d44e8e",
+                       "actual_sha256":  "5030ef30f9e9523c747264fef463d27979f3c037208eb637bcb935b456d44e8e",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/LICENSE",
+                       "exists":  true,
+                       "expected_size":  1085,
+                       "actual_size":  1085,
+                       "expected_sha256":  "afa48e5e64dc610298d80b010ae7a3450f61a79500a9f1d1697ff6dcbbfa1f72",
+                       "actual_sha256":  "afa48e5e64dc610298d80b010ae7a3450f61a79500a9f1d1697ff6dcbbfa1f72",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/LOCAL_PATCHES.md",
+                       "exists":  true,
+                       "expected_size":  764,
+                       "actual_size":  764,
+                       "expected_sha256":  "6edb65e4c36a1850a47b777e356912f0a8918c32c0c38ed7f528d413f376615f",
+                       "actual_sha256":  "6edb65e4c36a1850a47b777e356912f0a8918c32c0c38ed7f528d413f376615f",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/README.md",
+                       "exists":  true,
+                       "expected_size":  30307,
+                       "actual_size":  30307,
+                       "expected_sha256":  "3804e4c6f4a7a2cfea7df0b73d9bfb9eff32025a85efee705c4269dc5ea6fb84",
+                       "actual_sha256":  "3804e4c6f4a7a2cfea7df0b73d9bfb9eff32025a85efee705c4269dc5ea6fb84",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/backup.go",
+                       "exists":  true,
+                       "expected_size":  2218,
+                       "actual_size":  2218,
+                       "expected_sha256":  "00a1f7febc4345ac6e7ff34ca69cb8c4d9b74a34db6dacb792c57d1b58d1d450",
+                       "actual_sha256":  "00a1f7febc4345ac6e7ff34ca69cb8c4d9b74a34db6dacb792c57d1b58d1d450",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/callback.go",
+                       "exists":  true,
+                       "expected_size":  12614,
+                       "actual_size":  12614,
+                       "expected_sha256":  "0b93ea8ef33ff753a6e154192e5630d2726aece5513f44d2ed9e35b504d99736",
+                       "actual_sha256":  "0b93ea8ef33ff753a6e154192e5630d2726aece5513f44d2ed9e35b504d99736",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/convert.go",
+                       "exists":  true,
+                       "expected_size":  6815,
+                       "actual_size":  6815,
+                       "expected_sha256":  "fe49e3c1e4fd114d2ac81ea7e6864951dfe6bdc97cd7ac94cdfb7328e4162007",
+                       "actual_sha256":  "fe49e3c1e4fd114d2ac81ea7e6864951dfe6bdc97cd7ac94cdfb7328e4162007",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/doc.go",
+                       "exists":  true,
+                       "expected_size":  3550,
+                       "actual_size":  3550,
+                       "expected_sha256":  "1cc5224643358af918e27fb45065306ed4588698cc6c51b1c6e379c43965dd72",
+                       "actual_sha256":  "1cc5224643358af918e27fb45065306ed4588698cc6c51b1c6e379c43965dd72",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/error.go",
+                       "exists":  true,
+                       "expected_size":  6117,
+                       "actual_size":  6117,
+                       "expected_sha256":  "a9d73dad082368b40a4eb7fd9cc93ab2818e6bc6966ab88edfd8e7b80413448c",
+                       "actual_sha256":  "a9d73dad082368b40a4eb7fd9cc93ab2818e6bc6966ab88edfd8e7b80413448c",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/go.mod",
+                       "exists":  true,
+                       "expected_size":  146,
+                       "actual_size":  146,
+                       "expected_sha256":  "bc9235ee6e4e60243f1e7dcacf0caa4d480afcdf06ed78e481fd127e9e3119df",
+                       "actual_sha256":  "bc9235ee6e4e60243f1e7dcacf0caa4d480afcdf06ed78e481fd127e9e3119df",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/go.sum",
+                       "exists":  true,
+                       "expected_size":  0,
+                       "actual_size":  0,
+                       "expected_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                       "actual_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3-binding.c",
+                       "exists":  true,
+                       "expected_size":  9029884,
+                       "actual_size":  9029884,
+                       "expected_sha256":  "12e49f5061906b3bc85c80f3f6bc2fd6119b362a65e039323f4257d100ac7ffe",
+                       "actual_sha256":  "12e49f5061906b3bc85c80f3f6bc2fd6119b362a65e039323f4257d100ac7ffe",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3-binding.h",
+                       "exists":  true,
+                       "expected_size":  644401,
+                       "actual_size":  644401,
+                       "expected_sha256":  "9c211d8da9974c184a57ac310e8c512a78645bf4257f404eda2fb2824113a960",
+                       "actual_sha256":  "9c211d8da9974c184a57ac310e8c512a78645bf4257f404eda2fb2824113a960",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3.go",
+                       "exists":  true,
+                       "expected_size":  68658,
+                       "actual_size":  68658,
+                       "expected_sha256":  "d9fbe280208dbbe2880fd65eb80d43f880af2dad1e4ab2480ca92173440d980a",
+                       "actual_sha256":  "d9fbe280208dbbe2880fd65eb80d43f880af2dad1e4ab2480ca92173440d980a",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_busy_test.go",
+                       "exists":  true,
+                       "expected_size":  4603,
+                       "actual_size":  4603,
+                       "expected_sha256":  "843c9d1f74e3e1b18c60665144c16d46bacdd12016ea64e89ee1b8a75b1bb310",
+                       "actual_sha256":  "843c9d1f74e3e1b18c60665144c16d46bacdd12016ea64e89ee1b8a75b1bb310",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_context.go",
+                       "exists":  true,
+                       "expected_size":  3025,
+                       "actual_size":  3025,
+                       "expected_sha256":  "301afe66657c959b01f809f9406763587678000e8f2000b9c3ee18fa19dca448",
+                       "actual_sha256":  "301afe66657c959b01f809f9406763587678000e8f2000b9c3ee18fa19dca448",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_func_crypt.go",
+                       "exists":  true,
+                       "expected_size":  3977,
+                       "actual_size":  3977,
+                       "expected_sha256":  "2347733d028be1c7428d7199a33059f7cf8bbe7527dd67ac15aaa08b5978d943",
+                       "actual_sha256":  "2347733d028be1c7428d7199a33059f7cf8bbe7527dd67ac15aaa08b5978d943",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_go18.go",
+                       "exists":  true,
+                       "expected_size":  1547,
+                       "actual_size":  1547,
+                       "expected_sha256":  "98db8c40e52ecb02ddccdebc5f0349ec378ab476f3df6f4ce955353c1e612e8f",
+                       "actual_sha256":  "98db8c40e52ecb02ddccdebc5f0349ec378ab476f3df6f4ce955353c1e612e8f",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_libsqlite3.go",
+                       "exists":  true,
+                       "expected_size":  660,
+                       "actual_size":  660,
+                       "expected_sha256":  "b60213c6730f4606acd697c0edc1ed218d93cffcfa9dc4cd6824ec2899f70a74",
+                       "actual_sha256":  "b60213c6730f4606acd697c0edc1ed218d93cffcfa9dc4cd6824ec2899f70a74",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_load_extension.go",
+                       "exists":  true,
+                       "expected_size":  1887,
+                       "actual_size":  1887,
+                       "expected_sha256":  "7160b471294b372f1a12a2b41be199a04842ab769d625be5cdef2b05000e5250",
+                       "actual_sha256":  "7160b471294b372f1a12a2b41be199a04842ab769d625be5cdef2b05000e5250",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_load_extension_omit.go",
+                       "exists":  true,
+                       "expected_size":  625,
+                       "actual_size":  625,
+                       "expected_sha256":  "47c47b87da11c7b85c2f510cb7f309557913b0db4b3a1aa31e56f28471dfd744",
+                       "actual_sha256":  "47c47b87da11c7b85c2f510cb7f309557913b0db4b3a1aa31e56f28471dfd744",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_allow_uri_authority.go",
+                       "exists":  true,
+                       "expected_size":  402,
+                       "actual_size":  402,
+                       "expected_sha256":  "31b03b8a49b5f349636c5da80abbbf125bdcb3193db60ea72dd4aa81f2846515",
+                       "actual_sha256":  "31b03b8a49b5f349636c5da80abbbf125bdcb3193db60ea72dd4aa81f2846515",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_app_armor.go",
+                       "exists":  true,
+                       "expected_size":  400,
+                       "actual_size":  400,
+                       "expected_sha256":  "ce5e20e63e4e56c141d6b6aaec283c10b141b70c3dcf01195292ea87e524d8b0",
+                       "actual_sha256":  "ce5e20e63e4e56c141d6b6aaec283c10b141b70c3dcf01195292ea87e524d8b0",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_column_metadata.go",
+                       "exists":  true,
+                       "expected_size":  529,
+                       "actual_size":  529,
+                       "expected_sha256":  "0f9e4c16aebbffb3f63b51d5b08aef0144f41eecbb15dabfa75054cb23025145",
+                       "actual_sha256":  "0f9e4c16aebbffb3f63b51d5b08aef0144f41eecbb15dabfa75054cb23025145",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_foreign_keys.go",
+                       "exists":  true,
+                       "expected_size":  391,
+                       "actual_size":  391,
+                       "expected_sha256":  "d46a2e5e788e89def5a49f945e31a9caf86bf8457bd093b1105642ed557cf880",
+                       "actual_sha256":  "d46a2e5e788e89def5a49f945e31a9caf86bf8457bd093b1105642ed557cf880",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_fts5.go",
+                       "exists":  true,
+                       "expected_size":  317,
+                       "actual_size":  317,
+                       "expected_sha256":  "01aeafabfecd3411dbaad1de88a2d35fd6b2743decf0c4aadef8f3b209f80352",
+                       "actual_sha256":  "01aeafabfecd3411dbaad1de88a2d35fd6b2743decf0c4aadef8f3b209f80352",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_icu.go",
+                       "exists":  true,
+                       "expected_size":  588,
+                       "actual_size":  588,
+                       "expected_sha256":  "f86822ff319a953e80b43295a6a067355066c70f31b868b3d1114c2db2eb68d0",
+                       "actual_sha256":  "f86822ff319a953e80b43295a6a067355066c70f31b868b3d1114c2db2eb68d0",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_introspect.go",
+                       "exists":  true,
+                       "expected_size":  384,
+                       "actual_size":  384,
+                       "expected_sha256":  "053b117670310dca1616aad8312b5a9d96f4dd5b90213a7bc40ab52d247c24bb",
+                       "actual_sha256":  "053b117670310dca1616aad8312b5a9d96f4dd5b90213a7bc40ab52d247c24bb",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_math_functions.go",
+                       "exists":  true,
+                       "expected_size":  334,
+                       "actual_size":  334,
+                       "expected_sha256":  "c36b63adb8a526aed1b76ecb15e898d5c0ebe6f6b6b67446618fd15a0771b35f",
+                       "actual_sha256":  "c36b63adb8a526aed1b76ecb15e898d5c0ebe6f6b6b67446618fd15a0771b35f",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_os_trace.go",
+                       "exists":  true,
+                       "expected_size":  338,
+                       "actual_size":  338,
+                       "expected_sha256":  "53b46004b5bb72d59974e430825b7da7a9876e1d33718d89d84fab782d25f769",
+                       "actual_sha256":  "53b46004b5bb72d59974e430825b7da7a9876e1d33718d89d84fab782d25f769",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_preupdate.go",
+                       "exists":  true,
+                       "expected_size":  528,
+                       "actual_size":  528,
+                       "expected_sha256":  "c5f6fec85a685dad6103a3e9ad4cad0483cb7491aed249da39c59f7577f4075a",
+                       "actual_sha256":  "c5f6fec85a685dad6103a3e9ad4cad0483cb7491aed249da39c59f7577f4075a",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_preupdate_hook.go",
+                       "exists":  true,
+                       "expected_size":  3240,
+                       "actual_size":  3240,
+                       "expected_sha256":  "393d76cc21fa643d6bfd0c5d45c8ec2eccd46f78ca94ac2bed6930bd8d6f4ac3",
+                       "actual_sha256":  "393d76cc21fa643d6bfd0c5d45c8ec2eccd46f78ca94ac2bed6930bd8d6f4ac3",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_preupdate_omit.go",
+                       "exists":  true,
+                       "expected_size":  811,
+                       "actual_size":  811,
+                       "expected_sha256":  "a215bb90cca68f5c0ff8ac715d231ced76eeb6066ca7f2da7be512dfe7f469d2",
+                       "actual_sha256":  "a215bb90cca68f5c0ff8ac715d231ced76eeb6066ca7f2da7be512dfe7f469d2",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_secure_delete.go",
+                       "exists":  true,
+                       "expected_size":  386,
+                       "actual_size":  386,
+                       "expected_sha256":  "544fdbc3bb7f496b4b337fdc2eee179c9df88ac126d385b2ddba3cfb4e7bf226",
+                       "actual_sha256":  "544fdbc3bb7f496b4b337fdc2eee179c9df88ac126d385b2ddba3cfb4e7bf226",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_secure_delete_fast.go",
+                       "exists":  true,
+                       "expected_size":  399,
+                       "actual_size":  399,
+                       "expected_sha256":  "00da7c235bd4ea9f3fe17827e9cd6573f759ff45d05b2b736bc730c18ea92d14",
+                       "actual_sha256":  "00da7c235bd4ea9f3fe17827e9cd6573f759ff45d05b2b736bc730c18ea92d14",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_serialize.go",
+                       "exists":  true,
+                       "expected_size":  1995,
+                       "actual_size":  1995,
+                       "expected_sha256":  "a8d96b74be2b72227167371e19c35e8c2a168be86f3275fc4e744fc9b71d498f",
+                       "actual_sha256":  "a8d96b74be2b72227167371e19c35e8c2a168be86f3275fc4e744fc9b71d498f",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_serialize_omit.go",
+                       "exists":  true,
+                       "expected_size":  555,
+                       "actual_size":  555,
+                       "expected_sha256":  "21cf888e7bcf72d30560e7c6760ebc29325de2863123dedba49d7178bebccb6a",
+                       "actual_sha256":  "21cf888e7bcf72d30560e7c6760ebc29325de2863123dedba49d7178bebccb6a",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_stat4.go",
+                       "exists":  true,
+                       "expected_size":  367,
+                       "actual_size":  367,
+                       "expected_sha256":  "e42fa54a86161e1fb48f98408ef928dcd729eb080d10bba9643e8fd2801f4b2f",
+                       "actual_sha256":  "e42fa54a86161e1fb48f98408ef928dcd729eb080d10bba9643e8fd2801f4b2f",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_unlock_notify.c",
+                       "exists":  true,
+                       "expected_size":  1716,
+                       "actual_size":  1716,
+                       "expected_sha256":  "90bf6d96b09e438bda52ab63dc75c17487b7a566b025178de049aabf7273875f",
+                       "actual_sha256":  "90bf6d96b09e438bda52ab63dc75c17487b7a566b025178de049aabf7273875f",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_unlock_notify.go",
+                       "exists":  true,
+                       "expected_size":  1961,
+                       "actual_size":  1961,
+                       "expected_sha256":  "05944cc2c100fc116b1d50c8e83ee52625a6ff706dd57ff7664f17ff01a19772",
+                       "actual_sha256":  "05944cc2c100fc116b1d50c8e83ee52625a6ff706dd57ff7664f17ff01a19772",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_userauth.go",
+                       "exists":  true,
+                       "expected_size":  7609,
+                       "actual_size":  7609,
+                       "expected_sha256":  "1edf20fc76228e151f1d4a2460dbb3445942ab2ba36df08db810ab7e411ad574",
+                       "actual_sha256":  "1edf20fc76228e151f1d4a2460dbb3445942ab2ba36df08db810ab7e411ad574",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_userauth_omit.go",
+                       "exists":  true,
+                       "expected_size":  4470,
+                       "actual_size":  4470,
+                       "expected_sha256":  "9a43a2917cc566ba6013bf5c37a1c5a5da30fb889fdaba07813a5f8b33910deb",
+                       "actual_sha256":  "9a43a2917cc566ba6013bf5c37a1c5a5da30fb889fdaba07813a5f8b33910deb",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_vacuum_full.go",
+                       "exists":  true,
+                       "expected_size":  387,
+                       "actual_size":  387,
+                       "expected_sha256":  "91ccaea412606cb8976a5aa2e22f53562fa1f7079bf5b9f7c34c2dabf16b9d32",
+                       "actual_sha256":  "91ccaea412606cb8976a5aa2e22f53562fa1f7079bf5b9f7c34c2dabf16b9d32",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_vacuum_incr.go",
+                       "exists":  true,
+                       "expected_size":  387,
+                       "actual_size":  387,
+                       "expected_sha256":  "5866b91d80a947b037a8c0c2d17f2b97aa562edb89dd766bd416ec538a1206ed",
+                       "actual_sha256":  "5866b91d80a947b037a8c0c2d17f2b97aa562edb89dd766bd416ec538a1206ed",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_opt_vtable.go",
+                       "exists":  true,
+                       "expected_size":  20357,
+                       "actual_size":  20357,
+                       "expected_sha256":  "bc472893c4ab289bc67076d4e23f0f09f6b13934377121a506324aeb8d6b80b0",
+                       "actual_sha256":  "bc472893c4ab289bc67076d4e23f0f09f6b13934377121a506324aeb8d6b80b0",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_other.go",
+                       "exists":  true,
+                       "expected_size":  396,
+                       "actual_size":  396,
+                       "expected_sha256":  "ee1582442a9492d4975ca57276dd84d7dda8e6c25013d9cbc31326e8401bb748",
+                       "actual_sha256":  "ee1582442a9492d4975ca57276dd84d7dda8e6c25013d9cbc31326e8401bb748",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_solaris.go",
+                       "exists":  true,
+                       "expected_size":  294,
+                       "actual_size":  294,
+                       "expected_sha256":  "61aa7226faebd6d56bd22efd3afb1c22dff311b8256d938c311124f5878c70cd",
+                       "actual_sha256":  "61aa7226faebd6d56bd22efd3afb1c22dff311b8256d938c311124f5878c70cd",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_trace.go",
+                       "exists":  true,
+                       "expected_size":  8370,
+                       "actual_size":  8370,
+                       "expected_sha256":  "9e68786b553ecb4d377b14a753b9392ea9274a5e22ca71e308d265074873f811",
+                       "actual_sha256":  "9e68786b553ecb4d377b14a753b9392ea9274a5e22ca71e308d265074873f811",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_type.go",
+                       "exists":  true,
+                       "expected_size":  2447,
+                       "actual_size":  2447,
+                       "expected_sha256":  "621c5b2c8ff0f531b2b1e14b5020facf8203f86ab8455e579393ba128d490700",
+                       "actual_sha256":  "621c5b2c8ff0f531b2b1e14b5020facf8203f86ab8455e579393ba128d490700",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_usleep_windows.go",
+                       "exists":  true,
+                       "expected_size":  1253,
+                       "actual_size":  1253,
+                       "expected_sha256":  "cb20d3a8824e856b5c6d77645348618b09e94e909875111e2371a77f48d9f4ac",
+                       "actual_sha256":  "cb20d3a8824e856b5c6d77645348618b09e94e909875111e2371a77f48d9f4ac",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3_windows.go",
+                       "exists":  true,
+                       "expected_size":  404,
+                       "actual_size":  404,
+                       "expected_sha256":  "4829e5f93fb09590056de3da430f5262ad844b5ce1e01e53714edef8137d3144",
+                       "actual_sha256":  "4829e5f93fb09590056de3da430f5262ad844b5ce1e01e53714edef8137d3144",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/sqlite3ext.h",
+                       "exists":  true,
+                       "expected_size":  38369,
+                       "actual_size":  38369,
+                       "expected_sha256":  "3dd4cdc4d5353b73d8c2db19d2dcc5b825ac2fb374fd0ab9a81720d82ec46428",
+                       "actual_sha256":  "3dd4cdc4d5353b73d8c2db19d2dcc5b825ac2fb374fd0ab9a81720d82ec46428",
+                       "match":  true
+                   },
+                   {
+                       "path":  "server/third_party/go-sqlite3/static_mock.go",
+                       "exists":  true,
+                       "expected_size":  1513,
+                       "actual_size":  1513,
+                       "expected_sha256":  "78f4852380aa54024a66296400cbb1c01990d7d56459ac6da2be79a975413c34",
+                       "actual_sha256":  "78f4852380aa54024a66296400cbb1c01990d7d56459ac6da2be79a975413c34",
+                       "match":  true
+                   }
+               ]
+}

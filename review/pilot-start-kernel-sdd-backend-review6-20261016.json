@@ -1,0 +1,41 @@
+﻿{
+  "review": "pilot-start-kernel-sdd-backend-review6",
+  "date": "2026-10-16",
+  "target": "docs/41-试点课堂Start持久迁移内核SDD.md",
+  "scope": "read-only backend and SQLite design review; BE3-1..10 closure and new conflicts",
+  "code_modified": false,
+  "tests_run": false,
+  "verdict": "BLOCK",
+  "findings": [
+    {"id":"BE6-1","severity":"P1","status":"open","title":"Planner execution ordering remains contradictory","recommendation":"Make the transaction-external sequence the single contract and remove stale opposite ordering statements."},
+    {"id":"BE6-2","severity":"P1","status":"open","title":"Nickname validation conflicts with committed receipt replay","recommendation":"Authorize current owner, check receipt and replay before comparing nickname; compare only on receipt misses/new planning."},
+    {"id":"BE6-3","severity":"P1","status":"open","title":"Bundle cache key hides same-command fingerprint conflicts","recommendation":"Key by lesson_id+command_id and compare fingerprint on hit."},
+    {"id":"BE6-4","severity":"P1","status":"open","title":"Store build-tag placement cannot construct API-private task context","recommendation":"Keep coordinator/contracts in store; put pilot adapter in api package under the tag; compose in harness."},
+    {"id":"BE6-5","severity":"P1","status":"open","title":"Unknown commit wording permits storage without rollback proof","recommendation":"Permit write retry only with original bundle and explicit rollback-proven outcome from original connection; otherwise read-only pending_unknown."},
+    {"id":"BE6-6","severity":"P1","status":"open","title":"Per-request planner injection does not guarantee cross-request cache ownership","recommendation":"Use one case-scoped long-lived coordinator/planner; fail closed on cache capacity rather than evict unresolved entries."},
+    {"id":"BE6-7","severity":"P2","status":"open","title":"Sidecar restart recovery and corruption behavior are underspecified","recommendation":"Specify persistent case directory/key, strict replay and fail-closed behavior for truncated, contradictory, duplicate, or missing sidecar data."},
+    {"id":"BE6-8","severity":"P2","status":"open","title":"rollback_proven terminal state is confused with in-process same-ID retry permission","recommendation":"After restart with bundle lost, reject same command permanently and require a new ID; only a live retained bundle may be retried."},
+    {"id":"BE6-9","severity":"P2","status":"open","title":"Mixed lifecycle audit must preserve existing legacy and FK audit passes","recommendation":"Reuse loadPilotLegacyBridgesTx, auditPilotLegacyRuntimeTx, FK checks and bridge validation; replace only global created-only assumption with per-lesson dispatch."},
+    {"id":"BE6-10","severity":"P2","status":"open","title":"Audit-to-receipt association is not fully specified by current schema","recommendation":"Freeze deterministic trace/tool/effect mapping and duplicate/orphan rejection across mixed lifecycle rows."},
+    {"id":"BE6-11","severity":"P2","status":"open","title":"Ordinal scope is ambiguous across multiple students","recommendation":"Define ordinal per student and ensure one student's first reservation does not affect another's ordinal."}
+  ],
+  "be3_status": {
+    "BE3-1": "closed",
+    "BE3-2": "partial_blocked_by_BE6-9_and_facade_inventory",
+    "BE3-3": "closed",
+    "BE3-4": "partial_blocked_by_BE6-4",
+    "BE3-5": "closed_with_implementation_gate",
+    "BE3-6": "closed_in_design_subject_to_BE6-5",
+    "BE3-7": "closed_in_design",
+    "BE3-8": "closed_in_design",
+    "BE3-9": "closed_in_design_subject_to_BE6-5",
+    "BE3-10": "closed_in_design"
+  },
+  "required_before_implementation": [
+    "Unify planner/transaction/unknown ordering statements.",
+    "Fix cache ownership, key, and conflict semantics.",
+    "Separate store coordinator contracts from api-private task/tool adapter.",
+    "Define sidecar lifecycle and explicit rollback-proof result propagation.",
+    "Complete mixed audit facade, legacy/FK preservation, and audit-receipt association contracts."
+  ]
+}
