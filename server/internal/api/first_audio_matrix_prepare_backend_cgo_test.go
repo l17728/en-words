@@ -399,7 +399,7 @@ func prepareFirstAudioGuardedOwner(t *testing.T, ctx context.Context, runRoot, d
 	if err := owner.verifyStartupAutocommit(); err != nil {
 		return nil, errors.New("prepare_new_app_transaction_state_uncertain")
 	}
-	if app == nil || app.DB != guarded || app.StartupError != nil || startupBegins != 1 || startupEnds != 1 || owner.rowGuardCalls.Load() != 0 {
+	if app == nil || app.DB != guarded || app.StartupError != nil || startupBegins != 2 || startupEnds != 2 || owner.rowGuardCalls.Load() != 0 {
 		if err := owner.verifyStartupFailureState(); err != nil {
 			return nil, errors.New("prepare_new_app_failure_cleanup_uncertain")
 		}
@@ -604,7 +604,7 @@ func (o *firstAudioPreparedOwner) verifyStartupAutocommit() error {
 		totalBegins += connection.authorizer.startupBegins.Load()
 		totalEnds += connection.authorizer.startupEnds.Load()
 	}
-	if totalBegins != 1 || totalEnds != 1 {
+	if totalBegins != 2 || totalEnds != 2 {
 		return errors.New("startup_transaction_count_mismatch")
 	}
 	return nil

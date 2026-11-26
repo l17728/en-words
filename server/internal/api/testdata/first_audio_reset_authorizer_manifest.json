@@ -1,5 +1,5 @@
 {
-  "sha256": "46b3003bdcffb1e61880f2fcabcade6d3346cb45f8ec845994a88a8f3ee0b048",
+  "sha256": "38b427737a3038e306e5526986fd5744b3ccefbb58048bced6f6f3585ae5881f",
   "format_version": 1,
   "driver": "github.com/mattn/go-sqlite3",
   "driver_module_version": "v1.14.22 (repository fork)",
@@ -9,8 +9,8 @@
     "version": "3.45.1",
     "version_number": 3045001
   },
-  "go_runtime": "go1.25.14",
-  "schema_sha256": "a333a8863bba415d687d5099393a81926de667e073b7a6075ab546fff686b4af",
+  "go_runtime": "go1.27.4",
+  "schema_sha256": "c80ac10c04de8eb9c10777b713426ae94f142db051f20f75cd2f9d703528cef8",
   "trigger_manifest_version": 1,
   "trigger_manifest_sha256": "455b551414ce36b6034cc6f3c0ee5fa9322d70b80f2331a9f8b567d46da0bbc0",
   "statements": [
@@ -3096,6 +3096,90 @@
     },
     {
       "sequence": 21,
+      "operation": "07_snapshot_model_profiles",
+      "sql_template": "SELECT \"id\",\"name\",\"text_service\",\"asr_service\",\"tts_zh_service\",\"tts_en_service\",\"active\",\"created_at\",\"updated_at\" FROM \"model_profiles\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "model_profiles",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "model_profiles",
+          "arg2": "name",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "model_profiles",
+          "arg2": "text_service",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "model_profiles",
+          "arg2": "asr_service",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "model_profiles",
+          "arg2": "tts_zh_service",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "model_profiles",
+          "arg2": "tts_en_service",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "model_profiles",
+          "arg2": "active",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "model_profiles",
+          "arg2": "created_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "model_profiles",
+          "arg2": "updated_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "model_profiles",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 22,
       "operation": "07_snapshot_notifications",
       "sql_template": "SELECT \"id\",\"user_id\",\"type\",\"title\",\"body\",\"ref_id\",\"read\",\"created_at\" FROM \"notifications\" ORDER BY \"id\"",
       "tuples": [
@@ -3172,7 +3256,7 @@
       ]
     },
     {
-      "sequence": 22,
+      "sequence": 23,
       "operation": "07_snapshot_overdue_tasks",
       "sql_template": "SELECT \"task_id\",\"lesson_id\",\"student_id\",\"book_id\",\"original_open_at\",\"plan_json\",\"plan_history_json\",\"version\",\"status\",\"new_lesson_id\",\"created_at\",\"planned_at\",\"completed_at\" FROM \"overdue_tasks\" ORDER BY \"task_id\"",
       "tuples": [
@@ -3284,7 +3368,7 @@
       ]
     },
     {
-      "sequence": 23,
+      "sequence": 24,
       "operation": "07_snapshot_placement_drafts",
       "sql_template": "SELECT \"student_id\",\"book_id\",\"known_ids\",\"updated_at\" FROM \"placement_drafts\" ORDER BY \"student_id\",\"book_id\"",
       "tuples": [
@@ -3340,7 +3424,7 @@
       ]
     },
     {
-      "sequence": 24,
+      "sequence": 25,
       "operation": "07_snapshot_runtime_records",
       "sql_template": "SELECT \"key\",\"value\" FROM \"runtime_records\" ORDER BY \"key\"",
       "tuples": [
@@ -3375,7 +3459,126 @@
       ]
     },
     {
-      "sequence": 25,
+      "sequence": 26,
+      "operation": "07_snapshot_speech_assets",
+      "sql_template": "SELECT \"id\",\"cache_key\",\"language\",\"speech_text\",\"provider\",\"model\",\"voice\",\"rule_version\",\"file_path\",\"sha256\",\"size_bytes\",\"status\",\"created_at\",\"last_used_at\" FROM \"speech_assets\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "speech_assets",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "speech_assets",
+          "arg2": "cache_key",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "speech_assets",
+          "arg2": "language",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "speech_assets",
+          "arg2": "speech_text",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "speech_assets",
+          "arg2": "provider",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "speech_assets",
+          "arg2": "model",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "speech_assets",
+          "arg2": "voice",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "speech_assets",
+          "arg2": "rule_version",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "speech_assets",
+          "arg2": "file_path",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "speech_assets",
+          "arg2": "sha256",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "speech_assets",
+          "arg2": "size_bytes",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "speech_assets",
+          "arg2": "status",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "speech_assets",
+          "arg2": "created_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "speech_assets",
+          "arg2": "last_used_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "speech_assets",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 27,
       "operation": "07_snapshot_sqlite_sequence",
       "sql_template": "SELECT \"name\",\"seq\" FROM \"sqlite_sequence\" ORDER BY \"name\",\"seq\"",
       "tuples": [
@@ -3417,7 +3620,315 @@
       ]
     },
     {
-      "sequence": 26,
+      "sequence": 28,
+      "operation": "07_snapshot_teacher_analysis_jobs",
+      "sql_template": "SELECT \"id\",\"analysis_id\",\"analysis_key\",\"status\",\"lease_owner\",\"lease_until\",\"attempts\",\"next_run_at\",\"last_error\",\"created_at\",\"updated_at\" FROM \"teacher_analysis_jobs\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_analysis_jobs",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_analysis_jobs",
+          "arg2": "analysis_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_analysis_jobs",
+          "arg2": "analysis_key",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_analysis_jobs",
+          "arg2": "status",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_analysis_jobs",
+          "arg2": "lease_owner",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_analysis_jobs",
+          "arg2": "lease_until",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_analysis_jobs",
+          "arg2": "attempts",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_analysis_jobs",
+          "arg2": "next_run_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_analysis_jobs",
+          "arg2": "last_error",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_analysis_jobs",
+          "arg2": "created_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_analysis_jobs",
+          "arg2": "updated_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_analysis_jobs",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 29,
+      "operation": "07_snapshot_teacher_authorization_receipts",
+      "sql_template": "SELECT \"id\",\"analysis_id\",\"operator_id\",\"tool_name\",\"args_sha256\",\"nonce\",\"expires_at\",\"consumed_at\",\"created_at\" FROM \"teacher_authorization_receipts\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_authorization_receipts",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_authorization_receipts",
+          "arg2": "analysis_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_authorization_receipts",
+          "arg2": "operator_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_authorization_receipts",
+          "arg2": "tool_name",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_authorization_receipts",
+          "arg2": "args_sha256",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_authorization_receipts",
+          "arg2": "nonce",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_authorization_receipts",
+          "arg2": "expires_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_authorization_receipts",
+          "arg2": "consumed_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_authorization_receipts",
+          "arg2": "created_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_authorization_receipts",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 30,
+      "operation": "07_snapshot_teacher_failure_analyses",
+      "sql_template": "SELECT \"id\",\"lesson_id\",\"entry_id\",\"student_id\",\"failure_type\",\"target_text\",\"transcript\",\"diagnosis\",\"suggestion\",\"confidence\",\"analysis_status\",\"implementation_status\",\"analysis_key\",\"created_at\",\"resolved_at\" FROM \"teacher_failure_analyses\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_failure_analyses",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_failure_analyses",
+          "arg2": "lesson_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_failure_analyses",
+          "arg2": "entry_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_failure_analyses",
+          "arg2": "student_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_failure_analyses",
+          "arg2": "failure_type",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_failure_analyses",
+          "arg2": "target_text",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_failure_analyses",
+          "arg2": "transcript",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_failure_analyses",
+          "arg2": "diagnosis",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_failure_analyses",
+          "arg2": "suggestion",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_failure_analyses",
+          "arg2": "confidence",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_failure_analyses",
+          "arg2": "analysis_status",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_failure_analyses",
+          "arg2": "implementation_status",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_failure_analyses",
+          "arg2": "analysis_key",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_failure_analyses",
+          "arg2": "created_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_failure_analyses",
+          "arg2": "resolved_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "teacher_failure_analyses",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 31,
       "operation": "07_snapshot_users",
       "sql_template": "SELECT \"id\",\"username\",\"nickname\",\"role\",\"status\",\"salt\",\"hash\",\"created_at\",\"updated_at\" FROM \"users\" ORDER BY \"id\"",
       "tuples": [
@@ -3501,7 +4012,7 @@
       ]
     },
     {
-      "sequence": 27,
+      "sequence": 32,
       "operation": "07_snapshot_word_books",
       "sql_template": "SELECT \"id\",\"name\",\"grade\",\"description\",\"source\",\"status\",\"created_by\",\"created_at\",\"updated_at\" FROM \"word_books\" ORDER BY \"id\"",
       "tuples": [
@@ -3585,7 +4096,7 @@
       ]
     },
     {
-      "sequence": 28,
+      "sequence": 33,
       "operation": "07_snapshot_word_entries",
       "sql_template": "SELECT \"id\",\"book_id\",\"word\",\"norm_key\",\"phonetic\",\"meanings\",\"unit\",\"is_phrase\",\"freq_rank\" FROM \"word_entries\" ORDER BY \"id\"",
       "tuples": [
@@ -3669,7 +4180,98 @@
       ]
     },
     {
-      "sequence": 29,
+      "sequence": 34,
+      "operation": "07_snapshot_word_pronunciation_variants",
+      "sql_template": "SELECT \"id\",\"entry_id\",\"variant\",\"kind\",\"source\",\"confidence\",\"enabled\",\"version\",\"created_at\",\"updated_at\" FROM \"word_pronunciation_variants\" ORDER BY \"id\"",
+      "tuples": [
+        {
+          "action": 21,
+          "arg1": "",
+          "arg2": "",
+          "database": "",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_pronunciation_variants",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_pronunciation_variants",
+          "arg2": "entry_id",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_pronunciation_variants",
+          "arg2": "variant",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_pronunciation_variants",
+          "arg2": "kind",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_pronunciation_variants",
+          "arg2": "source",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_pronunciation_variants",
+          "arg2": "confidence",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_pronunciation_variants",
+          "arg2": "enabled",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_pronunciation_variants",
+          "arg2": "version",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_pronunciation_variants",
+          "arg2": "created_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_pronunciation_variants",
+          "arg2": "updated_at",
+          "database": "main",
+          "trigger": ""
+        },
+        {
+          "action": 20,
+          "arg1": "word_pronunciation_variants",
+          "arg2": "id",
+          "database": "main",
+          "trigger": ""
+        }
+      ]
+    },
+    {
+      "sequence": 35,
       "operation": "07_snapshot_ws_tickets",
       "sql_template": "SELECT \"id\",\"ticket\",\"lesson_id\",\"student_id\",\"expires_at\",\"created_at\" FROM \"ws_tickets\" ORDER BY \"id\"",
       "tuples": [

@@ -176,9 +176,21 @@ func (p *firstAudioRealSQLAuthorizer) authorizeStartupTransaction(action, arg2, 
 	}
 	switch action {
 	case "BEGIN":
-		return autoCommit && p.startupBegins.CompareAndSwap(0, 1)
+		if !autoCommit {
+			return false
+		}
+		for {
+			starts, ends := p.startupBegins.Load(), p.startupEnds.Load()
+			if starts != ends || starts >= 2 {
+				return false
+			}
+			if p.startupBegins.CompareAndSwap(starts, starts+1) {
+				return true
+			}
+		}
 	case "COMMIT", "ROLLBACK":
-		return !autoCommit && p.startupBegins.Load() == 1 && p.startupEnds.CompareAndSwap(0, 1)
+		starts, ends := p.startupBegins.Load(), p.startupEnds.Load()
+		return !autoCommit && starts == ends+1 && p.startupEnds.CompareAndSwap(ends, ends+1)
 	default:
 		return false
 	}
@@ -1904,8 +1916,8 @@ func TestFirstAudioMatrixRealSQLProbeTransactionAndReceiptUnderExactPermits(t *t
 		startupEnds += harness.authorizer.startupEnds.Load()
 	}
 	connectionHarnessMu.Unlock()
-	if startupBegins != 1 || startupEnds != 1 {
-		t.Fatalf("NewApp startup transactions begin=%d end=%d; want one exact transaction", startupBegins, startupEnds)
+	if startupBegins != 2 || startupEnds != 2 {
+		t.Fatalf("NewApp startup transactions begin=%d end=%d; want the exact configuration snapshot and identity transactions", startupBegins, startupEnds)
 	}
 	if app == nil || app.DB != guarded || app.StartupError != nil {
 		t.Fatalf("NewApp failed on guarded pool: app=%v startup=%v", app != nil, app.StartupError)

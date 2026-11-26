@@ -206,6 +206,10 @@ test('FIRST_AUDIO_MATRIX_JOURNEY_V1 first entry reaches subtitle and first audio
       startedText: started.text,
     }
   })
+  test.info().attach('first-audio-timing-diagnostic', {
+    body: JSON.stringify(browserTiming),
+    contentType: 'application/json',
+  })
   expect(browserTiming.playbackWord).toBe(action?.word)
   expect(browserTiming.startedText).toBe(action?.word)
   expect(browserTiming.showWordMs).toBeGreaterThanOrEqual(0)

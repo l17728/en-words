@@ -399,7 +399,7 @@ func TestWSWritePumpJoinsAfterClose(t *testing.T) {
 		t.Fatal(err)
 	}
 	select {
-	case <-client.writeDone:
+	case <-client.writerDone:
 	case <-time.After(time.Second):
 		t.Fatal("write pump did not join after socket close")
 	}

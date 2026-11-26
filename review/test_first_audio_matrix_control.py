@@ -30,6 +30,7 @@ from first_audio_matrix_control import (
     _safe_failure_code,
     _safe_failure_stage,
     _assert_db_absent,
+    _browser_journey_implemented,
     _child_environment,
     _build_environment,
     _collect_source_hashes,
@@ -540,16 +541,22 @@ class MatrixControlBoundaryTests(unittest.TestCase):
             (server / "go.mod").write_text("module test\n", encoding="utf-8")
             (server / "main.go").write_text("package main\n", encoding="utf-8")
             (server / "ignored.db").write_bytes(b"not source")
+            (server / ".test-artifacts" / "large-run").mkdir(parents=True)
+            (server / ".test-artifacts" / "large-run" / "generated.go").write_text(
+                "package generated\n", encoding="utf-8")
             (root / "web" / "src").mkdir(parents=True)
             (root / "web" / "src" / "App.tsx").write_text("export {}\n", encoding="utf-8")
+            (root / "web" / "node_modules" / "large-package").mkdir(parents=True)
+            (root / "web" / "node_modules" / "large-package" / "ignored.ts").write_text(
+                "export {}\n", encoding="utf-8")
             (root / "web" / "package.json").write_text("{}\n", encoding="utf-8")
             (root / "web" / "e2e").mkdir()
             (root / "web" / "e2e" / "smoke.spec.ts").write_text("test('smoke', () => {})\n", encoding="utf-8")
             (root / "web" / "playwright.config.ts").write_text("export default {}\n", encoding="utf-8")
             (root / "docs").mkdir()
-            (root / "docs" / "75-first-audio-immutable-guard-context-sdd.md").write_text("guard context spec\n", encoding="utf-8")
-            (root / "docs" / "76-first-audio-context-authority-and-probe-lifecycle-sdd.md").write_text("lease spec\n", encoding="utf-8")
-            (root / "docs" / "77-first-audio-write-callsite-inventory-sdd.md").write_text("write inventory\n", encoding="utf-8")
+            (root / "docs" / "75-first-audio-lead-setting-sdd.md").write_text("lead setting spec\n", encoding="utf-8")
+            (root / "docs" / "74-first-audio-matrix-isolated-backend-sdd.md").write_text("isolated backend spec\n", encoding="utf-8")
+            (root / "docs" / "73-first-audio-matrix-control-protocol-sdd.md").write_text("control protocol spec\n", encoding="utf-8")
             (root / "review").mkdir()
             (root / "review" / "first-audio-transaction-outcome-review-20261027.md").write_text("review\n", encoding="utf-8")
             (root / "review" / "first-audio-write-inventory-review-20261027.md").write_text("inventory review\n", encoding="utf-8")
@@ -558,15 +565,48 @@ class MatrixControlBoundaryTests(unittest.TestCase):
             manifest = __import__("json").loads((run_root / "source-manifest.json").read_text(encoding="utf-8"))
             self.assertEqual(64, len(manifest["binary_sha256"]))
             manifest_paths = [item["path"] for item in manifest["sources"]]
-            self.assertEqual(["docs/75-first-audio-immutable-guard-context-sdd.md",
-                              "docs/76-first-audio-context-authority-and-probe-lifecycle-sdd.md",
-                              "docs/77-first-audio-write-callsite-inventory-sdd.md",
+            self.assertEqual(["docs/73-first-audio-matrix-control-protocol-sdd.md",
+                              "docs/74-first-audio-matrix-isolated-backend-sdd.md",
+                              "docs/75-first-audio-lead-setting-sdd.md",
                               "review/first-audio-transaction-outcome-review-20261027.md",
                               "review/first-audio-write-inventory-review-20261027.md",
                               "server/go.mod", "server/main.go", "web/e2e/smoke.spec.ts", "web/package.json",
                               "web/playwright.config.ts", "web/src/App.tsx"], manifest_paths)
             self.assertEqual("NOT_IMPLEMENTED", manifest["browser_journey_status"])
             self.assertEqual([], manifest["browser_journey_sources"])
+
+    def test_source_hash_collection_prunes_matrix_artifacts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            server = Path(tmp) / "server"
+            (server / ".test-artifacts" / "nested").mkdir(parents=True)
+            (server / "internal").mkdir()
+            (server / ".test-artifacts" / "nested" / "generated.go").write_text(
+                "package generated\n", encoding="utf-8")
+            (server / "internal" / "real.go").write_text("package internal\n", encoding="utf-8")
+
+            self.assertEqual(["server/internal/real.go"],
+                             [item["path"] for item in _collect_source_hashes(server)])
+
+    def test_browser_journey_probe_checks_real_config_selector(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            server = root / "server"
+            server.mkdir()
+            entry = root / "web/e2e/first-audio-matrix.spec.ts"
+            config = root / "web/playwright.first-audio-matrix.config.ts"
+            controller = root / "review/first_audio_matrix_control.py"
+            entry.parent.mkdir(parents=True)
+            config.parent.mkdir(parents=True, exist_ok=True)
+            controller.parent.mkdir(parents=True)
+            entry.write_text("FIRST_AUDIO_MATRIX_JOURNEY_V1", encoding="utf-8")
+            config.write_text("testMatch: 'first-audio-matrix.spec.ts'", encoding="utf-8")
+            controller.write_text(
+                "web/e2e/first-audio-matrix.spec.ts "
+                "web/playwright.first-audio-matrix.config.ts "
+                "run_first_audio_matrix_browser_journeys",
+                encoding="utf-8")
+
+            self.assertTrue(_browser_journey_implemented(server))
 
     @unittest.skipUnless(os.name == "nt", "Windows Job Object regression")
     def test_job_object_reaps_descendant_after_leader_exits(self):

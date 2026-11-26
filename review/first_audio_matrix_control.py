@@ -555,10 +555,22 @@ def _collect_source_hashes(server_dir: Path) -> list[dict[str, str]]:
     repo_root = source_root.parent
     source_exts = {".go", ".c", ".h", ".cc", ".cpp", ".syso"}
     files: set[Path] = set()
-    for path in source_root.rglob("*"):
-        if not path.is_file() or (path.suffix not in source_exts and path.name not in {"go.mod", "go.sum"}):
-            continue
-        files.add(path)
+    # This repository keeps many prior matrix runs beneath server/.test-artifacts.
+    # They are runtime evidence, not source inputs, and may contain large SQLite
+    # trees. Prune them (and other generated/vendor trees) before walking so the
+    # identity check remains bounded and cannot accidentally hash test outputs.
+    excluded_dirs = {".git", ".test-artifacts", "node_modules", "vendor", "dist", "__pycache__"}
+    for root, dirs, names in os.walk(source_root, followlinks=False):
+        root_path = Path(root)
+        dirs[:] = [name for name in dirs
+                   if name not in excluded_dirs
+                   and not (root_path / name).is_symlink()]
+        for name in names:
+            path = root_path / name
+            if path.suffix not in source_exts and path.name not in {"go.mod", "go.sum"}:
+                continue
+            if path.is_file():
+                files.add(path)
     fixed = (
         "docs/70-classroom-first-audio-latency-sdd.md",
         "docs/74-first-audio-matrix-isolated-backend-sdd.md",
@@ -584,17 +596,23 @@ def _collect_source_hashes(server_dir: Path) -> list[dict[str, str]]:
     files.update(path for path in browser_files if path.is_file())
     web_root = repo_root / "web"
     web_source_exts = {".ts", ".tsx", ".js", ".mjs", ".cjs", ".json", ".css", ".html", ".svg"}
-    for path in web_root.rglob("*"):
-        if not path.is_file():
-            continue
-        if any(part in {"node_modules", "dist", ".playwright-mcp"} for part in path.parts):
-            continue
-        # Vite copies public assets verbatim and can import raster/font assets
-        # from src; hash those inputs even when their extensions are not text.
-        if path.suffix.lower() not in web_source_exts and not any(
-                part in {"src", "public"} for part in path.relative_to(web_root).parts):
-            continue
-        files.add(path)
+    if web_root.is_dir():
+        for root, dirs, names in os.walk(web_root, followlinks=False):
+            root_path = Path(root)
+            dirs[:] = [name for name in dirs
+                       if name not in excluded_dirs | {".playwright-mcp"}
+                       and not (root_path / name).is_symlink()]
+            for name in names:
+                path = root_path / name
+                if not path.is_file():
+                    continue
+                # Vite copies public assets verbatim and can import raster/font
+                # assets from src; hash those inputs even when not text files.
+                relative_parts = path.relative_to(web_root).parts
+                if path.suffix.lower() not in web_source_exts and not any(
+                        part in {"src", "public"} for part in relative_parts):
+                    continue
+                files.add(path)
     sources: list[dict[str, str]] = []
     for path in files:
         resolved = path.resolve(strict=True)
@@ -620,7 +638,7 @@ def _browser_journey_implemented(server_dir: Path) -> bool:
         return False
     return (MATRIX_E2E_MARKER in journey and MATRIX_E2E_ENTRYPOINT in controller_text
             and MATRIX_E2E_CONFIG in controller_text and "run_first_audio_matrix_browser_journeys" in controller_text
-            and MATRIX_E2E_ENTRYPOINT in config_text)
+            and "testMatch: 'first-audio-matrix.spec.ts'" in config_text)
 
 
 def _write_source_manifest(binary: Path, server_dir: Path, run_root: Path,

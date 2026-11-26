@@ -89,7 +89,22 @@ type App struct {
 	// Pilot is nil unless an operator explicitly enables isolated pilot
 	// persistence. Legacy classroom traffic never uses it implicitly.
 	Pilot *store.PilotStore
-	mu    sync.Mutex
+	// firstAudioRequestAdmission is installed only by the isolated first-audio
+	// harness. Normal product startup leaves it nil.
+	firstAudioRequestAdmission firstAudioRequestAdmission
+	mu                         sync.Mutex
+}
+
+type firstAudioRequestAdmission interface {
+	AcquireOperation(context.Context) (context.Context, func(), error)
+	OperationContextActive(context.Context) bool
+	ReserveSession(func(context.Context) error) (firstAudioWebSocketSession, error)
+}
+
+type firstAudioWebSocketSession interface {
+	Activate() error
+	Revoked() bool
+	Release()
 }
 
 // SetTestMode 开启测试模式。

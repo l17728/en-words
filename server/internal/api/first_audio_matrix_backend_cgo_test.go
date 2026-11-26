@@ -52,7 +52,7 @@ const (
 	firstAudioRunShutdown
 )
 
-type firstAudioGuardContext struct {
+type firstAudioMatrixBackendGuardContext struct {
 	phase          firstAudioRunPhase
 	lessonID       int64
 	studentID      int64
@@ -66,7 +66,7 @@ type firstAudioGuardContext struct {
 }
 
 type firstAudioMatrixPolicy struct {
-	state                 atomic.Pointer[firstAudioGuardContext]
+	state                 atomic.Pointer[firstAudioMatrixBackendGuardContext]
 	storageProfile        atomic.Pointer[firstAudioStorageProfile]
 	runtimeStarted        atomic.Bool
 	runtimePragmaAttempts atomic.Uint64
@@ -147,11 +147,11 @@ func firstAudioReadStorageProfile(conn *sqlite3.SQLiteConn) (firstAudioStoragePr
 
 func newFirstAudioMatrixPolicy(probe string) *firstAudioMatrixPolicy {
 	p := &firstAudioMatrixPolicy{reads: firstAudioStartupReadManifest()}
-	p.publish(firstAudioGuardContext{phase: firstAudioRunDriver, probeToken: probe})
+	p.publish(firstAudioMatrixBackendGuardContext{phase: firstAudioRunDriver, probeToken: probe})
 	return p
 }
 
-func (p *firstAudioMatrixPolicy) publish(next firstAudioGuardContext) {
+func (p *firstAudioMatrixPolicy) publish(next firstAudioMatrixBackendGuardContext) {
 	copy := next
 	copy.wordIDs = append([]int64(nil), next.wordIDs...)
 	p.state.Store(&copy)
@@ -362,7 +362,7 @@ func (p *firstAudioMatrixPolicy) rowGuardForConnection(connectionID uint64, valu
 	return allowed
 }
 
-func firstAudioMatrixSnapshotAllowed(payload string, state firstAudioGuardContext) bool {
+func firstAudioMatrixSnapshotAllowed(payload string, state firstAudioMatrixBackendGuardContext) bool {
 	if len(payload) == 0 || len(payload) > 1<<20 || state.lessonID <= 0 || state.studentID <= 0 || state.bookID <= 0 || state.wordCount <= 0 || len(state.wordIDs) != state.wordCount {
 		return false
 	}
@@ -585,19 +585,19 @@ func (b *firstAudioGuardedBackend) Bind(ctx context.Context, fixture string) (re
 	pool.SetMaxOpenConns(3)
 	pool.SetMaxIdleConns(3)
 	b.db, b.pool = db, pool
-	b.policy.publish(firstAudioGuardContext{phase: firstAudioRunDriver, lessonID: identity.LessonID, studentID: identity.StudentID, bookID: identity.BookID, wordCount: len(identity.WordIDs), wordIDs: identity.WordIDs, probeToken: b.probeToken})
+	b.policy.publish(firstAudioMatrixBackendGuardContext{phase: firstAudioRunDriver, lessonID: identity.LessonID, studentID: identity.StudentID, bookID: identity.BookID, wordCount: len(identity.WordIDs), wordIDs: identity.WordIDs, probeToken: b.probeToken})
 	stage = "guarded_connection_probe"
 	if err := pool.PingContext(ctx); err != nil {
 		return firstAudioBound{}, fmt.Errorf("driver probe failed: %w", err)
 	}
-	b.policy.publish(firstAudioGuardContext{phase: firstAudioRunStartup, lessonID: identity.LessonID, studentID: identity.StudentID, bookID: identity.BookID, wordCount: len(identity.WordIDs), wordIDs: identity.WordIDs, probeToken: b.probeToken})
+	b.policy.publish(firstAudioMatrixBackendGuardContext{phase: firstAudioRunStartup, lessonID: identity.LessonID, studentID: identity.StudentID, bookID: identity.BookID, wordCount: len(identity.WordIDs), wordIDs: identity.WordIDs, probeToken: b.probeToken})
 	b.identity, b.password = identity, password
 	stage = "api_app_startup"
 	b.app = NewApp(scheduler.RealClock{}, db)
 	if b.app == nil || b.app.StartupError != nil {
 		return firstAudioBound{}, errors.New("api.App startup failed under guarded pool")
 	}
-	b.policy.publish(firstAudioGuardContext{phase: firstAudioRunPreflight, lessonID: identity.LessonID, studentID: identity.StudentID, bookID: identity.BookID, wordCount: len(identity.WordIDs), wordIDs: identity.WordIDs, probeToken: b.probeToken})
+	b.policy.publish(firstAudioMatrixBackendGuardContext{phase: firstAudioRunPreflight, lessonID: identity.LessonID, studentID: identity.StudentID, bookID: identity.BookID, wordCount: len(identity.WordIDs), wordIDs: identity.WordIDs, probeToken: b.probeToken})
 	stage = "guarded_connection_preflight"
 	if err := b.preflightConnections(ctx); err != nil {
 		return firstAudioBound{}, err
@@ -613,7 +613,7 @@ func (b *firstAudioGuardedBackend) Bind(ctx context.Context, fixture string) (re
 		}
 		return firstAudioBound{}, fmt.Errorf("guarded app startup snapshot failed: %w", err)
 	}
-	b.policy.publish(firstAudioGuardContext{phase: firstAudioRunJourney, lessonID: identity.LessonID, studentID: identity.StudentID, bookID: identity.BookID, wordCount: len(identity.WordIDs), wordIDs: identity.WordIDs, probeToken: b.probeToken})
+	b.policy.publish(firstAudioMatrixBackendGuardContext{phase: firstAudioRunJourney, lessonID: identity.LessonID, studentID: identity.StudentID, bookID: identity.BookID, wordCount: len(identity.WordIDs), wordIDs: identity.WordIDs, probeToken: b.probeToken})
 	b.policy.runtimeStarted.Store(true)
 	stage = "initial_storage_stat"
 	b.storageBefore, err = firstAudioCaptureStorageSize(b.dbPath)
@@ -690,7 +690,7 @@ func (b *firstAudioGuardedBackend) preflightConnections(ctx context.Context) err
 	if got := b.policy.hooks.Load(); got != 3 {
 		return fmt.Errorf("guarded connection hook count %d, want 3", got)
 	}
-	b.policy.publish(firstAudioGuardContext{phase: firstAudioRunPreflight, lessonID: b.identity.LessonID, studentID: b.identity.StudentID, bookID: b.identity.BookID, wordCount: len(b.identity.WordIDs), wordIDs: b.identity.WordIDs, probeToken: b.probeToken, preflightProbe: true})
+	b.policy.publish(firstAudioMatrixBackendGuardContext{phase: firstAudioRunPreflight, lessonID: b.identity.LessonID, studentID: b.identity.StudentID, bookID: b.identity.BookID, wordCount: len(b.identity.WordIDs), wordIDs: b.identity.WordIDs, probeToken: b.probeToken, preflightProbe: true})
 	for index, conn := range connections {
 		var allowed bool
 		if err := conn.QueryRowContext(ctx, "SELECT first_audio_probe(?)", b.probeToken).Scan(&allowed); err != nil || !allowed {
@@ -736,7 +736,7 @@ func (b *firstAudioGuardedBackend) preflightConnections(ctx context.Context) err
 	if got := b.policy.probeCalls.Load(); got != 3 {
 		return fmt.Errorf("preflight UDF calls %d, want one on every connection", got)
 	}
-	b.policy.publish(firstAudioGuardContext{phase: firstAudioRunPreflight, lessonID: b.identity.LessonID, studentID: b.identity.StudentID, bookID: b.identity.BookID, wordCount: len(b.identity.WordIDs), wordIDs: b.identity.WordIDs, probeToken: b.probeToken})
+	b.policy.publish(firstAudioMatrixBackendGuardContext{phase: firstAudioRunPreflight, lessonID: b.identity.LessonID, studentID: b.identity.StudentID, bookID: b.identity.BookID, wordCount: len(b.identity.WordIDs), wordIDs: b.identity.WordIDs, probeToken: b.probeToken})
 	return nil
 }
 
@@ -878,7 +878,7 @@ func (b *firstAudioGuardedBackend) Reset(ctx context.Context, lessonID int64) (f
 		return firstAudioBound{}, err
 	}
 	nextSnapshot := string(nextState)
-	b.policy.publish(firstAudioGuardContext{phase: firstAudioRunReset, lessonID: lessonID, studentID: b.identity.StudentID, bookID: b.identity.BookID, wordCount: len(b.identity.WordIDs), wordIDs: b.identity.WordIDs, nextLesson: nextLesson, probeToken: b.probeToken, resetSnapshot: nextSnapshot})
+	b.policy.publish(firstAudioMatrixBackendGuardContext{phase: firstAudioRunReset, lessonID: lessonID, studentID: b.identity.StudentID, bookID: b.identity.BookID, wordCount: len(b.identity.WordIDs), wordIDs: b.identity.WordIDs, nextLesson: nextLesson, probeToken: b.probeToken, resetSnapshot: nextSnapshot})
 	txErr := b.db.WithContext(drainCtx).Transaction(func(tx *gorm.DB) error {
 		result := tx.Model(&store.Lesson{}).Where("id = ?", lessonID).UpdateColumn("id", nextLesson)
 		if result.Error != nil {
@@ -894,7 +894,7 @@ func (b *firstAudioGuardedBackend) Reset(ctx context.Context, lessonID int64) (f
 		return tx.Create(&store.RuntimeRecord{Key: fmt.Sprintf("snapshot/%d", nextLesson), Value: nextSnapshot}).Error
 	})
 	if txErr != nil {
-		b.policy.publish(firstAudioGuardContext{phase: firstAudioRunJourney, lessonID: lessonID, studentID: b.identity.StudentID, bookID: b.identity.BookID, wordCount: len(b.identity.WordIDs), wordIDs: b.identity.WordIDs, probeToken: b.probeToken})
+		b.policy.publish(firstAudioMatrixBackendGuardContext{phase: firstAudioRunJourney, lessonID: lessonID, studentID: b.identity.StudentID, bookID: b.identity.BookID, wordCount: len(b.identity.WordIDs), wordIDs: b.identity.WordIDs, probeToken: b.probeToken})
 		if errors.Is(txErr, context.Canceled) || errors.Is(txErr, context.DeadlineExceeded) {
 			return firstAudioBound{}, errFirstAudioOutcomeUncertain
 		}
@@ -924,7 +924,7 @@ func (b *firstAudioGuardedBackend) Reset(ctx context.Context, lessonID int64) (f
 	b.identity.WordIDs = append([]int64(nil), b.identity.WordIDs...)
 	b.bound.LessonID = nextLesson
 	b.bound.Generation++
-	b.policy.publish(firstAudioGuardContext{phase: firstAudioRunJourney, lessonID: nextLesson, studentID: b.identity.StudentID, bookID: b.identity.BookID, wordCount: len(b.identity.WordIDs), wordIDs: b.identity.WordIDs, probeToken: b.probeToken})
+	b.policy.publish(firstAudioMatrixBackendGuardContext{phase: firstAudioRunJourney, lessonID: nextLesson, studentID: b.identity.StudentID, bookID: b.identity.BookID, wordCount: len(b.identity.WordIDs), wordIDs: b.identity.WordIDs, probeToken: b.probeToken})
 	b.admission.resume()
 	return b.bound, nil
 }
@@ -1367,7 +1367,7 @@ func TestFirstAudioMatrixGuardedBackendRunsAppEntryAndSamePoolReset(t *testing.T
 
 func TestFirstAudioMatrixRowGuardPinsResetPayloadAndLessonPhase(t *testing.T) {
 	policy := newFirstAudioMatrixPolicy("probe")
-	policy.publish(firstAudioGuardContext{phase: firstAudioRunReset, lessonID: 40, nextLesson: 41, resetSnapshot: `{"LessonID":41}`})
+	policy.publish(firstAudioMatrixBackendGuardContext{phase: firstAudioRunReset, lessonID: 40, nextLesson: 41, resetSnapshot: `{"LessonID":41}`})
 	if !policy.rowGuard("lesson_update", "", "40", "41", "teaching", "teaching") {
 		t.Fatal("exact lesson ID transition with unchanged phase was denied")
 	}
@@ -1380,7 +1380,7 @@ func TestFirstAudioMatrixRowGuardPinsResetPayloadAndLessonPhase(t *testing.T) {
 	if policy.rowGuard("runtime_insert", "snapshot/41", "", "", `{"LessonID":999}`) {
 		t.Fatal("noncanonical snapshot payload was allowed")
 	}
-	policy.publish(firstAudioGuardContext{phase: firstAudioRunJourney, lessonID: 41})
+	policy.publish(firstAudioMatrixBackendGuardContext{phase: firstAudioRunJourney, lessonID: 41})
 	if policy.rowGuard("runtime_insert", "snapshot/41", "", "", `{"LessonID":41}`) {
 		t.Fatal("first-audio journey unexpectedly allowed a runtime write")
 	}
@@ -1395,7 +1395,7 @@ func TestFirstAudioMatrixRowGuardPinsResetPayloadAndLessonPhase(t *testing.T) {
 }
 
 func TestFirstAudioMatrixSnapshotGuardRejectsUnrestorablePositions(t *testing.T) {
-	guard := firstAudioGuardContext{lessonID: 41, studentID: 7, bookID: 2, wordCount: 2, wordIDs: []int64{11, 12}}
+	guard := firstAudioMatrixBackendGuardContext{lessonID: 41, studentID: 7, bookID: 2, wordCount: 2, wordIDs: []int64{11, 12}}
 	valid := `{"LessonID":41,"StudentID":7,"BookID":2,"Phase":"tts_seg","WordIdx":0,"QuizIdx":0,"QuizQueue":[],"ReviewList":[],"Config":{}}`
 	guard.phase = firstAudioRunJourney
 	if !firstAudioMatrixSnapshotAllowed(valid, guard) {

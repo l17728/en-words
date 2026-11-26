@@ -52,8 +52,8 @@ func TestAtomicConnectionObservedReportsCommitRollbackAndPreservesResults(t *tes
 	require.Error(t, err)
 	require.Equal(t, "failed", commitFailed.Commit.State)
 	require.Equal(t, "failed", commitFailed.Rollback.State)
-	require.Equal(t, "completed", commitFailed.RawCleanup.State)
-	require.Equal(t, "failed_cleaned", commitFailed.Outcome)
+	require.Equal(t, "unknown", commitFailed.RawCleanup.State)
+	require.Equal(t, "outcome_uncertain", commitFailed.Outcome)
 
 	var canceled AtomicConnectionTiming
 	ctx, cancel := context.WithCancel(context.Background())

@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "sha256": "797ffcb2b01d472f29fc73ee42c9ba8874e86aa38e6102cd2f9a3fb4329ddb78",
+  "sha256": "6e129708651d0d8ceccf15113ee05e641b169b0d3b683378aca9ae2fffa77031",
   "objects": [
     {
       "type": "index",
@@ -37,6 +37,12 @@
       "name": "idx_classroom_events_lesson_id",
       "table": "classroom_events",
       "sql": "CREATE INDEX `idx_classroom_events_lesson_id` ON `classroom_events`(`lesson_id`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_entry_variant",
+      "table": "word_pronunciation_variants",
+      "sql": "CREATE UNIQUE INDEX `idx_entry_variant` ON `word_pronunciation_variants`(`entry_id`,`variant`)"
     },
     {
       "type": "index",
@@ -100,6 +106,18 @@
     },
     {
       "type": "index",
+      "name": "idx_model_profiles_active",
+      "table": "model_profiles",
+      "sql": "CREATE INDEX `idx_model_profiles_active` ON `model_profiles`(`active`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_model_profiles_name",
+      "table": "model_profiles",
+      "sql": "CREATE UNIQUE INDEX `idx_model_profiles_name` ON `model_profiles`(`name`)"
+    },
+    {
+      "type": "index",
       "name": "idx_notifications_user_id",
       "table": "notifications",
       "sql": "CREATE INDEX `idx_notifications_user_id` ON `notifications`(`user_id`)"
@@ -109,6 +127,108 @@
       "name": "idx_ovr",
       "table": "config_overrides",
       "sql": "CREATE UNIQUE INDEX `idx_ovr` ON `config_overrides`(`student_id`,`key`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_speech_assets_cache_key",
+      "table": "speech_assets",
+      "sql": "CREATE UNIQUE INDEX `idx_speech_assets_cache_key` ON `speech_assets`(`cache_key`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_speech_assets_language",
+      "table": "speech_assets",
+      "sql": "CREATE INDEX `idx_speech_assets_language` ON `speech_assets`(`language`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_speech_assets_status",
+      "table": "speech_assets",
+      "sql": "CREATE INDEX `idx_speech_assets_status` ON `speech_assets`(`status`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_teacher_analysis_jobs_analysis_id",
+      "table": "teacher_analysis_jobs",
+      "sql": "CREATE INDEX `idx_teacher_analysis_jobs_analysis_id` ON `teacher_analysis_jobs`(`analysis_id`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_teacher_analysis_jobs_analysis_key",
+      "table": "teacher_analysis_jobs",
+      "sql": "CREATE UNIQUE INDEX `idx_teacher_analysis_jobs_analysis_key` ON `teacher_analysis_jobs`(`analysis_key`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_teacher_analysis_jobs_lease_until",
+      "table": "teacher_analysis_jobs",
+      "sql": "CREATE INDEX `idx_teacher_analysis_jobs_lease_until` ON `teacher_analysis_jobs`(`lease_until`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_teacher_authorization_receipts_nonce",
+      "table": "teacher_authorization_receipts",
+      "sql": "CREATE UNIQUE INDEX `idx_teacher_authorization_receipts_nonce` ON `teacher_authorization_receipts`(`nonce`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_teacher_authorization_receipts_operator_id",
+      "table": "teacher_authorization_receipts",
+      "sql": "CREATE INDEX `idx_teacher_authorization_receipts_operator_id` ON `teacher_authorization_receipts`(`operator_id`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_teacher_failure_analyses_analysis_key",
+      "table": "teacher_failure_analyses",
+      "sql": "CREATE UNIQUE INDEX `idx_teacher_failure_analyses_analysis_key` ON `teacher_failure_analyses`(`analysis_key`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_teacher_failure_analyses_analysis_status",
+      "table": "teacher_failure_analyses",
+      "sql": "CREATE INDEX `idx_teacher_failure_analyses_analysis_status` ON `teacher_failure_analyses`(`analysis_status`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_teacher_failure_analyses_entry_id",
+      "table": "teacher_failure_analyses",
+      "sql": "CREATE INDEX `idx_teacher_failure_analyses_entry_id` ON `teacher_failure_analyses`(`entry_id`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_teacher_failure_analyses_failure_type",
+      "table": "teacher_failure_analyses",
+      "sql": "CREATE INDEX `idx_teacher_failure_analyses_failure_type` ON `teacher_failure_analyses`(`failure_type`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_teacher_failure_analyses_implementation_status",
+      "table": "teacher_failure_analyses",
+      "sql": "CREATE INDEX `idx_teacher_failure_analyses_implementation_status` ON `teacher_failure_analyses`(`implementation_status`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_teacher_failure_analyses_lesson_id",
+      "table": "teacher_failure_analyses",
+      "sql": "CREATE INDEX `idx_teacher_failure_analyses_lesson_id` ON `teacher_failure_analyses`(`lesson_id`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_teacher_failure_analyses_student_id",
+      "table": "teacher_failure_analyses",
+      "sql": "CREATE INDEX `idx_teacher_failure_analyses_student_id` ON `teacher_failure_analyses`(`student_id`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_teacher_job_status_next",
+      "table": "teacher_analysis_jobs",
+      "sql": "CREATE INDEX `idx_teacher_job_status_next` ON `teacher_analysis_jobs`(`status`,`next_run_at`)"
+    },
+    {
+      "type": "index",
+      "name": "idx_teacher_receipt_action",
+      "table": "teacher_authorization_receipts",
+      "sql": "CREATE INDEX `idx_teacher_receipt_action` ON `teacher_authorization_receipts`(`analysis_id`,`tool_name`,`args_sha256`)"
     },
     {
       "type": "index",
@@ -162,6 +282,18 @@
       "type": "index",
       "name": "sqlite_autoindex_runtime_records_1",
       "table": "runtime_records",
+      "sql": ""
+    },
+    {
+      "type": "index",
+      "name": "sqlite_autoindex_teacher_analysis_jobs_1",
+      "table": "teacher_analysis_jobs",
+      "sql": ""
+    },
+    {
+      "type": "index",
+      "name": "sqlite_autoindex_teacher_authorization_receipts_1",
+      "table": "teacher_authorization_receipts",
       "sql": ""
     },
     {
@@ -250,6 +382,12 @@
     },
     {
       "type": "table",
+      "name": "model_profiles",
+      "table": "model_profiles",
+      "sql": "CREATE TABLE `model_profiles` (`id` integer PRIMARY KEY AUTOINCREMENT,`name` text,`text_service` text,`asr_service` text,`tts_zh_service` text,`tts_en_service` text,`active` numeric,`created_at` datetime,`updated_at` datetime)"
+    },
+    {
+      "type": "table",
       "name": "notifications",
       "table": "notifications",
       "sql": "CREATE TABLE `notifications` (`id` integer PRIMARY KEY AUTOINCREMENT,`user_id` integer,`type` text,`title` text,`body` text,`ref_id` integer,`read` numeric,`created_at` datetime)"
@@ -274,9 +412,33 @@
     },
     {
       "type": "table",
+      "name": "speech_assets",
+      "table": "speech_assets",
+      "sql": "CREATE TABLE `speech_assets` (`id` integer PRIMARY KEY AUTOINCREMENT,`cache_key` text,`language` text,`speech_text` text,`provider` text,`model` text,`voice` text,`rule_version` text,`file_path` text,`sha256` text,`size_bytes` integer,`status` text,`created_at` datetime,`last_used_at` datetime)"
+    },
+    {
+      "type": "table",
       "name": "sqlite_sequence",
       "table": "sqlite_sequence",
       "sql": "CREATE TABLE sqlite_sequence(name,seq)"
+    },
+    {
+      "type": "table",
+      "name": "teacher_analysis_jobs",
+      "table": "teacher_analysis_jobs",
+      "sql": "CREATE TABLE `teacher_analysis_jobs` (`id` text,`analysis_id` integer,`analysis_key` text,`status` text,`lease_owner` text,`lease_until` datetime,`attempts` integer,`next_run_at` datetime,`last_error` text,`created_at` datetime,`updated_at` datetime,PRIMARY KEY (`id`))"
+    },
+    {
+      "type": "table",
+      "name": "teacher_authorization_receipts",
+      "table": "teacher_authorization_receipts",
+      "sql": "CREATE TABLE `teacher_authorization_receipts` (`id` text,`analysis_id` integer,`operator_id` integer,`tool_name` text,`args_sha256` text,`nonce` text,`expires_at` datetime,`consumed_at` datetime,`created_at` datetime,PRIMARY KEY (`id`))"
+    },
+    {
+      "type": "table",
+      "name": "teacher_failure_analyses",
+      "table": "teacher_failure_analyses",
+      "sql": "CREATE TABLE `teacher_failure_analyses` (`id` integer PRIMARY KEY AUTOINCREMENT,`lesson_id` integer,`entry_id` integer,`student_id` integer,`failure_type` text,`target_text` text,`transcript` text,`diagnosis` text,`suggestion` text,`confidence` real,`analysis_status` text,`implementation_status` text,`analysis_key` text,`created_at` datetime,`resolved_at` datetime)"
     },
     {
       "type": "table",
@@ -295,6 +457,12 @@
       "name": "word_entries",
       "table": "word_entries",
       "sql": "CREATE TABLE `word_entries` (`id` integer PRIMARY KEY AUTOINCREMENT,`book_id` integer,`word` text,`norm_key` text,`phonetic` text,`meanings` text,`unit` text,`is_phrase` numeric,`freq_rank` integer)"
+    },
+    {
+      "type": "table",
+      "name": "word_pronunciation_variants",
+      "table": "word_pronunciation_variants",
+      "sql": "CREATE TABLE `word_pronunciation_variants` (`id` integer PRIMARY KEY AUTOINCREMENT,`entry_id` integer,`variant` text,`kind` text,`source` text,`confidence` real,`enabled` numeric,`version` integer,`created_at` datetime,`updated_at` datetime)"
     },
     {
       "type": "table",

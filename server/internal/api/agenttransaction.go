@@ -24,6 +24,75 @@ type committedToolError struct{ cause error }
 func (e *committedToolError) Error() string { return "tool committed; configuration refresh pending" }
 func (e *committedToolError) Unwrap() error { return e.cause }
 
+type uncertainToolTransactionError struct{ cause error }
+
+func (e *uncertainToolTransactionError) Error() string {
+	return "tool transaction outcome uncertain"
+}
+func (e *uncertainToolTransactionError) Unwrap() error { return e.cause }
+
+type toolTransactionOutcome string
+
+const (
+	toolTransactionCommitted         toolTransactionOutcome = "committed"
+	toolTransactionRollbackConfirmed toolTransactionOutcome = "rollback_confirmed"
+	toolTransactionOutcomeUncertain  toolTransactionOutcome = "outcome_uncertain"
+)
+
+type toolTxFinalizer interface {
+	Commit() error
+	Rollback() error
+}
+
+type gormToolTxFinalizer struct{ tx *gorm.DB }
+
+func (f gormToolTxFinalizer) Commit() error   { return f.tx.Commit().Error }
+func (f gormToolTxFinalizer) Rollback() error { return f.tx.Rollback().Error }
+
+func rollbackAfterToolPanic(tx *gorm.DB) (err error) {
+	defer func() {
+		if recover() != nil {
+			err = errors.New("rollback panicked")
+		}
+	}()
+	return tx.Rollback().Error
+}
+
+func classifyToolTransaction(tx toolTxFinalizer, callbackErr error) (toolTransactionOutcome, error) {
+	if callbackErr != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return toolTransactionOutcomeUncertain, errors.Join(callbackErr, fmt.Errorf("rollback: %w", rollbackErr))
+		}
+		return toolTransactionRollbackConfirmed, callbackErr
+	}
+	if commitErr := tx.Commit(); commitErr != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return toolTransactionOutcomeUncertain, errors.Join(fmt.Errorf("commit: %w", commitErr), fmt.Errorf("rollback cleanup: %w", rollbackErr))
+		}
+		return toolTransactionOutcomeUncertain, fmt.Errorf("commit: %w", commitErr)
+	}
+	return toolTransactionCommitted, nil
+}
+
+func runObservedToolTransaction(db *gorm.DB, ctx context.Context, callback func(*gorm.DB) error) (outcome toolTransactionOutcome, resultErr error) {
+	tx := db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return toolTransactionOutcomeUncertain, fmt.Errorf("begin: %w", tx.Error)
+	}
+	defer func() {
+		if recover() != nil {
+			rollbackErr := rollbackAfterToolPanic(tx)
+			outcome = toolTransactionOutcomeUncertain
+			if rollbackErr != nil {
+				resultErr = errors.New("transaction callback panicked; rollback cleanup failed")
+			} else {
+				resultErr = errors.New("transaction callback panicked; outcome uncertain")
+			}
+		}
+	}()
+	return classifyToolTransaction(gormToolTxFinalizer{tx: tx}, callback(tx))
+}
+
 // trustedToolExecutor executes a capability through a task-private registry
 // bound to the caller's existing transaction. It never begins or commits a
 // transaction; the outer owner controls commit and Call writes audit rows into
@@ -258,7 +327,7 @@ func (a *App) callAgentTool(ctx context.Context, name string, args any) (any, er
 			a.Log.ErrorCtx(ctx, "tools", "audit_persist_skipped_outcome_uncertain", map[string]any{"task_id": task.taskID, "tool": name})
 		}
 	}
-	if outcome == toolTransactionOutcomeUncertain {
+	if outcome == string(toolTransactionOutcomeUncertain) {
 		logCall(string(outcome), false)
 		return nil, &uncertainToolTransactionError{cause: err}
 	}

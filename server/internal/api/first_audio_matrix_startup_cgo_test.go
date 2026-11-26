@@ -30,6 +30,8 @@ const (
 	firstAudioStartupPreflight
 )
 
+const firstAudioAuditNoReplaceTrigger = "fa_audit_no_replace"
+
 type firstAudioStartupPolicy struct {
 	phase         atomic.Uint32
 	hooks         atomic.Uint64
@@ -46,15 +48,7 @@ func newFirstAudioStartupPolicy() *firstAudioStartupPolicy {
 }
 
 func firstAudioStartupReadManifest() map[string]map[string]struct{} {
-	models := []any{
-		&store.OverdueTask{}, &store.FeedbackTask{}, &store.FeedbackIntent{}, &store.FeedbackTodo{},
-		&store.FeedbackNotice{}, &store.ConfigRevision{}, &store.RuntimeRecord{}, &store.DurableMemory{},
-		&store.User{}, &store.WordBook{}, &store.WordEntry{}, &store.MemoryCard{}, &store.Lesson{},
-		&store.ClassroomEvent{}, &store.WsTicket{}, &store.ConfigGlobal{}, &store.ConfigOverride{},
-		&store.Feedback{}, &store.Notification{}, &store.AgentMemory{}, &store.AuditLog{}, &store.PlacementDraft{},
-		&store.SpeechAsset{}, &store.ModelProfile{},
-	}
-	models = append(models, store.TeacherAnalysisModels()...)
+	models := firstAudioStartupModels()
 	cache := &sync.Map{}
 	manifest := make(map[string]map[string]struct{}, len(models)+2)
 	for _, model := range models {
@@ -62,9 +56,6 @@ func firstAudioStartupReadManifest() map[string]map[string]struct{} {
 		if err != nil {
 			panic("first-audio model manifest parse failed")
 		}
-		// SQLite reports an empty column name for SQLITE_READ callbacks that
-		// implement COUNT(*) over a table. This sentinel grants row counting,
-		// not access to an undeclared physical column.
 		columns := map[string]struct{}{"": {}}
 		for _, field := range parsed.Fields {
 			if field.DBName != "" {
@@ -76,6 +67,18 @@ func firstAudioStartupReadManifest() map[string]map[string]struct{} {
 	manifest["sqlite_master"] = map[string]struct{}{"": {}, "type": {}, "name": {}, "tbl_name": {}, "rootpage": {}, "sql": {}}
 	manifest["sqlite_sequence"] = map[string]struct{}{"": {}, "name": {}, "seq": {}}
 	return manifest
+}
+
+func firstAudioStartupModels() []any {
+	models := []any{
+		&store.OverdueTask{}, &store.FeedbackTask{}, &store.FeedbackIntent{}, &store.FeedbackTodo{},
+		&store.FeedbackNotice{}, &store.ConfigRevision{}, &store.RuntimeRecord{}, &store.DurableMemory{},
+		&store.User{}, &store.WordBook{}, &store.WordEntry{}, &store.MemoryCard{}, &store.Lesson{},
+		&store.ClassroomEvent{}, &store.WsTicket{}, &store.ConfigGlobal{}, &store.ConfigOverride{},
+		&store.Feedback{}, &store.Notification{}, &store.AgentMemory{}, &store.AuditLog{}, &store.PlacementDraft{},
+		&store.SpeechAsset{}, &store.ModelProfile{},
+	}
+	return append(models, store.TeacherAnalysisModels()...)
 }
 
 func (p *firstAudioStartupPolicy) install(conn *sqlite3.SQLiteConn) error {
@@ -103,16 +106,37 @@ var firstAudioApprovedGuardTriggers = map[string]struct{}{
 }
 
 func (p *firstAudioStartupPolicy) authorize(action int, arg1, arg2, databaseName, triggerName string) bool {
-	phase := firstAudioStartupPhase(p.phase.Load())
+	return firstAudioStartupAuthorizeAt(firstAudioStartupPhase(p.phase.Load()), p.reads, action, arg1, arg2, databaseName, triggerName)
+}
+
+func firstAudioStartupAuthorizeAt(phase firstAudioStartupPhase, reads map[string]map[string]struct{}, action int, arg1, arg2, databaseName, triggerName string) bool {
 	switch action {
 	case sqlite3.SQLITE_SELECT:
 		if triggerName == "" {
 			return true
 		}
 		_, ok := firstAudioApprovedGuardTriggers[triggerName]
-		return ok
+		return (phase == firstAudioStartupApp || phase == firstAudioStartupPreflight) && (ok || triggerName == firstAudioAuditNoReplaceTrigger)
 	case sqlite3.SQLITE_READ:
-		_, ok := p.reads[arg1][arg2]
+		if triggerName != "" {
+			if phase != firstAudioStartupApp && phase != firstAudioStartupPreflight {
+				return false
+			}
+			if triggerName == "rev_config_globals_UPDATE" {
+				if databaseName != "main" {
+					return false
+				}
+				if arg1 == "config_globals" && arg2 == "key" {
+					return true
+				}
+				return arg1 == "config_revisions" && (arg2 == "student_id" || arg2 == "key" || arg2 == "revision")
+			}
+			if triggerName == firstAudioAuditNoReplaceTrigger {
+				return (databaseName == "main" && arg1 == "audit_logs" && arg2 == "id") || (databaseName == "" && arg1 == "audit_logs" && arg2 == "")
+			}
+			return false
+		}
+		_, ok := reads[arg1][arg2]
 		// SQLite omits the database name for COUNT(*)'s table-existence
 		// authorization callback. Accept that tuple only for the empty-column
 		// sentinel of an explicitly manifested main-schema table.
@@ -132,6 +156,9 @@ func (p *firstAudioStartupPolicy) authorize(action int, arg1, arg2, databaseName
 			return ok
 		}
 	case sqlite3.SQLITE_UPDATE:
+		if (phase == firstAudioStartupApp || phase == firstAudioStartupPreflight) && databaseName == "main" && triggerName == "rev_config_globals_UPDATE" && arg1 == "config_globals" && arg2 == "key" {
+			return true // The revision trigger's exact reservation reaches the row guard.
+		}
 		if (phase == firstAudioStartupApp || phase == firstAudioStartupPreflight) && databaseName == "main" && triggerName == "rev_config_globals_UPDATE" && arg1 == "config_revisions" {
 			return true
 		}
@@ -160,6 +187,7 @@ func installFirstAudioStartupGuards(db *gorm.DB) error {
 		`CREATE TRIGGER fa_config_globals_no_insert BEFORE INSERT ON config_globals BEGIN SELECT CASE WHEN first_audio_row_guard()=0 THEN RAISE(ABORT,'first_audio_guard') END; END`,
 		`CREATE TRIGGER fa_config_globals_no_update BEFORE UPDATE ON config_globals BEGIN SELECT CASE WHEN first_audio_row_guard()=0 THEN RAISE(ABORT,'first_audio_guard') END; END`,
 		`CREATE TRIGGER fa_config_globals_no_delete BEFORE DELETE ON config_globals BEGIN SELECT CASE WHEN first_audio_row_guard()=0 THEN RAISE(ABORT,'first_audio_guard') END; END`,
+		`CREATE TRIGGER fa_audit_no_replace BEFORE INSERT ON audit_logs WHEN EXISTS (SELECT 1 FROM audit_logs WHERE id=NEW.id) BEGIN SELECT RAISE(ABORT,'first_audio_audit_id_collision'); END`,
 	}
 	for _, statement := range statements {
 		if err := db.Exec(statement).Error; err != nil {
@@ -303,7 +331,7 @@ func TestFirstAudioMatrixNewAppStartsOnGuardedSQLitePool(t *testing.T) {
 		t.Fatalf("blocked config row change emitted revision side effect: count=%d baseline=%d err=%v last_denial=%v", revisionCount, setupRevisionCount, err, policy.lastDenial.Load())
 	}
 	if policy.rowGuardCalls.Load() < 2 {
-		t.Fatalf("row guard calls = %d, want at least the blocked users and config writes", policy.rowGuardCalls.Load())
+		t.Fatalf("row guard calls = %d, want at least the blocked users and config writes; last_denial=%v", policy.rowGuardCalls.Load(), policy.lastDenial.Load())
 	}
 	policy.phase.Store(uint32(firstAudioStartupPreflight))
 	if err := appDB.Exec("UPDATE users SET id=id WHERE id=?", identity.StudentID).Error; err == nil {
