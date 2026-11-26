@@ -11,6 +11,7 @@ import (
 	"enwords/internal/obs"
 	"errors"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -726,7 +727,7 @@ func (a *App) handleWS(c *gin.Context) {
 					shadowSession = nil
 					commitAccepted = true
 				}()
-				if commitAccepted && feedbackAfterCommit != nil {
+				if commitAccepted && feedbackAfterCommit != nil && !(a.TestMode && os.Getenv("ENWORDS_E2E_DEFER_FEEDBACK_DISPATCH") == "1") {
 					go a.deliverDuplexFeedback(ctx, tk.StudentID, lessonID, client, feedbackEventID)
 				}
 			case "resume":

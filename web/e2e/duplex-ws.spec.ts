@@ -1,9 +1,9 @@
 ﻿import { test, expect } from './recovery-server'
 import { api, fixture, scheduled, login } from './isolated-fixtures'
 
-test.use({ localModel: true, duplexPilot: true, duplexShadow: true })
+test.use({ localModel: true, duplexPilot: true, duplexShadow: true, deferDuplexFeedback: true })
 
-test('WS duplex shadow requires explicit confirmation before classroom progress', async ({ page, request }) => {
+test('WS duplex shadow requires explicit confirmation before classroom progress', async ({ page, request, server }) => {
   test.setTimeout(120_000)
   const f = await fixture(request, 'duplex-ws', [{ word: 'cat', meanings: ['猫'] }])
   await api(request, '/config/set', f.admin.token,
@@ -153,6 +153,22 @@ test('WS duplex shadow requires explicit confirmation before classroom progress'
   const analyses = await api(request, `/student/lessons/${lessonId}/teacher-analysis`, f.student.token, undefined, 'GET')
   const feedbackID = result.feedback.confirmed.submission_id
   expect(feedbackID, 'confirmed voice feedback must include its idempotency key').toMatch(/^duplex_[A-Za-z0-9_-]+$/)
+  await server.restart()
+  const resumed = await api(request, `/classroom/lessons/${lessonId}/enter?e2e=1`, f.student.token, {})
+  const recoveredFeedback = await page.evaluate(async ({ lessonId, ticket, feedbackID }) => {
+    const socket = new WebSocket(`/ws/classroom?lessonId=${lessonId}&ticket=${encodeURIComponent(ticket)}`)
+    return await new Promise<any>((resolve, reject) => {
+      const timer = setTimeout(() => { socket.close(); reject(new Error('timed out waiting for persisted feedback recovery')) }, 15_000)
+      socket.addEventListener('message', event => {
+        const frame = JSON.parse(String(event.data))
+        if (frame.type === 'feedback_reply' && frame.submission_id === feedbackID) {
+          clearTimeout(timer); socket.close(); resolve(frame)
+        }
+      })
+      socket.addEventListener('error', () => { clearTimeout(timer); reject(new Error('feedback recovery websocket failed')) })
+    })
+  }, { lessonId, ticket: resumed.ticket, feedbackID })
+  expect(recoveredFeedback.submission_id).toBe(feedbackID)
   const feedbackRecord = await api(request, `/feedbacks/submissions/${feedbackID}`, f.student.token, undefined, 'GET')
 
   expect(result.confirmed.type).toBe('voice_confirmed')
