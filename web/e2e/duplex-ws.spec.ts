@@ -1,7 +1,7 @@
 ﻿import { test, expect } from './recovery-server'
 import { api, fixture, scheduled, login } from './isolated-fixtures'
 
-test.use({ localModel: true, duplexPilot: true, duplexShadow: true, deferDuplexFeedback: true })
+test.use({ localModel: true, duplexPilot: true, duplexShadow: true, deferDuplexFeedback: true, uncertainDuplexCommit: true })
 
 test('WS duplex shadow requires explicit confirmation before classroom progress', async ({ page, request, server }) => {
   test.setTimeout(120_000)

@@ -38,32 +38,33 @@ type Clock interface {
 
 // App 全量装配。
 type App struct {
-	agentWriteMu         sync.Mutex
-	configRefreshPending bool // guarded by agentWriteMu; never a write-retry receipt
-	completionMu         sync.Mutex
-	atomicWriteObserved  func(context.Context, *gorm.DB, func(*gorm.DB) error, func(store.AtomicConnectionTiming)) error
-	feedbackState        *feedbackMemoryState
-	overdueTasks         map[string]store.OverdueTask
-	completionTargets    map[int64]int
-	completionTasks      map[int64]*lessonCompletion
-	StartupError         error
-	Local                *localmodel.Client
-	DuplexPreflight      bool // Explicit isolated device preflight only; never enables teaching.
-	DuplexShadow         bool // Bounded shadow ASR upload; never mutates teaching state.
-	Auth                 *auth.Service
-	Books                *wordbook.Service
-	Cfg                  *config.Store
-	Sched                *scheduler.Service
-	Judge                *judge.Judge
-	FB                   *feedback.Parser
-	Mem                  *memory.Service
-	Bank                 *scripts.Bank
-	Teacher              *agent.TeacherAgent
-	System               *agent.SystemAgent
-	Tools                *tools.Registry
-	ToolAudit            *tools.MemAuditor
-	Log                  *obs.Logger
-	Clock                Clock
+	agentWriteMu          sync.Mutex
+	duplexCommitFaultOnce sync.Once
+	configRefreshPending  bool // guarded by agentWriteMu; never a write-retry receipt
+	completionMu          sync.Mutex
+	atomicWriteObserved   func(context.Context, *gorm.DB, func(*gorm.DB) error, func(store.AtomicConnectionTiming)) error
+	feedbackState         *feedbackMemoryState
+	overdueTasks          map[string]store.OverdueTask
+	completionTargets     map[int64]int
+	completionTasks       map[int64]*lessonCompletion
+	StartupError          error
+	Local                 *localmodel.Client
+	DuplexPreflight       bool // Explicit isolated device preflight only; never enables teaching.
+	DuplexShadow          bool // Bounded shadow ASR upload; never mutates teaching state.
+	Auth                  *auth.Service
+	Books                 *wordbook.Service
+	Cfg                   *config.Store
+	Sched                 *scheduler.Service
+	Judge                 *judge.Judge
+	FB                    *feedback.Parser
+	Mem                   *memory.Service
+	Bank                  *scripts.Bank
+	Teacher               *agent.TeacherAgent
+	System                *agent.SystemAgent
+	Tools                 *tools.Registry
+	ToolAudit             *tools.MemAuditor
+	Log                   *obs.Logger
+	Clock                 Clock
 
 	Rooms                 *Hub
 	generations           *generationCoordinator

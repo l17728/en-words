@@ -49,6 +49,18 @@ func duplexReason(err error) string {
 	}
 }
 
+func (a *App) commitDuplexSnapshot(ctx context.Context, student, lesson int64, decision string, before, after any, delivery *store.DuplexFeedbackDelivery) error {
+	err := a.DuplexStore.CommitSnapshot(ctx, student, lesson, decision, before, after, delivery)
+	if err == nil && a.TestMode && os.Getenv("ENWORDS_E2E_COMMIT_THEN_ERROR") == "1" {
+		injected := false
+		a.duplexCommitFaultOnce.Do(func() { injected = true })
+		if injected {
+			return errors.New("e2e: simulated lost commit acknowledgement after durable commit")
+		}
+	}
+	return err
+}
+
 func (a *App) deliverDuplexFeedback(ctx context.Context, student, lesson int64, client Client, eventID string) {
 	if a.DuplexStore == nil {
 		return
@@ -677,7 +689,7 @@ func (a *App) handleWS(c *gin.Context) {
 						if feedbackAfterCommit != nil {
 							delivery = &store.DuplexFeedbackDelivery{SubmissionID: feedbackAfterCommit.SubmissionID, StudentID: tk.StudentID, LessonID: lessonID, Text: feedbackAfterCommit.Text}
 						}
-						if err := a.DuplexStore.CommitSnapshot(ctx, tk.StudentID, lessonID, receipt.DecisionID, beforeState, room.durableSnapshot(), delivery); err != nil {
+						if err := a.commitDuplexSnapshot(ctx, tk.StudentID, lessonID, receipt.DecisionID, beforeState, room.durableSnapshot(), delivery); err != nil {
 							stored, re := a.DuplexStore.LookupReceipt(ctx, tk.StudentID, lessonID, receipt.DecisionID)
 							var runtimeSnapshot store.RuntimeRecord
 							se := a.DB.WithContext(ctx).First(&runtimeSnapshot, "key = ?", "snapshot/"+strconv.FormatInt(lessonID, 10)).Error
